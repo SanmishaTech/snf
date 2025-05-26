@@ -250,12 +250,15 @@ const VendorForm: React.FC<VendorFormProps> = ({ mode, vendorId, onSuccess, init
          
         </>
       )}
-      <Button type="submit" disabled={isSubmitting || mutation.isPending} className="w-full sm:w-auto">
+      <div className="w-full  flex items-end justify-end">
+      <Button type="submit" disabled={isSubmitting || mutation.isPending} className="w-full sm:w-auto right-0">
         {isSubmitting || mutation.isPending ? (
           <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
         ) : null}
         {mode === "create" ? "Create Vendor & Vendor" : "Save Changes"}
       </Button>
+      </div>
+      
     </form>
   );
 };
