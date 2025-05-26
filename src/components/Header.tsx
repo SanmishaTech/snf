@@ -1,0 +1,111 @@
+import { Bell, Home, Menu, MessageSquare, User, Briefcase } from 'lucide-react';
+import GlobalSearch from './GlobalSearch';
+import { useState } from 'react';
+
+const Header = () => {
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  return (
+    <header className="bg-white shadow-sm sticky top-0 z-50">
+      <div className="max-w-[1200px] mx-auto px-4 h-16 flex items-center justify-between">
+        {/* Left Section - Logo */}
+        <div className="flex items-center">
+          <a href="/" className="text-2xl font-bold text-blue-600 mr-6">SNF</a>
+          {/* <div className="hidden md:block">
+            <GlobalSearch />
+          </div> */}
+        </div>
+
+        {/* Middle Section - Navigation (Desktop) */}
+        <div className="hidden md:flex items-center space-x-1">
+          <NavButton icon={<Home className="h-6 w-6" />} label="Home" href="/" active />
+          <NavButton icon={<User className="h-6 w-6" />} label="Users" href="/users" />
+          <NavButton icon={<Briefcase className="h-6 w-6" />} label="Vendors" href="/vendors" />
+          <NavButton icon={<MessageSquare className="h-6 w-6" />} label="Messages" href="/messages" />
+          <NavButton icon={<Bell className="h-6 w-6" />} label="Notifications" href="/notifications" />
+        </div>
+
+        {/* Right Section - Mobile Menu Toggle & Profile */}
+        <div className="flex items-center">
+          <div className="md:hidden mr-4">
+            <GlobalSearch />
+          </div>
+          
+          <button
+            className="md:hidden p-2 rounded-full hover:bg-gray-200"
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+          
+          <div className="hidden md:block">
+            <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden cursor-pointer">
+              <img
+                src="https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&w=100&h=100"
+                alt="Profile"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Mobile Navigation */}
+      {menuOpen && (
+        <div className="md:hidden bg-white shadow-lg absolute w-full">
+          <div className="flex flex-col p-4 space-y-3">
+            <MobileNavItem icon={<Home className="h-5 w-5" />} label="Home" href="/" active />
+            <MobileNavItem icon={<User className="h-5 w-5" />} label="Users" href="/users" />
+            <MobileNavItem icon={<Briefcase className="h-5 w-5" />} label="Vendors" href="/vendors" />
+            <MobileNavItem icon={<MessageSquare className="h-5 w-5" />} label="Messages" href="/messages" />
+            <MobileNavItem icon={<Bell className="h-5 w-5" />} label="Notifications" href="/notifications" />
+          </div>
+        </div>
+      )}
+    </header>
+  );
+};
+
+interface NavButtonProps {
+  icon: React.ReactNode;
+  label: string;
+  href: string;
+  active?: boolean;
+}
+
+const NavButton = ({ icon, label, href, active }: NavButtonProps) => {
+  return (
+    <a
+      href={href}
+      className={`flex flex-col items-center justify-center p-2 rounded-md hover:bg-gray-100 w-20 h-16 ${
+        active ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'
+      }`}
+    >
+      {icon}
+      <span className="text-xs mt-1">{label}</span>
+    </a>
+  );
+};
+
+interface MobileNavItemProps {
+  icon: React.ReactNode;
+  label: string;
+  href: string;
+  active?: boolean;
+}
+
+const MobileNavItem = ({ icon, label, href, active }: MobileNavItemProps) => {
+  return (
+    <a
+      href={href}
+      className={`flex items-center space-x-3 p-3 rounded-md ${
+        active ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-100'
+      }`}
+    >
+      {icon}
+      <span className="font-medium">{label}</span>
+    </a>
+  );
+};
+
+export default Header;
