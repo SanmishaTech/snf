@@ -14646,7 +14646,7 @@ function st(t, n) {
   return { ...i, mutate: l, mutateAsync: i.mutate };
 }
 const Hp = "SNF",
-  SP = () => "http://localhost:3000//",
+  SP = () => "http://13.126.180.52//",
   lj = SP();
 var Vu = {},
   tC;
@@ -51585,7 +51585,7 @@ const EK = ({
           })
       : n;
   },
-  AK = "http://localhost:3000//";
+  AK = "http://13.126.180.52//";
 function d4({ mode: t }) {
   const { id: n } = Kn(),
     s = Ct(),
@@ -54750,7 +54750,7 @@ const fQ = (t) => {
           })
       : n;
   },
-  hQ = "http://localhost:3000//";
+  hQ = "http://13.126.180.52//";
 function mQ({ mode: t }) {
   var b;
   const n =
@@ -69554,7 +69554,7 @@ const oX = () => {
       })
     );
   },
-  cf = "http://localhost:3000//",
+  cf = "http://13.126.180.52//",
   lp = (t, n = "https://via.placeholder.com/100") =>
     t.profilePicture
       ? `${cf}/uploads/members/${t.profilePicture}`
@@ -69608,7 +69608,7 @@ const oX = () => {
             var b;
             const C = lp(S),
               w = S.coverPhoto
-                ? `http://localhost:3000///uploads/members/${S.coverPhoto}`
+                ? `http://13.126.180.52///uploads/members/${S.coverPhoto}`
                 : S.profilePicture || S.logo
                 ? C
                 : void 0;
@@ -70622,7 +70622,7 @@ const oX = () => {
               name: b.memberName,
               profilePicture: lp(b, "https://via.placeholder.com/100"),
               coverPhoto: b.coverPhoto
-                ? `http://localhost:3000///uploads/members/${b.coverPhoto}`
+                ? `http://13.126.180.52///uploads/members/${b.coverPhoto}`
                 : b.profilePicture || b.logo
                 ? lp(
                     b,
