@@ -26,7 +26,7 @@ const baseAgencySchema = z.object({
   mobile: z.string().regex(/^\d{10}$/, "Mobile number must be 10 digits"),
   alternateMobile: z.any().nullable().optional(),
   address1: z.string().min(1, "Address Line 1 is required"),
-  address2: z.string().nullable().optional(),
+  address2: z.any().nullable().optional(),
   city: z.string().min(1, "City is required"),
   pincode: z.coerce.number().int("Pincode must be an integer").positive("Pincode must be positive").refine(val => String(val).length === 6, "Pincode must be 6 digits"),
   status: z.enum(["ACTIVE", "INACTIVE"]).default("ACTIVE"),
