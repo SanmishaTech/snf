@@ -246,7 +246,7 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
 
       <div className="grid gap-2 relative">
         <Label htmlFor="pincode">Pin Code</Label>
-        <Input id="pincode" type="text"  {...register("pincode")} disabled={isSubmitting} />
+        <Input id="pincode" type="number"  {...register("pincode")} disabled={isSubmitting} />
         {errors.pincode && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.pincode.message}</span>}
       </div>
 
