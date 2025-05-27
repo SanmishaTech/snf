@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import {Textarea } from "@/components/ui/textarea"
 import {Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { useNavigate } from "react-router-dom";
+import { formatCurrency } from "@/lib/formatter";
 
 // Schema for order creation
 const orderSchema = z.object({
@@ -69,6 +70,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
   const [products, setProducts] = useState<Product[]>([]);
   const [agencies, setAgencies] = useState<Agency[]>([]);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
+  const [orderTotal, setordertotal] = useState()
   const navigate = useNavigate()
 
   const { 
@@ -102,7 +104,10 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
   });
 
   const watchedOrderItems = watch("orderItems");
+  const watchedOrderItemsString = JSON.stringify(watchedOrderItems); // Stringify for dependency
+
   const groupedProductSummary = React.useMemo(() => {
+    console.log("[OrderForm] Recalculating groupedProductSummary. Watched items (stringified for dep):", watchedOrderItemsString, "Product count:", products.length);
     const summary: { [productId: string]: { name: string; totalQuantity: number; unit?: string } } = {};
     if (!watchedOrderItems || watchedOrderItems.length === 0 || !products || products.length === 0) {
       return summary;
@@ -126,8 +131,9 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
         }
       }
     });
+    console.log("[OrderForm] groupedProductSummary result:", JSON.parse(JSON.stringify(summary)));
     return summary;
-  }, [watchedOrderItems, products]);
+  }, [watchedOrderItemsString, products]); // Use stringified version in dependency
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -179,9 +185,9 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
 
           const itemsToSet = initialData.orderItems.map(item => ({
             ...item,
-            productId: String(item.productId), // Ensure productId is a string
-            quantity: Number(item.quantity) || 1, // Ensure quantity is a number
-            agencyId: String(item.agencyId), // Ensure agencyId is a string
+            productId: String(item?.productId || ''),
+            quantity: Number(item?.quantity || 1),
+            agencyId: String(item?.agencyId || '')
           }));
 
           // Optional: Check if products for these items actually exist in the fetched list
@@ -301,25 +307,50 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
     mutation.mutate(data);
   };
 
+ 
+
+  useEffect(() => {
+    console.log(
+      "[OrderForm] Recalculating orderTotal. groupedProductSummary:", JSON.parse(JSON.stringify(groupedProductSummary)), 
+      "Product count:", products.length, 
+      "Watched items (stringified for dep):", watchedOrderItemsString
+    );
+    const calculatedTotalPrice = Object.values(groupedProductSummary).reduce((accumulator, summaryItem) => {
+      const product = products.find(p => p.name === summaryItem.name);
+      // Ensure product exists and its price is valid (not null or undefined)
+      if (product && product.price != null) {
+        const price = Number(product.price);
+        const quantity = Number(summaryItem.totalQuantity);
+
+        // Add to total only if both price and quantity are valid numbers
+        if (!isNaN(price) && !isNaN(quantity)) {
+          return accumulator + (price * quantity);
+        }
+      }
+      return accumulator; // Otherwise, this item does not contribute to the total
+    }, 0);
+    console.log("[OrderForm] calculatedTotalPrice:", calculatedTotalPrice);
+    setordertotal(calculatedTotalPrice);
+  }, [groupedProductSummary, products, watchedOrderItemsString]); // Use stringified version in dependency
   // Helper to render current step content
   const renderStepContent = () => {
     return (
       <React.Fragment>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6"> 
           {/* Order Details Section */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 p-6 rounded-lg shadow-sm border border-blue-100 dark:border-blue-900">
+          <div className="bg-gray-50 dark:bg-gray-900 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800">
             <div className="flex items-center gap-2 mb-4">
-              <ShoppingCart className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-              {/* <h3 className="text-lg font-semibold text-blue-700 dark:text-blue-300">Order Information</h3> */}
+              <ShoppingCart className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+              {/* <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Order Information</h3> */}
             </div>
             
             <div className="grid gap-4">
               {mode !== "create" && (
                 <div className="relative">
-                  <Label htmlFor="poNumber" className="text-blue-700 dark:text-blue-300 font-medium">PO Number</Label>
+                  <Label htmlFor="poNumber" className="text-gray-700 dark:text-gray-300 font-medium">PO Number</Label>
                   <Input 
                     id="poNumber" 
-                    className="bg-white/80 dark:bg-gray-900/80 border-blue-200 dark:border-blue-800"
+                    className="bg-white/80 dark:bg-gray-900/80 border-gray-300 dark:border-gray-700"
                     {...register("poNumber")} 
                     disabled 
                   />
@@ -328,7 +359,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="relative">
-                  <Label htmlFor="orderDate" className="text-blue-700 dark:text-blue-300 font-medium">Order Date</Label>
+                  <Label htmlFor="orderDate" className="text-gray-700 dark:text-gray-300 font-medium">Order Date</Label>
                   <Controller
                     control={control}
                     name="orderDate"
@@ -357,11 +388,11 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                       </Popover>
                     )}
                   />
-                  {errors.orderDate && <span className="text-red-500 text-xs absolute -bottom-5">{errors.orderDate.message}</span>}
+                  {errors.orderDate && <span className="text-gray-500 text-xs absolute -bottom-5">{errors.orderDate.message}</span>}
                 </div>
                 
                 <div className="relative">
-                  <Label htmlFor="deliveryDate" className="text-blue-700 dark:text-blue-300 font-medium">Delivery Date</Label>
+                  <Label htmlFor="deliveryDate" className="text-gray-700 dark:text-gray-300 font-medium">Delivery Date</Label>
                   <Controller
                     control={control}
                     name="deliveryDate"
@@ -390,35 +421,35 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                       </Popover>
                     )}
                   />
-                  {errors.deliveryDate && <span className="text-red-500 text-xs absolute -bottom-5">{errors.deliveryDate.message}</span>}
+                  {errors.deliveryDate && <span className="text-gray-500 text-xs absolute -bottom-5">{errors.deliveryDate.message}</span>}
                 </div>
               </div>
 
               <div className="relative mt-2">
-                <Label htmlFor="notes" className="text-blue-700 dark:text-blue-300 font-medium">Notes / Special Instructions</Label>
+                <Label htmlFor="notes" className="text-gray-700 dark:text-gray-300 font-medium">Notes / Special Instructions</Label>
                 <Textarea 
                   id="notes" 
                   {...register("notes")} 
                    
                   rows={3} 
-                  className="bg-white/80 dark:bg-gray-900/80 border-blue-200 dark:border-blue-800"
+                  className="bg-white/80 dark:bg-gray-900/80 border-gray-300 dark:border-gray-700"
                 />
-                {errors.notes && <span className="text-red-500 text-xs mt-1">{errors.notes.message}</span>}
+                {errors.notes && <span className="text-gray-500 text-xs mt-1">{errors.notes.message}</span>}
               </div>
 
             </div>
           </div>
           
           {/* Vendor Section */}
-          <div className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950 p-6 rounded-lg shadow-sm border border-emerald-100 dark:border-emerald-900">
+          <div className="bg-gray-50 dark:bg-gray-900 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800">
             <div className="flex items-center gap-2 mb-4">
-              <Truck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-              <h3 className="text-lg font-semibold text-emerald-700 dark:text-emerald-300">Vendor Information</h3>
+              <Truck className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Vendor Information</h3>
             </div>
             
             <div className="grid gap-4">
               <div className="relative">
-                <Label htmlFor="vendorId" className="text-emerald-700 dark:text-emerald-300 font-medium">Select Vendor</Label>
+                <Label htmlFor="vendorId" className="text-gray-700 dark:text-gray-300 font-medium">Select Vendor</Label>
                 <Controller
                   control={control}
                   name="vendorId"
@@ -439,18 +470,18 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                     </Select>
                   )}
                 />
-                {errors.vendorId && <span className="text-red-500 text-xs absolute -bottom-5">{errors.vendorId.message}</span>}
+                {errors.vendorId && <span className="text-gray-500 text-xs absolute -bottom-5">{errors.vendorId.message}</span>}
               </div>
               
               <div className="relative">
-                <Label htmlFor="contactPersonName" className="text-emerald-700 dark:text-emerald-300 font-medium">Contact Person</Label>
+                <Label htmlFor="contactPersonName" className="text-gray-700 dark:text-gray-300 font-medium">Contact Person</Label>
                 <Input 
                   id="contactPersonName" 
                   disabled
                   className="bg-white/80 dark:bg-gray-900/80 border-emerald-200 dark:border-emerald-800"
                   {...register("contactPersonName")} 
                 />
-                {errors.contactPersonName && <span className="text-red-500 text-xs absolute -bottom-5">{errors.contactPersonName.message}</span>}
+                {errors.contactPersonName && <span className="text-gray-500 text-xs absolute -bottom-5">{errors.contactPersonName.message}</span>}
               </div>
             </div>
 
@@ -460,11 +491,11 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                 <div className="grid grid-cols-2 gap-2 mt-2 text-sm">
                   <div>
                     <span className="text-gray-500 dark:text-gray-400">Email:</span>
-                    <p className="font-medium text-gray-800 dark:text-gray-200">{selectedVendor.email}</p>
+                    <p className="font-medium text-gray-700 dark:text-gray-300">{selectedVendor.email}</p>
                   </div>
                   <div>
                     <span className="text-gray-500 dark:text-gray-400">Phone:</span>
-                    <p className="font-medium text-gray-800 dark:text-gray-200">{selectedVendor.mobile}</p>
+                    <p className="font-medium text-gray-700 dark:text-gray-300">{selectedVendor.mobile}</p>
                   </div>
                 </div>
               </div>
@@ -474,11 +505,11 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
 
         {/* Products & Agencies Section */}
         <Card className="shadow-lg mt-6">
-          <CardHeader className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-950 dark:to-violet-950">
+          <CardHeader className="bg-gray-50 dark:bg-gray-900">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Package className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                <CardTitle className="text-purple-700 dark:text-purple-300">Products & Agencies</CardTitle>
+                <Package className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                <CardTitle className="text-gray-700 dark:text-gray-300">Products & Agencies</CardTitle>
               </div>
               <Button
                 type="button"
@@ -491,13 +522,13 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                     agencyId: "",
                   })
                 }
-                className="border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900"
+                className="border-gray-300 mt-4 mb-4 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 <Plus className="h-4 w-4 mr-1" />
                 Add Product Item
               </Button>
             </div>
-            <CardDescription className="text-purple-600 dark:text-purple-400">
+            <CardDescription className="text-gray-600 dark:text-gray-400">
               Add products to your order, specify quantities, and assign an agency to each item.
             </CardDescription>
           </CardHeader>
@@ -550,7 +581,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                               )}
                             />
                             {errors.orderItems?.[index]?.agencyId && (
-                              <span className="text-red-500 text-xs mt-1 block">{errors.orderItems[index]?.agencyId?.message}</span>
+                              <span className="text-gray-500 text-xs mt-1 block">{errors.orderItems[index]?.agencyId?.message}</span>
                             )}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap min-w-[200px]">
@@ -573,7 +604,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                               )}
                             />
                             {errors.orderItems?.[index]?.productId && (
-                              <span className="text-red-500 text-xs mt-1 block">{errors.orderItems[index]?.productId?.message}</span>
+                              <span className="text-gray-500 text-xs mt-1 block">{errors.orderItems[index]?.productId?.message}</span>
                             )}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap min-w-[100px]">
@@ -585,7 +616,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                               className="h-9 text-sm bg-white dark:bg-gray-700/50 border-gray-300 dark:border-gray-600 w-full"
                             />
                             {errors.orderItems?.[index]?.quantity && (
-                              <span className="text-red-500 text-xs mt-1 block">{errors.orderItems[index]?.quantity?.message}</span>
+                              <span className="text-gray-500 text-xs mt-1 block">{errors.orderItems[index]?.quantity?.message}</span>
                             )}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 min-w-[80px]">
@@ -598,10 +629,10 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                             })()}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 min-w-[100px]">
-                            ₹{unitPrice.toFixed(2)}
+                            {formatCurrency(unitPrice.toFixed(2))}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">
-                            ₹{itemTotal.toFixed(2)}
+                            {formatCurrency(itemTotal.toFixed(2))}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-center">
                             <Button
@@ -609,7 +640,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                               size="icon"
                               variant="ghost"
                               onClick={() => remove(index)}
-                              className="h-8 w-8 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50"
+                              className="h-8 w-8 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800/50"
                               disabled={fields.length === 1}
                             >
                               <Trash2 className="h-4 w-4" />
@@ -624,75 +655,75 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
             )}
             
             {errors.orderItems && typeof errors.orderItems === 'object' && 'message' in errors.orderItems && (
-              <p className="text-red-500 text-sm mt-2">{(errors.orderItems as any).message}</p>
+              <p className="text-gray-500 text-sm mt-2">{(errors.orderItems as any).message}</p>
             )}
 
-            {/* {fields.length > 0 && (
+             {fields.length > 0 && (
               <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <div className="flex justify-between items-center text-lg">
-                    <span className="font-semibold text-purple-800 dark:text-purple-300">Current Order Total (incl. Tax):</span>
-                    <span className="font-bold text-lg text-purple-800 dark:text-purple-300">₹{(orderTotal * 1.18).toFixed(2)}</span>
+                    <span className="font-semibold text-gray-800 dark:text-gray-300">Current Order Total :</span>
+                    <span className="font-bold text-lg text-gray-800 dark:text-gray-300">{formatCurrency(orderTotal)}</span>
                   </div>
-                  <p className="text-xs text-right text-gray-500 dark:text-gray-400">(Subtotal: ₹{orderTotal.toFixed(2)} + Tax: ₹{(orderTotal * 0.18).toFixed(2)})</p>
+                  {/* <p className="text-xs text-right text-gray-500 dark:text-gray-400">(Subtotal: ₹{(orderTotal || 0).toFixed(2)})</p> */}
               </div>
-            )} */}
+            )} 
           </CardContent>
         </Card>
 
-        {/* Order Summary Section */}
-        {fields.length > 0 && (
-  <Card className="shadow-lg mt-6">
-    <CardHeader className="bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-950 dark:to-gray-950">
-      <div className="flex items-center gap-2">
-        <ListOrdered className="h-5 w-5 text-slate-600 dark:text-slate-400" />
-        <CardTitle className="text-slate-700 dark:text-slate-300">Order Summary</CardTitle>
-      </div>
-      <CardDescription className="text-slate-600 dark:text-slate-400">Review your ordered items and quantities before submission.</CardDescription>
-    </CardHeader>
-    <CardContent className="p-6 space-y-4">
-      {(() => {
-        const summaryEntries = Object.entries(groupedProductSummary);
-        // Defensive: If groupedProductSummary is empty but there are valid order items, show those directly
-        if (summaryEntries.length === 0) {
-          const validItems = watchedOrderItems?.filter(item => item.productId && Number(item.quantity) > 0) || [];
-          if (products.length === 0 && validItems.length > 0) {
-            return Array.from({ length: Math.min(validItems.length, 3) }).map((_, index) => (
-              <div key={`summary-loading-${index}`} className="flex justify-between items-center border-b pb-2 mb-2 animate-pulse">
-                <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mb-1"></div>
-                <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/6"></div>
+        {/* Order Summary Section - Disabled */}
+        {false && fields.length > 0 && (
+          <Card className="shadow-lg mt-6">
+            <CardHeader className="bg-gray-50 dark:bg-gray-900">
+              <div className="flex items-center gap-2">
+                <ListOrdered className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                <CardTitle className="text-gray-700 dark:text-gray-300">Order Summary</CardTitle>
               </div>
-            ));
-          }
-          if (validItems.length > 0) {
-            // Show a fallback summary for each valid item
-            return validItems.map((item, idx) => (
-              <div key={`summary-fallback-${item.productId}-${idx}`} className="flex justify-between items-center border-b pb-2 mb-2 last:border-b-0 last:pb-0 last:mb-0">
-                <p className="font-medium text-gray-800 dark:text-gray-200">Product ID: {item.productId}</p>
-                <p className="font-medium text-gray-800 dark:text-gray-200">Qty: {item.quantity}</p>
+              <CardDescription className="text-gray-600 dark:text-gray-400">Review your ordered items and quantities before submission.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-6 space-y-4">
+              {(() => {
+                const summaryEntries = Object.entries(groupedProductSummary);
+                // Defensive: If groupedProductSummary is empty but there are valid order items, show those directly
+                if (summaryEntries.length === 0) {
+                  const validItems = watchedOrderItems?.filter(item => item.productId && Number(item.quantity) > 0) || [];
+                  if (products.length === 0 && validItems.length > 0) {
+                    return Array.from({ length: Math.min(validItems.length, 3) }).map((_, index) => (
+                      <div key={`summary-loading-${index}`} className="flex justify-between items-center border-b pb-2 mb-2 animate-pulse">
+                        <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mb-1"></div>
+                        <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/6"></div>
+                      </div>
+                    ));
+                  }
+                  if (validItems.length > 0) {
+                    // Show a fallback summary for each valid item
+                    return validItems.map((item, idx) => (
+                      <div key={`summary-fallback-${item.productId}-${idx}`} className="flex justify-between items-center border-b pb-2 mb-2 last:border-b-0 last:pb-0 last:mb-0">
+                        <p className="font-medium text-gray-700 dark:text-gray-300">Product ID: {item.productId}</p>
+                        <p className="font-medium text-gray-700 dark:text-gray-300">Qty: {item.quantity}</p>
+                      </div>
+                    ));
+                  }
+                  // Products loaded, or no items with positive quantity/valid product ID.
+                  return <p className="text-sm text-gray-500 dark:text-gray-400">Review your selections. No products with positive quantities to summarize.</p>;
+                }
+                return summaryEntries.map(([productId, summaryItem]) => (
+                  <div key={`summary-group-${productId}`} className="flex justify-between items-center border-b pb-2 mb-2 last:border-b-0 last:pb-0 last:mb-0">
+                    <p className="font-medium text-gray-700 dark:text-gray-300">{summaryItem.name}</p>
+                    <p className="font-medium text-gray-700 dark:text-gray-300">Qty: {summaryItem.totalQuantity} {summaryItem.unit ? `(${summaryItem.unit})` : ''}</p>
+                  </div>
+                ));
+              })()}
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+                <div className="flex justify-between text-md">
+                  {/* <span className="font-semibold text-gray-700 dark:text-gray-300">Total Units:</span> */}
+                  {/* <span className="font-bold text-lg text-gray-800 dark:text-gray-200">
+                    {watch("orderItems").reduce((sum, currentItem) => sum + (Number(currentItem.quantity) || 0), 0)}
+                  </span> */}
+                </div>
               </div>
-            ));
-          }
-          // Products loaded, or no items with positive quantity/valid product ID.
-          return <p className="text-sm text-gray-500 dark:text-gray-400">Review your selections. No products with positive quantities to summarize.</p>;
-        }
-        return summaryEntries.map(([productId, summaryItem]) => (
-          <div key={`summary-group-${productId}`} className="flex justify-between items-center border-b pb-2 mb-2 last:border-b-0 last:pb-0 last:mb-0">
-            <p className="font-medium text-gray-800 dark:text-gray-200">{summaryItem.name}</p>
-            <p className="font-medium text-gray-800 dark:text-gray-200">Qty: {summaryItem.totalQuantity} {summaryItem.unit ? `(${summaryItem.unit})` : ''}</p>
-          </div>
-        ));
-      })()}
-      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
-        <div className="flex justify-between text-md">
-          <span className="font-semibold text-gray-700 dark:text-gray-300">Total Units:</span>
-          <span className="font-bold text-lg text-gray-900 dark:text-gray-100">
-            {watch("orderItems").reduce((sum, currentItem) => sum + (Number(currentItem.quantity) || 0), 0)}
-          </span>
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-)}
+            </CardContent>
+          </Card>
+        )}
       </React.Fragment>
     );
   };
@@ -712,7 +743,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
             <Button
               type="submit"
               disabled={isSubmitting || mutation.isPending}
-              className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold px-6 py-2.5 rounded-lg shadow-md hover:shadow-lg transition-all duration-150 flex items-center gap-2"
+              className="bg-gray-600 hover:bg-gray-700 text-white font-semibold px-6 py-2.5 rounded-lg shadow-md hover:shadow-lg transition-all duration-150 flex items-center gap-2"
             >
               {isSubmitting || mutation.isPending ? <LoaderCircle className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
               Submit Order

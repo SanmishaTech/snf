@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react"; 
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { get } from "@/services/apiService";
@@ -6,86 +6,137 @@ import AgencyForm from "./AgencyForm";
 import { 
   Card, 
   CardContent, 
-  CardDescription, 
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ChevronLeft, Loader } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton"; 
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+interface AgencyUser {
+  id: string | number;
+  name: string;
+  email: string;
+  active: boolean;
+}
+
+interface AgencyData {
+  id: string | number;
+  name: string;
+  contactPersonName?: string | null;
+  email?: string | null;
+  mobile: string;
+  alternateMobile?: string | null;
+  address1: string;
+  address2?: string | null;
+  city: string;
+  pincode: number;
+  userId: string | number;
+  user?: AgencyUser;
+}
 
 const EditAgencyPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [formInitialData, setFormInitialData] = useState<any>(null);
 
-  const { isLoading, isError, error } = useQuery({
+  const fetchAgencyById = async (agencyId: string): Promise<AgencyData> => {
+    const response = await get(`/agencies/${agencyId}`);
+    return response;
+  };
+
+  const { data: agencyData, isLoading, isError, error } = useQuery<AgencyData, Error>({
     queryKey: ["agency", id],
-    queryFn: async () => {
-      const data = await get(`/agencies/${id}`);
-      // Transform backend data to match form structure
-      setFormInitialData({
-        name: data.name,
-        email: data.email,
-        mobile: data.mobile,
-        address1: data.address1,
-        contactPersonName: data.contactPersonName,
-        alternateMobile: data.alternateMobile,
-        address2: data.address2 || null,
-        city: data.city,
-        pincode: data.pincode,
-      });
-      return data;
-    },
+    queryFn: () => fetchAgencyById(id!),
     enabled: !!id,
+    staleTime: 1000 * 60 * 5,
   });
 
   const handleSuccess = () => {
-    navigate("/admin/agencies"); // Redirect to agencies list
+    navigate("/admin/agencies"); 
   };
+
+  if (!id) {
+    return (
+      <div className="container mx-auto p-6">
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>No Agency ID provided. Please go back and select an agency to edit.</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-96">
-        <Loader className="animate-spin h-8 w-8" />
+      <div className="container mx-auto p-6"> 
+        <Card className="max-w-4xl mx-auto">
+          <CardHeader>
+            <Skeleton className="h-8 w-1/2" />
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-1/3 ml-auto" />
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  if (isError && error instanceof Error) {
+  if (isError) {
     return (
-      <div className="p-4 text-red-600">
-        <p>Error loading agency: {error.message}</p>
+      <div className="container mx-auto p-6">
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Error Fetching Agency</AlertTitle>
+          <AlertDescription>
+            There was a problem retrieving the agency details. Error: {error?.message || 'Unknown error'}
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
+
+  if (!agencyData) {
+    return (
+      <div className="container mx-auto p-6">
+        <Alert variant="default">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Not Found</AlertTitle>
+          <AlertDescription>Agency data could not be loaded or found.</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+  
+  const transformedInitialData: Partial<AgencyFormInputs> = {
+    name: agencyData.name,
+    contactPersonName: agencyData.contactPersonName || '',
+    email: agencyData.email || '',
+    mobile: agencyData.mobile,
+    alternateMobile: agencyData.alternateMobile || null,
+    address1: agencyData.address1,
+    address2: agencyData.address2 || null,
+    city: agencyData.city,
+    pincode: agencyData.pincode,
+    status: agencyData.user?.active ? "ACTIVE" : "INACTIVE",
+  };
 
   return (
-    <div className="container mx-auto p-4 max-w-4xl">
-      <Button 
-        variant="ghost" 
-        className="mb-4" 
-        onClick={() => navigate("/admin/agencies")}
-      >
-        <ChevronLeft className="mr-2 h-4 w-4" />
-        Back to Agencies
-      </Button>
-      
-      <Card className="shadow-md">
+    <div className="container mx-auto p-6"> 
+      <Card className="max-w-4xl mx-auto"> 
         <CardHeader>
-          <CardTitle className="text-2xl">Edit Agency</CardTitle>
-          <CardDescription>
-            Update the agency details below
-          </CardDescription>
+          <CardTitle className="text-2xl font-semibold">Edit Agency</CardTitle> 
         </CardHeader>
         <CardContent>
-          {formInitialData && (
-            <AgencyForm
-              mode="edit"
-              agencyId={id}
-              initialData={formInitialData}
-              onSuccess={handleSuccess}
-            />
-          )}
+          <AgencyForm
+            mode="edit"
+            agencyId={id!}
+            initialData={transformedInitialData} 
+            onSuccess={handleSuccess}
+          />
         </CardContent>
       </Card>
     </div>
@@ -93,3 +144,19 @@ const EditAgencyPage: React.FC = () => {
 };
 
 export default EditAgencyPage;
+
+type AgencyFormInputs = {
+  name: string;
+  contactPersonName?: string; 
+  email?: string; 
+  mobile: string;
+  alternateMobile?: string | null;
+  address1: string;
+  address2?: string | null;
+  city: string;
+  pincode?: number; 
+  status?: "ACTIVE" | "INACTIVE";
+  userFullName?: string; 
+  userLoginEmail?: string; 
+  userPassword?: string; 
+};

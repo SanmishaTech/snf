@@ -20,10 +20,10 @@ import { format } from 'date-fns';
 
 const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
-  url: z.preprocess(
-    (val) => (val === "" ? undefined : val),
-    z.string().url({ message: "Invalid URL format" }).optional().nullable()
-  ),
+  // url: z.preprocess(
+  //   (val) => (val === "" ? undefined : val),
+  //   z.string().url({ message: "Invalid URL format" }).optional().nullable()
+  // ),
   price: z.coerce.number().positive({ message: "Price must be a positive number" }),
   unit: z.string().optional().nullable(),
   });
@@ -137,7 +137,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
           {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
         </div>
 
-        <div className="space-y-2">
+        {/* <div className="space-y-2">
           <Label htmlFor="url">Product URL (Optional)</Label>
           <Input
             id="url"
@@ -147,7 +147,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
             disabled={isSubmitting || mutation.isPending}
           />
           {errors.url && <p className="text-red-500 text-xs mt-1">{errors.url.message}</p>}
-        </div>
+        </div> */}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

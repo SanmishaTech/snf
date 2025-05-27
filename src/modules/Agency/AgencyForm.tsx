@@ -214,40 +214,43 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
         {errors.email && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.email.message}</span>}
       </div>
 
-      <div className="grid gap-2 relative">
-        <Label htmlFor="mobile">Mobile Number</Label>
-        <Input id="mobile" type="text"  {...register("mobile")} disabled={isSubmitting} />
-        {errors.mobile && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.mobile.message}</span>}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid gap-2 relative">
+          <Label htmlFor="mobile">Mobile Number</Label>
+          <Input id="mobile" type="text"  {...register("mobile")} disabled={isSubmitting} />
+          {errors.mobile && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.mobile.message}</span>}
+        </div>
+        <div className="grid gap-2 relative">
+          <Label htmlFor="alternateMobile">Alternate Mobile (Optional)</Label>
+          <Input id="alternateMobile" type="text"  {...register("alternateMobile")} disabled={isSubmitting} />
+          {errors.alternateMobile && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.alternateMobile.message}</span>}
+        </div>
       </div>
 
-      <div className="grid gap-2 relative">
-        <Label htmlFor="alternateMobile">Alternate Mobile Number (Optional)</Label>
-        <Input id="alternateMobile" type="text"  {...register("alternateMobile")} disabled={isSubmitting} />
-        {errors.alternateMobile && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.alternateMobile.message}</span>}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid gap-2 relative">
+          <Label htmlFor="address1">Address Line 1</Label>
+          <Input id="address1" type="text"  {...register("address1")} disabled={isSubmitting} />
+          {errors.address1 && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.address1.message}</span>}
+        </div>
+        <div className="grid gap-2 relative">
+          <Label htmlFor="address2">Address Line 2 (Optional)</Label>
+          <Input id="address2" type="text"  {...register("address2")} disabled={isSubmitting} />
+          {errors.address2 && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.address2.message}</span>}
+        </div>
       </div>
 
-      <div className="grid gap-2 relative">
-        <Label htmlFor="address1">Address Line 1</Label>
-        <Input id="address1" type="text"  {...register("address1")} disabled={isSubmitting} />
-        {errors.address1 && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.address1.message}</span>}
-      </div>
-
-      <div className="grid gap-2 relative">
-        <Label htmlFor="address2">Address Line 2 (Optional)</Label>
-        <Input id="address2" type="text"  {...register("address2")} disabled={isSubmitting} />
-        {errors.address2 && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.address2.message}</span>}
-      </div>
-
-      <div className="grid gap-2 relative">
-        <Label htmlFor="city">City</Label>
-        <Input id="city" type="text"  {...register("city")} disabled={isSubmitting} />
-        {errors.city && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.city.message}</span>}
-      </div>
-
-      <div className="grid gap-2 relative">
-        <Label htmlFor="pincode">Pin Code</Label>
-        <Input id="pincode" type="number"  {...register("pincode")} disabled={isSubmitting} />
-        {errors.pincode && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.pincode.message}</span>}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid gap-2 relative">
+          <Label htmlFor="city">City</Label>
+          <Input id="city" type="text"  {...register("city")} disabled={isSubmitting} />
+          {errors.city && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.city.message}</span>}
+        </div>
+        <div className="grid gap-2 relative">
+          <Label htmlFor="pincode">Pin Code</Label>
+          <Input id="pincode" type="number"  {...register("pincode")} disabled={isSubmitting} />
+          {errors.pincode && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.pincode.message}</span>}
+        </div>
       </div>
 
       {/* <div className="grid gap-2 relative">

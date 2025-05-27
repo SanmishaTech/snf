@@ -21,6 +21,7 @@ import {
   Trash2,
   ClipboardCheck,
 } from "lucide-react";
+import { formatCurrency } from "@/lib/formatter"
 import { toast } from "sonner";
 import { Pagination, PaginationContent, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
 import { cn } from "@/lib/utils";
@@ -286,7 +287,7 @@ const OrderList = () => {
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 dark:text-gray-400">
                       {order.items.reduce((acc, item) => acc + item.quantity, 0)}
                     </TableCell>
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-700 dark:text-gray-300">₹{order.totalAmount.toFixed(2)}</TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-700 dark:text-gray-300">{formatCurrency(order.totalAmount.toFixed(2))}</TableCell>
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-center">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

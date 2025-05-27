@@ -5,6 +5,7 @@ import { get, del } from "@/services/apiService";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {formatCurrency} from "@/lib/formatter"
 import {
   Select,
   SelectTrigger,
@@ -234,18 +235,15 @@ const ProductList: React.FC = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead onClick={() => handleSort("id")} className="cursor-pointer">
+                    {/* <TableHead onClick={() => handleSort("id")} className="cursor-pointer">
                       ID {getSortIndicator("id")}
-                    </TableHead>
+                    </TableHead> */}
                     <TableHead onClick={() => handleSort('name')} className="cursor-pointer hover:bg-muted/50 transition-colors min-w-[150px]">
                       Name {getSortIndicator('name')}
                     </TableHead>
                   
-                    <TableHead onClick={() => handleSort("price")} className="cursor-pointer">
-                      Price {getSortIndicator("price")}
-                    </TableHead>
-                    <TableHead onClick={() => handleSort("unit")} className="cursor-pointer">
-                      Unit {getSortIndicator("unit")}
+                    <TableHead onClick={() => handleSort("price")} className="cursor-pointer text-right">
+                      Rate {getSortIndicator("price")}
                     </TableHead>
              
                     {/* <TableHead onClick={() => handleSort("quantity")} className="cursor-pointer text-right">
@@ -260,11 +258,10 @@ const ProductList: React.FC = () => {
                 <TableBody>
                   {products.map((product) => (
                     <TableRow key={product.id}>
-                      <TableCell>{product.id}</TableCell>
+                      {/* <TableCell>{product.id}</TableCell> */}
                       <TableCell className="font-medium" title={product.name}>{product.name}</TableCell>
                       
-                      <TableCell>₹{product.price}</TableCell>
-                      <TableCell>{product.unit || "N/A"}</TableCell>
+                      <TableCell className="text-right text-right">{formatCurrency(product.price)}{product.unit ? ` / ${product.unit}` : ""}</TableCell>
                       
                        {/* <TableCell className="text-right">{product.quantity}</TableCell> */} 
                       {/* <TableCell>{format(new Date(product.createdAt), "dd/MM/yy")}</TableCell> */}

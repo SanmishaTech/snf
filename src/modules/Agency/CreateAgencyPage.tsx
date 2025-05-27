@@ -4,12 +4,9 @@ import AgencyForm from "./AgencyForm";
 import { 
   Card, 
   CardContent, 
-  CardDescription, 
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ChevronLeft } from "lucide-react";
 
 const CreateAgencyPage: React.FC = () => {
   const navigate = useNavigate();
@@ -19,24 +16,16 @@ const CreateAgencyPage: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto p-4 max-w-4xl">
-      <Button 
-        variant="ghost" 
-        className="mb-4" 
-        onClick={() => navigate("/admin/agencies")}
-      >
-        <ChevronLeft className="mr-2 h-4 w-4" />
-        Back to Agencies
-      </Button>
+    <div className="container mx-auto p-4 md:p-6">
       
-      <Card className="shadow-md">
+      <Card className="max-w-4xl mx-auto">
         <CardHeader>
-          <CardTitle className="text-2xl">Create New Agency</CardTitle>
-          <CardDescription>
-            Fill in the details below to create a new agency with a user account
-          </CardDescription>
+          <CardTitle className="text-2xl font-semibold">Create New Agency</CardTitle>
         </CardHeader>
         <CardContent>
+          <p className="text-sm text-muted-foreground mb-6">
+            Fill in the details below to create a new agency and an associated user account.
+          </p>
           <AgencyForm mode="create" onSuccess={handleSuccess} />
         </CardContent>
       </Card>
