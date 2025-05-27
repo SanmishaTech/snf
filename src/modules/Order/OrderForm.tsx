@@ -47,6 +47,7 @@ interface Product {
   name: string;
   price: string;
   description?: string;
+  unit?: string; // Added to display product unit
 }
 
 interface Vendor {
@@ -102,7 +103,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
 
   const watchedOrderItems = watch("orderItems");
   const groupedProductSummary = React.useMemo(() => {
-    const summary: { [productId: string]: { name: string; totalQuantity: number } } = {};
+    const summary: { [productId: string]: { name: string; totalQuantity: number; unit?: string } } = {};
     if (!watchedOrderItems || watchedOrderItems.length === 0 || !products || products.length === 0) {
       return summary;
     }
@@ -120,6 +121,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
           summary[item.productId] = {
             name: product.name,
             totalQuantity: Number(item.quantity),
+            unit: product.unit,
           };
         }
       }
@@ -444,6 +446,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                 <Label htmlFor="contactPersonName" className="text-emerald-700 dark:text-emerald-300 font-medium">Contact Person</Label>
                 <Input 
                   id="contactPersonName" 
+                  disabled
                   className="bg-white/80 dark:bg-gray-900/80 border-emerald-200 dark:border-emerald-800"
                   {...register("contactPersonName")} 
                 />
@@ -511,27 +514,28 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                   <thead className="bg-gray-50 dark:bg-gray-800">
                     <tr>
                       <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">#</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Agency</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Product</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Qty</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Unit Price</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Line Total</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[150px]">Agency</th>
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[200px]">Product</th>
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[80px]">QTY</th>
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[80px]">Unit</th>
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[100px]">Unit Price</th>
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[100px]">Total</th>
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[80px]">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                    {fields.map((itemField, itemIndex) => {
-                      const productInfo = products.find(p => String(p.id) === watchedOrderItems[itemIndex]?.productId);
+                    {fields.map((itemField, index) => {
+                      const productInfo = products.find(p => String(p.id) === watchedOrderItems[index]?.productId);
                       const unitPrice = productInfo ? Number(productInfo.price) : 0;
-                      const itemTotal = unitPrice * (watchedOrderItems[itemIndex]?.quantity || 0);
+                      const itemTotal = unitPrice * (watchedOrderItems[index]?.quantity || 0);
 
                       return (
                         <tr key={itemField.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{itemIndex + 1}</td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{index + 1}</td>
                           <td className="px-4 py-3 whitespace-nowrap min-w-[200px]">
                             <Controller
                               control={control}
-                              name={`orderItems.${itemIndex}.agencyId`}
+                              name={`orderItems.${index}.agencyId`}
                               render={({ field: agencyField }) => (
                                 <Select onValueChange={agencyField.onChange} value={agencyField.value || ""}>
                                   <SelectTrigger className="h-9 text-sm bg-white dark:bg-gray-700">
@@ -545,14 +549,14 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                                 </Select>
                               )}
                             />
-                            {errors.orderItems?.[itemIndex]?.agencyId && (
-                              <span className="text-red-500 text-xs mt-1 block">{errors.orderItems[itemIndex]?.agencyId?.message}</span>
+                            {errors.orderItems?.[index]?.agencyId && (
+                              <span className="text-red-500 text-xs mt-1 block">{errors.orderItems[index]?.agencyId?.message}</span>
                             )}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap min-w-[200px]">
                             <Controller
                               control={control}
-                              name={`orderItems.${itemIndex}.productId`}
+                              name={`orderItems.${index}.productId`}
                               render={({ field: controllerField }) => (
                                 <Select onValueChange={controllerField.onChange} value={controllerField.value || ""}>
                                   <SelectTrigger className="h-9 text-sm bg-white dark:bg-gray-700/50 border-gray-300 dark:border-gray-600 w-full">
@@ -561,30 +565,39 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                                   <SelectContent>
                                     {products.map((product) => (
                                       <SelectItem key={product.id} value={String(product.id)}>
-                                        {product.name}
+                                        {product.name} {product.unit ? `(${product.unit})` : ''}
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
                                 </Select>
                               )}
                             />
-                            {errors.orderItems?.[itemIndex]?.productId && (
-                              <span className="text-red-500 text-xs mt-1 block">{errors.orderItems[itemIndex]?.productId?.message}</span>
+                            {errors.orderItems?.[index]?.productId && (
+                              <span className="text-red-500 text-xs mt-1 block">{errors.orderItems[index]?.productId?.message}</span>
                             )}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap min-w-[100px]">
                             <Input
-                              id={`orderItems.${itemIndex}.quantity`}
+                              id={`orderItems.${index}.quantity`}
                               type="number"
                               min="1"
-                              {...register(`orderItems.${itemIndex}.quantity`, { valueAsNumber: true })}
+                              {...register(`orderItems.${index}.quantity`, { valueAsNumber: true })}
                               className="h-9 text-sm bg-white dark:bg-gray-700/50 border-gray-300 dark:border-gray-600 w-full"
                             />
-                            {errors.orderItems?.[itemIndex]?.quantity && (
-                              <span className="text-red-500 text-xs mt-1 block">{errors.orderItems[itemIndex]?.quantity?.message}</span>
+                            {errors.orderItems?.[index]?.quantity && (
+                              <span className="text-red-500 text-xs mt-1 block">{errors.orderItems[index]?.quantity?.message}</span>
                             )}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 min-w-[80px]">
+                            {(() => {
+                              const currentProductId = watch(`orderItems.${index}.productId`);
+                              const selectedProduct = products.find(p => String(p.id) === currentProductId);
+                              return (
+                                selectedProduct?.unit || 'N/A'
+                              );
+                            })()}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 min-w-[100px]">
                             ₹{unitPrice.toFixed(2)}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -595,7 +608,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                               type="button"
                               size="icon"
                               variant="ghost"
-                              onClick={() => remove(itemIndex)}
+                              onClick={() => remove(index)}
                               className="h-8 w-8 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50"
                               disabled={fields.length === 1}
                             >
@@ -665,7 +678,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
         return summaryEntries.map(([productId, summaryItem]) => (
           <div key={`summary-group-${productId}`} className="flex justify-between items-center border-b pb-2 mb-2 last:border-b-0 last:pb-0 last:mb-0">
             <p className="font-medium text-gray-800 dark:text-gray-200">{summaryItem.name}</p>
-            <p className="font-medium text-gray-800 dark:text-gray-200">Qty: {summaryItem.totalQuantity}</p>
+            <p className="font-medium text-gray-800 dark:text-gray-200">Qty: {summaryItem.totalQuantity} {summaryItem.unit ? `(${summaryItem.unit})` : ''}</p>
           </div>
         ));
       })()}

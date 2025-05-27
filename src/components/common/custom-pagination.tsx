@@ -45,37 +45,41 @@ const CustomPagination: React.FC<CustomPaginationProps> = ({
   }, [currentPage, totalPages, onPageChange]);
 
   return (
-    <div className="flex flex-wrap justify-between items-center mt-4 gap-4">
-      {/* Number of Records */}
-      <div className="text-sm text-muted-foreground">
-        Showing <span className="font-medium">{startRecord}</span> to{" "}
-        <span className="font-medium">{endRecord}</span> of{" "}
-        <span className="font-medium">{totalRecords}</span> records
+    <div className="w-full">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-3 gap-3">
+        {/* Number of Records */}
+        <div className="text-sm text-muted-foreground">
+          Showing <span className="font-medium">{startRecord}</span> to{" "}
+          <span className="font-medium">{endRecord}</span> of{" "}
+          <span className="font-medium">{totalRecords}</span> records
+        </div>
+
+        {/* Records Per Page Selector */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Records per page:</span>
+          <Select
+            value={recordsPerPage?.toString() || "10"}
+            onValueChange={(value) => onRecordsPerPageChange(Number(value))}
+          >
+            <SelectTrigger className="w-[70px] h-8">
+              <SelectValue placeholder={`${recordsPerPage || 10}`} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+              <SelectItem value="100">100</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {/* Records Per Page Selector */}
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground">Records per page:</span>
-        <Select
-          value={recordsPerPage?.toString() || "10"}
-          onValueChange={(value) => onRecordsPerPageChange(Number(value))}
-        >
-          <SelectTrigger className="w-[70px] h-8">
-            <SelectValue placeholder={`${recordsPerPage || 10}`} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="5">5</SelectItem>
-            <SelectItem value="10">10</SelectItem>
-            <SelectItem value="20">20</SelectItem>
-            <SelectItem value="50">50</SelectItem>
-            <SelectItem value="100">100</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
+      {/* Pagination Controls */}
       {totalPages > 0 && (
-        <Pagination>
-          <PaginationContent>
+        <div className="flex justify-center md:justify-end w-full overflow-x-auto py-1">
+          <Pagination>
+            <PaginationContent>
             {/* Previous Button */}
             <PaginationItem>
               <PaginationPrevious
@@ -179,6 +183,7 @@ const CustomPagination: React.FC<CustomPaginationProps> = ({
             </PaginationItem>
           </PaginationContent>
         </Pagination>
+        </div>
       )}
     </div>
   );

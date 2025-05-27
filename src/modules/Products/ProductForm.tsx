@@ -20,11 +20,13 @@ import { format } from 'date-fns';
 
 const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
-  url: z.string().url("Invalid URL format").optional().nullable(),
-  price: z.string().min(1, "Price is required"),
-  date: z.date({ required_error: "Date is required" }),
-  quantity: z.coerce.number().int("Quantity must be an integer").min(1, "Quantity must be at least 1"),
-});
+  url: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z.string().url({ message: "Invalid URL format" }).optional().nullable()
+  ),
+  price: z.coerce.number().positive({ message: "Price must be a positive number" }),
+  unit: z.string().optional().nullable(),
+  });
 
 export type ProductFormInputs = z.infer<typeof productSchema>;
 
@@ -53,25 +55,35 @@ const ProductForm: React.FC<ProductFormProps> = ({
     formState: { errors, isSubmitting },
   } = useForm<ProductFormInputs>({
     resolver: zodResolver(productSchema),
-    defaultValues: initialData || {
+    defaultValues: {
       name: "",
-      url: "",
-      price: "",
-      date: new Date(),
-      quantity: 1,
+      url: null, // Consistent with schema optional().nullable()
+      price: undefined, // Zod schema expects number; undefined is a valid 'empty' state for a number field
+      unit: null,    // Consistent with schema optional().nullable()
     },
   });
 
+  // Effect to reset form when initialData changes (e.g., for edit mode)
   useEffect(() => {
     if (initialData) {
-      const dataToReset = {
+      // Ensure that all form fields are in the expected format (e.g., strings for text inputs)
+      const formDataToReset = {
         name: initialData.name || "",
-        ...initialData,
-        date: initialData.date ? new Date(initialData.date) : new Date(),
+        url: initialData.url || null, // Handled by preprocess in Zod schema
+        price: initialData.price != null ? Number(initialData.price) : undefined, // Ensure price is number or undefined
+        unit: initialData.unit || null, // Handled by preprocess or optional in Zod schema
       };
-      reset(dataToReset);
+      reset(formDataToReset);
+    } else if (mode === 'create') {
+      // Ensure form is cleared for create mode if initialData is not present
+      reset({
+        name: "",
+        url: null,
+        price: undefined,
+        unit: null,
+      });
     }
-  }, [initialData, reset]);
+  }, [initialData, mode, reset]);
 
   const mutation = useMutation<
     any,
@@ -106,8 +118,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
   });
 
   const onSubmit: SubmitHandler<ProductFormInputs> = (data) => {
-       data.price = Number(data.price)
-    
+    // data.price is now already a number due to z.coerce.number()
     mutation.mutate(data);
   };
 
@@ -153,42 +164,18 @@ const ProductForm: React.FC<ProductFormProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="date">Date</Label>
-          <Controller
-            name="date"
-            control={control}
-            render={({ field }) => (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !field.value && "text-muted-foreground"
-                    )}
-                    disabled={isSubmitting || mutation.isPending}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {field.value ? format(field.value, "dd/MM/yy") : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={field.value ? new Date(field.value) : undefined}
-                    onSelect={(date) => field.onChange(date || new Date())}
-                    initialFocus
-                    disabled={isSubmitting || mutation.isPending}
-                  />
-                </PopoverContent>
-              </Popover>
-            )}
+          <Label htmlFor="unit">Unit (e.g., kg, pcs, ltr)</Label>
+          <Input
+            id="unit"
+            type="text"
+            {...register("unit")}
+            disabled={isSubmitting || mutation.isPending}
           />
-          {errors.date && <p className="text-red-500 text-xs mt-1">{errors.date.message}</p>}
+          {errors.unit && <p className="text-red-500 text-xs mt-1">{errors.unit.message}</p>} 
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
           <Label htmlFor="quantity">Quantity</Label>
           <Input
@@ -200,7 +187,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
           />
           {errors.quantity && <p className="text-red-500 text-xs mt-1">{errors.quantity.message}</p>}
         </div>
-      </div>
+      </div> */}
 
       <div className="flex justify-end pt-4">
         <Button type="submit" disabled={isSubmitting || mutation.isPending} className="min-w-[120px]">

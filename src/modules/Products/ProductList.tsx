@@ -53,6 +53,7 @@ interface Product {
   name: string;
   url?: string | null;
   price: string;
+  unit?: string | null; // Added unit
   date: string; 
   quantity: number;
   createdAt: string;
@@ -161,8 +162,8 @@ const ProductList: React.FC = () => {
     setCurrentPage(page);
   };
 
-  const handleRecordsPerPageChange = (value: string) => {
-    setRecordsPerPage(Number(value));
+  const handleRecordsPerPageChange = (newRecordsPerPage: number) => {
+    setRecordsPerPage(newRecordsPerPage);
     setCurrentPage(1);
   };
 
@@ -239,15 +240,14 @@ const ProductList: React.FC = () => {
                     <TableHead onClick={() => handleSort('name')} className="cursor-pointer hover:bg-muted/50 transition-colors min-w-[150px]">
                       Name {getSortIndicator('name')}
                     </TableHead>
-                    <TableHead onClick={() => handleSort('url')} className="cursor-pointer hover:bg-muted/50 transition-colors min-w-[200px]">
-                      URL {getSortIndicator('url')}
-                    </TableHead>
+                  
                     <TableHead onClick={() => handleSort("price")} className="cursor-pointer">
                       Price {getSortIndicator("price")}
                     </TableHead>
-                    <TableHead onClick={() => handleSort("date")} className="cursor-pointer">
-                      Date {getSortIndicator("date")}
+                    <TableHead onClick={() => handleSort("unit")} className="cursor-pointer">
+                      Unit {getSortIndicator("unit")}
                     </TableHead>
+             
                     {/* <TableHead onClick={() => handleSort("quantity")} className="cursor-pointer text-right">
                       Quantity {getSortIndicator("quantity")}
                     </TableHead> */}
@@ -262,12 +262,11 @@ const ProductList: React.FC = () => {
                     <TableRow key={product.id}>
                       <TableCell>{product.id}</TableCell>
                       <TableCell className="font-medium" title={product.name}>{product.name}</TableCell>
-                      <TableCell className="max-w-xs truncate" title={product.url || ''}>
-                        {product.url || "N/A"}
-                      </TableCell>
-                      <TableCell>{product.price}</TableCell>
-                      <TableCell>{format(new Date(product.date), "dd/MM/yy")}</TableCell>
-                      {/* <TableCell className="text-right">{product.quantity}</TableCell> */}
+                      
+                      <TableCell>₹{product.price}</TableCell>
+                      <TableCell>{product.unit || "N/A"}</TableCell>
+                      
+                       {/* <TableCell className="text-right">{product.quantity}</TableCell> */} 
                       {/* <TableCell>{format(new Date(product.createdAt), "dd/MM/yy")}</TableCell> */}
                       <TableCell className="text-right">
                         <DropdownMenu>
@@ -310,7 +309,12 @@ const ProductList: React.FC = () => {
                   <span className="text-sm whitespace-nowrap">Rows:</span>
                   <Select
                     value={recordsPerPage.toString()}
-                    onValueChange={handleRecordsPerPageChange}
+                    onValueChange={(value: string) => {
+                    const numericValue = parseInt(value, 10);
+                    if (!isNaN(numericValue)) {
+                      handleRecordsPerPageChange(numericValue);
+                    }
+                  }}
                   >
                     <SelectTrigger className="h-8 w-[70px]">
                       <SelectValue placeholder={recordsPerPage.toString()} />
@@ -328,6 +332,9 @@ const ProductList: React.FC = () => {
                     currentPage={currentPage}
                     totalPages={totalPages}
                     onPageChange={handlePageChange}
+                    totalRecords={totalProducts}
+                    recordsPerPage={recordsPerPage}
+                    onRecordsPerPageChange={handleRecordsPerPageChange}
                   />
                 )}
               </div>
@@ -346,7 +353,6 @@ const ProductList: React.FC = () => {
         }}
         onConfirm={handleDeleteProduct}
         confirmLabel="Delete Product"
-        variant="destructive"
       />
     </div>
   );

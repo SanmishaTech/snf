@@ -280,8 +280,7 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
         <>
           <div className="border-b pb-4 mb-4 pt-6"> 
             <h3 className="text-lg font-medium leading-6 text-gray-900">Agency User Account Details</h3>
-            <p className="mt-1 text-sm text-gray-600">This will create a new user account linked to this agency with the AGENCY role. The user's full name will be the same as the agency name.</p>
-          </div>
+           </div>
 
           <div className="grid gap-2 relative">
             <Label htmlFor="userLoginEmail">Agency Login Email</Label>

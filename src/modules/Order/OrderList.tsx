@@ -64,18 +64,26 @@ interface Order {
 }
 
  
-const getRoleFromLocalStorage = () => {
+interface UserDetails {
+  role: string | null;
+  id: string | null; // Assuming user object in localStorage has an 'id'
+}
+
+const getUserDetailsFromLocalStorage = (): UserDetails => {
   const storedUser = localStorage.getItem("user");
   if (storedUser) {
     try {
       const user = JSON.parse(storedUser);
-      return user?.role || null;
+      return {
+        role: user?.role || null,
+        id: user?.id || null, 
+      };
     } catch (error) {
       console.error("Failed to parse user from localStorage", error);
-      return null;
+      return { role: null, id: null };
     }
   }
-  return null;
+  return { role: null, id: null };
 };
 
 const OrderList = () => {
@@ -85,12 +93,17 @@ const OrderList = () => {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const pageSize = 10;
 
-  const currentUserRole = getRoleFromLocalStorage();
+  const { role: currentUserRole, id: currentUserId } = getUserDetailsFromLocalStorage();
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["orders", page, searchTerm, dateFilter, statusFilter],
+    queryKey: ["orders", page, searchTerm, dateFilter, statusFilter, currentUserRole, currentUserId],
     queryFn: async () => {
-      const baseUrl = currentUserRole === 'VENDOR' ? '/vendor-orders/my' : '/vendor-orders';
+      let baseUrl = '/vendor-orders'; // Default for ADMIN or other unhandled roles
+      if (currentUserRole === 'VENDOR') {
+        baseUrl = '/vendor-orders/my';
+      } else if (currentUserRole === 'AGENCY') {
+        baseUrl = '/vendor-orders/my-agency-orders'; // New endpoint for agency's orders
+      }
       let url = `${baseUrl}?page=${page}&limit=${pageSize}`;
       
       if (searchTerm) {
@@ -165,7 +178,7 @@ const OrderList = () => {
         </Button>}
       </div>
 
-      {/* Filters */}
+      {/* Filters */} 
       <Card className="max-w-7xl mx-auto overflow-hidden border-0 shadow-sm bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-950 dark:to-gray-950">
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row gap-4">
@@ -326,7 +339,15 @@ const OrderList = () => {
                             </>
                           )}
 
-                          {currentUserRole !== "ADMIN" && currentUserRole !== "VENDOR" && (
+                          {currentUserRole === "AGENCY" && (
+                            <DropdownMenuItem asChild>
+                              <Link to={`/admin/orders/${order.id}`} className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800">
+                                <Eye className="mr-2 h-4 w-4" /> View Details
+                              </Link>
+                            </DropdownMenuItem>
+                          )}
+
+                          {currentUserRole !== "ADMIN" && currentUserRole !== "VENDOR" && currentUserRole !== "AGENCY" && (
                              <DropdownMenuItem disabled className="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-200">
                               No actions available for your role.
                             </DropdownMenuItem>

@@ -47,11 +47,11 @@ const initialData = {
   roles: {
     super_admin: {
       projects: [
-        { title: "Users", url: "/admin/users", icon: Briefcase, groupLabel: "Master" },
-        { title: "Vendors", url: "/admin/vendors", icon: Briefcase, groupLabel: "Services" },
+         { title: "Vendors", url: "/admin/vendors", icon: Briefcase, groupLabel: "Services" },
         { title: "Agency", url: "/admin/agencies", icon: Briefcase, groupLabel: "Services" },
          { title: "Products", url: "/admin/products", icon: Briefcase, groupLabel: "Services" },
          { title: "Orders", url: "/admin/orders", icon: Briefcase, groupLabel: "Services" },
+         { title: "Users", url: "/admin/users", icon: Briefcase, groupLabel: "Master" },
 
       ],
       navMain: [
@@ -265,7 +265,7 @@ function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             >
               <a href="/dashboard">
                 <Search className="h-5 w-5 " />
-                <Input 13.126.180.52 className="border-0 " />
+                <Input localhost:3000 className="border-0 " />
                </a>
               
             </SidebarMenuButton>

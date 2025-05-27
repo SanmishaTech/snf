@@ -225,8 +225,7 @@ const VendorForm: React.FC<VendorFormProps> = ({ mode, vendorId, onSuccess, init
         <>
           <div className="border-b pb-4 mb-4">
             <h3 className="text-lg font-medium leading-6 text-gray-900">Account Details</h3>
-            <p className="mt-1 text-sm text-gray-600">This will create a new user with the VENDOR role.</p>
-          </div>
+           </div>
           <div className="grid gap-2 relative">
             <Label htmlFor="userLoginEmail">Login Email</Label>
             <Input id="userLoginEmail" type="email" {...register("userLoginEmail")} disabled={isSubmitting} />

@@ -77,23 +77,7 @@ const EditOrderPage = () => {
   return (
     <div className="container mx-auto py-6">
       <div className="max-w-7xl mx-auto w-full mb-6">
-        <Breadcrumb>
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/admin/dashboard">
-              <HomeIcon className="h-4 w-4 mr-1" />
-              Dashboard
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/admin/orders">
-              <Package className="h-4 w-4 mr-1" />
-              Orders
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbItem>
-            <BreadcrumbLink>Edit Order {data?.poNumber}</BreadcrumbLink>
-          </BreadcrumbItem>
-        </Breadcrumb>
+ 
       </div>
 
       {orderData && (

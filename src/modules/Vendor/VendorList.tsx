@@ -423,18 +423,20 @@ const VendorList: React.FC = () => {
           )}
         </CardContent>
         {vendors.length > 0 && (
-            <CardFooter className="p-4 border-t">
-                 <CustomPagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    totalRecords={totalVendors}
-                    recordsPerPage={recordsPerPage}
-                    onPageChange={setCurrentPage}
-                    onRecordsPerPageChange={(newPageSize) => {
-                        setRecordsPerPage(newPageSize);
-                        setCurrentPage(1);
-                    }}
-                />
+            <CardFooter className="px-4 py-3 border-t">
+                <div className="w-full overflow-x-auto">
+                    <CustomPagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        totalRecords={totalVendors}
+                        recordsPerPage={recordsPerPage}
+                        onPageChange={setCurrentPage}
+                        onRecordsPerPageChange={(newPageSize) => {
+                            setRecordsPerPage(newPageSize);
+                            setCurrentPage(1);
+                        }}
+                    />
+                </div>
             </CardFooter>
         )}
       </Card>

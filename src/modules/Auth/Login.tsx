@@ -125,7 +125,7 @@ const Login = () => {
         console.log(
           "Login successful, policy already accepted or not required. Navigating to dashboard."
         );
-        navigate("/admin/users");
+        navigate("/admin/orders");
         toast.success("Login successful!");
       }
       // queryClient.invalidateQueries(...) // Consider invalidating relevant queries

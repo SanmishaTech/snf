@@ -44,6 +44,7 @@ interface OrderItem {
   quantity: number;
   agencyId?: string; // Optional if not always present
   agencyName?: string; // Optional if not always present
+  unit?: string; // Optional unit for the product
 }
 
 interface Order {
@@ -84,6 +85,7 @@ const OrderDetailsPage = () => {
         quantity: Number(item.quantity || 0),
         agencyId: item.agency?.id ? String(item.agency.id) : undefined,
         agencyName: item.agency?.name || undefined,
+        unit: item.product?.unit || undefined,
       }));
       return { ...response, items: transformedItems } as Order;
     },
@@ -295,7 +297,7 @@ const OrderDetailsPage = () => {
                             </div>
                           </div>
                         </div>
-                        <div className="col-span-2 text-right">{item.quantity}</div>
+                        <div className="col-span-2 text-right">{item.quantity} {item.unit && <span className="text-xs text-gray-500 dark:text-gray-400">{item.unit}</span>}</div>
                         {console.log(item)}
                         <div className="col-span-2 text-right">
                           {typeof item.deliveredQuantity === 'number' ? item.deliveredQuantity : '-'}
