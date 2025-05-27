@@ -26,6 +26,7 @@ import CreateOrderPage from "./modules/Order/CreateOrderPage"
 import OrderDetailsPage from "./modules/Order/OrderDetailsPage"
 import EditOrderPage from "./modules/Order/EditOrderPage";
 import OrderDeliveryPage from "./modules/Order/OrderDeliveryPage"; // Added for vendor delivery recording
+import OrderReceivedPage from "./modules/Order/OrderReceivedPage"; // Added for admin receipt recording
 import ProductList from "./modules/Products/ProductList"
 import CreateProductPage from "./modules/Products/CreateProductPage";
 import EditProductPage from "./modules/Products/EditProductPage";
@@ -68,6 +69,7 @@ const App = () => {
             <Route path="/admin/orders/create" element={<CreateOrderPage />} />
             <Route path="/admin/orders/:id" element={<OrderDetailsPage />} />
             <Route path="/admin/orders/edit/:id" element={<EditOrderPage />} />
+            <Route path="/admin/orders/:id/record-receipt" element={<OrderReceivedPage />} /> {/* New route for recording receipt */}
             <Route path="/admin/products" element={<ProductList />} />
             <Route path="/admin/products/create" element={<CreateProductPage />} />
             <Route path="/admin/products/edit/:id" element={<EditProductPage />} />

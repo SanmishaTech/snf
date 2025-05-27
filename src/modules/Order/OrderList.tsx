@@ -341,11 +341,20 @@ const OrderList = () => {
                           )}
 
                           {currentUserRole === "AGENCY" && (
-                            <DropdownMenuItem asChild>
-                              <Link to={`/admin/orders/${order.id}`} className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800">
-                                <Eye className="mr-2 h-4 w-4" /> View Details
-                              </Link>
-                            </DropdownMenuItem>
+                            <>
+                              <DropdownMenuItem asChild>
+                                <Link to={`/admin/orders/${order.id}`} className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800">
+                                  <Eye className="mr-2 h-4 w-4" /> View Details
+                                </Link>
+                              </DropdownMenuItem>
+                              {order.status === "DELIVERED" && (
+                                <DropdownMenuItem asChild>
+                                  <Link to={`/admin/orders/${order.id}/record-receipt`} className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800">
+                                    <ClipboardCheck className="mr-2 h-4 w-4" /> Record Receipt
+                                  </Link>
+                                </DropdownMenuItem>
+                              )}
+                            </>
                           )}
 
                           {currentUserRole !== "ADMIN" && currentUserRole !== "VENDOR" && currentUserRole !== "AGENCY" && (

@@ -42,6 +42,8 @@ interface OrderItem {
   productName: string;
   priceAtPurchase: number; // Corrected field name based on API
   quantity: number;
+  deliveredQuantity?: number; // Already present in Order.items, good to have here too for consistency
+  receivedQuantity?: number; // Add receivedQuantity
   agencyId?: string; // Optional if not always present
   agencyName?: string; // Optional if not always present
   unit?: string; // Optional unit for the product
@@ -81,7 +83,8 @@ const OrderDetailsPage = () => {
         productId: String(item.productId),
         productName: item.product?.name || 'Unknown Product',
         priceAtPurchase: Number(item.priceAtPurchase || 0),
-        deliveredQuantity: Number(item.deliveredQuantity || 0),
+        deliveredQuantity: item.deliveredQuantity !== null && item.deliveredQuantity !== undefined ? Number(item.deliveredQuantity) : undefined,
+        receivedQuantity: item.receivedQuantity !== null && item.receivedQuantity !== undefined ? Number(item.receivedQuantity) : undefined, // Map receivedQuantity
         quantity: Number(item.quantity || 0),
         agencyId: item.agency?.id ? String(item.agency.id) : undefined,
         agencyName: item.agency?.name || undefined,
@@ -278,14 +281,15 @@ const OrderDetailsPage = () => {
               <CardContent>
                 <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-800">
                   <div className="bg-gray-50 dark:bg-gray-900 px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 grid grid-cols-12">
-                    <div className="col-span-8">Product</div>
+                    <div className="col-span-6">Product</div> {/* Adjusted from col-span-8 to col-span-6 */}
                     <div className="col-span-2 text-right">Ordered</div>
                     <div className="col-span-2 text-right">Delivered</div>
+                    <div className="col-span-2 text-right">Received</div> {/* New column */}
                   </div>
                   <div className="divide-y divide-gray-200 dark:divide-gray-800 mb-2">
                     {order.items.map((item) => (
                       <div key={item.id} className="mb-2 px-4 py-4 grid grid-cols-12 items-center">
-                        <div className="col-span-8">
+                        <div className="col-span-6"> {/* Adjusted from col-span-8 to col-span-6 */}
                           <div className="flex items-center">
                             <div className="h-10 w-10 flex-shrink-0 rounded-md bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                               <Package className="h-5 w-5 text-gray-500" />
@@ -298,9 +302,12 @@ const OrderDetailsPage = () => {
                           </div>
                         </div>
                         <div className="col-span-2 text-right">{item.quantity} {item.unit && <span className="text-xs text-gray-500 dark:text-gray-400">{item.unit}</span>}</div>
-                        {console.log(item)}
+                        
                         <div className="col-span-2 text-right">
                           {typeof item.deliveredQuantity === 'number' ? item.deliveredQuantity : '-'}
+                        </div>
+                        <div className="col-span-2 text-right"> {/* New column data */}
+                          {typeof item.receivedQuantity === 'number' ? item.receivedQuantity : '-'}
                         </div>
                       </div>
                     ))}
