@@ -243,7 +243,7 @@ const VendorForm: React.FC<VendorFormProps> = ({ mode, vendorId, onSuccess, init
         {isSubmitting || mutation.isPending ? (
           <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
         ) : null}
-        {mode === "create" ? "Create Vendor & Vendor" : "Save Changes"}
+        {mode === "create" ? "Create Vendor" : "Save Changes"}
       </Button>
       </div>
       
