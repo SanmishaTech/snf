@@ -31,6 +31,8 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   onCancel,
   children,
 }) => {
+  console.log('[confirm-dialog.tsx] ConfirmDialog rendered. isOpen:', isOpen);
+
   const dialogCoreContent = (
     <DialogContent className="sm:max-w-[425px]">
       <DialogHeader>
@@ -57,7 +59,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     );
   } else {
     return (
-      <Dialog open={isOpen} onOpenChange={onCancel} modal={false}>
+      <Dialog open={isOpen} onOpenChange={onCancel} modal={true}>
         {/* Render DialogContent directly when isOpen is true and no children trigger */}
         {isOpen && dialogCoreContent}
       </Dialog>

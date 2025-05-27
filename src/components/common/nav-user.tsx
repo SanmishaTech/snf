@@ -85,33 +85,10 @@ export function NavUser({
                   </div>
                 </div>
               </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                <DropdownMenuItem
-                  onClick={() => navigate("/profile")}
-                  className="cursor-pointer"
-                >
-                  <UserPen className="mr-2 h-4 w-4" />
-                  Update Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => navigate("/memberships")}
-                  className="cursor-pointer"
-                >
-                  <UserPen className="mr-2 h-4 w-4" />
-                  View Memberships
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => navigate("/forgot-password")}
-                  className="cursor-pointer"
-                >
-                  <KeySquare /> Change Password
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onSelect={(e) => {
+                 <DropdownMenuItem
+                  onSelect={(e) => {
                   e.preventDefault();
+                  console.log('[nav-user.tsx] Logout DropdownMenuItem clicked. Setting showConfirmation to true.');
                   setShowConfirmation(true);
                 }}
                 className="cursor-pointer text-destructive"

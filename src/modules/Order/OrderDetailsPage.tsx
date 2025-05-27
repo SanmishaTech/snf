@@ -154,22 +154,22 @@ const OrderDetailsPage = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" asChild className="h-8 w-8">
+            {/* <Button variant="ghost" size="icon" asChild className="h-8 w-8">
               <Link to="/orders">
                 <ArrowLeft className="h-4 w-4" />
               </Link>
-            </Button>
+            </Button> */}
             <h1 className="text-3xl font-bold tracking-tight">Order #{order.poNumber}</h1>
-            <Badge 
+            {/* <Badge 
               className={cn(
                 "ml-2 font-medium border uppercase text-xs px-2.5 py-0.5",
                 getStatusColor(order.status)
               )}
             >
               {order.status}
-            </Badge>
+            </Badge> */}
           </div>
-          <Breadcrumb className="mt-2 ml-11">
+          {/* <Breadcrumb className="mt-2 ml-11">
             <BreadcrumbItem>
               <BreadcrumbLink href="/dashboard">
                 <HomeIcon className="h-4 w-4 mr-1" />
@@ -182,7 +182,7 @@ const OrderDetailsPage = () => {
             <BreadcrumbItem>
               <span className="text-gray-500 dark:text-gray-400">#{order.poNumber}</span>
             </BreadcrumbItem>
-          </Breadcrumb>
+          </Breadcrumb> */}
         </div>
       </div>
 

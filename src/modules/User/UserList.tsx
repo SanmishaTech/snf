@@ -285,8 +285,7 @@ const UserList = () => {
             {/* Search Input */}
             <div className="flex-grow">
               <Input
-                placeholder="Search users..."
-                value={search}
+                 value={search}
                 onChange={handleSearchChange}
                 className="w-full"
                 icon={<Search className="h-4 w-4" />}
@@ -350,7 +349,7 @@ const UserList = () => {
                   </label>
                   <Select value={active} onValueChange={handleActiveChange}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Filter by status" />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Users</SelectItem>
@@ -373,8 +372,7 @@ const UserList = () => {
                         value: role,
                       }))}
                       onChange={handleRoleChange}
-                      placeholder="Select roles"
-                    />
+                     />
                   ) : (
                     <div className="h-10 flex items-center text-gray-500">
                       <Loader className="mr-2 h-4 w-4 animate-spin" />

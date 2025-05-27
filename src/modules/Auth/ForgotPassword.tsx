@@ -80,8 +80,7 @@ const ForgotPassword = () => {
           <Input
             id="email"
             type="email"
-            placeholder="m@example.com"
-            {...register("email")}
+             {...register("email")}
             required
             disabled={forgotPasswordMutation.isPending}
           />

@@ -9,13 +9,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { get, post } from "@/services/apiService";
+import { get, post, put } from "@/services/apiService";
 import { toast } from "sonner";
 import { format, addDays } from "date-fns";
-import { LoaderCircle,ChevronLeft, ChevronRight,CalendarIcon, Plus, Trash2, Package, Truck, ShoppingCart, Check, Save, PackageSearch, ListOrdered } from "lucide-react";
+import { LoaderCircle, CalendarIcon, Plus, Trash2, Package, Truck, ShoppingCart, Save, PackageSearch, ListOrdered } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {Textarea } from "@/components/ui/textarea"
 import {Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { useNavigate } from "react-router-dom";
 
 // Schema for order creation
 const orderSchema = z.object({
@@ -61,13 +62,13 @@ interface Agency {
   name: string;
 }
 
-const OrderForm: React.FC<OrderFormProps> = ({ mode, initialData, onSuccess }) => {
+const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuccess }) => {
   const queryClient = useQueryClient();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [agencies, setAgencies] = useState<Agency[]>([]);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
-  const [orderTotal, setOrderTotal] = useState(0);
+  const navigate = useNavigate()
 
   const { 
     register, 
@@ -139,7 +140,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, initialData, onSuccess }) =
         if (response && Array.isArray(response)) {
             setVendors(response.map(v => ({ ...v, id: String(v.id) })));
         } else if (response && response.data && Array.isArray(response.data)) {
-            setVendors(response.data.map(v => ({ ...v, id: String(v.id) })));
+            setVendors(response.data.map((v: any) => ({ ...v, id: String(v.id) })));
         } else {
             setVendors([]);
             toast.error("Failed to fetch vendors or data is not in expected format.");
@@ -272,29 +273,22 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, initialData, onSuccess }) =
     }
   }, [watchVendorId, vendors, setValue]);
 
-  // Calculate order total when order items change
-  const watchOrderItems = watch("orderItems");
-  useEffect(() => {
-    if (watchOrderItems && Array.isArray(products) && products.length > 0) { 
-      const total = watchOrderItems.reduce((sum, item) => {
-        const product = products.find(p => String(p.id) === item.productId);
-        return sum + (product ? Number(product.price) * item.quantity : 0);
-      }, 0);
-      setOrderTotal(total);
-    } else if (Array.isArray(products) && products.length === 0 && watchOrderItems && watchOrderItems.length > 0) {
-      setOrderTotal(0);
-    }
-  }, [watchOrderItems, products]);
 
   // Create order mutation
   const mutation = useMutation({
-    mutationFn: (data: OrderFormData) => {
-      return post("/vendor-orders", data);
+    mutationFn: async (data: OrderFormData) => {
+      if (mode === "edit" && orderId) {
+        return put(`/vendor-orders/${orderId}`, data);
+      } else {
+        return post("/vendor-orders", data);
+      }
     },
     onSuccess: () => {
       toast.success("Order created successfully");
       queryClient.invalidateQueries({ queryKey: ["orders"] });
+      navigate(`/admin/orders`)
       if (onSuccess) onSuccess();
+
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to create order");
@@ -403,7 +397,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, initialData, onSuccess }) =
                 <Textarea 
                   id="notes" 
                   {...register("notes")} 
-                  placeholder="Any specific instructions for this order..." 
+                   
                   rows={3} 
                   className="bg-white/80 dark:bg-gray-900/80 border-blue-200 dark:border-blue-800"
                 />
@@ -433,7 +427,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, initialData, onSuccess }) =
                       defaultValue={field.value || ""}
                     >
                       <SelectTrigger className="bg-white dark:bg-gray-700">
-                        <SelectValue placeholder="Select a vendor" />
+                        <SelectValue  />
                       </SelectTrigger>
                       <SelectContent>
                         {vendors.map((vendor) => (
@@ -527,9 +521,9 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, initialData, onSuccess }) =
                   </thead>
                   <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                     {fields.map((itemField, itemIndex) => {
-                      const productInfo = products.find(p => String(p.id) === watchOrderItems[itemIndex]?.productId);
+                      const productInfo = products.find(p => String(p.id) === watchedOrderItems[itemIndex]?.productId);
                       const unitPrice = productInfo ? Number(productInfo.price) : 0;
-                      const itemTotal = unitPrice * (watchOrderItems[itemIndex]?.quantity || 0);
+                      const itemTotal = unitPrice * (watchedOrderItems[itemIndex]?.quantity || 0);
 
                       return (
                         <tr key={itemField.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
@@ -541,7 +535,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, initialData, onSuccess }) =
                               render={({ field: agencyField }) => (
                                 <Select onValueChange={agencyField.onChange} value={agencyField.value || ""}>
                                   <SelectTrigger className="h-9 text-sm bg-white dark:bg-gray-700">
-                                    <SelectValue placeholder="Select agency" />
+                                    <SelectValue  />
                                   </SelectTrigger>
                                   <SelectContent>
                                     {agencies.map(agency => (
@@ -562,7 +556,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, initialData, onSuccess }) =
                               render={({ field: controllerField }) => (
                                 <Select onValueChange={controllerField.onChange} value={controllerField.value || ""}>
                                   <SelectTrigger className="h-9 text-sm bg-white dark:bg-gray-700/50 border-gray-300 dark:border-gray-600 w-full">
-                                    <SelectValue placeholder="Select product" />
+                                    <SelectValue  />
                                   </SelectTrigger>
                                   <SelectContent>
                                     {products.map((product) => (
@@ -634,57 +628,58 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, initialData, onSuccess }) =
 
         {/* Order Summary Section */}
         {fields.length > 0 && (
-          <Card className="shadow-lg mt-6">
-            <CardHeader className="bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-950 dark:to-gray-950">
-              <div className="flex items-center gap-2">
-                <ListOrdered className="h-5 w-5 text-slate-600 dark:text-slate-400" />
-                <CardTitle className="text-slate-700 dark:text-slate-300">Order Summary</CardTitle>
+  <Card className="shadow-lg mt-6">
+    <CardHeader className="bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-950 dark:to-gray-950">
+      <div className="flex items-center gap-2">
+        <ListOrdered className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+        <CardTitle className="text-slate-700 dark:text-slate-300">Order Summary</CardTitle>
+      </div>
+      <CardDescription className="text-slate-600 dark:text-slate-400">Review your ordered items and quantities before submission.</CardDescription>
+    </CardHeader>
+    <CardContent className="p-6 space-y-4">
+      {(() => {
+        const summaryEntries = Object.entries(groupedProductSummary);
+        // Defensive: If groupedProductSummary is empty but there are valid order items, show those directly
+        if (summaryEntries.length === 0) {
+          const validItems = watchedOrderItems?.filter(item => item.productId && Number(item.quantity) > 0) || [];
+          if (products.length === 0 && validItems.length > 0) {
+            return Array.from({ length: Math.min(validItems.length, 3) }).map((_, index) => (
+              <div key={`summary-loading-${index}`} className="flex justify-between items-center border-b pb-2 mb-2 animate-pulse">
+                <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mb-1"></div>
+                <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/6"></div>
               </div>
-              <CardDescription className="text-slate-600 dark:text-slate-400">Review your ordered items and quantities before submission.</CardDescription>
-            </CardHeader>
-            <CardContent className="p-6 space-y-4">
-              {(() => {
-                const summaryEntries = Object.entries(groupedProductSummary);
-
-                if (summaryEntries.length === 0) {
-                  // fields.length > 0 is true to render the summary card.
-                  // So, orderItems array in form has items, but groupedProductSummary is empty.
-                  if (products.length === 0 && watchedOrderItems && watchedOrderItems.some(item => item.productId && Number(item.quantity) > 0)) {
-                    // Items with positive quantity are selected, products are expected but not yet loaded.
-                    const itemsWithProducts = watchedOrderItems.filter(item => item.productId && Number(item.quantity) > 0);
-                    return Array.from({ length: Math.min(itemsWithProducts.length, 3) }).map((_, index) => (
-                      <div key={`summary-loading-${index}`} className="flex justify-between items-center border-b pb-2 mb-2 animate-pulse">
-                        <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mb-1"></div>
-                        <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/6"></div>
-                      </div>
-                    ));
-                  }
-                  // Products loaded, or no items with positive quantity/valid product ID.
-                  return <p className="text-sm text-gray-500 dark:text-gray-400">Review your selections. No products with positive quantities to summarize.</p>;
-                }
-
-                return summaryEntries.map(([productId, summaryItem]) => (
-                  <div key={`summary-group-${productId}`} className="flex justify-between items-center border-b pb-2 mb-2 last:border-b-0 last:pb-0 last:mb-0">
-                    <p className="font-medium text-gray-800 dark:text-gray-200">{summaryItem.name}</p>
-                    <p className="font-medium text-gray-800 dark:text-gray-200">Qty: {summaryItem.totalQuantity}</p>
-                  </div>
-                ));
-              })()}
-              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
-                {/* <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">Product Lines:</span>
-                  <span className="font-medium text-gray-800 dark:text-gray-200">{watch("orderItems").length}</span>
-                </div> */}
-                <div className="flex justify-between text-md">
-                  <span className="font-semibold text-gray-700 dark:text-gray-300">Total Units:</span>
-                  <span className="font-bold text-lg text-gray-900 dark:text-gray-100">
-                    {watch("orderItems").reduce((sum, currentItem) => sum + (Number(currentItem.quantity) || 0), 0)}
-                  </span>
-                </div>
+            ));
+          }
+          if (validItems.length > 0) {
+            // Show a fallback summary for each valid item
+            return validItems.map((item, idx) => (
+              <div key={`summary-fallback-${item.productId}-${idx}`} className="flex justify-between items-center border-b pb-2 mb-2 last:border-b-0 last:pb-0 last:mb-0">
+                <p className="font-medium text-gray-800 dark:text-gray-200">Product ID: {item.productId}</p>
+                <p className="font-medium text-gray-800 dark:text-gray-200">Qty: {item.quantity}</p>
               </div>
-            </CardContent>
-          </Card>
-        )}
+            ));
+          }
+          // Products loaded, or no items with positive quantity/valid product ID.
+          return <p className="text-sm text-gray-500 dark:text-gray-400">Review your selections. No products with positive quantities to summarize.</p>;
+        }
+        return summaryEntries.map(([productId, summaryItem]) => (
+          <div key={`summary-group-${productId}`} className="flex justify-between items-center border-b pb-2 mb-2 last:border-b-0 last:pb-0 last:mb-0">
+            <p className="font-medium text-gray-800 dark:text-gray-200">{summaryItem.name}</p>
+            <p className="font-medium text-gray-800 dark:text-gray-200">Qty: {summaryItem.totalQuantity}</p>
+          </div>
+        ));
+      })()}
+      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+        <div className="flex justify-between text-md">
+          <span className="font-semibold text-gray-700 dark:text-gray-300">Total Units:</span>
+          <span className="font-bold text-lg text-gray-900 dark:text-gray-100">
+            {watch("orderItems").reduce((sum, currentItem) => sum + (Number(currentItem.quantity) || 0), 0)}
+          </span>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+)}
       </React.Fragment>
     );
   };

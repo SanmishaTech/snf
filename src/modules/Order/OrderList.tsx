@@ -90,7 +90,8 @@ const OrderList = () => {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["orders", page, searchTerm, dateFilter, statusFilter],
     queryFn: async () => {
-      let url = `/vendor-orders?page=${page}&limit=${pageSize}`;
+      const baseUrl = currentUserRole === 'VENDOR' ? '/vendor-orders/my' : '/vendor-orders';
+      let url = `${baseUrl}?page=${page}&limit=${pageSize}`;
       
       if (searchTerm) {
         url += `&search=${searchTerm}`;
@@ -171,8 +172,7 @@ const OrderList = () => {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search orders by PO number or vendor..."
-                value={searchTerm}
+                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800"
               />
@@ -262,7 +262,7 @@ const OrderList = () => {
                 {orders.map((order: Order) => (
                   <TableRow key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{order.poNumber}</TableCell>
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{order.vendor.name}</TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{order.vendor?.name || (currentUserRole === 'VENDOR' ? 'You' : '—')}</TableCell>
                      <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{format(new Date(order.orderDate), "dd/MM/yyyy")}</TableCell>
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{format(new Date(order.deliveryDate), "dd/MM/yyyy")}</TableCell>
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm">

@@ -91,8 +91,7 @@ const Register = () => {
             <Input
               id="name"
               type="text"
-              placeholder="John Doe"
-              {...register("name")}
+               {...register("name")}
               required
               disabled={registerMutation.isPending}
             />
@@ -107,8 +106,7 @@ const Register = () => {
             <Input
               id="email"
               type="email"
-              placeholder="m@example.com"
-              {...register("email")}
+               {...register("email")}
               required
               disabled={registerMutation.isPending}
             />

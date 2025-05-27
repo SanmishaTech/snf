@@ -15,9 +15,9 @@ import { PasswordInput } from "@/components/ui/password-input";
 const baseVendorSchema = z.object({
   name: z.string().min(1, "Vendor name is required"),
   contactPersonName: z.string().min(1, "Contact person's name is required").optional(),
-  email: z.string().email("Invalid contact person's email").min(1, "Contact person's email is required"),
-  mobile: z.string().min(10, "Mobile number must be 10-15 digits").max(15, "Mobile number must be 10-15 digits").regex(/^\d+$/, "Mobile number must be digits only"),
-  alternateMobile: z.string().min(10, "Alternate mobile must be 10-15 digits").max(15, "Alternate mobile must be 10-15 digits").regex(/^\d+$/, "Alternate mobile must be digits only").nullable().optional(),
+  email: z.string().email("Invalid contact person's email").optional(),
+  mobile: z.string().regex(/^\d{10}$/, "Mobile number must be 10 digits"),
+  alternateMobile: z.union([z.literal(''), z.string().regex(/^\d{10}$/, "Alternate mobile must be 10 digits")]).nullable().optional(),
   address1: z.string().min(1, "Address Line 1 is required"),
   address2: z.string().nullable().optional(),
   city: z.string().min(1, "City is required"),
@@ -25,9 +25,8 @@ const baseVendorSchema = z.object({
 });
 
 const newUserSchema = z.object({
-  userFullName: z.string().min(1, "Vendor's full name is required"),
   userLoginEmail: z.string().email("Invalid login email for user"),
-  userPassword: z.string().min(6, "Vendor password must be at least 6 characters"),
+  userPassword: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 const internalFormRepresentationSchema = baseVendorSchema.extend({
@@ -39,7 +38,7 @@ const internalFormRepresentationSchema = baseVendorSchema.extend({
 
 type VendorFormInputs = z.infer<typeof internalFormRepresentationSchema>;
 
-const createResolverSchema = baseVendorSchema.merge(newUserSchema); 
+const createResolverSchema = baseVendorSchema.merge(newUserSchema);
 
 const updateResolverSchema = baseVendorSchema; 
 
@@ -63,7 +62,7 @@ const VendorForm: React.FC<VendorFormProps> = ({ mode, vendorId, onSuccess, init
   } = useForm<VendorFormInputs>({
     mode: 'onChange', // Validate on every change for immediate error clearing
     resolver: zodResolver(mode === "create" ? createResolverSchema : updateResolverSchema),
-    defaultValues: initialData || { 
+    defaultValues: initialData || {
       name: '',
       contactPersonName: '', // Already present, kept for clarity
       email: '',
@@ -73,9 +72,7 @@ const VendorForm: React.FC<VendorFormProps> = ({ mode, vendorId, onSuccess, init
       address2: null, // Already present, kept for clarity
       city: '',
       pincode: undefined, // Or a suitable default number like 0
-      userFullName: '', // Already present, kept for clarity
-      userLoginEmail: '', // Already present, kept for clarity
-      userPassword: '', // Already present, kept for clarity
+      ...(mode === "create" ? { userFullName: '', userLoginEmail: '', userPassword: '' } : {}),
     },
   });
 
@@ -118,7 +115,7 @@ const VendorForm: React.FC<VendorFormProps> = ({ mode, vendorId, onSuccess, init
           address2: data.address2,
           city: data.city,
           pincode: data.pincode,
-          userFullName: data.userFullName,
+          userFullName: data.name, // Send contactPersonName as userFullName
           userLoginEmail: data.userLoginEmail,
           userPassword: data.userPassword,
           role: "VENDOR", 
@@ -170,31 +167,31 @@ const VendorForm: React.FC<VendorFormProps> = ({ mode, vendorId, onSuccess, init
 
       <div className="grid gap-2 relative">
         <Label htmlFor="name">Vendor Company Name</Label>
-        <Input id="name" type="text" placeholder="ABC Corp" {...register("name")} disabled={isSubmitting} />
+        <Input id="name" type="text"   {...register("name")} disabled={isSubmitting} />
         {errors.name && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.name.message}</span>}
       </div>
 
       <div className="grid gap-2 relative">
-        <Label htmlFor="contactPersonName">Contact Person's Name</Label>
-        <Input id="contactPersonName" type="text" placeholder="Jane Smith" {...register("contactPersonName")} disabled={isSubmitting} />
+        <Label htmlFor="contactPersonName">Contact Person Name</Label>
+        <Input id="contactPersonName" type="text" {...register("contactPersonName")} disabled={isSubmitting} />
         {errors.contactPersonName && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.contactPersonName.message}</span>}
       </div>
 
       <div className="grid gap-2 relative">
-        <Label htmlFor="email">Contact Person's Email</Label>
-        <Input id="email" type="email" placeholder="contact@abccorp.com" {...register("email")} disabled={isSubmitting} />
+        <Label htmlFor="email">Contact Person Email</Label>
+        <Input id="email" type="email" {...register("email")} disabled={isSubmitting} />
         {errors.email && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.email.message}</span>}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="grid gap-2 relative">
           <Label htmlFor="mobile">Mobile Number</Label>
-          <Input id="mobile" type="tel" placeholder="9876543210" {...register("mobile")} disabled={isSubmitting} />
+          <Input id="mobile" type="tel" {...register("mobile")} disabled={isSubmitting} />
           {errors.mobile && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.mobile.message}</span>}
         </div>
         <div className="grid gap-2 relative">
           <Label htmlFor="alternateMobile">Alternate Mobile (Optional)</Label>
-          <Input id="alternateMobile" type="tel" placeholder="9876543211" {...register("alternateMobile")} disabled={isSubmitting} />
+          <Input id="alternateMobile" type="tel" {...register("alternateMobile")} disabled={isSubmitting} />
           {errors.alternateMobile && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.alternateMobile.message}</span>}
         </div>
       </div>
@@ -202,12 +199,12 @@ const VendorForm: React.FC<VendorFormProps> = ({ mode, vendorId, onSuccess, init
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="grid gap-2 relative">
             <Label htmlFor="address1">Address Line 1</Label>
-            <Input id="address1" type="text" placeholder="123 Main St" {...register("address1")} disabled={isSubmitting} />
+            <Input id="address1" type="text" {...register("address1")} disabled={isSubmitting} />
             {errors.address1 && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.address1.message}</span>}
         </div>
         <div className="grid gap-2 relative">
             <Label htmlFor="address2">Address Line 2 (Optional)</Label>
-            <Input id="address2" type="text" placeholder="Apartment, studio, or floor" {...register("address2")} disabled={isSubmitting} />
+            <Input id="address2" type="text" {...register("address2")} disabled={isSubmitting} />
             {errors.address2 && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.address2.message}</span>}
         </div>
       </div>
@@ -215,39 +212,31 @@ const VendorForm: React.FC<VendorFormProps> = ({ mode, vendorId, onSuccess, init
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="grid gap-2 relative">
             <Label htmlFor="city">City</Label>
-            <Input id="city" type="text" placeholder="New Delhi" {...register("city")} disabled={isSubmitting} />
+            <Input id="city" type="text" {...register("city")} disabled={isSubmitting} />
             {errors.city && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.city.message}</span>}
         </div>
         <div className="grid gap-2 relative">
           <Label htmlFor="pincode">Pincode</Label>
-          <Input id="pincode" type="text" placeholder="110001" {...register("pincode")} disabled={isSubmitting} />
+          <Input id="pincode" type="text" {...register("pincode")} disabled={isSubmitting} />
           {errors.pincode && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.pincode.message}</span>}
         </div>
       </div>
       {mode === "create" && (
         <>
           <div className="border-b pb-4 mb-4">
-            <h3 className="text-lg font-medium leading-6 text-gray-900">Vendor Account Details</h3>
+            <h3 className="text-lg font-medium leading-6 text-gray-900">Account Details</h3>
             <p className="mt-1 text-sm text-gray-600">This will create a new user with the VENDOR role.</p>
           </div>
           <div className="grid gap-2 relative">
-            <Label htmlFor="userFullName">Vendor's Full Name</Label>
-            <Input id="userFullName" type="text" placeholder="John Doe" {...register("userFullName")} disabled={isSubmitting} />
-            {errors.userFullName && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.userFullName.message}</span>}
-          </div>
-
-          <div className="grid gap-2 relative">
-            <Label htmlFor="userLoginEmail">Vendor's Login Email</Label>
-            <Input id="userLoginEmail" type="email" placeholder="user@example.com" {...register("userLoginEmail")} disabled={isSubmitting} />
+            <Label htmlFor="userLoginEmail">Login Email</Label>
+            <Input id="userLoginEmail" type="email" {...register("userLoginEmail")} disabled={isSubmitting} />
             {errors.userLoginEmail && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.userLoginEmail.message}</span>}
           </div>
-
           <div className="grid gap-2 relative">
-            <Label htmlFor="userPassword">Vendor's Password</Label>
-            <PasswordInput id="userPassword" placeholder="Enter a secure password" {...register("userPassword")} disabled={isSubmitting} />
+            <Label htmlFor="userPassword">Password</Label>
+            <PasswordInput id="userPassword" {...register("userPassword")} disabled={isSubmitting} />
             {errors.userPassword && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.userPassword.message}</span>}
           </div>
-         
         </>
       )}
       <div className="w-full  flex items-end justify-end">

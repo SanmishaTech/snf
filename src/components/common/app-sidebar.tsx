@@ -50,6 +50,8 @@ const initialData = {
         { title: "Users", url: "/admin/users", icon: Briefcase, groupLabel: "Master" },
         { title: "Vendors", url: "/admin/vendors", icon: Briefcase, groupLabel: "Services" },
         { title: "Agency", url: "/admin/agencies", icon: Briefcase, groupLabel: "Services" },
+         { title: "Products", url: "/admin/products", icon: Briefcase, groupLabel: "Services" },
+         { title: "Orders", url: "/admin/orders", icon: Briefcase, groupLabel: "Services" },
 
       ],
       navMain: [
@@ -110,6 +112,15 @@ const initialData = {
             { title: "View Requirements", url: "/member/viewrequirements" },
           ],
         },
+      ],
+      navMain: [] as any[],
+    },
+    VENDOR: {
+      projects: [
+        // { title: "Dashboard", url: "/vendor/dashboard", icon: PieChart, groupLabel: "Vendor Portal" },
+        // { title: "Products", url: "/vendor/products", icon: Briefcase, groupLabel: "Vendor Portal" },
+        { title: "Orders", url: "/admin/orders", icon: FileText, groupLabel: "Vendor Portal" },
+        // Add other vendor-specific links here
       ],
       navMain: [] as any[],
     },
@@ -254,7 +265,7 @@ function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             >
               <a href="/dashboard">
                 <Search className="h-5 w-5 " />
-                <Input placeholder="Search" className="border-0 " />
+                <Input 13.126.180.52 className="border-0 " />
                </a>
               
             </SidebarMenuButton>

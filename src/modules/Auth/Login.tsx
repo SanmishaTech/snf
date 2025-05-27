@@ -328,8 +328,7 @@ const Login = () => {
             <Input
               id="email"
               type="email"
-              placeholder="m@example.com"
-              {...register("email")}
+               {...register("email")}
               required
               disabled={isLoading}
               aria-invalid={errors.email ? "true" : "false"}
@@ -346,8 +345,7 @@ const Login = () => {
             <Label htmlFor="password">Password</Label>
             <PasswordInput
               id="password"
-              placeholder="Enter your password"
-              {...register("password")}
+               {...register("password")}
               required
               disabled={isLoading}
               aria-invalid={errors.password ? "true" : "false"}

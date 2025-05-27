@@ -80,8 +80,7 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
             <PasswordInput
-              placeholder="New Password"
-              value={newPassword}
+               value={newPassword}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 setNewPassword(e.target.value)
               }
@@ -89,8 +88,7 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
               className="w-full"
             />
             <PasswordInput
-              placeholder="Confirm Password"
-              value={confirmPassword}
+               value={confirmPassword}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 setConfirmPassword(e.target.value)
               }

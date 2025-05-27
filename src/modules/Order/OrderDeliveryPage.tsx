@@ -64,7 +64,7 @@ const OrderDeliveryPage = () => {
     onSuccess: () => {
       toast.success("Delivery recorded successfully!");
       // refetch(); // Or invalidate query for the order list/details
-      navigate(`/vendor/orders`); // Navigate to order list after successful submission
+      navigate(`/admin/orders`); // Navigate to order list after successful submission
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || "Failed to record delivery. Please try again.");
@@ -182,11 +182,11 @@ const OrderDeliveryPage = () => {
                 </div>
                 <div>
                   <p className="text-gray-500 dark:text-gray-400">Order Date</p>
-                  <p className="font-medium text-gray-800 dark:text-gray-200">{format(new Date(order.orderDate), "PPP")}</p>
-                </div>
+                  <p className="font-medium text-gray-800 dark:text-gray-200">{format(new Date(order.orderDate), "dd/MM/yy")}</p>
+                </div>    
                 <div>
                   <p className="text-gray-500 dark:text-gray-400">Expected Delivery Date</p>
-                  <p className="font-medium text-gray-800 dark:text-gray-200">{format(new Date(order.deliveryDate), "PPP")}</p>
+                  <p className="font-medium text-gray-800 dark:text-gray-200">{format(new Date(order.deliveryDate), "dd/MM/yy")}</p>
                 </div>
                 <div>
                   <p className="text-gray-500 dark:text-gray-400">Status</p>

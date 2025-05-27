@@ -294,8 +294,7 @@ const AgencyList: React.FC = () => {
                   <div className="relative">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Search by name, email, or city..."
-                      value={search}
+                       value={search}
                       onChange={handleSearchChange}
                       className="pl-8"
                     />
@@ -310,7 +309,7 @@ const AgencyList: React.FC = () => {
                     onValueChange={handleActiveFilterChange}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="All Users" />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Users</SelectItem>

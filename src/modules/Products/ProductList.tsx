@@ -198,8 +198,7 @@ const ProductList: React.FC = () => {
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Search by URL or Price..."
-                value={search}
+                 value={search}
                 onChange={handleSearchChange}
                 className="pl-8 w-full"
               />
@@ -249,12 +248,12 @@ const ProductList: React.FC = () => {
                     <TableHead onClick={() => handleSort("date")} className="cursor-pointer">
                       Date {getSortIndicator("date")}
                     </TableHead>
-                    <TableHead onClick={() => handleSort("quantity")} className="cursor-pointer text-right">
+                    {/* <TableHead onClick={() => handleSort("quantity")} className="cursor-pointer text-right">
                       Quantity {getSortIndicator("quantity")}
-                    </TableHead>
-                    <TableHead onClick={() => handleSort("createdAt")} className="cursor-pointer">
+                    </TableHead> */}
+                    {/* <TableHead onClick={() => handleSort("createdAt")} className="cursor-pointer">
                       Created At {getSortIndicator("createdAt")}
-                    </TableHead>
+                    </TableHead> */}
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -267,9 +266,9 @@ const ProductList: React.FC = () => {
                         {product.url || "N/A"}
                       </TableCell>
                       <TableCell>{product.price}</TableCell>
-                      <TableCell>{format(new Date(product.date), "PP")}</TableCell>
-                      <TableCell className="text-right">{product.quantity}</TableCell>
-                      <TableCell>{format(new Date(product.createdAt), "PPpp")}</TableCell>
+                      <TableCell>{format(new Date(product.date), "dd/MM/yy")}</TableCell>
+                      {/* <TableCell className="text-right">{product.quantity}</TableCell> */}
+                      {/* <TableCell>{format(new Date(product.createdAt), "dd/MM/yy")}</TableCell> */}
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>

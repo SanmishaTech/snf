@@ -119,7 +119,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
           <Input
             id="name"
             type="text"
-            placeholder="Enter product name"
+            
             {...register("name")}
             disabled={isSubmitting || mutation.isPending}
           />
@@ -131,7 +131,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
           <Input
             id="url"
             type="text"
-            placeholder="https://example.com/product-image.jpg"
+            
             {...register("url")}
             disabled={isSubmitting || mutation.isPending}
           />
@@ -145,7 +145,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
           <Input
             id="price"
             type="number"
-            placeholder="e.g., 99.99 or ₹7500"
+            
             {...register("price")}
             disabled={isSubmitting || mutation.isPending}
           />
@@ -169,7 +169,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
                     disabled={isSubmitting || mutation.isPending}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                    {field.value ? format(field.value, "dd/MM/yy") : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
@@ -194,7 +194,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
           <Input
             id="quantity"
             type="number"
-            placeholder="Enter quantity"
+            
             {...register("quantity")}
             disabled={isSubmitting || mutation.isPending}
           />

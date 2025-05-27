@@ -156,7 +156,7 @@ const UserForm = ({ mode, userId, onSuccess, className }: UserFormProps) => {
           <Input
             id="name"
             type="text"
-            placeholder="John Doe"
+            
             {...register("name")}
           />
           {errors.name && (
@@ -172,7 +172,7 @@ const UserForm = ({ mode, userId, onSuccess, className }: UserFormProps) => {
           <Input
             id="email"
             type="email"
-            placeholder="m@example.com"
+            
             {...register("email")}
           />
           {errors.email && (
@@ -188,7 +188,7 @@ const UserForm = ({ mode, userId, onSuccess, className }: UserFormProps) => {
             <Label htmlFor="password">Password</Label>
             <PasswordInput
               id="password"
-              placeholder="Enter a secure password"
+              
               {...register("password")}
             />
             {errors.password && (
@@ -210,7 +210,7 @@ const UserForm = ({ mode, userId, onSuccess, className }: UserFormProps) => {
               render={({ field }) => (
                 <Select value={field.value} onValueChange={field.onChange}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a role" />
+                    <SelectValue  />
                   </SelectTrigger>
                   <SelectContent>
                     {roles.map((roleValue) => (

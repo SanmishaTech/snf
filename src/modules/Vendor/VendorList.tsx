@@ -277,8 +277,7 @@ const VendorList: React.FC = () => {
                     <Input
                       id="search"
                       type="text"
-                      placeholder="Search by name, email, contact..."
-                      value={search}
+                       value={search}
                       onChange={handleSearchChange}
                       className="pl-10"
                     />
@@ -291,7 +290,7 @@ const VendorList: React.FC = () => {
                   </label>
                   <Select value={activeFilter} onValueChange={handleActiveFilterChange}>
                     <SelectTrigger id="activeFilter">
-                      <SelectValue placeholder="Filter by user status" />
+                      <SelectValue  />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Users</SelectItem>

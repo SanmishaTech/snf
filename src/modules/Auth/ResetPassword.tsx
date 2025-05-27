@@ -96,8 +96,7 @@ const ResetPassword = () => {
           <PasswordInput
             id="password"
             type="password"
-            placeholder="Enter new password"
-            {...register("password")}
+             {...register("password")}
             required
             disabled={resetPasswordMutation.isPending}
           />
@@ -110,8 +109,7 @@ const ResetPassword = () => {
           <PasswordInput
             id="confirmPassword"
             type="password"
-            placeholder="Confirm new password"
-            {...register("confirmPassword")}
+             {...register("confirmPassword")}
             required
             disabled={resetPasswordMutation.isPending}
           />

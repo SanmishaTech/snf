@@ -117,8 +117,7 @@ const GlobalSearch = () => {
           <Search className="h-5 w-5 text-gray-500 mr-2" />
           <input
             type="text"
-            placeholder="Search members..."
-            className="bg-transparent border-none focus:outline-none w-60"
+             className="bg-transparent border-none focus:outline-none w-60"
             value={searchQuery}
             onChange={handleSearchChange}
             onFocus={handleSearchFocus}
