@@ -671,7 +671,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
         </Card>
 
         {/* Order Summary Section - Disabled */}
-        {false && fields.length > 0 && (
+        {fields.length > 0 && (
           <Card className="shadow-lg mt-6">
             <CardHeader className="bg-gray-50 dark:bg-gray-900">
               <div className="flex items-center gap-2">

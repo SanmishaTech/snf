@@ -349,7 +349,7 @@ const OrderDetailsPage = () => {
                   </div>
                   <div className="flex">
                     <span className="text-gray-500 dark:text-gray-400 w-20">Address:</span>
-                    <span className="font-medium">{order?.vendor?.address}</span>
+                    <span className="font-medium">{order?.vendor?.address1}</span>
                   </div>
                 </div>
               </CardContent>
