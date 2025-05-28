@@ -337,6 +337,7 @@ const OrderDetailsPage = () => {
                     <p className="text-sm text-gray-500 dark:text-gray-400">Vendor ID: {order.vendor.id}</p>
                   </div>
                 </div>
+                {console.log(order.vendor)}
                 
                 <div className="space-y-3 text-sm">
                   <div className="flex">
@@ -349,7 +350,7 @@ const OrderDetailsPage = () => {
                   </div>
                   <div className="flex">
                     <span className="text-gray-500 dark:text-gray-400 w-20">Address:</span>
-                    <span className="font-medium">{order.vendor.address}</span>
+                    <span className="font-medium">{order.vendor.address1}</span>
                   </div>
                 </div>
               </CardContent>
