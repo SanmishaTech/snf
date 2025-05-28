@@ -330,27 +330,26 @@ const OrderDetailsPage = () => {
               <CardContent>
                 <div className="flex items-center mb-4">
                   <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg">
-                    {order.vendor.name.substring(0, 2).toUpperCase()}
+                    {order?.vendor?.name.substring(0, 2).toUpperCase()}
                   </div>
                   <div className="ml-4">
-                    <h3 className="font-semibold text-lg">{order.vendor.name}</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Vendor ID: {order.vendor.id}</p>
+                    <h3 className="font-semibold text-lg">{order?.vendor?.name}</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Vendor ID: {order?.vendor?.id}</p>
                   </div>
                 </div>
-                {console.log(order.vendor)}
-                
+                 
                 <div className="space-y-3 text-sm">
                   <div className="flex">
                     <span className="text-gray-500 dark:text-gray-400 w-20">Email:</span>
-                    <span className="font-medium">{order.vendor.email}</span>
+                    <span className="font-medium">{order?.vendor?.email}</span>
                   </div>
                   <div className="flex">
                     <span className="text-gray-500 dark:text-gray-400 w-20">Phone:</span>
-                    <span className="font-medium">{order.vendor.mobile}</span>
+                    <span className="font-medium">{order?.vendor?.mobile}</span>
                   </div>
                   <div className="flex">
                     <span className="text-gray-500 dark:text-gray-400 w-20">Address:</span>
-                    <span className="font-medium">{order.vendor.address1}</span>
+                    <span className="font-medium">{order?.vendor?.address}</span>
                   </div>
                 </div>
               </CardContent>
