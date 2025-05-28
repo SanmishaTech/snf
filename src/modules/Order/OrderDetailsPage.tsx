@@ -334,7 +334,7 @@ const OrderDetailsPage = () => {
                   </div>
                   <div className="ml-4">
                     <h3 className="font-semibold text-lg">{order?.vendor?.name}</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Vendor ID: {order?.vendor?.id}</p>
+                    {/* <p className="text-sm text-gray-500 dark:text-gray-400">Vendor ID: {order?.vendor?.id}</p> */}
                   </div>
                 </div>
                  

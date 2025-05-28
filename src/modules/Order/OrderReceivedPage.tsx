@@ -279,19 +279,19 @@ const OrderReceivedPage = () => {
             <CardContent className="space-y-3 text-sm">
               <div>
                 <p className="text-gray-500 dark:text-gray-400">Name</p>
-                <p className="font-medium text-gray-800 dark:text-gray-200">{order.vendor.name}</p>
+                <p className="font-medium text-gray-800 dark:text-gray-200">{order?.vendor?.name}</p>
               </div>
               <div>
                 <p className="text-gray-500 dark:text-gray-400">Email</p>
-                <p className="font-medium text-gray-800 dark:text-gray-200">{order.vendor.email}</p>
+                <p className="font-medium text-gray-800 dark:text-gray-200">{order?.vendor?.email}</p>
               </div>
               <div>
                 <p className="text-gray-500 dark:text-gray-400">Mobile</p>
-                <p className="font-medium text-gray-800 dark:text-gray-200">{order.vendor.mobile}</p>
+                <p className="font-medium text-gray-800 dark:text-gray-200">{order?.vendor?.mobile}</p>
               </div>
               <div>
                 <p className="text-gray-500 dark:text-gray-400">Address</p>
-                <p className="font-medium text-gray-800 dark:text-gray-200">{order.vendor.address}</p>
+                <p className="font-medium text-gray-800 dark:text-gray-200">{order?.vendor?.address1}</p>
               </div>
             </CardContent>
           </Card>

@@ -158,11 +158,11 @@ const OrderDeliveryPage = () => {
 
   return (
     <div className="p-4 md:p-6 space-y-6 bg-gray-50 dark:bg-gray-950 min-h-screen">
-      <Breadcrumb className="text-sm">
+      {/* <Breadcrumb className="text-sm">
         <BreadcrumbItem><Link to="/" className="flex items-center text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"><HomeIcon className="h-4 w-4 mr-1.5" /> Home</Link></BreadcrumbItem>
         <BreadcrumbItem><Link to="/vendor/orders" className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200">Orders</Link></BreadcrumbItem>
         <BreadcrumbItem className="font-medium text-gray-800 dark:text-gray-200">Record Delivery PO#{order.poNumber}</BreadcrumbItem>
-      </Breadcrumb>
+      </Breadcrumb> */}
 
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Left Column: Order Details & Items */}
@@ -222,7 +222,7 @@ const OrderDeliveryPage = () => {
                       <tr key={item.id}>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{item.productName}</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">ID: {item.productId}</div>
+                          {/* <div className="text-xs text-gray-500 dark:text-gray-400">ID: {item.productId}</div> */}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{item.agencyName || 'N/A'}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">{item.quantity}</td>
@@ -271,7 +271,7 @@ const OrderDeliveryPage = () => {
               <p><strong className="text-gray-600 dark:text-gray-300">Name:</strong> {order.vendor.name}</p>
               <p><strong className="text-gray-600 dark:text-gray-300">Email:</strong> {order.vendor.email}</p>
               <p><strong className="text-gray-600 dark:text-gray-300">Mobile:</strong> {order.vendor.mobile}</p>
-              <p><strong className="text-gray-600 dark:text-gray-300">Address:</strong> {order.vendor.address}</p>
+              <p><strong className="text-gray-600 dark:text-gray-300">Address:</strong> {order.vendor.address1}</p>
             </CardContent>
           </Card>
         </div>
