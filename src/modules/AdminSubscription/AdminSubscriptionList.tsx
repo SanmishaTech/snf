@@ -493,12 +493,31 @@ const AdminSubscriptionList: React.FC = () => {
     const effectiveLimit = currentLimit !== undefined ? currentLimit : (limit !== undefined ? limit : 10);
     const effectiveFilters = currentFilters || filters || {}; // Ensure filters is an object
 
+    const apiParams: { [key: string]: string } = {};
+    for (const [originalKey, originalValueObj] of Object.entries(effectiveFilters)) {
+      // Ensure originalValueObj is not null or undefined before calling toString
+      if (originalValueObj === null || originalValueObj === undefined) {
+        continue;
+      }
+      const value = String(originalValueObj).trim();
+
+      if (value === '' || value.toLowerCase() === 'all') {
+        continue;
+      }
+
+      if (originalKey === 'memberName') {
+        apiParams['searchTerm'] = value;
+      } else if (originalKey === 'subscriptionDate') {
+        apiParams['startDate'] = value;
+      } else {
+        apiParams[originalKey] = value;
+      }
+    }
+
     const queryParams = new URLSearchParams({
       page: effectivePage.toString(),
       limit: effectiveLimit.toString(),
-      ...Object.entries(effectiveFilters)
-        .filter(([_, value]) => value !== '' && value !== null && value !== 'ALL') // Ensure 'ALL' is not sent as a filter value
-        .reduce((acc, [key, value]) => ({ ...acc, [key]: String(value) }), {})
+      ...apiParams
     }).toString();
 
     try {
@@ -737,15 +756,15 @@ const AdminSubscriptionList: React.FC = () => {
       
       <h1 className="text-2xl font-bold mb-6">Admin - Subscriptions Management</h1>
 
-      <Button 
+      {/* <Button 
         variant="outline"
         className="mb-4"
         onClick={() => setShowFilters(!showFilters)}
       >
         {showFilters ? 'Hide Filters' : 'Show Filters'}
-      </Button>
+      </Button> */}
 
-      {showFilters && (
+      {false && showFilters && (
         <div className="mb-6 p-4 border rounded-lg bg-slate-50 dark:bg-slate-800 shadow">
           <h2 className="text-xl font-semibold mb-4">Filters</h2>
           <form onSubmit={handleFilterSubmit}>
