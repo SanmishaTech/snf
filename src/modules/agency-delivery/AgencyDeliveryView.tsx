@@ -120,8 +120,24 @@ const AgencyDeliveryView: React.FC = () => {
       const fetchAgencies = async () => {
         setLoadingAgencies(true);
         try {
-          const fetchedAgencies = await get<ApiAgency[]>('/agencies'); 
-          setAgenciesList(fetchedAgencies.map(ag => ({ id: ag.id, name: (ag as any).user?.name || ag.name || `Agency ${ag.id}` }))); 
+          const response = await get<any>('/agencies'); // Get as 'any' first to inspect
+          console.log('Raw /agencies response:', response);
+          let agenciesArray: ApiAgency[] = [];
+          if (Array.isArray(response)) {
+            agenciesArray = response;
+          } else if (response && Array.isArray(response.data)) { // Common wrapper
+            agenciesArray = response.data;
+          } else if (response && Array.isArray(response.agencies)) { // Another common wrapper
+            agenciesArray = response.agencies;
+          } else if (response && typeof response === 'object' && response !== null) {
+            // If it's a single object, or some other structure, log and treat as empty or handle as needed
+            console.warn('/agencies endpoint did not return an array or a known wrapped array structure.');
+          }
+
+          setAgenciesList(agenciesArray.map(ag => ({ 
+            id: ag.id, 
+            name: (ag as any).user?.name || ag.name || `Agency ${ag.id}` 
+          })));
         } catch (err: any) {
           setError(err.message || 'Failed to fetch agencies.');
         }
