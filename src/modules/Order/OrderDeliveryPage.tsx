@@ -1,17 +1,14 @@
 import { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 // useMutation will be used when API submission is implemented
 import { useQuery, useMutation } from "@tanstack/react-query"; 
 import { get, put } from "@/services/apiService"; 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Breadcrumb, BreadcrumbItem } from "@/components/ui/breadcrumb"; // Removed BreadcrumbLink
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import {
-  HomeIcon,
-  ArrowLeft,
   ClipboardCheck // Re-using for submit
   // Removed Truck, Package, ShoppingCart, FileText, InfoIcon
 } from "lucide-react";
@@ -24,6 +21,7 @@ interface OrderItem {
   productName: string;
   priceAtPurchase: number;
   quantity: number; // Ordered quantity
+  productUnit?: string; // Added product unit
   agencyId?: string;
   agencyName?: string;
 }
@@ -86,6 +84,7 @@ const OrderDeliveryPage = () => {
         id: String(item.id),
         productId: String(item.productId),
         productName: item.product?.name || 'Unknown Product',
+        productUnit: item.product?.unit || '', // Extract product unit, fallback to empty string
         priceAtPurchase: Number(item.priceAtPurchase || 0),
         quantity: Number(item.quantity || 0),
         agencyId: item.agency?.id ? String(item.agency.id) : undefined,
@@ -221,18 +220,23 @@ const OrderDeliveryPage = () => {
                           {/* <div className="text-xs text-gray-500 dark:text-gray-400">ID: {item.productId}</div> */}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{item.agencyName || 'N/A'}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">{item.quantity}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">
+                          {item.quantity} {item.productUnit}
+                        </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                          <Input
-                            type="number"
-                            value={deliveredQuantities[item.id] || ''}
-                            onChange={(e) => handleDeliveredQuantityChange(item.id, e.target.value)}
-                            onFocus={(e) => e.target.select()} // Select all text on focus
-                            className="w-20 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 text-right pr-1" // Ensure text inside input is also aligned if needed
-                            min="0"
-                            disabled={order?.status?.toUpperCase() === "DELIVERED"}
-                            // max={item.quantity} // Optional: prevent delivering more than ordered
-                          />
+                          <div className="flex items-center justify-end space-x-2">
+                            <Input
+                              type="number"
+                              value={deliveredQuantities[item.id] || ''}
+                              onChange={(e) => handleDeliveredQuantityChange(item.id, e.target.value)}
+                              onFocus={(e) => e.target.select()} // Select all text on focus
+                              className="w-20 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 text-right pr-1"
+                              min="0"
+                              disabled={order?.status?.toUpperCase() === "DELIVERED"}
+                              // max={item.quantity} // Optional: prevent delivering more than ordered
+                            />
+                            {item.productUnit && <span className="text-gray-500 dark:text-gray-400">{item.productUnit}</span>}
+                          </div>
                         </td>
                       </tr>
                     ))}

@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { get, post } from "@/services/apiService";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
+import { X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle, Star, Leaf, Truck, Calendar } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -45,6 +47,23 @@ const ProductDetailPage: React.FC = () => {
   const showSubscribeButton = !location.state?.fromLanding;
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
   const [isBuyOnceModalOpen, setIsBuyOnceModalOpen] = useState(false);
+  const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false);
+
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    try {
+      const userString = localStorage.getItem('user');
+      if (userString) {
+        const user = JSON.parse(userString);
+        if (user && user.role === 'ADMIN') {
+          setIsAdmin(true);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to parse user data from localStorage', error);
+    }
+  }, []);
 
   const fetchProductById = async (id: string): Promise<ProductData> => {
     const response = await get(`/products/${id}`);
@@ -260,7 +279,7 @@ const ProductDetailPage: React.FC = () => {
               <motion.img 
                 src={`${import.meta.env.VITE_BACKEND_URL}${product.attachmentUrl}`}
                 alt={product.name}
-                className="object-cover max-h-[900px] min-h-[500px] rounded-xl"
+                className="object-cover max-h-[900px] min-h-[600px] rounded-xl"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5 }}
@@ -294,8 +313,9 @@ const ProductDetailPage: React.FC = () => {
             
             <div className="mt-8">
               <h2 className="text-xl font-semibold mb-3">Description</h2>
-              <p className="text-muted-foreground leading-relaxed">
-                {product.description || "Our premium milk comes from grass-fed cows raised in natural pastures. Rich in calcium and essential nutrients, it's pasteurized for safety while maintaining its natural goodness."}
+              <p className="text-muted-foreground leading-relaxed cursor-pointer" onClick={() => setIsDescriptionModalOpen(true)}>
+                {truncateDescription(product.description || "Our premium milk comes from grass-fed cows raised in natural pastures. Rich in calcium and essential nutrients, it's pasteurized for safety while maintaining its natural goodness.")}
+                <span className="text-primary font-medium ml-1">Read more</span>
               </p>
             </div>
             
@@ -323,7 +343,7 @@ const ProductDetailPage: React.FC = () => {
               </div>
             </div>
             
-            {showSubscribeButton && (
+            {!isAdmin && showSubscribeButton && (
             <div className="flex flex-col sm:flex-row gap-4">
               <motion.div 
                 whileHover={{ scale: 1.02 }}
@@ -371,9 +391,26 @@ const ProductDetailPage: React.FC = () => {
           productId={productId}
           onBuyOnceConfirm={handleBuyOnceConfirm}
         />
+        
+        {/* Description Modal */}
+        <Dialog open={isDescriptionModalOpen} onOpenChange={setIsDescriptionModalOpen}>
+          <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold">{product.name} - Full Description</DialogTitle>
+              <DialogClose className="absolute right-4 top-4">
+                <X className="h-4 w-4" />
+              </DialogClose>
+            </DialogHeader>
+            <div className="mt-4 max-h-[70vh] overflow-y-auto">
+              <p className="text-muted-foreground leading-relaxed">
+                {product.description || "Our premium milk comes from grass-fed cows raised in natural pastures. Rich in calcium and essential nutrients, it's pasteurized for safety while maintaining its natural goodness. We source our milk from local farms that prioritize animal welfare and sustainable farming practices. Each bottle undergoes rigorous quality checks to ensure you receive the freshest, most nutritious product possible. The cows are fed a natural diet without hormones or antibiotics, resulting in milk that's both delicious and healthier. Perfect for drinking, cooking, or adding to your morning coffee, our milk is a versatile addition to any kitchen. We're proud to support local farmers and bring you a product that's not only good for you but also good for the environment."}
+              </p>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* FAQ Section */}
-        <div className="mt-16 pt-8 border-t border-muted/20">
+        {/* <div className="mt-16 pt-8 border-t border-muted/20">
           <h2 className="text-2xl font-bold mb-6">Frequently Asked Questions</h2>
           
           <div className="space-y-4">
@@ -401,10 +438,21 @@ const ProductDetailPage: React.FC = () => {
               </p>
             </div>
           </div>
-        </div>
+        </div> */}
       </motion.div>
     </div>
   );
+};
+
+// Helper function to truncate description to roughly 2 sentences
+const truncateDescription = (text: string): string => {
+  const characterLimit = 250; // You can adjust this value
+
+  if (text.length > characterLimit) {
+    return text.substring(0, characterLimit) + '...';
+  }
+  
+  return text;
 };
 
 export default ProductDetailPage;

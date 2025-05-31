@@ -92,7 +92,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   const [userAddresses, setUserAddresses] = useState<AddressData[]>([]);
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
-  const [modalView, setModalView] = useState<'subscriptionDetails' | 'addressForm'>('subscriptionDetails');
+  const [modalView, setModalView] = useState<'subscriptionDetails' | 'addressForm' | 'confirmation'>('subscriptionDetails');
 
   const handleCancelAddAddress = () => {
     setModalView('subscriptionDetails');
@@ -327,24 +327,27 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   };
 
 
-  const handleInternalAddItem = () => { 
+  const handleProceedToConfirmation = () => { 
     if (!selectedAddressId) {
       console.error("No address selected. Please select or add an address.");
-      // TODO: Show a user-friendly error message in the UI (e.g., a toast or an alert within the modal)
+      toast.error("Please select a delivery address");
       return;
     }
-
-    // Call onSubscribeConfirm with the correctly structured details
-  // 'selectedAddress' in the props means the ID of the address (string)
-  // 'productId' and 'onSubscribeConfirm' are props of SubscriptionModal
+    
+    // Move to confirmation view
+    setModalView('confirmation');
+  };
+  
+  const handleFinalConfirmation = () => {
+    // Get the selected address details
     const selectedFullAddress = userAddresses.find(addr => addr.id === selectedAddressId);
-    const currentDeliveryAddressLabel = selectedFullAddress?.label || "Home"; // Default to Home if not found, though it should be
-
+    const currentDeliveryAddressLabel = selectedFullAddress?.label || "Home"; // Default to Home if not found
+    
     // Create a date with time set to noon to avoid timezone issues
     const normalizedDate = startDate ? new Date(startDate) : new Date();
     normalizedDate.setHours(12, 0, 0, 0); // Set to noon to avoid any date shifting due to timezone
 
-    // Get calculated values from subscription summary if available
+    // Get calculated values from subscription summary
     const totalQuantity = subscriptionSummary?.totalQuantity || 0;
     const totalAmount = subscriptionSummary?.totalPrice || 0;
 
@@ -767,10 +770,85 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 </div>
               </div>
             </>
+          ) : modalView === 'confirmation' ? (
+            <div className="bg-white p-4 rounded-md space-y-4">
+              <h3 className="text-lg font-semibold text-center">Confirm Your Subscription</h3>
+              
+              <div className="border rounded-lg p-4 bg-gray-50 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Product:</span>
+                  <span className="font-semibold">{product.name}</span>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Period:</span>
+                  <span>{subscriptionSummary?.period}</span>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Delivery:</span>
+                  <span>{subscriptionSummary?.deliveryDescription}</span>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Start Date:</span>
+                  <span>{subscriptionSummary?.startDate}</span>
+                </div>
+                
+                {/* <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Delivery Count:</span>
+                  <span>{subscriptionSummary?.deliveryCount} deliveries</span>
+                </div> */}
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Total Quantity:</span>
+                  <span>{subscriptionSummary?.totalQuantity} items</span>
+                </div>
+                
+                <div className="flex justify-between items-center pt-2 border-t">
+                  <span className="text-sm font-semibold">Total Amount:</span>
+                  <span className="text-lg font-bold text-green-600">₹{subscriptionSummary?.totalPrice}</span>
+                </div>
+              </div>
+              
+              <div className="bg-white p-4 rounded-md border">
+                <h4 className="text-sm font-medium mb-2">Delivery Address:</h4>
+                {userAddresses.map(address => {
+                  if (address.id === selectedAddressId) {
+                    return (
+                      <div key={address.id} className="text-sm">
+                        <Badge variant="outline" className="mt-1">{address.label}</Badge>
+                        <p><span className="font-medium">{address.recipientName}</span> • {address.mobile}</p>
+                        <p>{address.plotBuilding}, {address.streetArea}</p>
+                        {address.landmark && <p>{address.landmark}</p>}
+                        <p>{address.city}, {address.state} - {address.pincode}</p>
+                       </div>
+                    );
+                  }
+                  return null;
+                })}
+              </div>
+              
+              {/* <div className="flex gap-3 pt-2">
+                <Button 
+                  variant="outline" 
+                  className="flex-1" 
+                  onClick={() => setModalView('subscriptionDetails')}
+                >
+                  Back
+                </Button>
+                <Button 
+                  className="flex-1 bg-green-500 hover:bg-green-600" 
+                  onClick={handleFinalConfirmation}
+                >
+                  Confirm Subscription
+                </Button>
+              </div> */}
+            </div>
           ) : (
             // Address Form View (remains largely the same with minor UI tweaks)
-            <div className="space-y-5 bg-white p-4 rounded-lg border border-gray-200">
-              <h3 className="text-lg font-medium text-gray-800">Add New Delivery Address</h3>
+            <div className="bg-white p-4 rounded-md space-y-4">
+              <h3 className="text-lg font-semibold">Add New Address</h3>
                 <div className="space-y-5">
                              <div>
                               <Label htmlFor="address-label" className="text-sm font-medium mb-2 block">Address Label</Label>
@@ -834,13 +912,13 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         <DialogFooter className="p-4 border-t bg-white">
           {modalView === 'subscriptionDetails' ? (
             <Button 
-              onClick={handleInternalAddItem} 
-              className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-medium h-12"
-              disabled={!selectedAddressId || isLoadingAddresses}
+              onClick={handleProceedToConfirmation} 
+              disabled={isLoadingAddresses}
+              className="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-md font-medium"
             >
-              Confirm Subscription
+              Review Subscription
             </Button>
-          ) : (
+          ) : modalView === 'addressForm' ? (
             <div className="flex justify-end gap-3 w-full">
               <Button 
                 variant="outline" 
@@ -854,6 +932,22 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 className="bg-green-500 hover:bg-green-600 text-white rounded-lg h-11"
               >
                 Save Address
+              </Button>
+            </div>
+          ) : (
+            <div className="flex justify-end gap-3 w-full">
+              <Button 
+                variant="outline" 
+                className="rounded-lg h-11 border-gray-300"
+                onClick={() => setModalView('subscriptionDetails')}
+              >
+                Back
+              </Button>
+              <Button 
+                className="bg-green-500 hover:bg-green-600 text-white rounded-lg h-11"
+                onClick={handleFinalConfirmation}
+              >
+                Confirm Subscription
               </Button>
             </div>
           )}

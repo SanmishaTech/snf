@@ -127,7 +127,7 @@ const EditProductPage: React.FC = () => {
         <CardHeader>
           <CardTitle className="text-2xl font-semibold">Edit Product</CardTitle>
           <CardDescription>
-            Update the details for product ID: {productData.id}
+            Update the details
           </CardDescription>
         </CardHeader>
         <CardContent>

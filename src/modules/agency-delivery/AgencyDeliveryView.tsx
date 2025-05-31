@@ -6,25 +6,40 @@ import * as XLSX from 'xlsx';
 
 // Helper function to get user details from localStorage
 const getUserDetailsFromLocalStorage = (): { role: string | null; userId: string | null; agencyId: string | null; name: string | null; } => {
-  const userString = localStorage.getItem('user');
-  const agencyId = localStorage.getItem('agencyId'); // Specific to AGENCY users, might be set separately
-  
-  if (userString) {
+  console.log('[StorageDebug] Attempting to get user details...');
+  const rawUserString = localStorage.getItem('user');
+  const rawAgencyId = localStorage.getItem('agencyId');
+  console.log('[StorageDebug] Raw localStorage.getItem(\'user\'):', rawUserString);
+  console.log('[StorageDebug] Raw localStorage.getItem(\'agencyId\'):', rawAgencyId);
+
+  let agencyIdFromStorage: string | null = rawAgencyId;
+  let role: string | null = null;
+  let userId: string | null = null;
+  let name: string | null = null;
+
+  if (rawUserString) {
     try {
-      const userObject = JSON.parse(userString);
-      const role = userObject.role || null;
-      const userId = userObject.id ? String(userObject.id) : null; // Ensure userId is a string or null
-      const name = userObject.name || null;
-      // console.log('Parsed user details from localStorage:', { role, userId, name, agencyId });
-      return { role, userId, agencyId, name };
+      const userObject = JSON.parse(rawUserString);
+      console.log('[StorageDebug] Parsed userObject:', userObject);
+      role = userObject.role || null;
+      userId = userObject.id ? String(userObject.id) : null;
+      name = userObject.name || null;
+      
+      const agencyIdInUserObject = userObject.agencyId ? String(userObject.agencyId) : null;
+      console.log('[StorageDebug] agencyId found in userObject:', agencyIdInUserObject);
+
+      if (!agencyIdFromStorage && agencyIdInUserObject) {
+        console.log('[StorageDebug] Using agencyId from userObject as primary source was empty.');
+        agencyIdFromStorage = agencyIdInUserObject;
+      }
     } catch (error) {
-      console.error('Failed to parse user details from localStorage:', error);
-      // Fallback if parsing fails but agencyId might still be relevant
-      return { role: null, userId: null, agencyId, name: null };
+      console.error('[StorageDebug] Failed to parse user details from localStorage:', error);
+      // role, userId, name remain null, agencyIdFromStorage keeps value from localStorage.getItem('agencyId')
     }
   }
-  // console.log('No user string found in localStorage. Returning agencyId if present.');
-  return { role: null, userId: null, agencyId, name: null };
+
+  console.log('[StorageDebug] Final determined values for return: role=', role, 'userId=', userId, 'name=', name, 'agencyId=', agencyIdFromStorage);
+  return { role, userId, agencyId: agencyIdFromStorage, name };
 };
 
 // Define Agency interface
@@ -75,45 +90,55 @@ const AgencyDeliveryView: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<Record<string, boolean>>({}); // deliveryId: boolean
 
-  const fetchDeliveries = useCallback(async (date: string, adminSelectedAgencyId?: string | null) => {
-    if (!currentUser) return;
+  const fetchDeliveries = useCallback(async (date: string, agencyIdForAdmin?: string) => {
+    console.log(`[fetchDeliveries] Called. Date: ${date}, AdminAgencyID: ${agencyIdForAdmin}, UserRole: ${currentUser?.role}`);
+    if (!currentUser) {
+      console.warn('[fetchDeliveries] currentUser is null. Aborting.');
+      setError('User information is not available.');
+      setDeliveries([]);
+      return;
+    }
 
     let fetchUrl = '';
-
     if (currentUser.role === 'ADMIN') {
-      if (!adminSelectedAgencyId) {
-        setDeliveries([]); 
-        return;
-      }
-      fetchUrl = `/delivery-schedules/agency/by-date?date=${date}&agencyId=${adminSelectedAgencyId}`;
-    } else if (currentUser.role === 'AGENCY') {
-      if (!currentUser.agencyId) {
-        setError('Agency user profile is incomplete (missing agency ID).');
+      if (!agencyIdForAdmin) {
+        console.warn('[fetchDeliveries] Admin role but no agencyIdForAdmin provided. Clearing deliveries.');
         setDeliveries([]);
         return;
       }
-      fetchUrl = `/delivery-schedules/agency/by-date?date=${date}`;
+      fetchUrl = `/delivery-schedules/agency/by-date?date=${date}&agencyId=${agencyIdForAdmin}&paymentStatus=PAID`;
+    } else if (currentUser.role === 'AGENCY') {
+      // For AGENCY role, agencyId is inferred by the backend from the user's token.
+      // Frontend does not need to send it or have it in localStorage for this API call.
+      console.log('[fetchDeliveries] AGENCY role. Backend will infer agencyId.');
+      fetchUrl = `/delivery-schedules/agency/by-date?date=${date}&paymentStatus=PAID`;
     } else {
+      console.warn('[fetchDeliveries] User role is not ADMIN or AGENCY. Role:', currentUser.role);
       setError('You do not have permission to view this page.');
       setDeliveries([]);
       return;
     }
 
+    console.log('[fetchDeliveries] Attempting to fetch from URL:', fetchUrl);
     setLoading(true);
     setError(null);
+
     try {
       const data = await get<ApiDeliveryScheduleEntry[]>(fetchUrl);
+      console.log('[fetchDeliveries] Raw data received:', data);
       setDeliveries(data || []);
     } catch (err: any) {
+      console.error('[fetchDeliveries] Error fetching deliveries:', err);
       setError(err.message || 'Failed to fetch deliveries.');
       setDeliveries([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentUser, setDeliveries, setError, setLoading]);
 
   useEffect(() => {
     const userDetails = getUserDetailsFromLocalStorage();
+    console.log(userDetails)
     setCurrentUser(userDetails);
 
     if (userDetails.role === 'ADMIN') {
@@ -147,29 +172,30 @@ const AgencyDeliveryView: React.FC = () => {
     }
   }, []);
 
+  // useEffect for ADMIN data fetching
   useEffect(() => {
-    if (currentUser?.role === 'ADMIN' && selectedAgencyIdForAdmin) {
-      fetchDeliveries(selectedDate, selectedAgencyIdForAdmin);
-    } else if (currentUser?.role === 'AGENCY' && currentUser.agencyId) {
-      fetchDeliveries(selectedDate);
-    } else if (currentUser?.role === 'ADMIN' && !selectedAgencyIdForAdmin) {
+    if (currentUser?.role === 'ADMIN') {
+      console.log('[ADMIN Effect for FetchDeliveries] Triggered. Date:', selectedDate, 'SelectedAdminAgencyID:', selectedAgencyIdForAdmin);
+      if (selectedAgencyIdForAdmin) {
+        fetchDeliveries(selectedDate, selectedAgencyIdForAdmin);
+      } else {
+        // Admin role, but no agency selected yet. Clear deliveries.
         setDeliveries([]);
+      }
     }
-  }, [selectedDate, fetchDeliveries, currentUser, selectedAgencyIdForAdmin]);
+  }, [selectedDate, selectedAgencyIdForAdmin, currentUser, fetchDeliveries]);
 
-  const handleUpdateStatus = async (deliveryId: string, status: DeliveryStatus) => {
-    setUpdatingStatus(prev => ({ ...prev, [deliveryId]: true }));
-    try {
-      const updatedEntry = await put<ApiDeliveryScheduleEntry>(`/delivery-schedules/${deliveryId}/status`, { status });
-      setDeliveries(prevDeliveries =>
-        prevDeliveries.map(d => (d.id === deliveryId ? updatedEntry : d))
-      );
-    } catch (err: any) {
-      setError(err.message || 'Failed to update status.');
-    } finally {
-      setUpdatingStatus(prev => ({ ...prev, [deliveryId]: false }));
+  // useEffect for AGENCY data fetching
+  useEffect(() => {
+    if (currentUser?.role === 'AGENCY' && selectedDate) {
+      console.log('[AGENCY Effect for FetchDeliveries] Triggered. Date:', selectedDate, 'Role:', currentUser.role);
+      // For AGENCY role, agencyId is inferred by the backend. We just need a date.
+      fetchDeliveries(selectedDate);
+    } else if (currentUser?.role === 'AGENCY' && !selectedDate) {
+      console.log('[AGENCY Effect for FetchDeliveries] AGENCY role, but no date selected. Clearing deliveries.');
+      setDeliveries([]); // Clear deliveries if no date is selected
     }
-  };
+  }, [selectedDate, currentUser, fetchDeliveries]);
 
   const handleDownloadExcel = () => {
     if (!deliveries.length) {
@@ -218,6 +244,30 @@ const AgencyDeliveryView: React.FC = () => {
     }
   };
 
+  const handleUpdateStatus = useCallback(async (deliveryId: string, newStatus: DeliveryStatus) => {
+    console.log(`[UpdateStatus] Attempting to update delivery ${deliveryId} to ${newStatus}`);
+    if (currentUser?.role === 'ADMIN') {
+      setError('Admins cannot update delivery status.');
+      console.warn('[UpdateStatus] Admin role detected, update forbidden by frontend logic.');
+      return;
+    }
+
+    setUpdatingStatus(prev => ({ ...prev, [deliveryId]: true }));
+    setError(null);
+
+    try {
+      await put(`/delivery-schedules/${deliveryId}/status`, { status: newStatus });
+      console.log(`[UpdateStatus] Successfully updated status for ${deliveryId} to ${newStatus}`);
+      setDeliveries(prevDeliveries =>
+        prevDeliveries.map(d => (d.id === deliveryId ? { ...d, status: newStatus } : d))
+      );
+    } catch (err: any) {
+      console.error(`[UpdateStatus] Error updating status for ${deliveryId}:`, err);
+      setError(err.response?.data?.error || err.message || 'Failed to update delivery status.');
+    }
+    setUpdatingStatus(prev => ({ ...prev, [deliveryId]: false }));
+  }, [currentUser, setDeliveries, setError, setUpdatingStatus]);
+
   return (
     <div className="p-4 md:p-6 lg:p-8 bg-gray-100 min-h-screen font-sans">
       <header className="mb-6">
@@ -239,7 +289,10 @@ const AgencyDeliveryView: React.FC = () => {
             id="deliveryDate"
             type="date"
             value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
+            onChange={(e) => {
+              console.log('[DateChange] New date:', e.target.value);
+              setSelectedDate(e.target.value);
+            }}
             className="border border-gray-300 rounded-md p-2 text-sm text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
           />
         </div>
@@ -248,7 +301,11 @@ const AgencyDeliveryView: React.FC = () => {
             <label htmlFor="agencySelect" className="font-semibold text-gray-700 whitespace-nowrap">Select Agency:</label>
             <Select
               value={selectedAgencyIdForAdmin || ''}
-              onValueChange={(value) => setSelectedAgencyIdForAdmin(value === 'NONE' ? null : value)}
+              onValueChange={(value) => {
+                const newAgencyId = value === 'NONE' ? null : value;
+                console.log('[AgencyChange] New agency ID:', newAgencyId);
+                setSelectedAgencyIdForAdmin(newAgencyId);
+              }}
               disabled={loadingAgencies || agenciesList.length === 0}
             >
               <SelectTrigger id="agencySelect" className="min-w-[200px]">
@@ -265,14 +322,16 @@ const AgencyDeliveryView: React.FC = () => {
         )}
         <div className="flex flex-col sm:flex-row gap-2 mt-3 sm:mt-0">
           <button
-            onClick={() => fetchDeliveries(selectedDate, selectedAgencyIdForAdmin)}
-            disabled={loading && !Object.keys(updatingStatus).length}
+            onClick={() => fetchDeliveries(selectedDate, selectedAgencyIdForAdmin ?? undefined)}
+            disabled={loading || Object.values(updatingStatus).some(s => s === true)}
             className={clsx(
               "inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
-              (loading && !Object.keys(updatingStatus).length) ? "bg-gray-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-500 focus-visible:outline-indigo-600"
+              (loading || Object.values(updatingStatus).some(s => s === true))
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-indigo-600 hover:bg-indigo-500 focus-visible:outline-indigo-600"
             )}
           >
-            {(loading && !Object.keys(updatingStatus).length && !error) ? (
+            {(loading && !Object.values(updatingStatus).some(s => s === true) && !error) ? (
               <Spinner size="sm" color="white" className="mr-2" />
             ) : null}
             Refresh Deliveries
@@ -293,6 +352,7 @@ const AgencyDeliveryView: React.FC = () => {
           </button>
         </div>
       </div>
+
 
       {loading && deliveries.length === 0 && !error && (
         <div className="flex justify-center items-center p-10">
@@ -357,37 +417,39 @@ const AgencyDeliveryView: React.FC = () => {
                     </span>
                   </td>
                   {currentUser?.role === 'AGENCY' && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                    <button
-                      onClick={() => handleUpdateStatus(delivery.id, DeliveryStatus.DELIVERED)}
-                      disabled={delivery.status !== DeliveryStatus.PENDING || updatingStatus[delivery.id]}
-                      className={clsx(
-                        "text-xs font-medium py-1 px-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1",
-                        (delivery.status !== DeliveryStatus.PENDING || updatingStatus[delivery.id])
-                          ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                          : "bg-green-500 text-white hover:bg-green-600 focus:ring-green-400"
-                      )}
-                    >
-                      {updatingStatus[delivery.id] && delivery.status === DeliveryStatus.PENDING ? (
-                        <Spinner size="sm" color="white" className="mr-1 inline-block" />
-                      ) : null}
-                      Delivered
-                    </button>
-                    <button
-                      onClick={() => handleUpdateStatus(delivery.id, DeliveryStatus.NOT_DELIVERED)}
-                      disabled={delivery.status !== DeliveryStatus.PENDING || updatingStatus[delivery.id]}
-                      className={clsx(
-                        "text-xs font-medium py-1 px-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1",
-                        (delivery.status !== DeliveryStatus.PENDING || updatingStatus[delivery.id])
-                          ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                          : "bg-red-500 text-white hover:bg-red-600 focus:ring-red-400"
-                      )}
-                    >
-                      {updatingStatus[delivery.id] && delivery.status === DeliveryStatus.PENDING ? (
-                        <Spinner size="sm" color="white" className="mr-1 inline-block" />
-                      ) : null}
-                      Not Delivered
-                    </button>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-1 text-center">
+                      <button
+                        onClick={() => handleUpdateStatus(delivery.id, DeliveryStatus.DELIVERED)}
+                        disabled={delivery.status !== DeliveryStatus.PENDING || updatingStatus[delivery.id]}
+                        className={clsx(
+                          "text-xs font-medium py-1 px-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1",
+                          (delivery.status !== DeliveryStatus.PENDING || updatingStatus[delivery.id])
+                            ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                            : "bg-green-500 text-white hover:bg-green-600 focus:ring-green-400"
+                        )}
+                        title="Mark as Delivered"
+                      >
+                        {updatingStatus[delivery.id] ? (
+                          <Spinner size="sm" color="white" className="mr-1 inline-block align-middle" />
+                        ) : null}
+                        Delivered
+                      </button>
+                      <button
+                        onClick={() => handleUpdateStatus(delivery.id, DeliveryStatus.NOT_DELIVERED)}
+                        disabled={delivery.status !== DeliveryStatus.PENDING || updatingStatus[delivery.id]}
+                        className={clsx(
+                          "text-xs font-medium py-1 px-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1",
+                          (delivery.status !== DeliveryStatus.PENDING || updatingStatus[delivery.id])
+                            ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                            : "bg-red-500 text-white hover:bg-red-600 focus:ring-red-400"
+                        )}
+                        title="Mark as Not Delivered"
+                      >
+                        {updatingStatus[delivery.id] ? (
+                          <Spinner size="sm" color="white" className="mr-1 inline-block align-middle" />
+                        ) : null}
+                        Not Delivered
+                      </button>
                     </td>
                   )}
                 </tr>

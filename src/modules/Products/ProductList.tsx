@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { get, del } from "@/services/apiService";
@@ -97,6 +97,22 @@ const ProductList: React.FC = () => {
   const [sortOrder, setSortOrder] = useState("desc");
   const [search, setSearch] = useState("");
 
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    try {
+      const userString = localStorage.getItem('user');
+      if (userString) {
+        const user = JSON.parse(userString);
+        if (user && user.role === 'ADMIN') {
+          setIsAdmin(true);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to parse user data from localStorage', error);
+    }
+  }, []);
+
   const [showConfirmDeleteDialog, setShowConfirmDeleteDialog] = useState(false);
   const [productToDeleteId, setProductToDeleteId] = useState<number | null>(null);
 
@@ -190,13 +206,15 @@ const ProductList: React.FC = () => {
               Manage your product inventory.
             </CardDescription>
           </div>
-          <Button
-            onClick={() => navigate("/admin/products/create")}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            <PlusCircle size={18} className="mr-2" />
-            Add Product
-          </Button>
+          {!isAdmin && (
+            <Button
+              onClick={() => navigate("/admin/products/create")}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <PlusCircle size={18} className="mr-2" />
+              Add Product
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           <div className="mb-4 flex items-center">
@@ -226,13 +244,15 @@ const ProductList: React.FC = () => {
                   ? "Try a different search term."
                   : "Get started by adding your first product."}
               </p>
-              <Button
-                onClick={() => navigate("/admin/products/create")}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                <PlusCircle size={16} className="mr-2" />
-                Add Product
-              </Button>
+              {!isAdmin && (
+                <Button
+                  onClick={() => navigate("/admin/products/create")}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <PlusCircle size={16} className="mr-2" />
+                  Add Product
+                </Button>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">

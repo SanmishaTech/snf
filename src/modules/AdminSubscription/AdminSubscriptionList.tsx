@@ -34,6 +34,23 @@ interface Product {
   name: string;
 }
 
+interface DeliveryAddress {
+  id: string;
+  memberId: number;
+  recipientName: string;
+  mobile: string;
+  plotBuilding: string;
+  streetArea: string;
+  landmark?: string;
+  pincode: string;
+  city: string;
+  state: string;
+  isDefault: boolean;
+  label?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface Subscription {
   id: number;
   member: Member;
@@ -51,6 +68,7 @@ interface Subscription {
   paymentReference?: string | null;
   paymentDate?: string | null; // Store as ISO string or Date
   expiryDate?: string | null;
+  deliveryAddress?: DeliveryAddress;
 }
 
 interface ApiResponse {
@@ -91,6 +109,7 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
   const [paymentReference, setPaymentReference] = useState<string>('');
   const [paymentDate, setPaymentDate] = useState<string>('');
   const [paymentStatusState, setPaymentStatusState] = useState<string>('');
+  const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
 
   const isPaymentSectionDisabled = subscription?.paymentStatus === 'PAID';
 
@@ -108,8 +127,26 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
     }
   }, [subscription]);
 
+  const validateForm = () => {
+    const errors: { [key: string]: string } = {};
+    
+    if (!paymentStatusState) {
+      errors.paymentStatus = 'Payment status is required';
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async () => {
     if (!subscription || isPaymentSectionDisabled) return;
+    
+    if (!validateForm()) return;
+    console.log(paymentStatusState)
+    if (paymentStatusState !== "PAID" && paymentStatusState !== "FAILED"){
+      toast.error("Payment Status is Required")
+      return
+    }
 
     const updatedDetails: any = {
       subscriptionId: subscription.id,
@@ -148,7 +185,7 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
           <fieldset disabled={isPaymentSectionDisabled} className="grid gap-4 border p-4 rounded-md">
             <legend className="text-sm font-medium px-1">Payment Information {isPaymentSectionDisabled ? `(Status: ${subscription.paymentStatus} - Disabled)` : ""}</legend>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="paymentMode" className="text-right col-span-1">Payment Mode</Label>
+              <Label htmlFor="paymentMode" className="text-right col-span-1">Payment Mode <span className="text-red-500">*</span></Label>
               <Select
                 value={paymentMode}
                 onValueChange={(value) => setPaymentMode(value)}
@@ -181,15 +218,31 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right col-span-1">Status</Label>
-              <Select value={paymentStatusState} onValueChange={setPaymentStatusState}>
-                <SelectTrigger id="payment-status-modal" className="col-span-3"><SelectValue placeholder="Select status" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="PENDING">Pending</SelectItem>
-                  <SelectItem value="PAID">Paid</SelectItem>
-                  <SelectItem value="FAILED">Failed</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label className="text-right col-span-1" htmlFor="payment-status-modal">
+                Status <span className="text-red-500">*</span>
+              </Label>
+              <div className="col-span-3 flex flex-col gap-1">
+                <Select value={paymentStatusState} onValueChange={(value) => {
+                  setPaymentStatusState(value);
+                  if (value) {
+                    const newErrors = {...formErrors};
+                    delete newErrors.paymentStatus;
+                    setFormErrors(newErrors);
+                  }
+                }}>
+                  <SelectTrigger id="payment-status-modal" className={formErrors.paymentStatus ? "border-red-500" : ""}>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {/* <SelectItem value="PENDING">Pending</SelectItem> */}
+                    <SelectItem value="PAID">Paid</SelectItem>
+                    <SelectItem value="FAILED">Failed</SelectItem>
+                  </SelectContent>
+                </Select>
+                {formErrors.paymentStatus && (
+                  <p className="text-xs text-red-500">{formErrors.paymentStatus}</p>
+                )}
+              </div>
             </div>
           </fieldset>
         </div>
@@ -252,9 +305,45 @@ const AssignAgentModal: React.FC<AssignAgentModalProps> = ({
 
   if (!isOpen || !subscription) return null;
 
+  // Format delivery schedule in a user-friendly way
+  const formatDeliverySchedule = (schedule: string, weekdays?: string | null) => {
+    switch (schedule) {
+      case 'DAILY':
+        return 'Daily';
+      case 'WEEKDAYS':
+        return 'Weekdays (Mon-Fri)';
+      case 'ALTERNATE_DAYS':
+        return 'Alternate Days';
+      case 'SELECT_DAYS':
+        try {
+          if (weekdays) {
+            const days = JSON.parse(weekdays);
+            return `Selected Days: ${days.join(', ')}`;
+          }
+          return 'Selected Days';
+        } catch {
+          return 'Selected Days';
+        }
+      case 'VARYING':
+        return 'Varying Schedule';
+      default:
+        return schedule;
+    }
+  };
+
+  // Format date to a more readable format
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return 'Not set';
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-xl max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Assign Agent for: {subscription.product.name}</DialogTitle>
           <DialogDescription>
@@ -265,7 +354,76 @@ const AssignAgentModal: React.FC<AssignAgentModalProps> = ({
             <X className="h-4 w-4" />
         </DialogClose>
 
-        <div className="grid gap-6 py-4">
+        <div className="grid gap-6 py-4 px-1 overflow-y-auto flex-grow">
+          {/* Subscription Details Section */}
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="text-sm font-medium mb-2">Subscription Details</h3>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <p className="text-gray-500">Product</p>
+                <p className="font-medium">{subscription.product.name}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Quantity</p>
+                <p className="font-medium">{subscription.qty}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Delivery Schedule</p>
+                <p className="font-medium">{formatDeliverySchedule(subscription.deliverySchedule, subscription.weekdays)}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Start Date</p>
+                <p className="font-medium">{formatDate(subscription.startDate)}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Expiry Date</p>
+                <p className="font-medium">{formatDate(subscription.expiryDate)}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Payment Status</p>
+                <p className="font-medium">
+                  <span className={`inline-block px-2 py-0.5 rounded ${subscription.paymentStatus === 'PAID' ? 'bg-green-100 text-green-800' : subscription.paymentStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
+                    {subscription.paymentStatus}
+                  </span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Delivery Address Section */}
+          {subscription.deliveryAddress && (
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-sm font-medium mb-2">Delivery Address</h3>
+              <div className="grid gap-1 text-sm">
+                <div className="flex items-center gap-2">
+                  <p className="font-medium">{subscription.deliveryAddress.recipientName}</p>
+                  {subscription.deliveryAddress.label && (
+                    <span className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded">
+                      {subscription.deliveryAddress.label}
+                    </span>
+                  )}
+                </div>
+                <p>{subscription.deliveryAddress.plotBuilding}, {subscription.deliveryAddress.streetArea}</p>
+                {subscription.deliveryAddress.landmark && <p>{subscription.deliveryAddress.landmark}</p>}
+                <p>{subscription.deliveryAddress.city}, {subscription.deliveryAddress.state} - {subscription.deliveryAddress.pincode}</p>
+                <p className="text-blue-600">Mobile: {subscription.deliveryAddress.mobile}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Customer Details Section */}
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="text-sm font-medium mb-2">Member Details</h3>
+            <div className="grid gap-1 text-sm">
+              <p><span className="text-gray-500">Name:</span> {subscription.member.user.name}</p>
+              <p><span className="text-gray-500">Email:</span> {subscription.member.user.email}</p>
+              {subscription.member.user.mobile && (
+                <p><span className="text-gray-500">Mobile:</span> {subscription.member.user.mobile}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Agent Selection */}
           <fieldset className="grid gap-4 border p-4 rounded-md">
             <legend className="text-sm font-medium px-1">Delivery Agent</legend>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -303,17 +461,13 @@ const AssignAgentModal: React.FC<AssignAgentModalProps> = ({
   );
 };
 
-// AdminSubscriptionList component starts below
-
 const AdminSubscriptionList: React.FC = () => {
    const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  
-  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [currentPage, setCurrentPage] = useState(1);
   const [limit, setLimit] = useState<number>(10);
-  const [totalPages, setTotalPages] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
   const [showFilters, setShowFilters] = useState<boolean>(false); // Restore showFilters state
-  const [totalCount, setTotalCount] = useState<number>(0);
   const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
   const [isAssignAgentModalOpen, setIsAssignAgentModalOpen] = useState<boolean>(false);
@@ -331,7 +485,7 @@ const AdminSubscriptionList: React.FC = () => {
   });
   
 
-  const fetchSubscriptions = useCallback(async (page = currentPage, currentLimit = limit, currentFilters = filters) => {
+  const fetchSubscriptions = useCallback(async (page = currentPage, currentLimit = 10, currentFilters = filters) => {
     setIsLoading(true);
 
     // Determine effective values for pagination and filters, providing fallbacks
@@ -352,7 +506,6 @@ const AdminSubscriptionList: React.FC = () => {
       setSubscriptions(response || []);
       setTotalPages(response.totalPages);
       setCurrentPage(response.currentPage);
-      setTotalCount(response.totalCount);
     } catch (err: any) {
       console.error('Failed to fetch subscriptions:', err);
       const errorMessage = err.response?.data?.message || err.message || 'Failed to fetch subscriptions.';
@@ -644,7 +797,7 @@ const AdminSubscriptionList: React.FC = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ALL">All Statuses</SelectItem>
-                    <SelectItem value="PENDING">Pending</SelectItem>
+                    {/* <SelectItem value="PENDING">Pending</SelectItem> */}
                     <SelectItem value="PAID">Paid</SelectItem> 
                     <SelectItem value="FAILED">Failed</SelectItem>
                   </SelectContent>
@@ -675,9 +828,7 @@ const AdminSubscriptionList: React.FC = () => {
 
       <div className="mb-4 flex justify-between items-center">
         <span className="text-sm text-gray-600 dark:text-gray-400">
-          Showing {subscriptions.length > 0 ? ((currentPage - 1) * limit) + 1 : 0}-
-          {Math.min(currentPage * limit, totalCount)} of {totalCount} subscriptions
-        </span>
+          </span>
         <div className="flex items-center space-x-2">
           <span className="text-sm">Items per page:</span>
           <Select value={limit.toString()} onValueChange={(value) => handleLimitChange(Number(value))}>
@@ -722,7 +873,7 @@ const AdminSubscriptionList: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                   <PhoneIcon className="h-3.5 w-3.5" />
-                  {sub.member?.user?.mobile || 'N/A'}
+                  {sub?.deliveryAddress?.mobile || 'N/A'}
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-500 truncate">
                   <MailIcon className="h-3.5 w-3.5" />
@@ -828,9 +979,9 @@ const AdminSubscriptionList: React.FC = () => {
 
             {/* Assigned Agent */}
             <TableCell>
-              <div className="flex items-center gap-2">
-                <UserCheckIcon className="h-4 w-4 text-gray-500" />
-                <span>{sub.agency?.user?.name || sub.agency?.name || 'Unassigned'}</span>
+                <div className="flex items-center gap-2">
+                  <UserCheckIcon className="h-4 w-4 text-gray-500" />
+                  <span>{sub.agency?.user?.name || sub.agency?.name || 'Unassigned'}</span>
               </div>
             </TableCell>
 
@@ -862,12 +1013,13 @@ const AdminSubscriptionList: React.FC = () => {
                         size="icon"
                         className="h-8 w-8"
                         onClick={() => handleOpenAssignAgentModal(sub)}
+                        disabled={sub.paymentStatus !== 'PAID' || !!sub.agencyId}
                       >
                         <UserPlus className="h-4 w-4" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="top">
-                      <p>Assign Agent</p>
+                      <p>{!!sub.agencyId ? "Agent already assigned" : sub.paymentStatus !== 'PAID' ? "Payment required before agent assignment" : "Assign Agent"}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>

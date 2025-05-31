@@ -52,6 +52,7 @@ const initialData = {
          { title: "Products", url: "/admin/products", icon: Briefcase, groupLabel: "Services" },
          { title: "Orders", url: "/admin/orders", icon: Briefcase, groupLabel: "Services" },
          { title: "Subscriptions", url: "/admin/subscriptions", icon: Briefcase, groupLabel: "Services" },
+         { title: "Delivery", url: "/admin/delivery", icon: FileText, groupLabel: "Services" },
 
          { title: "Users", url: "/admin/users", icon: Briefcase, groupLabel: "Master" },
 
