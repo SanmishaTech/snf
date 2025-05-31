@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { get } from "@/services/apiService";
@@ -22,31 +22,26 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const getRoleFromLocalStorage = () => {
-  const storedUser = localStorage.getItem("user");
-  if (storedUser) {
-    try {
-      const user = JSON.parse(storedUser);
-      return user?.role || null;
-    } catch (error) {
-      console.error("Failed to parse user from localStorage", error);
-      return null;
-    }
-  }
-  return null;
-};
+interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  agencyId?: string | number; 
+  agencyName?: string;
+}
 
 interface OrderItem {
   id: string;
   productId: string;
   productName: string;
-  priceAtPurchase: number; // Corrected field name based on API
+  priceAtPurchase: number; 
   quantity: number;
-  deliveredQuantity?: number; // Already present in Order.items, good to have here too for consistency
-  receivedQuantity?: number; // Add receivedQuantity
-  agencyId?: string; // Optional if not always present
-  agencyName?: string; // Optional if not always present
-  unit?: string; // Optional unit for the product
+  deliveredQuantity?: number; 
+  receivedQuantity?: number; 
+  agencyId?: string; 
+  agencyName?: string; 
+  unit?: string; 
 }
 
 interface Order {
@@ -71,20 +66,25 @@ interface Order {
 const OrderDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState<"details" | "timeline">("details");
-  const currentUserRole = getRoleFromLocalStorage();
+
+  const { data: currentUserProfile, isLoading: isLoadingUserProfile } = useQuery<UserProfile>({
+    queryKey: ["currentUserProfile"],
+    queryFn: async () => get("/api/users/me"),
+    staleTime: 5 * 60 * 1000, 
+  });
+  const currentUserRole = currentUserProfile?.role;
 
   const { data: order, isLoading, isError, refetch } = useQuery<Order>({
     queryKey: ["order", id],
     queryFn: async (): Promise<Order> => {
       const response = await get(`/vendor-orders/${id}`);
-      // Transform the items array to match the OrderItem interface
       const transformedItems = response.items.map((item: any) => ({
         id: String(item.id),
         productId: String(item.productId),
         productName: item.product?.name || 'Unknown Product',
         priceAtPurchase: Number(item.priceAtPurchase || 0),
         deliveredQuantity: item.deliveredQuantity !== null && item.deliveredQuantity !== undefined ? Number(item.deliveredQuantity) : undefined,
-        receivedQuantity: item.receivedQuantity !== null && item.receivedQuantity !== undefined ? Number(item.receivedQuantity) : undefined, // Map receivedQuantity
+        receivedQuantity: item.receivedQuantity !== null && item.receivedQuantity !== undefined ? Number(item.receivedQuantity) : undefined, 
         quantity: Number(item.quantity || 0),
         agencyId: item.agency?.id ? String(item.agency.id) : undefined,
         agencyName: item.agency?.name || undefined,
@@ -93,6 +93,16 @@ const OrderDetailsPage = () => {
       return { ...response, items: transformedItems } as Order;
     },
   });
+
+  const itemsToDisplay = useMemo(() => {
+    if (!order?.items) return [];
+    if (currentUserProfile?.role === 'AGENCY' && currentUserProfile.agencyId != null) {
+      return order.items.filter(
+        item => item.agencyId != null && String(item.agencyId) === String(currentUserProfile.agencyId)
+      );
+    }
+    return order.items;
+  }, [order, currentUserProfile]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -113,7 +123,7 @@ const OrderDetailsPage = () => {
       case "DELIVERED": return "Delivered";
       case "RECEIVED": return "Received";
       default:
-        const knownStatus = status as string; // Type assertion for string operations
+        const knownStatus = status as string; 
         return knownStatus ? knownStatus.charAt(0).toUpperCase() + knownStatus.slice(1) : "Unknown Status";
     }
   };
@@ -127,6 +137,18 @@ const OrderDetailsPage = () => {
         return `Order status is currently ${status || 'unknown'}.`;
     }
   };
+
+  const breadcrumbBase = currentUserRole === "ADMIN" ? "/admin" : currentUserRole === "VENDOR" ? "/vendor" : currentUserRole === "AGENCY" ? "/admin" : "/";
+
+  if (isLoading || isLoadingUserProfile) { 
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="flex flex-col items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
+        </div>
+      </div>
+    );
+  }
 
   if (isError) {
     return (
@@ -144,84 +166,50 @@ const OrderDetailsPage = () => {
     ); 
   }
 
-  if (isLoading) {
-    return (
-      <div className="container mx-auto py-10">
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto py-6 space-y-6 px-4 sm:px-6 lg:px-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
+           
           <div className="flex items-center gap-3">
-            {/* <Button variant="ghost" size="icon" asChild className="h-8 w-8">
-              <Link to="/orders">
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
-            </Button> */}
             <h1 className="text-3xl font-bold tracking-tight">Order #{order.poNumber}</h1>
-            {/* <Badge 
-              className={cn(
-                "ml-2 font-medium border uppercase text-xs px-2.5 py-0.5",
-                getStatusColor(order.status)
-              )}
-            >
-              {order.status}
-            </Badge> */}
           </div>
-          {/* <Breadcrumb className="mt-2 ml-11">
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/dashboard">
-                <HomeIcon className="h-4 w-4 mr-1" />
-                Dashboard
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/orders">Orders</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbItem>
-              <span className="text-gray-500 dark:text-gray-400">#{order.poNumber}</span>
-            </BreadcrumbItem>
-          </Breadcrumb> */}
         </div>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="flex border-b border-gray-200 dark:border-gray-800">
-        <button
-          className={cn(
-            "px-4 py-2 font-medium text-sm flex items-center gap-2",
-            activeTab === "details"
-              ? "border-b-2 border-blue-500 text-blue-600 dark:text-blue-400"
-              : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-          )}
-          onClick={() => setActiveTab("details")}
-        >
-          <FileText className="h-4 w-4" />
-          Order Details
-        </button>
-        {currentUserRole !== "VENDOR" && (
+      {/* Tabs for Details and Timeline */}
+      <div className="border-b border-gray-200 dark:border-gray-700">
+        <nav className="-mb-px flex space-x-6" aria-label="Tabs">
           <button
+            onClick={() => setActiveTab("details")}
             className={cn(
-              "px-4 py-3 font-medium text-sm focus:outline-none",
-              activeTab === "timeline"
-                ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400"
-                : "text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+              "whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm",
+              activeTab === "details"
+                ? "border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-300"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-500"
             )}
-            onClick={() => setActiveTab("timeline")}
           >
-            Order Timeline
+            Order Details
           </button>
-        )}
+          {currentUserProfile?.role !== 'AGENCY' && (
+            <button
+              onClick={() => setActiveTab("timeline")}
+              className={cn(
+                "whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm",
+                activeTab === "timeline"
+                  ? "border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-300"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-500"
+              )}
+            >
+              Order Timeline
+            </button>
+          )}
+        </nav>
       </div>
 
-      {activeTab === "details" ? (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Tab Content */}
+      {activeTab === "details" && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
           {/* Main Order Details */}
           <div className="lg:col-span-2 space-y-6">
             <Card>
@@ -281,33 +269,42 @@ const OrderDetailsPage = () => {
               <CardContent>
                 <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-800">
                   <div className="bg-gray-50 dark:bg-gray-900 px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 grid grid-cols-12">
-                    <div className="col-span-6">Product</div> {/* Adjusted from col-span-8 to col-span-6 */}
+                    <div className="col-span-6">Product</div> 
                     <div className="col-span-2 text-right">Ordered</div>
                     <div className="col-span-2 text-right">Delivered</div>
-                    <div className="col-span-2 text-right">Received</div> {/* New column */}
+                    <div className="col-span-2 text-right">Received</div> 
                   </div>
                   <div className="divide-y divide-gray-200 dark:divide-gray-800 mb-2">
-                    {order.items.map((item) => (
+                    {itemsToDisplay.map((item) => (
                       <div key={item.id} className="mb-2 px-4 py-4 grid grid-cols-12 items-center">
-                        <div className="col-span-6"> {/* Adjusted from col-span-8 to col-span-6 */}
+                        <div className="col-span-6"> 
                           <div className="flex items-center">
                             <div className="h-10 w-10 flex-shrink-0 rounded-md bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                               <Package className="h-5 w-5 text-gray-500" />
                             </div>
                             <div className="ml-4">
                               <p className="font-medium text-gray-900 dark:text-gray-100">{item.productName}</p>
-                              {/* <p className="text-xs text-gray-500 dark:text-gray-400">ID: {item.productId}</p> */}
                               {item.agencyName && <p className="text-xs text-blue-500 dark:text-blue-400">Agency: {item.agencyName}</p>}
                             </div>
                           </div>
                         </div>
-                        <div className="col-span-2 text-right">{item.quantity} {item.unit && <span className="text-xs text-gray-500 dark:text-gray-400">{item.unit}</span>}</div>
+                        <div className="col-span-2 text-right">
+                          {item.quantity} {item.unit && <span className="text-xs text-gray-500 dark:text-gray-400">{item.unit}</span>}
+                        </div>
                         
                         <div className="col-span-2 text-right">
-                          {typeof item.deliveredQuantity === 'number' ? item.deliveredQuantity : '-'}
+                          {typeof item.deliveredQuantity === 'number' ? (
+                            <>
+                              {item.deliveredQuantity} {item.unit && <span className="text-xs text-gray-500 dark:text-gray-400">{item.unit}</span>}
+                            </>
+                          ) : '-'}
                         </div>
-                        <div className="col-span-2 text-right"> {/* New column data */}
-                          {typeof item.receivedQuantity === 'number' ? item.receivedQuantity : '-'}
+                        <div className="col-span-2 text-right"> 
+                          {typeof item.receivedQuantity === 'number' ? (
+                            <>
+                              {item.receivedQuantity} {item.unit && <span className="text-xs text-gray-500 dark:text-gray-400">{item.unit}</span>}
+                            </>
+                          ) : '-'}
                         </div>
                       </div>
                     ))}
@@ -334,7 +331,6 @@ const OrderDetailsPage = () => {
                   </div>
                   <div className="ml-4">
                     <h3 className="font-semibold text-lg">{order?.vendor?.name}</h3>
-                    {/* <p className="text-sm text-gray-500 dark:text-gray-400">Vendor ID: {order?.vendor?.id}</p> */}
                   </div>
                 </div>
                  
@@ -386,13 +382,12 @@ const OrderDetailsPage = () => {
             </Card>
           </div>
         </div>
-      ) : (
-        <Card>
+      )}
+
+      {activeTab === "timeline" && currentUserProfile?.role !== 'AGENCY' && (
+        <Card className="mt-6">
           <CardHeader>
-            <CardTitle className="text-xl flex items-center gap-2">
-              <Clock className="h-5 w-5 text-blue-500" />
-              Order Timeline
-            </CardTitle>
+            <CardTitle className="text-xl font-semibold text-gray-800 dark:text-gray-100">Order Progress Timeline</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="relative pl-6 space-y-4 before:absolute before:inset-y-0 before:left-6 before:w-0.5 before:bg-gray-300 dark:before:bg-gray-700">
@@ -401,7 +396,7 @@ const OrderDetailsPage = () => {
                 const currentStatusIndex = orderStatusHierarchy.indexOf(order.status);
 
                 const steps = [
-                  { // Order Created
+                  { 
                     title: "Order Created",
                     icon: <ShoppingCart className="h-5 w-5 text-white" />,
                     iconBg: "bg-blue-500",
@@ -409,7 +404,7 @@ const OrderDetailsPage = () => {
                     description: `Order #${order.poNumber} was created with ${order.items.length} product(s).`,
                     stepStatus: "PENDING",
                   },
-                  { // Order Delivered
+                  { 
                     title: "Order Delivered",
                     activeIcon: <Check className="h-5 w-5 text-white" />,
                     activeIconBg: "bg-green-500",
@@ -419,7 +414,7 @@ const OrderDetailsPage = () => {
                     description: "Order has been marked as delivered by the vendor.",
                     stepStatus: "DELIVERED",
                   },
-                  { // Order Received
+                  { 
                     title: "Order Received",
                     activeIcon: <PackageCheck className="h-5 w-5 text-white" />,
                     activeIconBg: "bg-purple-500",
@@ -435,18 +430,18 @@ const OrderDetailsPage = () => {
                   const stepIndex = orderStatusHierarchy.indexOf(step.stepStatus);
                   let displayIcon, displayIconBg, itemStyle, titleStyle;
 
-                  if (currentStatusIndex === stepIndex) { // Active step
+                  if (currentStatusIndex === stepIndex) { 
                     displayIcon = step.activeIcon || step.icon;
                     displayIconBg = step.activeIconBg || step.iconBg;
                     itemStyle = "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-sm";
                     titleStyle = "font-semibold text-gray-900 dark:text-gray-100";
-                  } else if (currentStatusIndex > stepIndex) { // Completed step
+                  } else if (currentStatusIndex > stepIndex) { 
                     displayIcon = step.activeIcon || step.icon;
                     displayIconBg = step.activeIconBg || step.iconBg;
-                    itemStyle = "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-sm opacity-80"; // Slightly faded for completed
+                    itemStyle = "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-sm opacity-80"; 
                     titleStyle = "font-semibold text-gray-700 dark:text-gray-300";
-                  } else { // Placeholder step (future step)
-                    displayIcon = step.placeholderIcon || step.icon; // Fallback to main icon if no specific placeholder
+                  } else { 
+                    displayIcon = step.placeholderIcon || step.icon; 
                     displayIconBg = step.placeholderIconBg || step.iconBg;
                     itemStyle = "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 border-dashed opacity-70";
                     titleStyle = "font-semibold text-gray-600 dark:text-gray-400";

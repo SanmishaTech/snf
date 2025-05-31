@@ -51,6 +51,8 @@ const initialData = {
         { title: "Agency", url: "/admin/agencies", icon: Briefcase, groupLabel: "Services" },
          { title: "Products", url: "/admin/products", icon: Briefcase, groupLabel: "Services" },
          { title: "Orders", url: "/admin/orders", icon: Briefcase, groupLabel: "Services" },
+         { title: "Subscriptions", url: "/admin/subscriptions", icon: Briefcase, groupLabel: "Services" },
+
          { title: "Users", url: "/admin/users", icon: Briefcase, groupLabel: "Master" },
 
       ],
@@ -124,6 +126,15 @@ const initialData = {
       ],
       navMain: [] as any[],
     },
+    AGENCY: {
+      projects: [
+         { title: "Orders", url: "/admin/orders", icon: FileText, groupLabel: "Agency Portal" },
+         { title: "Delivery", url: "/admin/delivery", icon: FileText, groupLabel: "Agency Portal" },
+
+         // Add other agency-specific links here
+      ],
+      navMain: [] as any[],
+    }
   },
   user: {
     name: "",
@@ -252,9 +263,7 @@ function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <ArrowUpCircleIcon className="h-5 w-5" />
                   <span className="text-base font-semibold">{appName}</span>
                 </a>
-                {/* <a className="flex items-center gap-2" href="/member/search">
-                  <Search className="h-5 w-5 mr-2" />
-                </a> */}
+              
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -265,7 +274,7 @@ function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             >
               <a href="/dashboard">
                 <Search className="h-5 w-5 " />
-                <Input 13.126.180.52 className="border-0 " />
+                <Input localhost:3000 className="border-0 " />
                </a>
               
             </SidebarMenuButton>

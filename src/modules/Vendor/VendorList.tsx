@@ -378,7 +378,7 @@ const VendorList: React.FC = () => {
                           >
                             <Trash2 size={16} />
                           </Button>
-                          {/* <DropdownMenu>
+                          {/* <DropdownMenu modal={false} >
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon" className="h-8 w-8">
                                 <MoreHorizontal size={16} />

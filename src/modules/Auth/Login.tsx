@@ -12,6 +12,7 @@ import { post, get, patch } from "@/services/apiService"; // Added patch
 import { appName, allowRegistration } from "@/config";
 import { LoaderCircle } from "lucide-react";
 import { toast } from "sonner";
+import { Link } from "react-router-dom"; // Import Link from react-router-dom
 
 // User object structure within LoginResponse and for localStorage
 interface User {
@@ -57,13 +58,37 @@ const loginSchema = z.object({
 
 type LoginFormInputs = z.infer<typeof loginSchema>; // No longer needs agreedToPolicy here
 
-const Login = () => {
+// Define props for Login component
+interface LoginProps {
+  setActiveTab: (tab: string) => void;
+}
+
+const Login: React.FC<LoginProps> = ({ setActiveTab }) => {
   const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
   const [policyText, setPolicyText] = useState("");
   const [isPolicyLoading, setIsPolicyLoading] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient(); // Obtain queryClient
+
+  // Helper function to determine redirect path based on user role
+  const determineRedirectPath = (user: User | undefined): string => {
+    if (user && user.role === 'MEMBER') {
+      return '/dashboard'; // Redirect members to the dashboard
+    }
+    if(user && user.role === 'ADMIN') {
+      return '/admin/orders';
+    }
+    if(user && user.role === 'VENDOR') {
+      return '/vendor/orders';
+    }
+    if(user && user.role === 'AGENCY') {
+      return '/agency/orders';
+    }
+    // Add other role-based redirects here if needed in the future
+    // e.g., if (user && user.role === 'ADMIN') return '/admin/overview';
+    return '/'; // Default path for other roles or if user is undefined
+  };
 
   // Get setError from useForm
   const {
@@ -122,13 +147,12 @@ const Login = () => {
         );
         fetchPolicyMutation.mutate(); // This will open the modal on its own success
       } else {
-        console.log(
-          "Login successful, policy already accepted or not required. Navigating to dashboard."
-        );
-        navigate("/admin/orders");
+        // Policy not required, proceed with login and redirect
         toast.success("Login successful!");
+        queryClient.invalidateQueries({ queryKey: ["user"] });
+        const redirectPath = determineRedirectPath(data.user);
+        navigate(redirectPath);
       }
-      // queryClient.invalidateQueries(...) // Consider invalidating relevant queries
     },
     onError: (error: ApiErrorResponse) => {
       // Handle field-specific validation errors (map to form fields)
@@ -212,28 +236,16 @@ const Login = () => {
       return await patch("/auth/accept-policy", {});
     },
     onSuccess: (data) => {
-      setIsPolicyModalOpen(false);
-      toast.success(data.message || "Policy accepted!");
+      // Assuming 'data.user' contains the updated user object after policy acceptance
+      // If not, retrieve from localStorage or ensure backend sends it.
+      const updatedUser = data.user || JSON.parse(localStorage.getItem("user") || "null");
+      localStorage.setItem("user", JSON.stringify(updatedUser));
 
-      // Update user in localStorage with the new policyAccepted status
-      const storedUserData = localStorage.getItem("user");
-      if (storedUserData) {
-        try {
-          const currentUser: User = JSON.parse(storedUserData);
-          const updatedUser = {
-            ...currentUser,
-            policyAccepted: data.user.policyAccepted,
-            policyAcceptedAt: data.user.policyAcceptedAt,
-          };
-          localStorage.setItem("user", JSON.stringify(updatedUser));
-        } catch (e) {
-          console.error(
-            "Failed to update user data in localStorage after policy acceptance:",
-            e
-          );
-        }
-      }
-      navigate("/dashboard");
+      toast.success("Policy accepted. Login complete!");
+      queryClient.invalidateQueries({ queryKey: ["user"] });
+      const redirectPath = determineRedirectPath(updatedUser);
+      navigate(redirectPath);
+      setIsPolicyModalOpen(false);
     },
     onError: (error) => {
       toast.error(
@@ -357,6 +369,13 @@ const Login = () => {
             )}
           </div>
 
+          <div className="flex items-center justify-between text-sm">
+            {/* This is a good place for 'Remember me' if you add it later */}
+            <Link to="/forgot-password" className="font-medium text-primary hover:underline">
+              Forgot Password?
+            </Link>
+          </div>
+
           {/* Submit Button */}
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? (
@@ -365,13 +384,18 @@ const Login = () => {
             Login
           </Button>
 
-          {/* Registration Link */}
+          {/* Registration Button */}
           {allowRegistration && (
-            <p className="text-center text-sm">
-              Don&apos;t have an account?{" "}
-              <a href="/register" className="font-semibold hover:underline">
+            <p className="text-center text-sm text-muted-foreground mt-4">
+              Are you new?{" "}
+              <Button 
+                variant="link"
+                className="font-semibold p-0 h-auto text-primary hover:underline"
+                onClick={() => setActiveTab("register")}
+                type="button" // Add type button to prevent form submission
+              >
                 Register
-              </a>
+              </Button>
             </p>
           )}
         </div>

@@ -1,17 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { get, del } from "@/services/apiService";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink } from "@/components/ui/breadcrumb";
+import { Breadcrumb, BreadcrumbItem } from "@/components/ui/breadcrumb";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format } from "date-fns";
 import {
   HomeIcon,
-  Search,
   Calendar as CalendarIcon,
   Filter,
   ShoppingCart,
@@ -20,12 +20,12 @@ import {
   Eye,
   Trash2,
   ClipboardCheck,
+  AlertCircle,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/formatter"
 import { toast } from "sonner";
 import { Pagination, PaginationContent, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
 import { cn } from "@/lib/utils";
-import { Link } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -40,6 +40,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface OrderItem {
   id: string;
@@ -47,6 +53,8 @@ interface OrderItem {
   productName: string;
   price: number;
   quantity: number;
+  deliveredQuantity?: number;
+  receivedQuantity?: number;
 }
 
 interface Order {
@@ -62,22 +70,22 @@ interface Order {
   status: "PENDING" | "DELIVERED" | "RECEIVED";
   items: OrderItem[];
   totalAmount: number;
+  recordedByAgencies?: string[];
 }
 
- 
-interface UserDetails {
+interface StoredUserDetails {
   role: string | null;
-  id: string | null; // Assuming user object in localStorage has an 'id'
+  id: string | null;
 }
 
-const getUserDetailsFromLocalStorage = (): UserDetails => {
+const getStoredUserDetails = (): StoredUserDetails => {
   const storedUser = localStorage.getItem("user");
   if (storedUser) {
     try {
       const user = JSON.parse(storedUser);
       return {
         role: user?.role || null,
-        id: user?.id || null, 
+        id: user?.id || null,
       };
     } catch (error) {
       console.error("Failed to parse user from localStorage", error);
@@ -89,21 +97,86 @@ const getUserDetailsFromLocalStorage = (): UserDetails => {
 
 const OrderList = () => {
   const [page, setPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [inputValue, setInputValue] = useState(""); // For the input field
+  const [searchTerm, setSearchTerm] = useState(""); // Debounced value for the query
   const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState<string>("");
+  const searchDebounceTimeout = useRef<number | null>(null);
   const pageSize = 10;
 
-  const { role: currentUserRole, id: currentUserId } = getUserDetailsFromLocalStorage();
+  const [currentUserDetails, setCurrentUserDetails] = useState<StoredUserDetails>(getStoredUserDetails());
+  const [currentAgencyId, setCurrentAgencyId] = useState<string | null>(null);
+  const [isAgencyInfoLoading, setIsAgencyInfoLoading] = useState<boolean>(false);
+
+  const currentUserRole = currentUserDetails?.role;
+
+  const handleInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(event.target.value);
+  }, []); // setInputValue from useState is stable, so empty dependency array is fine
+
+  useEffect(() => {
+    const fetchAgencyInfo = async () => {
+      if (currentUserRole === 'AGENCY') {
+        setIsAgencyInfoLoading(true);
+        try {
+          const agencyInfo = await get("/users/me");
+          console.log("agencyinfo",agencyInfo)
+          // Ensure agencyId is stored as a string if it exists, otherwise null
+          setCurrentAgencyId(agencyInfo?.agencyId ? String(agencyInfo.agencyId) : null);
+        } catch (error) {
+          console.error("Failed to fetch agency info:", error);
+          toast.error("Could not load agency details.");
+          setCurrentAgencyId(null);
+        }
+        setIsAgencyInfoLoading(false);
+      }
+    };
+    fetchAgencyInfo();
+  }, [currentUserRole]);
+
+  useEffect(() => {
+    if (currentUserRole === 'AGENCY' && statusFilter === 'PENDING') {
+      setStatusFilter(""); // Clear status filter if it's PENDING for an agency
+    }
+  }, [currentUserRole, statusFilter]);
+
+  // Debounce search input to prevent losing focus
+  useEffect(() => {
+    // Clear existing timeout when input changes
+    if (searchDebounceTimeout.current) {
+      window.clearTimeout(searchDebounceTimeout.current);
+    }
+    
+    // Set a new timeout to update searchTerm after 500ms of no typing
+    searchDebounceTimeout.current = window.setTimeout(() => {
+      setSearchTerm(inputValue);
+    }, 500);
+    
+    // Cleanup function to clear timeout on unmount
+    return () => {
+      if (searchDebounceTimeout.current) {
+        window.clearTimeout(searchDebounceTimeout.current);
+      }
+    };
+  }, [inputValue]);
+
+  const ordersQueryEnabled = 
+    !!currentUserRole && 
+    (currentUserRole !== 'AGENCY' || (currentUserRole === 'AGENCY' && !isAgencyInfoLoading && currentAgencyId !== undefined));
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["orders", page, searchTerm, dateFilter, statusFilter, currentUserRole, currentUserId],
+    queryKey: ["orders", page, searchTerm, dateFilter, statusFilter, currentUserRole, currentAgencyId],
     queryFn: async () => {
-      let baseUrl = '/vendor-orders'; // Default for ADMIN or other unhandled roles
+      if (!currentUserRole) return { data: [], totalPages: 0 };
+      if (currentUserRole === 'AGENCY' && !currentAgencyId) {
+        return { data: [], totalPages: 0 };
+      }
+
+      let baseUrl = '/vendor-orders'; 
       if (currentUserRole === 'VENDOR') {
         baseUrl = '/vendor-orders/my';
       } else if (currentUserRole === 'AGENCY') {
-        baseUrl = '/vendor-orders/my-agency-orders'; // New endpoint for agency's orders
+        baseUrl = '/vendor-orders/my-agency-orders'; 
       }
       let url = `${baseUrl}?page=${page}&limit=${pageSize}`;
       
@@ -119,205 +192,240 @@ const OrderList = () => {
         url += `&status=${statusFilter}`;
       }
       
+      if (currentUserRole === 'AGENCY') {
+        // Always exclude PENDING orders for AGENCY users
+        url += `&excludeStatus=PENDING`;
+        // Add agencyId if the user is an agency and agencyId is available
+        if (currentAgencyId) {
+          url += `&agencyId=${currentAgencyId}`;
+        }
+      }
+      
       const response = await get(url);
       return response;
     },
+    enabled: ordersQueryEnabled,
   });
-  console.log(data)
-  const orders = data?.data || [];
+   const orders: Order[] = data?.data || [];
   const totalPages = data?.totalPages || 1;
 
   const handleDeleteOrder = async (orderId: string) => {
-    // Optional: Add a confirmation dialog here
-    // if (!confirm("Are you sure you want to delete this order?")) {
-    //   return;
-    // }
     try {
       await del(`/vendor-orders/${orderId}`);
       toast.success("Order deleted successfully");
-      refetch(); // Refetch orders after deletion
+      refetch(); 
     } catch (error) {
       toast.error("Failed to delete order");
-      console.error("Delete order error:", error);
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "PENDING":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800";
+        return "bg-yellow-500";
       case "DELIVERED":
-        return "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800";
+        return "bg-blue-500";
       case "RECEIVED":
-        return "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800";
+        return "bg-green-500";
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900 dark:text-gray-300 dark:border-gray-800";
+        return "bg-gray-500";
     }
   };
 
-  const clearFilters = () => {
-    setSearchTerm("");
-    setDateFilter(undefined);
-    setStatusFilter("");
+  const getOrderQuantitiesSummary = (items: OrderItem[]) => {
+    if (!items || items.length === 0) {
+      return { ordered: 0, delivered: 0, received: 0 };
+    }
+    const ordered = items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+    const delivered = items.reduce((sum, item) => sum + (item.deliveredQuantity || 0), 0);
+    const received = items.reduce((sum, item) => sum + (item.receivedQuantity || 0), 0);
+    return { ordered, delivered, received };
   };
 
+  const clearFilters = () => {
+    setInputValue(""); // Clear the input field
+    setSearchTerm(""); // Clear the search term
+    setDateFilter(undefined);
+    setStatusFilter("");
+    setPage(1); 
+  };
+
+  if (currentUserRole === 'AGENCY' && isAgencyInfoLoading) {
+    return <div className="flex justify-center items-center h-screen"><p>Loading agency details...</p></div>;
+  }
+
+  if (isLoading && ordersQueryEnabled) { 
+    return <div className="flex justify-center items-center h-screen"><p>Loading orders...</p></div>;
+  }
+
+  if (isError && ordersQueryEnabled) { 
+    return <div className="flex justify-center items-center h-screen"><p>Error loading orders. Please try again later.</p></div>;
+  }
+
   return (
-    <div className="container mx-auto py-6 space-y-6 items-center">
-      <div className="max-w-7xl mx-auto w-full flex flex-col sm:flex-row sm:items-center justify-between items-center gap-3">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Orders</h1>
-          <div className="flex items-center gap-2">
-           
-          </div>
-         
-        </div>
-     {  currentUserRole === "ADMIN" &&  <Button asChild className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
-          <Link to="/admin/orders/create">
-            <ShoppingCart className="h-4 w-4 mr-2" />
-            Create New Order
-          </Link>
-        </Button>}
-      </div>
+    <div className="container mx-auto p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+       
 
-      {/* Filters */} 
-      <Card className="max-w-7xl mx-auto overflow-hidden border-0 shadow-sm bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-950 dark:to-gray-950">
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800"
-              />
-            </div>
-            
-            <div className="flex gap-2">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="flex gap-2 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
-                    <CalendarIcon className="h-4 w-4" />
-                    {dateFilter ? format(dateFilter, "dd/mm/yy") : "Filter by date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={dateFilter}
-                    onSelect={setDateFilter}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-              
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="rounded-md border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-3 py-2 text-sm flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">All Statuses</option>
-                <option value="PENDING">Pending</option>
-                <option value="DELIVERED">DELIVERED</option>
-                <option value="RECEIVED">Delivered</option>
-              </select>
-              
-              {(searchTerm || dateFilter || statusFilter) && (
-                <Button variant="ghost" onClick={clearFilters} className="flex-shrink-0">
-                  Clear
+      <Card className="mb-6 shadow-lg dark:bg-gray-800">
+        <CardHeader className="flex flex-row items-center justify-between pb-4">
+          <CardTitle className="text-2xl font-bold text-gray-800 dark:text-gray-100">Order Management</CardTitle>
+          {currentUserRole === "ADMIN" && (
+            <Link to="/admin/orders/create">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600">
+                <ShoppingCart className="mr-2 h-5 w-5" /> Create New Order
+              </Button>
+            </Link>
+          )}
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 min-w-full ">
+            <Input
+              placeholder="Search by PO, Vendor..."
+              value={inputValue}
+              onChange={handleInputChange} // Use the memoized handler
+              className="dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 w-full"
+            />
+            {/* <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={cn(
+                    "w-full justify-start text-left font-normal dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600",
+                    !dateFilter && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateFilter ? format(dateFilter, "dd/MM/yy") : <span>Pick a date</span>}
                 </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 dark:bg-gray-800" align="start">
+                <Calendar
+                  mode="single"
+                  selected={dateFilter}
+                  onSelect={setDateFilter}
+                  initialFocus
+                  className="dark:text-gray-200"
+                />
+              </PopoverContent>
+            </Popover> */}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
+            >
+              <option value="">All Status</option>
+              {currentUserRole !== 'AGENCY' && (
+                <option value="PENDING">Pending</option>
               )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {isLoading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
-        </div>
-      ) : isError ? (
-        <Card className="max-w-7xl mx-auto bg-red-50 dark:bg-red-950 border-red-100 dark:border-red-900">
-          <CardContent className="p-6 text-center">
-            <p className="text-red-600 dark:text-red-400">Failed to load orders. Please try again.</p>
-            <Button variant="outline" onClick={() => refetch()} className="mt-4">
-              Retry
+              <option value="DELIVERED">Delivered</option>
+              <option value="RECEIVED">Received</option>
+            </select>
+            <Button onClick={clearFilters} variant="outline" className="dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600">
+              <Filter className="mr-2 h-4 w-4" /> Clear Filters
             </Button>
-          </CardContent>
-        </Card>
-      ) : orders.length === 0 ? (
-        <Card className="max-w-7xl mx-auto bg-white dark:bg-gray-900 shadow-sm border border-gray-200 dark:border-gray-800">
-          <CardContent className="p-10 text-center">
-            <ShoppingCart className="h-12 w-12 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">No orders found</h3>
-            <p className="text-gray-500 dark:text-gray-400 mt-2">
-              {searchTerm || dateFilter || statusFilter
-                ? "Try adjusting your search filters."
-                : "There are no orders to display at the moment."}
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="max-w-7xl mx-auto bg-white dark:bg-gray-900 shadow-md border border-gray-200 dark:border-gray-800">
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b border-gray-200 dark:border-gray-800">
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">PO Number</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Vendor</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Order Date</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Delivery Date</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</TableHead>
-                  <TableHead className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Quantity</TableHead>
-                  <TableHead className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total Amount</TableHead>
-                  <TableHead className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</TableHead>
+          </div>
+
+          {orders.length === 0 ? (
+            <div className="text-center py-10">
+              <p className="text-xl text-gray-600 dark:text-gray-400">No orders found.</p>
+              <p className="text-sm text-gray-500 dark:text-gray-500">Try adjusting your filters or creating a new order.</p>
+            </div>
+          ) : (
+            <Table className="min-w-full bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
+              <TableHeader className="bg-gray-100 dark:bg-gray-700">
+                <TableRow>
+                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">PO Number</TableHead>
+                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Vendor</TableHead>
+                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Order Date</TableHead>
+                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Delivery Date</TableHead>
+                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Total Amount</TableHead>
+                  {currentUserRole === "ADMIN" && (
+                    <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Quantities (O/D/R)</TableHead>
+                  )}
+                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Status</TableHead>
+                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Actions</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody className="divide-y divide-gray-200 dark:divide-gray-800">
-                {orders.map((order: Order) => (
-                  <TableRow key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+              <TableBody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {orders.map((order) => {
+                  const agencyNeedsToRecord = currentUserRole === "AGENCY" && 
+                                            !!currentAgencyId && 
+                                            order.status === "RECEIVED" && 
+                                            !order.recordedByAgencies?.includes(currentAgencyId);
+                  const canAgencyRecord = currentUserRole === "AGENCY" && 
+                                        !!currentAgencyId && 
+                                        (order.status === "DELIVERED" || agencyNeedsToRecord);
+                  const quantities = getOrderQuantitiesSummary(order.items);
+                  
+                  return (
+                  <TableRow key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-750">
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{order.poNumber}</TableCell>
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{order.vendor?.name || (currentUserRole === 'VENDOR' ? 'You' : '—')}</TableCell>
-                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{format(new Date(order.orderDate), "dd/MM/yyyy")}</TableCell>
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{format(new Date(order.deliveryDate), "dd/MM/yyyy")}</TableCell>
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm">
-                      <Badge className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", getStatusColor(order.status))}>
-                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{order.vendor.name}</TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{format(new Date(order.orderDate), "dd/MM/yy")}</TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{format(new Date(order.deliveryDate), "dd/MM/yy")}</TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{formatCurrency(order.totalAmount)}</TableCell>
+                    {currentUserRole === "ADMIN" && (
+                      <TableCell className="px-6 py-4 whitespace-nowrap text-sm">
+                        <div className="flex flex-col space-y-1">
+                          <div><span className="font-medium">Ordered:</span> {quantities.ordered}</div>
+                          <div>
+                            <span className="font-medium">Delivered:</span>{" "}
+                            <span className={quantities.delivered < quantities.ordered ? "text-red-500 font-medium" : "text-gray-500 dark:text-gray-300"}>
+                              {quantities.delivered}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="font-medium">Received:</span>{" "}
+                            <span className={quantities.received < quantities.delivered ? "text-red-500 font-medium" : "text-gray-500 dark:text-gray-300"}>
+                              {quantities.received}
+                            </span>
+                          </div>
+                        </div>
+                      </TableCell>
+                    )}
+                    <TableCell className="px-6 py-4 whitespace-nowrap">
+                      <Badge className={`${getStatusColor(order.status)} text-white px-2 py-1 rounded-full text-xs`}>
+                        {order.status}
                       </Badge>
+                      {agencyNeedsToRecord && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <AlertCircle className="ml-2 h-4 w-4 text-red-500 inline-block" />
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-black text-white p-2 rounded">
+                              <p>You need to record your quantities for this order.</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
                     </TableCell>
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 dark:text-gray-400">
-                      {order.items.reduce((acc, item) => acc + item.quantity, 0)}
-                    </TableCell>
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-700 dark:text-gray-300">{formatCurrency(order.totalAmount.toFixed(2))}</TableCell>
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-center">
-                      <DropdownMenu>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <DropdownMenu modal={false} >
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                            <MoreHorizontal className="h-5 w-5" />
-                            <span className="sr-only">Actions</span>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuContent align="end" className="dark:bg-gray-800 dark:text-gray-200">
                           {currentUserRole === "ADMIN" && (
                             <>
+                              {order.status === "PENDING" && (
+                                <DropdownMenuItem asChild>
+                                  <Link to={`/admin/orders/${order.id}/edit`} className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800">
+                                    <Edit className="mr-2 h-4 w-4" /> Edit
+                                  </Link>
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuItem asChild>
                                 <Link to={`/admin/orders/${order.id}`} className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800">
                                   <Eye className="mr-2 h-4 w-4" /> View Details
                                 </Link>
                               </DropdownMenuItem>
                               {order.status === "PENDING" && (
-                                <>
-                                  <DropdownMenuItem asChild>
-                                    <Link to={`/admin/orders/edit/${order.id}`} className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800">
-                                      <Edit className="mr-2 h-4 w-4" /> Edit Order
-                                    </Link>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() => handleDeleteOrder(order.id)}
-                                    className="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30 cursor-pointer"
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4" /> Delete Order
-                                  </DropdownMenuItem>
-                                </> 
+                                <DropdownMenuItem onClick={() => handleDeleteOrder(order.id)} className="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/50 cursor-pointer">
+                                  <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                </DropdownMenuItem>
                               )}
                             </>
                           )}
@@ -331,7 +439,6 @@ const OrderList = () => {
                                   </Link>
                                 </DropdownMenuItem>
                               )}
-                              {/* Always show View Details for VENDOR role */}
                               <DropdownMenuItem asChild>
                                 <Link to={`/vendor/orders/${order.id}`} className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800">
                                   <Eye className="mr-2 h-4 w-4" /> View Details
@@ -347,10 +454,11 @@ const OrderList = () => {
                                   <Eye className="mr-2 h-4 w-4" /> View Details
                                 </Link>
                               </DropdownMenuItem>
-                              {order.status === "DELIVERED" && (
+                              {canAgencyRecord && (
                                 <DropdownMenuItem asChild>
                                   <Link to={`/admin/orders/${order.id}/record-receipt`} className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800">
-                                    <ClipboardCheck className="mr-2 h-4 w-4" /> Record Receipt
+                                    <ClipboardCheck className="mr-2 h-4 w-4" /> 
+                                    {agencyNeedsToRecord ? "Record Your Quantities" : "Record Receipt"}
                                   </Link>
                                 </DropdownMenuItem>
                               )}
@@ -366,20 +474,19 @@ const OrderList = () => {
                       </DropdownMenu>
                     </TableCell>
                   </TableRow>
-                ))}
+                )})}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </CardContent>
+      </Card>
 
-      {/* Pagination */}
       {!isLoading && !isError && orders.length > 0 && (
         <div className="flex justify-center mt-6">
           <Pagination>
             <PaginationPrevious
-              onClick={page > 1 ? () => setPage(page - 1) : (e) => e.preventDefault()}
-              className={page <= 1 ? "pointer-events-none opacity-50" : ""}
+              onClick={() => page > 1 && setPage(page - 1)}
+              className={cn("cursor-pointer", page <= 1 && "pointer-events-none opacity-50")}
             />
             <PaginationContent>
               <div className="flex items-center gap-2">
@@ -389,8 +496,8 @@ const OrderList = () => {
               </div>
             </PaginationContent>
             <PaginationNext
-              onClick={page < totalPages ? () => setPage(page + 1) : (e) => e.preventDefault()}
-              className={page >= totalPages ? "pointer-events-none opacity-50" : ""}
+              onClick={() => page < totalPages && setPage(page + 1)}
+              className={cn("cursor-pointer", page >= totalPages && "pointer-events-none opacity-50")}
             />
           </Pagination>
         </div>

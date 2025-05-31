@@ -88,7 +88,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
 
       // Initialize other fields based on mode and initialData
       orderDate: (mode === 'edit' && initialData?.orderDate) ? new Date(initialData.orderDate) : new Date(),
-      deliveryDate: (mode === 'edit' && initialData?.deliveryDate) ? new Date(initialData.deliveryDate) : addDays(new Date(), 7),
+      deliveryDate: (mode === 'edit' && initialData?.deliveryDate) ? new Date(initialData.deliveryDate) : addDays(new Date(), 1),
       contactPersonName: (mode === 'edit' && initialData?.contactPersonName) ? initialData.contactPersonName : '',
       vendorId: (mode === 'edit' && initialData?.vendorId) ? initialData.vendorId : '',
       notes: (mode === 'edit' && initialData?.notes) ? initialData.notes : '',
@@ -383,6 +383,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                             selected={field.value}
                             onSelect={field.onChange}
                             initialFocus
+                            fromDate={new Date()} // Disable past dates
                           />
                         </PopoverContent>
                       </Popover>
@@ -414,8 +415,13 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                           <Calendar
                             mode="single"
                             selected={field.value}
-                            onSelect={field.onChange}
+                            onSelect={(date) => {
+                              field.onChange(date);
+                              // Optional: If orderDate is later, clear deliveryDate or show error
+                              // For now, just restrict selection
+                            }}
                             initialFocus
+                            fromDate={watch("orderDate") || new Date()} // Disable dates before selected orderDate or today
                           />
                         </PopoverContent>
                       </Popover>

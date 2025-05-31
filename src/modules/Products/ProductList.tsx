@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { get, del } from "@/services/apiService";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {formatCurrency} from "@/lib/formatter"
+import { formatCurrency } from "@/lib/formatter"
 import {
   Select,
   SelectTrigger,
@@ -44,6 +44,7 @@ import {
   Search,
   PlusCircle,
   MoreHorizontal,
+  Eye,
 } from "lucide-react";
 import CustomPagination from "@/components/common/custom-pagination";
 import ConfirmDialog from "@/components/common/confirm-dialog";
@@ -54,6 +55,7 @@ interface Product {
   name: string;
   url?: string | null;
   price: string;
+  rate: string;  // Added rate
   unit?: string | null; // Added unit
   date: string; 
   quantity: number;
@@ -87,6 +89,8 @@ const fetchProducts = async (
 const ProductList: React.FC = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isAdminRoute = location.pathname.includes('/admin/');
   const [currentPage, setCurrentPage] = useState(1);
   const [recordsPerPage, setRecordsPerPage] = useState(10);
   const [sortBy, setSortBy] = useState("createdAt");
@@ -242,16 +246,30 @@ const ProductList: React.FC = () => {
                       Name {getSortIndicator('name')}
                     </TableHead>
                   
-                    <TableHead onClick={() => handleSort("price")} className="cursor-pointer text-right">
-                      Rate {getSortIndicator("price")}
+                    <TableHead
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleSort("price")}
+                    >
+                      <div className="flex items-center">
+                        Price {getSortIndicator("price")}
+                      </div>
                     </TableHead>
-             
-                    {/* <TableHead onClick={() => handleSort("quantity")} className="cursor-pointer text-right">
-                      Quantity {getSortIndicator("quantity")}
-                    </TableHead> */}
-                    {/* <TableHead onClick={() => handleSort("createdAt")} className="cursor-pointer">
-                      Created At {getSortIndicator("createdAt")}
-                    </TableHead> */}
+                    <TableHead
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleSort("rate")}
+                    >
+                      <div className="flex items-center">
+                        Rate {getSortIndicator("rate")}
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleSort("unit")}
+                    >
+                      <div className="flex items-center">
+                        Unit {getSortIndicator("unit")}
+                      </div>
+                    </TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -259,14 +277,21 @@ const ProductList: React.FC = () => {
                   {products.map((product) => (
                     <TableRow key={product.id}>
                       {/* <TableCell>{product.id}</TableCell> */}
-                      <TableCell className="font-medium" title={product.name}>{product.name}</TableCell>
+                      <TableCell 
+                        className="font-medium cursor-pointer hover:text-blue-600 hover:underline" 
+                        title={product.name}
+                        onClick={() => navigate(isAdminRoute ? `/admin/products/${product.id}` : `/member/products/${product.id}`)}
+                      >
+                        {product.name}
+                      </TableCell>
                       
-                      <TableCell className="text-right text-right">{formatCurrency(product.price)}{product.unit ? ` / ${product.unit}` : ""}</TableCell>
-                      
-                       {/* <TableCell className="text-right">{product.quantity}</TableCell> */} 
-                      {/* <TableCell>{format(new Date(product.createdAt), "dd/MM/yy")}</TableCell> */}
+                      <TableCell>
+                        {product.price ? formatCurrency(parseFloat(product.price)) : "N/A"}
+                      </TableCell>
+                      <TableCell>{product.rate ? formatCurrency(parseFloat(product.rate)) : "N/A"}</TableCell>
+                      <TableCell>{product.unit || "N/A"}</TableCell>
                       <TableCell className="text-right">
-                        <DropdownMenu>
+                        <DropdownMenu modal={false} >
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm">
                               <MoreHorizontal size={16} />
@@ -274,6 +299,11 @@ const ProductList: React.FC = () => {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuGroup>
+                              <DropdownMenuItem
+                                onClick={() => navigate(isAdminRoute ? `/admin/products/${product.id}` : `/member/products/${product.id}`)}
+                              >
+                                <Eye size={14} className="mr-2" /> View
+                              </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => navigate(`/admin/products/edit/${product.id}`)}
                               >

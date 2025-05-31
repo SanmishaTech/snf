@@ -158,11 +158,7 @@ const OrderDeliveryPage = () => {
 
   return (
     <div className="p-4 md:p-6 space-y-6 bg-gray-50 dark:bg-gray-950 min-h-screen">
-      {/* <Breadcrumb className="text-sm">
-        <BreadcrumbItem><Link to="/" className="flex items-center text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"><HomeIcon className="h-4 w-4 mr-1.5" /> Home</Link></BreadcrumbItem>
-        <BreadcrumbItem><Link to="/vendor/orders" className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200">Orders</Link></BreadcrumbItem>
-        <BreadcrumbItem className="font-medium text-gray-800 dark:text-gray-200">Record Delivery PO#{order.poNumber}</BreadcrumbItem>
-      </Breadcrumb> */}
+    
 
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Left Column: Order Details & Items */}

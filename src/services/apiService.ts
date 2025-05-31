@@ -3,9 +3,6 @@ import { backendUrl } from "../config";
 
 const api = axios.create({
   baseURL: backendUrl,
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
 // Helper function to ensure URLs are prefixed with '/api'
@@ -58,7 +55,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-export const get = async (url: string, params?: any, config?: any) => {
+export const get = async <T = any>(url: string, params?: any, config?: any): Promise<T> => {
   try {
     const finalConfig = {
       params,
@@ -68,10 +65,10 @@ export const get = async (url: string, params?: any, config?: any) => {
     const response = await api.get(ensureApiPrefix(url), finalConfig);
 
     if (config?.responseType === "blob") {
-      return response;
+      return response as T;
     }
 
-    return response.data;
+    return response.data as T;
   } catch (error: any) {
     console.error('GET request error details:', error.response?.data);
     throw {
@@ -84,14 +81,14 @@ export const get = async (url: string, params?: any, config?: any) => {
   }
 };
 
-export const post = async (url: string, data: any, params?: any) => {
+export const post = async <T = any>(url: string, data: any, params?: any): Promise<T> => {
   try {
     const response = await api.post(ensureApiPrefix(url), data);
     if (params?.responseType === "blob") {
-      return response;
+      return response as T;
     }
 
-    return response.data;
+    return response.data as T;
   } catch (error: any) {
     console.error('POST request error details:', error.response?.data);
     throw {
@@ -104,10 +101,10 @@ export const post = async (url: string, data: any, params?: any) => {
   }
 };
 
-export const put = async (url: string, data: any) => {
+export const put = async <T = any>(url: string, data: any): Promise<T> => {
   try {
     const response = await api.put(ensureApiPrefix(url), data);
-    return response.data;
+    return response.data as T;
   } catch (error: any) {
     console.error('PUT request error details:', error.response?.data);
     throw {
@@ -120,10 +117,10 @@ export const put = async (url: string, data: any) => {
   }
 };
 
-export const patch = async (url: string, data: any) => {
+export const patch = async <T = any>(url: string, data: any): Promise<T> => {
   try {
     const response = await api.patch(ensureApiPrefix(url), data);
-    return response.data;
+    return response.data as T;
   } catch (error: any) {
     console.error('PATCH request error details:', error.response?.data);
     throw {
@@ -136,10 +133,10 @@ export const patch = async (url: string, data: any) => {
   }
 };
 
-export const del = async (url: string) => {
+export const del = async <T = any>(url: string): Promise<T> => {
   try {
     const response = await api.delete(ensureApiPrefix(url));
-    return response.data;
+    return response.data as T;
   } catch (error: any) {
     console.error('DELETE request error details:', error.response?.data);
     throw {
@@ -219,3 +216,67 @@ export const putupload = async (
     };
   }
 };
+
+// Types for Delivery Schedule Management
+export enum DeliveryStatus {
+  PENDING = 'PENDING',
+  DELIVERED = 'DELIVERED',
+  NOT_DELIVERED = 'NOT_DELIVERED',
+  CANCELLED = 'CANCELLED',
+}
+
+export interface ApiUser {
+  id: number;
+  name: string;
+  email?: string;
+}
+
+export interface ApiMember {
+  id: number;
+  name: string;
+  user?: ApiUser; // User details might be nested
+  phoneNumber?: string; // Added phoneNumber
+}
+
+export interface ApiProduct {
+  id: number;
+  name: string;
+  unit?: string;
+}
+
+export interface ApiDeliveryAddress {
+  id: number;
+  recipientName: string;
+  mobile: string;
+  plotBuilding: string;
+  streetArea: string;
+  landmark?: string;
+  pincode: string;
+  city: string;
+  state: string;
+  label?: string;
+  deliveryNotes?: string; // Added deliveryNotes
+}
+
+export interface ApiSubscriptionInfo {
+    id: number;
+    // Add other relevant subscription fields if needed by the frontend for context
+}
+
+export interface ApiDeliveryScheduleEntry {
+  id: string; // Prisma CUID is a string
+  subscriptionId: number;
+  memberId: number;
+  deliveryAddressId: number;
+  productId: number;
+  deliveryDate: string; // ISO date string
+  quantity: number;
+  status: DeliveryStatus;
+  createdAt: string; // ISO date string
+  updatedAt: string; // ISO date string
+  product: ApiProduct;
+  member: ApiMember;
+  deliveryAddress: ApiDeliveryAddress;
+  subscription: ApiSubscriptionInfo; 
+}
+

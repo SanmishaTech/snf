@@ -38,15 +38,15 @@ export function NavUser({
   const handleLogout = () => {
     localStorage.removeItem("authToken"); // Remove auth token
     localStorage.removeItem("user"); // Remove user data
-    navigate("/"); // Redirect to login page
     setShowConfirmation(false);
+    navigate("/"); // Redirect to login page
   };
 
   return (
     <>
       <SidebarMenu>
         <SidebarMenuItem>
-          <DropdownMenu>
+          <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
                 size="lg"

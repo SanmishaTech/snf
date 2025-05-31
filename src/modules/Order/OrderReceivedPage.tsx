@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, QueryClient } from "@tanstack/react-query"; 
 import { get, put } from "@/services/apiService";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -40,10 +40,15 @@ interface Order {
     mobile: string;
     address: string;
   };
-  status: "PENDING" | "DELIVERED" | "RECEIVED" | "PARTIALLY_RECEIVED"; // Added PARTIALLY_RECEIVED
+  status: "PENDING" | "DELIVERED" | "RECEIVED"; // Removed PARTIALLY_RECEIVED
   items: OrderItem[];
   createdAt: string;
   updatedAt: string;
+}
+
+interface UserProfile {
+  role: string;
+  agencyId?: string | number; 
 }
 
 interface ReceivedQuantities {
@@ -55,6 +60,11 @@ const OrderReceivedPage = () => {
   const navigate = useNavigate();
   const [receivedQuantities, setReceivedQuantities] = useState<ReceivedQuantities>({});
 
+  const { data: currentUserProfile, isLoading: isLoadingUserProfile } = useQuery<UserProfile>({
+    queryKey: ["currentUserProfile"],
+    queryFn: async () => get("/api/users/me"), 
+  });
+
   const recordReceiptMutation = useMutation({
     mutationFn: (receiptData: { items: { orderItemId: string; receivedQuantity: number }[] }) => {
       if (!orderId) throw new Error("Order ID is missing for receipt submission.");
@@ -62,9 +72,9 @@ const OrderReceivedPage = () => {
     },
     onSuccess: () => {
       toast.success("Receipt recorded successfully!");
-      queryClient.invalidateQueries({ queryKey: ["order", orderId] }); // Invalidate to refetch updated order status
-      queryClient.invalidateQueries({ queryKey: ["orders"] }); // Invalidate order list
-      navigate(`/admin/orders`); // Navigate to order list after successful submission
+      queryClient.invalidateQueries({ queryKey: ["order", orderId] }); 
+      queryClient.invalidateQueries({ queryKey: ["orders"] }); 
+      navigate(`/admin/orders`); 
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || "Failed to record receipt. Please try again.");
@@ -96,7 +106,6 @@ const OrderReceivedPage = () => {
   useEffect(() => {
     if (order) {
       const initialQuantities = order.items.reduce<ReceivedQuantities>((acc, item) => {
-        // Pre-fill with delivered quantity if available, else ordered quantity. Or 0 if nothing delivered yet.
         acc[item.id] = String(item.deliveredQuantity ?? item.quantity); 
         return acc;
       }, {});
@@ -108,33 +117,62 @@ const OrderReceivedPage = () => {
     setReceivedQuantities(prev => ({ ...prev, [itemId]: value }));
   };
 
-  const handleSubmitReceipt = async () => {
-    if (!order || !orderId) {
-      toast.error("Order details are not available. Cannot submit receipt.");
+  const handleSubmitReceipt = () => {
+    if (!order || !order.items || !currentUserProfile) { 
+      toast.error("Order data or user profile is not loaded yet.");
       return;
     }
 
-    const itemsToSubmit = order.items.map(item => ({
-      orderItemId: item.id,
-      receivedQuantity: parseInt(receivedQuantities[item.id] || String(item.deliveredQuantity ?? item.quantity), 10),
-    }));
+    let relevantItemIdsForSubmission: Set<string> | null = null;
 
-    for (const rItem of itemsToSubmit) {
-      const productItem = order.items.find(i => i.id === rItem.orderItemId);
-      if (rItem.receivedQuantity < 0) {
-        toast.error(`Received quantity for ${productItem?.productName || 'an item'} cannot be negative.`);
-        return;
-      }
-      if (productItem && productItem.deliveredQuantity !== undefined && rItem.receivedQuantity > productItem.deliveredQuantity) {
-        toast.warning(`Received quantity for ${productItem.productName} exceeds delivered quantity (${productItem.deliveredQuantity}).`);
-        // Potentially allow this with a confirmation, or block it. For now, just a warning.
-      }
-      if (productItem && rItem.receivedQuantity > productItem.quantity) {
-        // This case might be less common if deliveredQuantity is respected
-        toast.warning(`Received quantity for ${productItem.productName} exceeds ordered quantity (${productItem.quantity}).`);
-      }
+    // If the user is an agency, only consider items assigned to their agency for submission
+    if (currentUserProfile.role === 'AGENCY' && currentUserProfile.agencyId != null) {
+      relevantItemIdsForSubmission = new Set(
+        order.items
+          .filter(item => item.agencyId != null && String(item.agencyId) === String(currentUserProfile.agencyId))
+          .map(item => item.id)
+      );
     }
 
+    const itemsToSubmit = Object.entries(receivedQuantities)
+      .filter(([itemId]) => {
+        // If relevantItemIdsForSubmission is set (i.e., for an agency user),
+        // only include items that are in that set.
+        // Otherwise (for admin or other roles), include all items with entered quantities.
+        if (relevantItemIdsForSubmission) {
+          return relevantItemIdsForSubmission.has(itemId);
+        }
+        return true; 
+      })
+      .map(([itemId, quantityStr]) => {
+        const itemDetail = order.items.find(i => i.id === itemId);
+        if (!itemDetail) return null; 
+
+        const receivedQuantity = parseInt(quantityStr, 10);
+        if (isNaN(receivedQuantity) || receivedQuantity < 0) {
+          toast.info(`Invalid quantity for item ${itemDetail.productName}. Please enter a valid non-negative number.`);
+          return null; 
+        }
+        
+        if (itemDetail.deliveredQuantity !== undefined && receivedQuantity > itemDetail.deliveredQuantity) {
+          toast.info(`Received quantity for ${itemDetail.productName} (${receivedQuantity}) cannot exceed delivered quantity (${itemDetail.deliveredQuantity}).`);
+          return null;
+        }
+        return {
+          orderItemId: itemId,
+          receivedQuantity: receivedQuantity,
+        };
+      })
+      .filter(item => item !== null) as { orderItemId: string; receivedQuantity: number }[];
+
+    if (itemsToSubmit.length === 0) {
+      toast.info(
+        currentUserProfile.role === 'AGENCY' 
+        ? "No quantities entered for your agency's items, or all quantities are invalid/exceed delivered amounts. Nothing to submit."
+        : "No quantities entered or all quantities are invalid/exceed delivered amounts. Nothing to submit."
+      );
+      return;
+    }
     recordReceiptMutation.mutate({ items: itemsToSubmit });
   };
 
@@ -142,41 +180,22 @@ const OrderReceivedPage = () => {
     switch (status.toUpperCase()) {
       case "PENDING":
         return "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800";
-      case "DELIVERED": // Vendor has marked as delivered
+      case "DELIVERED": 
         return "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800";
       case "PARTIALLY_RECEIVED":
         return "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800";
-      case "RECEIVED": // All items confirmed as received by admin/store
+      case "RECEIVED": 
         return "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800";
       default:
         return "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900 dark:text-gray-300 dark:border-gray-800";
     }
   };
 
-  if (isLoading) return <div className="p-6">Loading order details...</div>;
+  if (isLoading || isLoadingUserProfile) return <div className="p-6">Loading order details...</div>;
   if (isError || !order) return <div className="p-6 text-red-500">Error loading order details. Please try again.</div>;
-
-  // Check if the order status allows recording receipt (e.g., must be DELIVERED or PARTIALLY_RECEIVED)
-  // This logic might be more complex depending on business rules.
-  // For now, allowing if not PENDING.
-  // if (order.status === "PENDING" || order.status === "RECEIVED") {
-  //   return (
-  //     <div className="p-6">
-  //       <p className="text-lg">Order #{order.poNumber} is currently <strong>{order.status}</strong>.</p>
-  //       <p>Receipts can only be recorded for orders that are DELIVERED or PARTIALLY_RECEIVED.</p>
-  //       <Button onClick={() => navigate(-1)} className="mt-4">Go Back</Button>
-  //     </div>
-  //   );
-  // }
 
   return (
     <div className="p-4 md:p-6 space-y-6 bg-gray-50 dark:bg-gray-950 min-h-screen">
-      <Breadcrumb className="text-sm">
-        <BreadcrumbItem><Link to="/" className="flex items-center text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"><HomeIcon className="h-4 w-4 mr-1.5" /> Home</Link></BreadcrumbItem>
-        <BreadcrumbItem><Link to="/admin/orders" className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200">Orders</Link></BreadcrumbItem>
-        <BreadcrumbItem className="font-medium text-gray-800 dark:text-gray-200">Record Receipt PO#{order.poNumber}</BreadcrumbItem>
-      </Breadcrumb>
-
       <div className="flex flex-col lg:flex-row gap-6">
         <div className="lg:w-2/3 space-y-6">
           <Card>
@@ -225,7 +244,12 @@ const OrderReceivedPage = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {order.items.map(item => (
+                    {(currentUserProfile?.role === 'AGENCY' && currentUserProfile?.agencyId != null
+                      ? (order?.items || []).filter(item => 
+                          item.agencyId != null && String(item.agencyId) === String(currentUserProfile.agencyId)
+                        )
+                      : (order?.items || [])
+                    ).map(item => (
                       <tr key={item.id}>
                         <td className="px-4 py-3 text-gray-800 dark:text-gray-200">
                           {item.productName}
@@ -240,7 +264,6 @@ const OrderReceivedPage = () => {
                             onChange={(e) => handleReceivedQuantityChange(item.id, e.target.value)}
                             className="w-full text-right dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
                             min="0"
-                            // max={item.deliveredQuantity ?? item.quantity} // Optional: enforce max based on delivered/ordered
                           />
                         </td>
                       </tr>
@@ -254,13 +277,13 @@ const OrderReceivedPage = () => {
                 variant="outline" 
                 onClick={() => navigate(-1)} 
                 className="mr-3"
-                disabled={recordReceiptMutation.isPending}
+                disabled={recordReceiptMutation.isPending || isLoadingUserProfile}
               >
                 <ArrowLeft className="h-4 w-4 mr-1.5" /> Cancel
               </Button>
               <Button 
                 onClick={handleSubmitReceipt} 
-                disabled={recordReceiptMutation.isPending || Object.keys(receivedQuantities).length === 0}
+                disabled={recordReceiptMutation.isPending || Object.keys(receivedQuantities).length === 0 || isLoadingUserProfile}
                 className="flex items-center"
               >
                 <ClipboardCheck className="h-4 w-4 mr-1.5" />
@@ -270,7 +293,6 @@ const OrderReceivedPage = () => {
           </Card>
         </div>
 
-        {/* Right Column: Vendor Details */}
         <div className="lg:w-1/3 space-y-6">
           <Card>
             <CardHeader>
@@ -301,11 +323,6 @@ const OrderReceivedPage = () => {
   );
 };
 
-// Need to import queryClient from where it's initialized, typically App.tsx or a custom hook
-// For now, assuming it's globally available or will be passed/imported.
-// This is a placeholder for the actual import.
-import { QueryClient } from '@tanstack/react-query'; 
-// A mock queryClient, replace with your actual client instance
 const queryClient = new QueryClient(); 
 
 export default OrderReceivedPage;

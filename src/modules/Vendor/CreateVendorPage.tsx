@@ -12,7 +12,7 @@ const CreateVendorPage: React.FC = () => {
 
   return (
     <div className="container mx-auto p-4 md:p-6">
-      <Card className="max-w-4xl mx-auto">
+      <Card className="w-full mx-auto">
         <CardHeader>
           <CardTitle className="text-2xl font-semibold">Create New Vendor</CardTitle>
         </CardHeader>

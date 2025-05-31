@@ -19,6 +19,11 @@ interface RegisterResponse {
   message: string;
 }
 
+// Define props for Register component
+interface RegisterProps {
+  setActiveTab: (tab: string) => void;
+}
+
 type RegisterFormInputs = z.infer<typeof registerSchema>;
 
 // Define Zod schema
@@ -40,7 +45,7 @@ const registerSchema = z
     path: ["confirmPassword"],
   });
 
-const Register = () => {
+const Register: React.FC<RegisterProps> = ({ setActiveTab }) => {
   const navigate = useNavigate();
 
   const {
@@ -91,7 +96,7 @@ const Register = () => {
             <Input
               id="name"
               type="text"
-               {...register("name")}
+              {...register("name")}
               required
               disabled={registerMutation.isPending}
             />
@@ -106,7 +111,7 @@ const Register = () => {
             <Input
               id="email"
               type="email"
-               {...register("email")}
+              {...register("email")}
               required
               disabled={registerMutation.isPending}
             />
@@ -158,12 +163,18 @@ const Register = () => {
               "Register"
             )}
           </Button>
-          <div className="text-center text-sm">
-            Already have an account?{" "}
-            <a href="/" className="underline underline-offset-4">
+          {/* Login Button */}
+          <p className="text-center text-sm text-muted-foreground mt-4">
+            Already a member?{" "}
+            <Button
+              variant="link"
+              className="font-semibold p-0 h-auto text-primary hover:underline"
+              onClick={() => setActiveTab("login")}
+              type="button"
+            >
               Login
-            </a>
-          </div>
+            </Button>
+          </p>
         </div>
       </div>
     </form>
