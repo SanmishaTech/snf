@@ -18,7 +18,7 @@ const CreateProductPage: React.FC = () => {
         <ArrowLeft size={16} className="mr-2" />
         Back to Product List
       </Button>
-      <Card className="max-w-4xl mx-auto">
+      <Card className=" mx-auto">
         <CardHeader>
           <CardTitle className="text-2xl font-semibold">Create New Product</CardTitle>
           <CardDescription>

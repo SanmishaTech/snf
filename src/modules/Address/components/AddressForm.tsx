@@ -40,15 +40,15 @@ export interface DeliveryAddress {
 // Validation schema using Zod
 const addressSchema = z.object({
   recipientName: z.string().min(1, 'Recipient name is required'),
-  mobile: z.string().min(10, 'Mobile number must be at least 10 digits'),
+  mobile: z.string().min(1, 'Mobile number is required').regex(/^\d{10,}$/, 'Mobile number must be at least 10 digits and contain only numbers'),
   plotBuilding: z.string().min(1, 'Flat/House/Plot number is required'),
   streetArea: z.string().min(1, 'Street/Area name is required'),
   landmark: z.string().optional(),
-  pincode: z.string().min(6, 'Pincode must be at least 6 digits'),
+  pincode: z.string().min(1, 'Pincode is required').regex(/^\d{6}$/, 'Pincode must be exactly 6 numeric digits'),
   city: z.string().min(1, 'City is required'),
   state: z.string().min(1, 'State is required'),
   isDefault: z.boolean().default(false),
-  label: z.enum(['Home', 'Work', 'Other']).optional().default('Home'), // Added label schema
+  label: z.enum(['Home', 'Work', 'Other']).optional().default('Home'),
 });
 
 type AddressFormData = z.infer<typeof addressSchema>;
@@ -58,6 +58,7 @@ interface AddressFormProps {
   addressId?: string;
   initialData?: DeliveryAddress;
   onSuccess?: (data: DeliveryAddress) => void;
+  onCancel?: () => void; // Added for modal integration
 }
 
 const AddressForm: React.FC<AddressFormProps> = ({
@@ -65,6 +66,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
   addressId,
   initialData,
   onSuccess,
+  onCancel, // Added for modal integration
 }) => {
   const navigate = useNavigate();
   const isEditMode = mode === 'edit';
@@ -245,7 +247,9 @@ const AddressForm: React.FC<AddressFormProps> = ({
                   <FormItem>
                     <FormLabel>Pincode*</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter pincode" {...field} />
+                      <Input 
+                        type="number"
+                      placeholder="Enter pincode" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -303,15 +307,23 @@ const AddressForm: React.FC<AddressFormProps> = ({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate('/member/addresses')}
+                onClick={() => {
+                  if (onCancel) {
+                    onCancel();
+                  } else {
+                    navigate('/member/addresses');
+                  }
+                }}
+                disabled={form.formState.isSubmitting}
+                className="w-full md:w-auto mr-2"
               >
                 Cancel
               </Button>
-              <Button type="submit">
-                {isEditMode ? 'Update Delivery Address' : 'Save Delivery Address'}
-              </Button>
-            </div>
-          </form>
+            <Button type="submit" disabled={form.formState.isSubmitting} className="w-full md:w-auto">
+              {form.formState.isSubmitting ? (isEditMode ? 'Saving...' : 'Adding...') : (isEditMode ? 'Save Changes' : 'Add Address')}
+            </Button>
+          </div>
+        </form>
         </Form>
       </CardContent>
     </Card>

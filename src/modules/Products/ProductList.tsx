@@ -206,15 +206,14 @@ const ProductList: React.FC = () => {
               Manage your product inventory.
             </CardDescription>
           </div>
-          {!isAdmin && (
-            <Button
+             <Button
               onClick={() => navigate("/admin/products/create")}
               className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               <PlusCircle size={18} className="mr-2" />
               Add Product
             </Button>
-          )}
+         
         </CardHeader>
         <CardContent>
           <div className="mb-4 flex items-center">
@@ -244,7 +243,7 @@ const ProductList: React.FC = () => {
                   ? "Try a different search term."
                   : "Get started by adding your first product."}
               </p>
-              {!isAdmin && (
+              
                 <Button
                   onClick={() => navigate("/admin/products/create")}
                   className="bg-blue-600 hover:bg-blue-700 text-white"
@@ -252,7 +251,7 @@ const ProductList: React.FC = () => {
                   <PlusCircle size={16} className="mr-2" />
                   Add Product
                 </Button>
-              )}
+              
             </div>
           ) : (
             <div className="overflow-x-auto">

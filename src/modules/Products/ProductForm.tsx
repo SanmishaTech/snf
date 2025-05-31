@@ -1,5 +1,7 @@
 import React, { useEffect } from "react";
-import { useForm, SubmitHandler } from "react-hook-form";
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css'; // Import Quill styles
+import { useForm, SubmitHandler, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
@@ -57,6 +59,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
     register,
     handleSubmit,
     reset,
+    control, // Added for Controller
     formState: { errors, isSubmitting },
   } = useForm<ProductFormInputs>({
     resolver: zodResolver(productSchema),
@@ -187,18 +190,43 @@ const ProductForm: React.FC<ProductFormProps> = ({
 
         <div className="md:col-span-2 space-y-2">
           <Label htmlFor="description">Description</Label>
-          <Textarea
-            id="description"
-            {...register("description")}
-            rows={4}
-            disabled={isSubmitting || mutation.isPending}
-            placeholder="Enter product description (optional)"
+          <Controller
+            name="description"
+            control={control}
+            render={({ field }) => (
+              <ReactQuill
+                theme="snow"
+                value={field.value || ""}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                readOnly={isSubmitting || mutation.isPending}
+                placeholder="Enter product description (optional)"
+                modules={{
+                  toolbar: [
+                    [{ 'header': '1'}, {'header': '2'}, { 'font': [] }],
+                    [{size: []}],
+                    ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+                    [{'list': 'ordered'}, {'list': 'bullet'}, 
+                     {'indent': '-1'}, {'indent': '+1'}],
+                    ['link', 'image'], // 'image' and 'video' can be added if needed
+                    ['clean']
+                  ],
+                }}
+                formats={[
+                  'header', 'font', 'size',
+                  'bold', 'italic', 'underline', 'strike', 'blockquote',
+                  'list', 'bullet', 'indent',
+                  'link', 'image'
+                ]}
+                style={{ backgroundColor: (isSubmitting || mutation.isPending) ? '#f3f4f6' : 'white' }} // Optional: style to indicate readOnly
+              />
+            )}
           />
           {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description.message}</p>}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="price">Price</Label>
+          <Label htmlFor="price">Purchase Price</Label>
           <Input
             id="price"
             type="number"
@@ -210,7 +238,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="rate">Rate</Label>
+          <Label htmlFor="rate">Selling Price</Label>
           <Input
             id="rate"
             type="number"

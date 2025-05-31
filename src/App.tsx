@@ -26,13 +26,15 @@ import Orderlist from "./modules/Order/OrderList"
 import CreateOrderPage from "./modules/Order/CreateOrderPage"
 import OrderDetailsPage from "./modules/Order/OrderDetailsPage"
 import EditOrderPage from "./modules/Order/EditOrderPage";
-import OrderDeliveryPage from "./modules/Order/OrderDeliveryPage"; // Added for vendor delivery recording
+// import OrderHistoryPage from './modules/member/OrderHistoryPage'; // File not found, commented out
+import MySubscriptionsPage from './modules/member/MySubscriptionsPage'; // Added for member subscriptions
 import OrderReceivedPage from "./modules/Order/OrderReceivedPage"; // Added for admin receipt recording
 import ProductList from "./modules/Products/ProductList"
 import LandingPage from "./modules/Homepage/LandingPage"; // Added for milk subscription landing page
 import CreateProductPage from "./modules/Products/CreateProductPage";
 import EditProductPage from "./modules/Products/EditProductPage";
 import ProductDetailPage from "./modules/Products/ProductDetailPage"; // Added for product detail page
+import ProductDetailWrapper from "./components/ProductDetailWrapper"; // Wrapper for conditional layout
 import MemberProductDisplayPage from "./modules/Products/MemberProductDisplayPage"; // Added for member product display
 import AddressListPage from "./modules/Address/AddressListPage";
 import CreateAddressPage from "./modules/Address/CreateAddressPage";
@@ -58,10 +60,10 @@ const App = () => {
         <Routes>
           {/* Landing page */}
           <Route path="/" element={<LandingPage />} />
-          <Route path="/products/:id" element={<ProductDetailPage />} />
+          <Route path="/products/:id" element={<ProductDetailWrapper />} />
           
           <Route element={<AuthLayout />}>
-            <Route path="/login" element={<Login />} />
+            <Route path="/admin" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
@@ -93,7 +95,7 @@ const App = () => {
 
             {/* Vendor specific routes */}
             <Route path="/vendor/orders/:id" element={<OrderDetailsPage />} />
-            <Route path="/vendor/orders/:id/record-delivery" element={<OrderDeliveryPage />} />
+            {/* <Route path="/vendor/orders/:id/record-delivery" element={<OrderDeliveryPage />} /> */}
           
           </Route>
           
@@ -116,6 +118,7 @@ const App = () => {
             <Route path="/member/addresses" element={<AddressListPage />} />
             <Route path="/member/addresses/create" element={<CreateAddressPage />} />
             <Route path="/member/addresses/edit/:id" element={<EditAddressPage />} />
+            <Route path="/member/subscriptions" element={<MySubscriptionsPage />} />
           </Route>
         </Routes>
       </Router>

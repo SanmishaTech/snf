@@ -84,7 +84,11 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   const [quantity, setQuantity] = useState(1);
   const [quantityVarying2, setQuantityVarying2] = useState(1);
   const [deliveryOption, setDeliveryOption] = useState("daily");
-  const [startDate, setStartDate] = useState<Date | undefined>(new Date());
+  const [startDate, setStartDate] = useState<Date | undefined>(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow;
+  });
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<number>(7); // Changed to number, default 7
 
@@ -642,7 +646,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {startDate ? format(startDate, "dd-MM-yyyy") : <span>Pick a date</span>}
+                          {startDate ? format(startDate, "dd/MM/yy") : <span>Pick a date</span>}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent 
@@ -748,7 +752,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">Start Date:</span>
-                          <span>{subscriptionSummary.startDate}</span>
+                          <span>{format(subscriptionSummary.startDate, "dd/MM/yy")}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">Total Deliveries:</span>
@@ -758,12 +762,19 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                           <span className="text-gray-600">Total Quantity:</span>
                           <span>{subscriptionSummary.totalQuantity}</span>
                         </div>
+                        <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-200">
+                          <span className="text-sm font-medium text-gray-600">Calculation:</span>
+                          <span className="text-sm font-medium text-green-600">
+                            {subscriptionSummary?.totalQuantity || quantity} Lts * ₹{product?.rate?.toFixed(2)} = ₹{((subscriptionSummary?.totalQuantity || quantity) * (product?.rate || 0)).toFixed(2)}
+                          </span>
+                        </div>
                         <div className="border-t border-gray-200 pt-2 mt-2">
                           <div className="flex justify-between font-medium">
                             <span>Total Price:</span>
                             <span className="text-green-600">₹{subscriptionSummary.totalPrice}</span>
                           </div>
                         </div>
+                      
                       </div>
                     </div>
                   )}
@@ -779,12 +790,11 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   <span className="text-sm font-medium">Product:</span>
                   <span className="font-semibold">{product.name}</span>
                 </div>
-                
+              
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Period:</span>
                   <span>{subscriptionSummary?.period}</span>
                 </div>
-                
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Delivery:</span>
                   <span>{subscriptionSummary?.deliveryDescription}</span>
@@ -804,7 +814,12 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   <span className="text-sm font-medium">Total Quantity:</span>
                   <span>{subscriptionSummary?.totalQuantity} items</span>
                 </div>
-                
+                <div className="flex justify-between items-center pt-2 border-t">
+                  <span className="text-sm font-medium">Calculation:</span>
+                  <span className="text-sm font-medium text-green-600">
+                    {subscriptionSummary?.totalQuantity || quantity} Lts * ₹{product?.rate?.toFixed(2)} = ₹{((subscriptionSummary?.totalQuantity || quantity) * (product?.rate || 0)).toFixed(2)}
+                  </span>
+                </div>
                 <div className="flex justify-between items-center pt-2 border-t">
                   <span className="text-sm font-semibold">Total Amount:</span>
                   <span className="text-lg font-bold text-green-600">₹{subscriptionSummary?.totalPrice}</span>
@@ -891,7 +906,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                             </div>
                             <div>
                               <Label htmlFor="address-pincode" className="text-sm font-medium mb-1.5 block">Pincode*</Label>
-                              <Input id="address-pincode" name="pincode" value={addressFormState.pincode} onChange={handleAddressFormChange} placeholder="Pincode" className="h-11 bg-white" />
+                              <Input id="address-pincode" name="pincode" type="number" value={addressFormState.pincode} onChange={handleAddressFormChange} placeholder="Pincode" className="h-11 bg-white" />
                             </div>
                             <div className="flex items-center space-x-2">
                               <input 
@@ -935,7 +950,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               </Button>
             </div>
           ) : (
-            <div className="flex justify-end gap-3 w-full">
+            <div className="flex justify-end items-center gap-3 w-full">
               <Button 
                 variant="outline" 
                 className="rounded-lg h-11 border-gray-300"
@@ -943,8 +958,9 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               >
                 Back
               </Button>
+             
               <Button 
-                className="bg-green-500 hover:bg-green-600 text-white rounded-lg h-11"
+                className="bg-green-500 hover:bg-green-600 text-white rounded-lg h-11 "
                 onClick={handleFinalConfirmation}
               >
                 Confirm Subscription

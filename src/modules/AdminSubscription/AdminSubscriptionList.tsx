@@ -982,6 +982,9 @@ const AdminSubscriptionList: React.FC = () => {
               </div>
             </TableCell>
 
+            {/* Create Date */}
+        
+
             {/* Subscription Dates Group */}
             <TableCell>
               <div className="flex flex-col gap-1 text-sm">
@@ -991,7 +994,11 @@ const AdminSubscriptionList: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <CalendarCheckIcon className="h-4 w-4 text-gray-500" />
-                  <span>Expiry: {sub.expiryDate ? format(new Date(sub.expiryDate), 'PP') : 'N/A'}</span>
+                  <span>Expiry: {sub.expiryDate ? format(new Date(sub.expiryDate), 'dd/MM/yy') : 'N/A'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CalendarIcon className="h-4 w-4 text-gray-500" />
+                  <span>Created: {sub.createdAt ? format(new Date(sub.createdAt), 'dd/MM/yy') : 'N/A'}</span>
                 </div>
               </div>
             </TableCell>

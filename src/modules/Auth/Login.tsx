@@ -74,16 +74,16 @@ const Login: React.FC<LoginProps> = ({ setActiveTab }) => {
   // Helper function to determine redirect path based on user role
   const determineRedirectPath = (user: User | undefined): string => {
     if (user && user.role === 'MEMBER') {
-      return '/dashboard'; // Redirect members to the dashboard
+      return '/member/products'; // Redirect members to the dashboard
     }
     if(user && user.role === 'ADMIN') {
       return '/admin/orders';
     }
     if(user && user.role === 'VENDOR') {
-      return '/vendor/orders';
+      return '/admin/orders';
     }
     if(user && user.role === 'AGENCY') {
-      return '/agency/orders';
+      return '/admin/orders';
     }
     // Add other role-based redirects here if needed in the future
     // e.g., if (user && user.role === 'ADMIN') return '/admin/overview';

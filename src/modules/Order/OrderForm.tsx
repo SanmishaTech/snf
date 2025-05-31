@@ -71,6 +71,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
   const [agencies, setAgencies] = useState<Agency[]>([]);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [orderTotal, setordertotal] = useState()
+  const [isFetchingPrefill, setIsFetchingPrefill] = useState<boolean>(false);
   const navigate = useNavigate()
 
   const { 
@@ -105,6 +106,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
 
   const watchedOrderItems = watch("orderItems");
   const watchedOrderItemsString = JSON.stringify(watchedOrderItems); // Stringify for dependency
+  const watchedDeliveryDate = watch('deliveryDate');
 
   const groupedProductSummary = React.useMemo(() => {
     console.log("[OrderForm] Recalculating groupedProductSummary. Watched items (stringified for dep):", watchedOrderItemsString, "Product count:", products.length);
@@ -237,6 +239,42 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
     };
     fetchAgencies();
   }, []);
+
+  // Effect to fetch and prefill order items based on selected deliveryDate
+  useEffect(() => {
+    if (mode === "create" && watchedDeliveryDate) {
+      const fetchPrefillData = async () => {
+        setIsFetchingPrefill(true);
+        try {
+          const formattedDate = format(watchedDeliveryDate, "yyyy-MM-dd");
+          // Ensure 'get' is correctly typed or cast the response if necessary
+          const response = await get(`/api/vendor-orders/get-order-details?date=${formattedDate}`);
+          
+          // Assuming response is the array of items or an object with a data property
+          const data = response && response.data && Array.isArray(response.data) ? response.data : response;
+
+          if (data && Array.isArray(data) && data.length > 0) {
+            const newOrderItems = data.map((item: any) => ({
+              productId: String(item.productId), // Ensure string ID
+              quantity: Number(item.totalQty),
+              agencyId: String(item.agencyId),   // Ensure string ID
+            }));            
+            setValue("orderItems", newOrderItems, { shouldValidate: true });
+            toast.success(`${newOrderItems.length} order items prefilled for ${format(watchedDeliveryDate, "PPP")}.`);
+          } else {
+            setValue("orderItems", [], { shouldValidate: true }); // Clear items if no data found
+            toast.info(`No scheduled order items found for ${format(watchedDeliveryDate, "PPP")}.`);
+          }
+        } catch (error: any) {
+          console.error("Error fetching prefill data:", error);
+          toast.error(error.message || "Failed to fetch prefill order items.");
+        } finally {
+          setIsFetchingPrefill(false);
+        }
+      };
+      fetchPrefillData();
+    }
+  }, [watchedDeliveryDate, mode, setValue, products, agencies]);
 
   // useEffect for populating basic form fields from initialData
   useEffect(() => {
@@ -428,6 +466,18 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                     )}
                   />
                   {errors.deliveryDate && <span className="text-gray-500 text-xs absolute -bottom-5">{errors.deliveryDate.message}</span>}
+                  {/* Prefill loading indicator and info text */}
+                  {mode === "create" && (
+                    <>
+                      {isFetchingPrefill && (
+                        <div className="flex items-center text-sm text-blue-600 mt-2">
+                          <LoaderCircle className="animate-spin h-4 w-4 mr-2" />
+                          Checking for scheduled items...
+                        </div>
+                      )}
+                 
+                    </>
+                  )}
                 </div>
               </div>
 

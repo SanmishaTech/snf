@@ -15,7 +15,7 @@ const CreateVendorDialog: React.FC<CreateVendorDialogProps> = ({ isOpen, onClose
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="max-sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Create New Vendor</DialogTitle>
           <DialogDescription>

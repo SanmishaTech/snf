@@ -67,7 +67,7 @@ const EditVendorPage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="container mx-auto p-6">
-        <Card className="max-w-4xl mx-auto">
+        <Card className=" mx-auto">
           <CardHeader>
             <Skeleton className="h-8 w-1/2" />
           </CardHeader>
@@ -140,7 +140,7 @@ const EditVendorPage: React.FC = () => {
 
   return (
     <div className="container mx-auto p-4 md:p-6">
-      <Card className="max-w-4xl mx-auto">
+      <Card className="mx-auto">
         <CardHeader>
           <CardTitle>Edit Vendor: {vendorData.name}</CardTitle>
         </CardHeader>

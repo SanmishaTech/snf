@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useEffect } from "react";
-import { useParams, useLocation } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useParams, useLocation, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { get, post } from "@/services/apiService";
 import { toast } from "sonner";
@@ -48,6 +48,7 @@ const ProductDetailPage: React.FC = () => {
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
   const [isBuyOnceModalOpen, setIsBuyOnceModalOpen] = useState(false);
   const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -56,12 +57,16 @@ const ProductDetailPage: React.FC = () => {
       const userString = localStorage.getItem('user');
       if (userString) {
         const user = JSON.parse(userString);
+        setIsLoggedIn(!!user); // Set to true if user object exists
         if (user && user.role === 'ADMIN') {
           setIsAdmin(true);
         }
+      } else {
+        setIsLoggedIn(false); // Explicitly set to false if no user string
       }
     } catch (error) {
       console.error('Failed to parse user data from localStorage', error);
+      setIsLoggedIn(false); // Set to false on error as well
     }
   }, []);
 
@@ -313,10 +318,27 @@ const ProductDetailPage: React.FC = () => {
             
             <div className="mt-8">
               <h2 className="text-xl font-semibold mb-3">Description</h2>
-              <p className="text-muted-foreground leading-relaxed cursor-pointer" onClick={() => setIsDescriptionModalOpen(true)}>
-                {truncateDescription(product.description || "Our premium milk comes from grass-fed cows raised in natural pastures. Rich in calcium and essential nutrients, it's pasteurized for safety while maintaining its natural goodness.")}
-                <span className="text-primary font-medium ml-1">Read more</span>
-              </p>
+              <div className="text-muted-foreground leading-relaxed prose">
+                {product.description ? (
+                  <>
+                    <div
+                      style={{ maxHeight: '6em', overflow: 'hidden', position: 'relative', cursor: product.description.length > 200 ? 'pointer' : 'default' }}
+                      onClick={() => product.description && product.description.length > 200 && setIsDescriptionModalOpen(true)}
+                      dangerouslySetInnerHTML={{ __html: product.description }}
+                    />
+                    {product.description.length > 200 && (
+                      <span 
+                        onClick={() => setIsDescriptionModalOpen(true)} 
+                        className="text-primary font-medium ml-1 cursor-pointer hover:underline"
+                      >
+                        Read more
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <p>Our premium milk comes from grass-fed cows raised in natural pastures. Rich in calcium and essential nutrients, it's pasteurized for safety while maintaining its natural goodness.</p>
+                )}
+              </div>
             </div>
             
             <div className="border-t border-muted/20 my-8"></div>
@@ -343,34 +365,48 @@ const ProductDetailPage: React.FC = () => {
               </div>
             </div>
             
-            {!isAdmin && showSubscribeButton && (
-            <div className="flex flex-col sm:flex-row gap-4">
-              <motion.div 
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="flex-1"
-              >
-                <Button 
-                  className="w-full py-6 text-md sm:text-lg bg-orange-500 hover:bg-orange-600 text-white shadow-lg transition-all duration-300 rounded-xl"
-                  onClick={handleOpenBuyOnceModal}
+            <div className="mt-8 space-y-4">
+              {!isLoggedIn ? (
+                <Button
+                  asChild
+                  className="w-full bg-green-500 hover:bg-green-600 text-white py-6 rounded-lg text-lg font-semibold transition-transform duration-200 hover:scale-105"
                 >
-                  Buy Once
+                  <Link to="/">Subscribe</Link>
                 </Button>
-              </motion.div>
-              <motion.div 
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="flex-1"
-              >
-                <Button 
-                  className="w-full py-6 text-md sm:text-lg bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary text-white shadow-lg transition-all duration-300 rounded-xl"
-                  onClick={handleSubscribe}
-                >
-                  Subscribe Now
-                </Button>
-              </motion.div>
+              ) : (
+                <>
+                  {/* This is the original block for logged-in users */}
+                  {!isAdmin && showSubscribeButton && (
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <motion.div 
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="flex-1"
+                      >
+                        <Button 
+                          className="w-full py-6 text-md sm:text-lg bg-orange-500 hover:bg-orange-600 text-white shadow-lg transition-all duration-300 rounded-xl"
+                          onClick={handleOpenBuyOnceModal}
+                        >
+                          Buy Once
+                        </Button>
+                      </motion.div>
+                      <motion.div 
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="flex-1"
+                      >
+                        <Button 
+                          className="w-full py-6 text-md sm:text-lg bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary text-white shadow-lg transition-all duration-300 rounded-xl"
+                          onClick={handleSubscribe}
+                        >
+                          Subscribe Now
+                        </Button>
+                      </motion.div>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
-            )}
           </div>
         </div>
 
@@ -402,9 +438,7 @@ const ProductDetailPage: React.FC = () => {
               </DialogClose>
             </DialogHeader>
             <div className="mt-4 max-h-[70vh] overflow-y-auto">
-              <p className="text-muted-foreground leading-relaxed">
-                {product.description || "Our premium milk comes from grass-fed cows raised in natural pastures. Rich in calcium and essential nutrients, it's pasteurized for safety while maintaining its natural goodness. We source our milk from local farms that prioritize animal welfare and sustainable farming practices. Each bottle undergoes rigorous quality checks to ensure you receive the freshest, most nutritious product possible. The cows are fed a natural diet without hormones or antibiotics, resulting in milk that's both delicious and healthier. Perfect for drinking, cooking, or adding to your morning coffee, our milk is a versatile addition to any kitchen. We're proud to support local farmers and bring you a product that's not only good for you but also good for the environment."}
-              </p>
+              <div className="text-muted-foreground leading-relaxed prose" dangerouslySetInnerHTML={{ __html: product.description || "Our premium milk comes from grass-fed cows raised in natural pastures. Rich in calcium and essential nutrients, it's pasteurized for safety while maintaining its natural goodness. We source our milk from local farms that prioritize animal welfare and sustainable farming practices. Each bottle undergoes rigorous quality checks to ensure you receive the freshest, most nutritious product possible. The cows are fed a natural diet without hormones or antibiotics, resulting in milk that's both delicious and healthier. Perfect for drinking, cooking, or adding to your morning coffee, our milk is a versatile addition to any kitchen. We're proud to support local farmers and bring you a product that's not only good for you but also good for the environment." }} />
             </div>
           </DialogContent>
         </Dialog>
@@ -444,15 +478,5 @@ const ProductDetailPage: React.FC = () => {
   );
 };
 
-// Helper function to truncate description to roughly 2 sentences
-const truncateDescription = (text: string): string => {
-  const characterLimit = 250; // You can adjust this value
-
-  if (text.length > characterLimit) {
-    return text.substring(0, characterLimit) + '...';
-  }
-  
-  return text;
-};
 
 export default ProductDetailPage;

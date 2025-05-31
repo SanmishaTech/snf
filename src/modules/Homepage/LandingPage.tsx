@@ -26,6 +26,7 @@ const LandingPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   useEffect(() => {
     const fetchProducts = async () => {
       setIsLoading(true);
@@ -45,7 +46,28 @@ const LandingPage = () => {
     };
 
     fetchProducts();
+
+    const userDetailsString = localStorage.getItem('user');
+    if (userDetailsString) {
+      try {
+        const userDetails = JSON.parse(userDetailsString);
+        if (userDetails && userDetails.role) {
+          setCurrentUserRole(userDetails.role);
+        }
+      } catch (e) {
+        console.error("Failed to parse user data from localStorage", e);
+        setCurrentUserRole(null);
+      }
+    } else {
+      setCurrentUserRole(null);
+    }
   }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    navigate('/'); // Redirect to home page
+    window.location.reload(); // Force a reload to ensure all state is reset
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -363,50 +385,63 @@ const LandingPage = () => {
                 </div>
               )}
             </div>
-            
-            {/* Auth Section - Enhanced */}
-            <div className="sticky top-24 bg-card rounded-2xl shadow-lg overflow-hidden border border-muted/50">
-              <div className="bg-gradient-to-r from-primary/90 to-primary p-6 text-white">
-                <h2 className="text-2xl font-bold mb-2">Join Our Milk Club</h2>
-                <p className="opacity-90">Sign in or create an account to start your subscription</p>
+            {/* Auth Section - Enhanced - Conditionally rendered based on user role */}
+            {currentUserRole === 'MEMBER' ? (
+              // Logout Prompt for Members
+              <div className="sticky top-24 bg-card rounded-2xl shadow-lg overflow-hidden border border-muted/50 p-6 text-center">
+                <h2 className="text-2xl font-bold mb-4">Welcome, Member!</h2>
+                <p className="text-muted-foreground mb-6">You are already logged in.</p>
+                <button
+                  onClick={handleLogout}
+                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none h-10 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  Logout
+                </button>
               </div>
-              
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <div className="px-6 pt-6 pb-2">
-                  <TabsList className="grid w-full grid-cols-2 bg-muted/10 p-1.5 rounded-xl border border-muted/30">
-                    <TabsTrigger 
-                      value="login" 
-                      className="px-4 py-3 rounded-lg font-medium text-sm transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground hover:text-primary/80"
-                    >
-                      Login
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="register" 
-                      className="px-4 py-3 rounded-lg font-medium text-sm transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground hover:text-primary/80"
-                    >
-                      Register
-                    </TabsTrigger>
-                  </TabsList>
-                </div>
+            ) : (
+              // Original Auth Section for non-members
+              <div className="sticky top-24 bg-card rounded-2xl shadow-lg overflow-hidden border border-muted/50">
+                <div className="bg-gradient-to-r from-primary/90 to-primary p-6 text-white">
+                  <h2 className="text-2xl font-bold mb-2">Join Our Milk Club</h2>
+                  <p className="opacity-90">Sign in or create an account to start your subscription</p>
+                </div> {/* This was the missing closing tag */}
                 
-                <div className="p-6 pt-2">
-                  <TabsContent value="login">
-                    <Login setActiveTab={setActiveTab} />
-                  </TabsContent>
-                  <TabsContent value="register">
-                    <Register setActiveTab={setActiveTab} />
-                  </TabsContent>
-                </div>
-              </Tabs>
-              
-              <div className="px-6 pb-6">
-                <div className="border-t border-muted/30 pt-6 text-center">
-                  <p className="text-muted-foreground text-sm">
-                    By joining, you agree to our <a href="#" className="text-primary hover:underline">Terms</a> and <a href="#" className="text-primary hover:underline">Privacy Policy</a>
-                  </p>
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                  <div className="px-6 pt-6 pb-2">
+                    <TabsList className="grid w-full grid-cols-2 bg-muted/10 p-1.5 rounded-xl border border-muted/30">
+                      <TabsTrigger 
+                        value="login" 
+                        className="px-4 py-3 rounded-lg font-medium text-sm transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground hover:text-primary/80"
+                      >
+                        Login
+                      </TabsTrigger>
+                      <TabsTrigger 
+                        value="register" 
+                        className="px-4 py-3 rounded-lg font-medium text-sm transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground hover:text-primary/80"
+                      >
+                        Register
+                      </TabsTrigger>
+                    </TabsList>
+                  </div>
+                  
+                  <div className="p-6 pt-2">
+                    <TabsContent value="login">
+                      <Login setActiveTab={setActiveTab} />
+                    </TabsContent>
+                    <TabsContent value="register">
+                      <Register setActiveTab={setActiveTab} />
+                    </TabsContent>
+                  </div>
+                </Tabs>
+                <div className="px-6 pb-6">
+                  <div className="border-t border-muted/30 pt-6 text-center">
+                    <p className="text-muted-foreground text-sm">
+                      By joining, you agree to our <a href="#" className="text-primary hover:underline">Terms</a> and <a href="#" className="text-primary hover:underline">Privacy Policy</a>
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )} {/* End of conditional rendering for Auth Section */}
           </div>
         </div>
       </section>

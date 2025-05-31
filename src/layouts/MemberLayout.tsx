@@ -1,6 +1,6 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { Sun, Moon, User, LogOut, Settings, Clock } from "lucide-react";
+import React, { useState, useEffect } from "react"; // Added React import
+import { Sun, Moon, LogOut, Settings, Repeat } from "lucide-react"; // Removed User, Clock
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -16,13 +16,18 @@ import { appName } from "@/config";
 import { get } from "@/services/apiService"; // For fetching products
 
 // Define Product type (ensure this matches your actual Product structure)
+
+// Define props for MemberLayout
+interface MemberLayoutProps {
+  children?: React.ReactNode; // Optional children prop
+}
 interface Product {
   id: string;
   name: string;
   // Add other relevant fields if needed for logic, though only 'id' is used here
 }
 
-export default function MemberLayout() {
+export default function MemberLayout({ children }: MemberLayoutProps) { // Destructure children from props
   const location = useLocation();
   const navigate = useNavigate();
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -159,7 +164,7 @@ export default function MemberLayout() {
       <header className="bg-white dark:bg-gray-900 sticky top-0 z-20 shadow-sm border-b border-gray-200 dark:border-gray-800">
         <div className="container mx-auto px-4 flex h-16 items-center justify-between">
           {/* Logo and brand name */}
-          <div className="flex items-center space-x-2" onClick={() => navigate("/member/products")} style={{ cursor: "pointer" }}>
+          <div className="flex items-center space-x-2" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
             {/* Replace with your actual logo */}
             <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold">
               {appName.charAt(0)}
@@ -178,6 +183,10 @@ export default function MemberLayout() {
               <Package className="h-5 w-5 mr-2" />
               Products
             </Button> */}
+            <Button variant="ghost" onClick={() => navigate("/member/subscriptions")}>
+              <Repeat className="h-5 w-5 mr-2" />
+              My Subscriptions
+            </Button>
           </nav>
 
           {/* Right side controls */}
@@ -209,15 +218,7 @@ export default function MemberLayout() {
                   </div>
                 </DropdownMenuLabel>
                 
-                {subscriptionDaysLeft !== null && (
-                  <div className="px-2 py-1.5 text-sm">
-                    <div className="flex items-center">
-                      <Clock className="mr-2 h-4 w-4 text-primary" />
-                      <span className="text-muted-foreground">Subscription: </span>
-                      <span className="ml-1 font-medium">{subscriptionDaysLeft} days left</span>
-                    </div>
-                  </div>
-                )}
+                 
                 
                 <DropdownMenuSeparator />
 {/*                 
@@ -230,10 +231,10 @@ export default function MemberLayout() {
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Manage Addresses</span>
                 </DropdownMenuItem>
-                {/* <DropdownMenuItem onClick={() => navigate("/member/orders")}>
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>My Orders</span>
-                </DropdownMenuItem> */}
+                <DropdownMenuItem onClick={() => navigate("/member/subscriptions")}>
+                  <Repeat className="mr-2 h-4 w-4" />
+                  <span>My Subscriptions</span>
+                </DropdownMenuItem>
                 
                 <DropdownMenuSeparator />
                 
@@ -249,7 +250,7 @@ export default function MemberLayout() {
 
       {/* Main content */}
       <main className="flex-grow container mx-auto px-4 py-6">
-        <Outlet />
+        {children || <Outlet />}
       </main>
       
       {/* Footer */}
