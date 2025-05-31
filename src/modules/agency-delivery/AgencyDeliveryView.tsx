@@ -93,21 +93,18 @@ const AgencyDeliveryView: React.FC = () => {
         return;
       }
       fetchUrl = `/delivery-schedules/agency/by-date?date=${date}`;
-    }
-    console.log('[fetchDeliveries] Attempting to fetch from URL:', fetchUrl);
-    setLoading(true);
+    } else {
       setError('You do not have permission to view this page.');
       setDeliveries([]);
       return;
     }
 
+    setLoading(true);
     setError(null);
     try {
       const data = await get<ApiDeliveryScheduleEntry[]>(fetchUrl);
-      console.log('[fetchDeliveries] Raw data received:', data);
       setDeliveries(data || []);
     } catch (err: any) {
-      console.error('[fetchDeliveries] Error:', err);
       setError(err.message || 'Failed to fetch deliveries.');
       setDeliveries([]);
     } finally {
@@ -151,7 +148,6 @@ const AgencyDeliveryView: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    console.log('[Effect FetchDeliveries] Triggered. Date:', selectedDate, 'AdminAgencyID:', selectedAgencyIdForAdmin, 'UserRole:', currentUser?.role);
     if (currentUser?.role === 'ADMIN' && selectedAgencyIdForAdmin) {
       fetchDeliveries(selectedDate, selectedAgencyIdForAdmin);
     } else if (currentUser?.role === 'AGENCY' && currentUser.agencyId) {
@@ -243,10 +239,7 @@ const AgencyDeliveryView: React.FC = () => {
             id="deliveryDate"
             type="date"
             value={selectedDate}
-            onChange={(e) => {
-              console.log('[DateChange] New date:', e.target.value);
-              setSelectedDate(e.target.value);
-            }}
+            onChange={(e) => setSelectedDate(e.target.value)}
             className="border border-gray-300 rounded-md p-2 text-sm text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
           />
         </div>
@@ -255,11 +248,7 @@ const AgencyDeliveryView: React.FC = () => {
             <label htmlFor="agencySelect" className="font-semibold text-gray-700 whitespace-nowrap">Select Agency:</label>
             <Select
               value={selectedAgencyIdForAdmin || ''}
-              onValueChange={(value) => {
-                const newAgencyId = value === 'NONE' ? null : value;
-                console.log('[AgencyChange] New agency ID:', newAgencyId);
-                setSelectedAgencyIdForAdmin(newAgencyId);
-              }}
+              onValueChange={(value) => setSelectedAgencyIdForAdmin(value === 'NONE' ? null : value)}
               disabled={loadingAgencies || agenciesList.length === 0}
             >
               <SelectTrigger id="agencySelect" className="min-w-[200px]">
