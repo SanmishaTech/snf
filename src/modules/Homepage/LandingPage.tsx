@@ -400,46 +400,45 @@ const LandingPage = () => {
               </div>
             ) : (
               // Original Auth Section for non-members
-              <div className="sticky top-24 bg-card rounded-2xl shadow-lg overflow-hidden border border-muted/50">
-                <div className="bg-gradient-to-r from-primary/90 to-primary p-6 text-white">
-                  <h2 className="text-2xl font-bold mb-2">Join Our Milk Club</h2>
-                  <p className="opacity-90">Sign in or create an account to start your subscription</p>
+            <div className="sticky top-24 bg-card rounded-2xl shadow-lg overflow-hidden border border-muted/50">
+              <div className="bg-gradient-to-r from-primary/90 to-primary p-6 text-white">
+                <h2 className="text-2xl font-bold mb-2">Join Our Milk Club</h2>
+                <p className="opacity-90">Sign in or create an account to start your subscription</p>
                 </div> {/* This was the missing closing tag */}
-                
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <div className="px-6 pt-6 pb-2">
-                    <TabsList className="grid w-full grid-cols-2 bg-muted/10 p-1.5 rounded-xl border border-muted/30">
-                      <TabsTrigger 
-                        value="login" 
-                        className="px-4 py-3 rounded-lg font-medium text-sm transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground hover:text-primary/80"
-                      >
-                        Login
-                      </TabsTrigger>
-                      <TabsTrigger 
-                        value="register" 
-                        className="px-4 py-3 rounded-lg font-medium text-sm transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground hover:text-primary/80"
-                      >
-                        Register
-                      </TabsTrigger>
-                    </TabsList>
-                  </div>
-                  
-                  <div className="p-6 pt-2">
-                    <TabsContent value="login">
-                      <Login setActiveTab={setActiveTab} />
-                    </TabsContent>
-                    <TabsContent value="register">
-                      <Register setActiveTab={setActiveTab} />
-                    </TabsContent>
-                  </div>
-                </Tabs>
-                <div className="px-6 pb-6">
-                  <div className="border-t border-muted/30 pt-6 text-center">
-                    <p className="text-muted-foreground text-sm">
-                      By joining, you agree to our <a href="#" className="text-primary hover:underline">Terms</a> and <a href="#" className="text-primary hover:underline">Privacy Policy</a>
-                    </p>
-                  </div>
+              
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <div className="px-6 pt-6 pb-2">
+                  <TabsList className="grid w-full grid-cols-2 bg-muted/10 p-1.5 rounded-xl border border-muted/30">
+                    <TabsTrigger 
+                      value="login" 
+                      className="px-4 py-3 rounded-lg font-medium text-sm transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground hover:text-primary/80"
+                    >
+                      Login
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="register" 
+                      className="px-4 py-3 rounded-lg font-medium text-sm transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground hover:text-primary/80"
+                    >
+                      Register
+                    </TabsTrigger>
+                  </TabsList>
                 </div>
+                                  <div className="p-6 pt-2">
+                  <TabsContent value="login">
+                    <Login setActiveTab={setActiveTab} />
+                  </TabsContent>
+                  <TabsContent value="register">
+                    <Register setActiveTab={setActiveTab} />
+                  </TabsContent>
+                </div>
+              </Tabs>
+              <div className="px-6 pb-6">
+                <div className="border-t border-muted/30 pt-6 text-center">
+                  <p className="text-muted-foreground text-sm">
+                    By joining, you agree to our <a href="#" className="text-primary hover:underline">Terms</a> and <a href="#" className="text-primary hover:underline">Privacy Policy</a>
+                  </p>
+                </div>
+              </div>
               </div>
             )} {/* End of conditional rendering for Auth Section */}
           </div>

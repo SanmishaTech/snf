@@ -1,4 +1,4 @@
-import { useState } from "react";
+
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -6,23 +6,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
-import { useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { post } from "@/services/apiService";
 import { appName } from "@/config";
 import { LoaderCircle } from "lucide-react"; // Spinner icon
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 import Validate from "@/lib/Handlevalidation";
-
+ 
 // Define expected API response structure
 interface RegisterResponse {
   message: string;
 }
 
 // Define props for Register component
-interface RegisterProps {
-  setActiveTab: (tab: string) => void;
-}
+interface RegisterProps {}
 
 type RegisterFormInputs = z.infer<typeof registerSchema>;
 
@@ -45,8 +43,10 @@ const registerSchema = z
     path: ["confirmPassword"],
   });
 
-const Register: React.FC<RegisterProps> = ({ setActiveTab }) => {
-  const navigate = useNavigate();
+const Register: React.FC<RegisterProps> = () => {
+  const location = useLocation();
+  const navigate = useNavigate()
+  const isAdminRegisterPath = location.pathname === "/admin/register";
 
   const {
     register,
@@ -65,8 +65,16 @@ const Register: React.FC<RegisterProps> = ({ setActiveTab }) => {
     mutationFn: (data) => post("/auth/register", data),
     onSuccess: () => {
       toast.success("Registration successful! Please log in.");
-      navigate("/"); // Redirect to login page
-    },
+      if(location.pathname === "/admin/register"){
+        navigate("/admin")
+      }
+      if(location.pathname === "/register"){
+        navigate("/login")
+      }else{
+
+        window.location.reload()
+      }
+        },
     onError: (error: any) => {
       Validate(error, setError);
       if (error.message) {
@@ -82,102 +90,131 @@ const Register: React.FC<RegisterProps> = ({ setActiveTab }) => {
   };
 
   return (
-    <form className="p-4 md:p-6" onSubmit={handleSubmit(onSubmit)}>
-      <div className="flex flex-col space-y-6">
-        <div className="flex flex-col items-center text-center space-y-2">
-          <h1 className="text-2xl font-bold">Create an Account</h1>
-          <p className="text-balance text-muted-foreground">
-            Register for your {appName} account
-          </p>
-        </div>
-        <div className="flex flex-col space-y-6">
-          <div className="grid gap-2 relative">
-            <Label htmlFor="name">Name</Label>
+    <div className="w-full max-w-md mx-auto">
+      <div className="text-center mb-8">
+      {location.pathname !== "/"  &&  <div className="mx-auto bg-gradient-to-br from-primary to-purple-600 w-16 h-16 rounded-xl flex items-center justify-center mb-4">
+          {/* You can use a different icon for registration, e.g., UserPlus */} 
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="w-8 h-8">
+            <path d="M12 2.5a5.5 5.5 0 0 1 5.5 5.5c0 1.826-.889 3.442-2.25 4.465A9.003 9.003 0 0 1 20 18.75a.75.75 0 0 1-1.5 0A7.503 7.503 0 0 0 13 12.198V13.5a.75.75 0 0 1-1.5 0v-1.302a7.503 7.503 0 0 0-5.5 6.552.75.75 0 0 1-1.5 0A9.003 9.003 0 0 1 8.75 12.465C7.389 11.442 6.5 9.826 6.5 8a5.5 5.5 0 0 1 5.5-5.5Zm2.506 17.084a.75.75 0 0 1 .988 0l2.25 1.5a.75.75 0 0 1-.988 1.424l-2.25-1.5a.75.75 0 0 1 0-1.424ZM19.25 18a.75.75 0 0 0 .75-.75v-1.5a.75.75 0 0 0-1.5 0v1.5a.75.75 0 0 0 .75.75ZM8.994 19.584a.75.75 0 0 1-.988 0l-2.25-1.5a.75.75 0 1 1 .988-1.424l2.25 1.5a.75.75 0 0 1 0 1.424ZM4.75 18a.75.75 0 0 0-.75-.75v-1.5a.75.75 0 0 0-1.5 0v1.5A.75.75 0 0 0 4 18Z" />
+          </svg>
+        </div>}
+{location.pathname !== "/"  &&        <h1 className="text-3xl font-bold mb-2">Create your account</h1>
+}     {location.pathname !== "/" &&   <p className="text-muted-foreground">
+          Join {appName} today to get started.
+        </p>}
+      </div>
+
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <div className="space-y-5">
+          {/* Name Field */}
+          <div className="space-y-2">
+            <Label htmlFor="name">Full Name</Label>
             <Input
               id="name"
               type="text"
+              placeholder="Your full name"
               {...register("name")}
-              required
               disabled={registerMutation.isPending}
+              className="py-5 px-4"
             />
             {errors.name && (
-              <span className="text-destructive text-xs absolute -bottom-5">
+              <p className="text-destructive text-sm flex items-center mt-1">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 mr-1">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                </svg>
                 {errors.name.message}
-              </span>
+              </p>
             )}
           </div>
-          <div className="grid gap-2 relative">
-            <Label htmlFor="email">Email</Label>
+
+          {/* Email Field */}
+          <div className="space-y-2">
+            <Label htmlFor="email">Email Address</Label>
             <Input
               id="email"
               type="email"
+              placeholder="name@example.com"
               {...register("email")}
-              required
               disabled={registerMutation.isPending}
+              className="py-5 px-4"
             />
             {errors.email && (
-              <p className="text-destructive text-xs absolute -bottom-5">
+              <p className="text-destructive text-sm flex items-center mt-1">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 mr-1">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                </svg>
                 {errors.email.message}
               </p>
             )}
           </div>
-          <div className="grid gap-2 relative">
+
+          {/* Password Field */}
+          <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <PasswordInput
               id="password"
+              placeholder="••••••••"
               {...register("password")}
-              required
               disabled={registerMutation.isPending}
+              className="py-5 px-4"
             />
             {errors.password && (
-              <p className="text-destructive text-xs absolute -bottom-5">
+              <p className="text-destructive text-sm flex items-center mt-1">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 mr-1">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                </svg>
                 {errors.password.message}
               </p>
             )}
           </div>
-          <div className="grid gap-2 relative">
+
+          {/* Confirm Password Field */}
+          <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirm Password</Label>
             <PasswordInput
               id="confirmPassword"
+              placeholder="••••••••"
               {...register("confirmPassword")}
-              required
               disabled={registerMutation.isPending}
+              className="py-5 px-4"
             />
             {errors.confirmPassword && (
-              <p className="text-destructive text-xs absolute -bottom-5">
+              <p className="text-destructive text-sm flex items-center mt-1">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 mr-1">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                </svg>
                 {errors.confirmPassword.message}
               </p>
             )}
           </div>
-          <Button
-            type="submit"
-            className="w-full"
+
+          {/* Submit Button */}
+          <Button 
+            type="submit" 
+            className="w-full py-5 font-semibold"
             disabled={registerMutation.isPending}
           >
             {registerMutation.isPending ? (
               <>
-                <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                Registering...
+                <LoaderCircle className="animate-spin mr-2" size={20} />
+                Creating account...
               </>
-            ) : (
-              "Register"
-            )}
+            ) : "Create Account"}
           </Button>
-          {/* Login Button */}
-          <p className="text-center text-sm text-muted-foreground mt-4">
-            Already a member?{" "}
-            <Button
-              variant="link"
-              className="font-semibold p-0 h-auto text-primary hover:underline"
-              onClick={() => setActiveTab("login")}
-              type="button"
+
+          {/* Login Link */}
+    {location.pathname !== "/" &&       <p className="text-center text-sm text-muted-foreground mt-6 pt-4 border-t border-border">
+            Already have an account?{" "}
+            <Link
+              to={isAdminRegisterPath ? "/admin" : "/login"}
+              className="font-semibold text-primary hover:underline p-0 h-auto"
             >
-              Login
-            </Button>
-          </p>
+              Sign In
+            </Link>
+          </p>}
         </div>
-      </div>
-    </form>
+      </form>
+    </div>
   );
 };
 

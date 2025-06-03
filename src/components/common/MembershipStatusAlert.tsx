@@ -42,7 +42,7 @@ const MembershipStatusAlert = ({
               <div className="flex items-center gap-2 text-sm">
                 <CalendarClock className="h-4 w-4" />
                 <span>
-                  Expires on <span className="font-medium">{expiryDate ? format(new Date(expiryDate), "dd/MM/yy") : 'N/A'}</span>
+                  Expires on <span className="font-medium">{expiryDate ? format(new Date(expiryDate), "dd/MM/yyyy") : 'N/A'}</span>
                 </span>
               </div>
               {daysUntilExpiry !== undefined && (

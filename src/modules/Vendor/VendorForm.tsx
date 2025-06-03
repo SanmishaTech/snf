@@ -15,12 +15,12 @@ import { PasswordInput } from "@/components/ui/password-input";
 const baseVendorSchema = z.object({
   name: z.string().min(1, "Vendor name is required"),
   contactPersonName: z.string().min(1, "Contact person's name is required").optional(),
-  email: z.string().email("Invalid contact person's email").optional(),
+  email: z.string().optional().nullable(),
   mobile: z.string().regex(/^\d{10}$/, "Mobile number must be 10 digits"),
   alternateMobile: z.union([z.literal(''), z.string().regex(/^\d{10}$/, "Alternate mobile must be 10 digits")]).nullable().optional(),
   address1: z.string().min(1, "Address Line 1 is required"),
   address2: z.string().nullable().optional(),
-  city: z.string().min(1, "City is required"),
+  city: z.string().optional().nullable(),
   pincode: z.coerce.number().int("Pincode must be an integer").positive("Pincode must be positive").refine(val => String(val).length === 6, "Pincode must be 6 digits"),
 });
 

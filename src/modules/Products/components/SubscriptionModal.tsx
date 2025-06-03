@@ -34,6 +34,7 @@ interface ProductData {
   name: string;
   price: number;
   rate: number;
+  unit?: string; // Added to display unit with quantity
 }
 
 interface SubscriptionModalProps {
@@ -97,10 +98,10 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [modalView, setModalView] = useState<'subscriptionDetails' | 'addressForm' | 'confirmation'>('subscriptionDetails');
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const handleCancelAddAddress = () => {
     setModalView('subscriptionDetails');
-    // Reset form for next time, ensure all fields are cleared
     setAddressFormState({ 
       recipientName: "",
       mobile: "",
@@ -113,6 +114,45 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       isDefault: false,
       label: "Home" 
     });
+    setFormErrors({}); // Clear errors when cancelling
+  };
+
+  const validateAddressForm = (): boolean => {
+    const errors: Record<string, string> = {};
+    if (!addressFormState.recipientName.trim()) errors.recipientName = "Recipient name is required.";
+    if (!addressFormState.mobile.trim()) errors.mobile = "Mobile number is required.";
+    else if (!/^\d{10}$/.test(addressFormState.mobile.trim())) errors.mobile = "Mobile number must be 10 digits.";
+    if (!addressFormState.plotBuilding.trim()) errors.plotBuilding = "Plot/Building is required.";
+    if (!addressFormState.streetArea.trim()) errors.streetArea = "Street/Area is required.";
+    if (!addressFormState.pincode.trim()) errors.pincode = "Pincode is required.";
+    else if (!/^\d{6}$/.test(addressFormState.pincode.trim())) errors.pincode = "Pincode must be 6 digits.";
+    if (!addressFormState.city.trim()) errors.city = "City is required.";
+    if (!addressFormState.state.trim()) errors.state = "State is required.";
+    if (!addressFormState.label.trim()) errors.label = "Address label is required.";
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const validateSubscriptionDetails = (): boolean => {
+    const errors: Record<string, string> = {};
+    if (!startDate) {
+      errors.startDate = "Start date is required.";
+    } else {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Compare dates only
+      if (startDate < today) {
+        errors.startDate = "Start date cannot be in the past.";
+      }
+    }
+    if (deliveryOption === "select-days" && selectedDays.length === 0) {
+      errors.selectedDays = "Please select at least one delivery day.";
+    }
+    if (!selectedAddressId) {
+      errors.selectedAddressId = "Please select a delivery address.";
+    }
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   // New state for address form fields
@@ -225,27 +265,24 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     }
   }, [isOpen, modalView]);
 
-  const handleAddressFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAddressFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setAddressFormState(prev => ({ ...prev, [name]: value }));
+    // Clear specific error when user types
+    if (formErrors[name]) {
+      setFormErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handleAddressLabelChange = (value: string) => {
     setAddressFormState(prev => ({ ...prev, label: value }));
+    if (formErrors.label) {
+      setFormErrors(prev => ({ ...prev, label: '' }));
+    }
   };
 
   const handleSaveAddress = async () => {
-    if (!validateAddressForm()) {
-      const errors = addressFormErrors; // Get the current errors object
-      const firstErrorField = Object.keys(errors)[0];
-      if (firstErrorField && errors[firstErrorField]) {
-        toast.error(errors[firstErrorField]); // Show the first validation error
-      } else {
-        toast.error("Please correct the errors in the form."); // Fallback message
-      }
-      return;
-    }
-
+    if (!validateAddressForm()) return;
     const addressToCreate = {
       ...addressFormState,
     };
@@ -278,49 +315,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     }
   };
 
-
-
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
-  const [addressFormErrors, setAddressFormErrors] = useState<Record<string, string>>({});
-
-  const validateAddressForm = () => {
-    const errors: Record<string, string> = {};
-    
-    if (!addressFormState.recipientName.trim()) {
-      errors.recipientName = "Recipient name is required";
-    }
-    
-    if (!addressFormState.mobile.trim()) {
-      errors.mobile = "Mobile number is required";
-    } else if (!/^\d{10}$/.test(addressFormState.mobile)) {
-      errors.mobile = "Mobile number must be 10 digits.";
-    }
-    
-    if (!addressFormState.plotBuilding.trim()) {
-      errors.plotBuilding = "Plot/building is required";
-    }
-    
-    if (!addressFormState.streetArea.trim()) {
-      errors.streetArea = "Street/area is required";
-    }
-    
-    if (!addressFormState.city.trim()) {
-      errors.city = "City is required";
-    }
-    
-    if (!addressFormState.state.trim()) {
-      errors.state = "State is required";
-    }
-    
-    if (!addressFormState.pincode.trim()) {
-      errors.pincode = "Pincode is required";
-    } else if (!/^\d{6}$/.test(addressFormState.pincode)) {
-      errors.pincode = "Invalid pincode (6 digits required)";
-    }
-    
-    setAddressFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
+  // Removed redundant addressFormErrors, using formErrors for all form validations
 
   const toggleDaySelection = (dayId: string) => {
     if (selectedDays.includes(dayId)) {
@@ -329,7 +325,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       setSelectedDays([...selectedDays, dayId]);
     }
   };
-
 
   const handleProceedToConfirmation = () => { 
     if (!selectedAddressId) {
@@ -342,7 +337,14 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     setModalView('confirmation');
   };
   
-  const handleFinalConfirmation = () => {
+  const handleConfirmSubscription = () => {
+    if (!validateSubscriptionDetails()) return;
+
+    if (!product || !productId || !selectedAddressId || !startDate) { // selectedAddressId already validated by validateSubscriptionDetails
+      toast.error("Missing product details or critical information."); // Simplified error
+      return;
+    }
+
     // Get the selected address details
     const selectedFullAddress = userAddresses.find(addr => addr.id === selectedAddressId);
     const currentDeliveryAddressLabel = selectedFullAddress?.label || "Home"; // Default to Home if not found
@@ -373,7 +375,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     
     onOpenChange(false); // Close modal after confirming
   };
-
 
   const subscriptionSummary = useMemo(() => {
     if (!product) return null;
@@ -453,7 +454,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       startDate: startDate ? format(startDate, "MMM dd, yyyy") : "Not set"
     };
   }, [product, deliveryOption, selectedPeriod, quantity, quantityVarying2, selectedDays, startDate]);
-
 
   if (!product) return null; // Don't render modal content if no product data
  return (
@@ -546,12 +546,16 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                               size="sm"
                               variant={selectedDays.includes(day.id) ? "default" : "outline"}
                               className={`h-8 w-9 p-0 ${selectedDays.includes(day.id) ? "bg-orange-500" : "border-gray-300 text-gray-700"}`}
-                              onClick={() => toggleDaySelection(day.id)}
+                              onClick={() => {
+                                toggleDaySelection(day.id);
+                                if (formErrors.selectedDays) setFormErrors(prev => ({...prev, selectedDays: ''}));
+                              }}
                             >
                               {day.label}
                             </Button>
                           ))}
                         </div>
+                        {formErrors.selectedDays && <p className="text-red-500 text-xs mt-1">{formErrors.selectedDays}</p>}
                       </div>
                     )}
 
@@ -646,7 +650,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {startDate ? format(startDate, "dd/MM/yy") : <span>Pick a date</span>}
+                          {startDate ? format(startDate, "dd/MM/yyyy") : <span>Pick a date</span>}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent 
@@ -659,18 +663,14 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                           onSelect={(date) => {
                             setStartDate(date);
                             setCalendarOpen(false);
-                          }}
-                          disabled={(date) => {
-                            // Disable dates before today
-                            const today = new Date();
-                            today.setHours(0, 0, 0, 0); // Set to beginning of day for proper comparison
-                            return date < today;
+                            if (formErrors.startDate) setFormErrors(prev => ({...prev, startDate: ''}));
                           }}
                           initialFocus
-                          className="pointer-events-auto"
+                          disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() -1)) } // Disable past dates
                         />
                       </PopoverContent>
                     </Popover>
+                    {formErrors.startDate && <p className="text-red-500 text-xs mt-1">{formErrors.startDate}</p>}
                   </div>
                 </div>
 
@@ -695,33 +695,39 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       </div>
                     ) : userAddresses.length > 0 ? (
                       <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
-                        {userAddresses.map((address) => (
-                          <div 
-                            key={address.id} 
-                            className={`p-3 border rounded-lg cursor-pointer transition-all ${
-                              selectedAddressId === address.id 
-                                ? 'border-green-500 bg-green-50' 
-                                : 'border-gray-200 hover:bg-gray-50'
-                            }`}
-                            onClick={() => setSelectedAddressId(address.id)}
-                          >
-                            <div className="flex justify-between">
-                              <span className="font-medium text-gray-900">{address.recipientName}</span>
-                              <Badge variant="outline">{address.label}</Badge>
+                        <RadioGroup
+                          value={selectedAddressId || ''}
+                          onValueChange={(id: string) => {
+                            setSelectedAddressId(id);
+                            if (formErrors.selectedAddressId) setFormErrors(prev => ({ ...prev, selectedAddressId: '' }));
+                          }}
+                          className="space-y-3"
+                        >
+                          {userAddresses.map((address) => (
+                            <div key={address.id} className={`p-3 border rounded-lg cursor-pointer transition-all ${selectedAddressId === address.id ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:bg-gray-50'}`}>
+                              <Label htmlFor={`address-item-${address.id}`} className="flex items-start space-x-3 w-full">
+                                <RadioGroupItem value={address.id} id={`address-item-${address.id}`} className="mt-1" />
+                                <div className="flex-1">
+                                  <div className="flex justify-between">
+                                    <span className="font-medium text-gray-900">{address.recipientName}</span>
+                                    <Badge variant="outline">{address.label}</Badge>
+                                  </div>
+                                  <p className="text-xs text-gray-600 mt-1">
+                                    {address.plotBuilding}, {address.streetArea}
+                                  </p>
+                                  <p className="text-xs text-gray-600">
+                                    {address.city}, {address.state} - {address.pincode}
+                                  </p>
+                                  {address.isDefault && (
+                                    <span className="inline-block mt-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">
+                                      Default
+                                    </span>
+                                  )}
+                                </div>
+                              </Label>
                             </div>
-                            <p className="text-xs text-gray-600 mt-1">
-                              {address.plotBuilding}, {address.streetArea}
-                            </p>
-                            <p className="text-xs text-gray-600">
-                              {address.city}, {address.state} - {address.pincode}
-                            </p>
-                            {address.isDefault && (
-                              <span className="inline-block mt-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">
-                                Default
-                              </span>
-                            )}
-                          </div>
-                        ))}
+                          ))}
+                        </RadioGroup>
                       </div>
                     ) : (
                       <div className="text-center py-6">
@@ -752,7 +758,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">Start Date:</span>
-                          <span>{format(subscriptionSummary.startDate, "dd/MM/yy")}</span>
+                          <span>{format(subscriptionSummary.startDate, "dd/MM/yyyy")}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">Total Deliveries:</span>
@@ -760,12 +766,12 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">Total Quantity:</span>
-                          <span>{subscriptionSummary.totalQuantity}</span>
+                          <span>{subscriptionSummary.totalQuantity} {product?.unit || ''}</span>
                         </div>
                         <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-200">
                           <span className="text-sm font-medium text-gray-600">Calculation:</span>
                           <span className="text-sm font-medium text-green-600">
-                            {subscriptionSummary?.totalQuantity || quantity} Lts * ₹{product?.rate?.toFixed(2)} = ₹{((subscriptionSummary?.totalQuantity || quantity) * (product?.rate || 0)).toFixed(2)}
+                            {subscriptionSummary?.totalQuantity || quantity} {product?.unit || ''} * ₹{product?.rate?.toFixed(2)} = ₹{((subscriptionSummary?.totalQuantity || quantity) * (product?.rate || 0)).toFixed(2)}
                           </span>
                         </div>
                         <div className="border-t border-gray-200 pt-2 mt-2">
@@ -812,12 +818,12 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Total Quantity:</span>
-                  <span>{subscriptionSummary?.totalQuantity} items</span>
+                  <span>{subscriptionSummary?.totalQuantity} {product?.unit || ''}</span>
                 </div>
                 <div className="flex justify-between items-center pt-2 border-t">
                   <span className="text-sm font-medium">Calculation:</span>
                   <span className="text-sm font-medium text-green-600">
-                    {subscriptionSummary?.totalQuantity || quantity} Lts * ₹{product?.rate?.toFixed(2)} = ₹{((subscriptionSummary?.totalQuantity || quantity) * (product?.rate || 0)).toFixed(2)}
+                    {subscriptionSummary?.totalQuantity || quantity} {product?.unit || ''} * ₹{product?.rate?.toFixed(2)} = ₹{((subscriptionSummary?.totalQuantity || quantity) * (product?.rate || 0)).toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center pt-2 border-t">
@@ -853,8 +859,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   Back
                 </Button>
                 <Button 
-                  className="flex-1 bg-green-500 hover:bg-green-600" 
-                  onClick={handleFinalConfirmation}
+                  className="bg-green-500 hover:bg-green-600 text-white rounded-lg h-11 "
+                  onClick={handleConfirmSubscription}
                 >
                   Confirm Subscription
                 </Button>
@@ -870,43 +876,53 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                               <RadioGroup defaultValue="Home" value={addressFormState.label} onValueChange={handleAddressLabelChange} className="flex gap-4 mt-1" id="address-label">
                                 <div className="flex items-center space-x-2"><RadioGroupItem value="Home" id="type-home" className="text-green-500"/><Label htmlFor="type-home" className="text-sm">Home</Label></div>
                                 <div className="flex items-center space-x-2"><RadioGroupItem value="Work" id="type-work" className="text-green-500"/><Label htmlFor="type-work" className="text-sm">Work</Label></div>
-                                <div className="flex items-center space-x-2"><RadioGroupItem value="Other" id="type-other" className="text-green-500"/><Label htmlFor="type-other" className="text-sm">Other</Label></div>
-                              </RadioGroup>
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="Other" id="label-other" />
+            <Label htmlFor="label-other">Other</Label>
+          </div>
+        </RadioGroup>
+        {formErrors.label && <p className="text-red-500 text-xs mt-1">{formErrors.label}</p>}
                             </div>
                             <div>
-                              <Label htmlFor="address-recipient" className="text-sm font-medium mb-1.5 block">Delivery To*</Label>
-                              <Input id="address-recipient" name="recipientName" value={addressFormState.recipientName} onChange={handleAddressFormChange} placeholder="Full name of recipient" className="h-11 bg-white" />
-                              {addressFormErrors.recipientName && <p className="text-red-500 text-xs mt-1">{addressFormErrors.recipientName}</p>}
+                              <Label htmlFor="recipientName" className="text-sm font-medium mb-1.5 block">Delivery To*</Label>
+                              <Input id="recipientName" name="recipientName" value={addressFormState.recipientName} onChange={handleAddressFormChange} placeholder="Full name of recipient" className="h-11 bg-white" />
+                              {formErrors.recipientName && <p className="text-red-500 text-xs mt-1">{formErrors.recipientName}</p>}
                             </div>
                             <div>
-                              <Label htmlFor="address-mobile" className="text-sm font-medium mb-1.5 block">Mobile Number*</Label>
-                              <Input id="address-mobile" name="mobile" value={addressFormState.mobile} onChange={handleAddressFormChange} placeholder="Mobile number" className="h-11 bg-white" />
+                              <Label htmlFor="mobile" className="text-sm font-medium mb-1.5 block">Mobile*</Label>
+                              <Input id="mobile" name="mobile" value={addressFormState.mobile} onChange={handleAddressFormChange} placeholder="Mobile number" className="h-11 bg-white" />
+        {formErrors.mobile && <p className="text-red-500 text-xs mt-1">{formErrors.mobile}</p>}
                             </div>
                             <div>
-                              <Label htmlFor="address-plot" className="text-sm font-medium mb-1.5 block">Plot/Building*</Label>
-                              <Input id="address-plot" name="plotBuilding" value={addressFormState.plotBuilding} onChange={handleAddressFormChange} placeholder="Plot number, building name" className="h-11 bg-white" />
+                              <Label htmlFor="plotBuilding" className="text-sm font-medium mb-1.5 block">Plot/Building*</Label>
+                              <Input id="plotBuilding" name="plotBuilding" value={addressFormState.plotBuilding} onChange={handleAddressFormChange} placeholder="Plot number, building name" className="h-11 bg-white" />
+                              {formErrors.plotBuilding && <p className="text-red-500 text-xs mt-1">{formErrors.plotBuilding}</p>}
                             </div>
                             <div>
-                              <Label htmlFor="address-street" className="text-sm font-medium mb-1.5 block">Street/Area*</Label>
-                              <Input id="address-street" name="streetArea" value={addressFormState.streetArea} onChange={handleAddressFormChange} placeholder="Street, area" className="h-11 bg-white"/>
+                              <Label htmlFor="streetArea" className="text-sm font-medium mb-1.5 block">Street/Area*</Label>
+                              <Input id="streetArea" name="streetArea" value={addressFormState.streetArea} onChange={handleAddressFormChange} placeholder="Street, area" className="h-11 bg-white"/>
+                              {formErrors.streetArea && <p className="text-red-500 text-xs mt-1">{formErrors.streetArea}</p>}
                             </div>
                             <div>
-                              <Label htmlFor="address-landmark" className="text-sm font-medium mb-1.5 block">Landmark (Optional)</Label>
-                              <Input id="address-landmark" name="landmark" value={addressFormState.landmark} onChange={handleAddressFormChange} placeholder="Nearby landmark" className="h-11 bg-white"/>
+                              <Label htmlFor="landmark" className="text-sm font-medium mb-1.5 block">Landmark (Optional)</Label>
+                              <Input id="landmark" name="landmark" value={addressFormState.landmark} onChange={handleAddressFormChange} placeholder="Nearby landmark" className="h-11 bg-white"/>
+        {/* Landmark is optional, so no error display needed unless explicitly required */}
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                               <div>
-                                <Label htmlFor="address-city" className="text-sm font-medium mb-1.5 block">City*</Label>
-                                <Input id="address-city" name="city" value={addressFormState.city} onChange={handleAddressFormChange} placeholder="City" className="h-11 bg-white" />
+                                <Label htmlFor="city" className="text-sm font-medium mb-1.5 block">City*</Label>
+                                <Input id="city" name="city" value={addressFormState.city} onChange={handleAddressFormChange} placeholder="City" className="h-11 bg-white" />
+                                {formErrors.city && <p className="text-red-500 text-xs mt-1">{formErrors.city}</p>}
                               </div>
                               <div>
-                                <Label htmlFor="address-state" className="text-sm font-medium mb-1.5 block">State*</Label>
-                                <Input id="address-state" name="state" value={addressFormState.state} onChange={handleAddressFormChange} placeholder="State" className="h-11 bg-white" />
+                                <Label htmlFor="state" className="text-sm font-medium mb-1.5 block">State*</Label>
+                                <Input id="state" name="state" value={addressFormState.state} onChange={handleAddressFormChange} placeholder="State" className="h-11 bg-white" />
+                                {formErrors.state && <p className="text-red-500 text-xs mt-1">{formErrors.state}</p>}
                               </div>
                             </div>
                             <div>
-                              <Label htmlFor="address-pincode" className="text-sm font-medium mb-1.5 block">Pincode*</Label>
-                              <Input id="address-pincode" name="pincode" type="number" value={addressFormState.pincode} onChange={handleAddressFormChange} placeholder="Pincode" className="h-11 bg-white" />
+                              <Label htmlFor="pincode" className="text-sm font-medium mb-1.5 block">Pincode*</Label>
+                              <Input id="pincode" name="pincode" type="text" value={addressFormState.pincode} onChange={handleAddressFormChange} placeholder="Pincode" className="h-11 bg-white" />
+                              {formErrors.pincode && <p className="text-red-500 text-xs mt-1">{formErrors.pincode}</p>}
                             </div>
                             <div className="flex items-center space-x-2">
                               <input 
@@ -944,7 +960,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               </Button>
               <Button 
                 onClick={handleSaveAddress} 
-                className="bg-green-500 hover:bg-green-600 text-white rounded-lg h-11"
+                className="bg-green-500 hover:bg-green-600 text-white rounded-lg h-11 "
+                disabled={!!(formErrors.recipientName || formErrors.mobile || formErrors.plotBuilding || formErrors.streetArea || formErrors.pincode || formErrors.city || formErrors.state || formErrors.label)}
               >
                 Save Address
               </Button>
@@ -961,7 +978,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
              
               <Button 
                 className="bg-green-500 hover:bg-green-600 text-white rounded-lg h-11 "
-                onClick={handleFinalConfirmation}
+                onClick={handleConfirmSubscription}
+                disabled={!!(formErrors.startDate || formErrors.selectedDays || formErrors.selectedAddressId)}
               >
                 Confirm Subscription
               </Button>

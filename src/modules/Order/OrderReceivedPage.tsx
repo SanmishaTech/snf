@@ -210,11 +210,11 @@ const OrderReceivedPage = () => {
                 </div>
                 <div>
                   <p className="text-gray-500 dark:text-gray-400">Order Date</p>
-                  <p className="font-medium text-gray-800 dark:text-gray-200">{format(new Date(order.orderDate), "dd/MM/yy")}</p>
+                  <p className="font-medium text-gray-800 dark:text-gray-200">{format(new Date(order.orderDate), "dd/MM/yyyy")}</p>
                 </div>    
                 <div>
                   <p className="text-gray-500 dark:text-gray-400">Expected Delivery Date</p>
-                  <p className="font-medium text-gray-800 dark:text-gray-200">{format(new Date(order.deliveryDate), "dd/MM/yy")}</p>
+                  <p className="font-medium text-gray-800 dark:text-gray-200">{format(new Date(order.deliveryDate), "dd/MM/yyyy")}</p>
                 </div>
                 <div>
                   <p className="text-gray-500 dark:text-gray-400">Status</p>

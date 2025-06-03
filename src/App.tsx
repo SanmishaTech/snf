@@ -26,6 +26,7 @@ import Orderlist from "./modules/Order/OrderList"
 import CreateOrderPage from "./modules/Order/CreateOrderPage"
 import OrderDetailsPage from "./modules/Order/OrderDetailsPage"
 import EditOrderPage from "./modules/Order/EditOrderPage";
+import OrderDeliveryPage from "./modules/Order/OrderDeliveryPage"
 // import OrderHistoryPage from './modules/member/OrderHistoryPage'; // File not found, commented out
 import MySubscriptionsPage from './modules/member/MySubscriptionsPage'; // Added for member subscriptions
 import OrderReceivedPage from "./modules/Order/OrderReceivedPage"; // Added for admin receipt recording
@@ -62,13 +63,18 @@ const App = () => {
           <Route path="/" element={<LandingPage />} />
           <Route path="/products/:id" element={<ProductDetailWrapper />} />
           
+          {/* Auth routes with minimal layout */}
           <Route element={<AuthLayout />}>
             <Route path="/admin" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            <Route path="/admin/register" element={<Register />} /> {/* Admin registration with AuthLayout */}
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
-          
-        
+          </Route>
+
+          {/* Public routes with MemberLayout (includes navbar/footer) */}
+          <Route element={<MemberLayout />}>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
           </Route>
           <Route element={<MainLayout />}> 
           
@@ -95,7 +101,7 @@ const App = () => {
 
             {/* Vendor specific routes */}
             <Route path="/vendor/orders/:id" element={<OrderDetailsPage />} />
-            {/* <Route path="/vendor/orders/:id/record-delivery" element={<OrderDeliveryPage />} /> */}
+            <Route path="/vendor/orders/:id/record-delivery" element={<OrderDeliveryPage />} />
           
           </Route>
           

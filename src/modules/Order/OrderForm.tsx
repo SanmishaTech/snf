@@ -260,10 +260,10 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
               agencyId: String(item.agencyId),   // Ensure string ID
             }));            
             setValue("orderItems", newOrderItems, { shouldValidate: true });
-            toast.success(`${newOrderItems.length} order items prefilled for ${format(watchedDeliveryDate, "PPP")}.`);
+            toast.success(`${newOrderItems.length} order items prefilled for ${format(watchedDeliveryDate, "dd/MM/yyyy")}.`);
           } else {
             setValue("orderItems", [], { shouldValidate: true }); // Clear items if no data found
-            toast.info(`No scheduled order items found for ${format(watchedDeliveryDate, "PPP")}.`);
+            toast.info(`No scheduled order items found for ${format(watchedDeliveryDate, "dd/MM/yyyy")}.`);
           }
         } catch (error: any) {
           console.error("Error fetching prefill data:", error);
@@ -412,7 +412,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                             )}
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {field.value ? format(field.value, "dd/MM/yy") : <span>Pick a date</span>}
+                            {field.value ? format(field.value, "dd/MM/yyyy") : <span>Pick a date</span>}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
@@ -446,7 +446,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                             )}
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {field.value ? format(field.value, "dd/MM/yy") : <span>Pick a date</span>}
+                            {field.value ? format(field.value, "dd/MM/yyyy") : <span>Pick a date</span>}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">

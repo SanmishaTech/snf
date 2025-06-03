@@ -55,6 +55,7 @@ interface OrderItem {
   quantity: number;
   deliveredQuantity?: number;
   receivedQuantity?: number;
+  unit?: string; // Added unit field
 }
 
 interface Order {
@@ -295,7 +296,7 @@ const OrderList = () => {
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dateFilter ? format(dateFilter, "dd/MM/yy") : <span>Pick a date</span>}
+                  {dateFilter ? format(dateFilter, "dd/MM/yyyy") : <span>Pick a date</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0 dark:bg-gray-800" align="start">
@@ -361,25 +362,33 @@ const OrderList = () => {
                   <TableRow key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-750">
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{order.poNumber}</TableCell>
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{order.vendor.name}</TableCell>
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{format(new Date(order.orderDate), "dd/MM/yy")}</TableCell>
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{format(new Date(order.deliveryDate), "dd/MM/yy")}</TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{format(new Date(order.orderDate), "dd/MM/yyyy")}</TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{format(new Date(order.deliveryDate), "dd/MM/yyyy")}</TableCell>
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{formatCurrency(order.totalAmount)}</TableCell>
                     {currentUserRole === "ADMIN" && (
                       <TableCell className="px-6 py-4 whitespace-nowrap text-sm">
                         <div className="flex flex-col space-y-1">
-                          <div><span className="font-medium">Ordered:</span> {quantities.ordered}</div>
-                          <div>
-                            <span className="font-medium">Delivered:</span>{" "}
-                            <span className={quantities.delivered < quantities.ordered ? "text-red-500 font-medium" : "text-gray-500 dark:text-gray-300"}>
-                              {quantities.delivered}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="font-medium">Received:</span>{" "}
-                            <span className={quantities.received < quantities.delivered ? "text-red-500 font-medium" : "text-gray-500 dark:text-gray-300"}>
-                              {quantities.received}
-                            </span>
-                          </div>
+                          {(() => {
+                            const representativeUnit = order.items && order.items.length > 0 && order.items[0].unit ? ` ${order.items[0].unit}` : "";
+                            console.log(order.items)
+                            return (
+                              <>
+                                <div><span className="font-medium">Ordered:</span> {quantities.ordered}{representativeUnit}</div>
+                                <div>
+                                  <span className="font-medium">Delivered:</span>{" "}
+                                  <span className={quantities.delivered < quantities.ordered ? "text-red-500 font-medium" : "text-gray-500 dark:text-gray-300"}>
+                                    {quantities.delivered}{representativeUnit}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="font-medium">Received:</span>{" "}
+                                  <span className={quantities.received < quantities.delivered ? "text-red-500 font-medium" : "text-gray-500 dark:text-gray-300"}>
+                                    {quantities.received}{representativeUnit}
+                                  </span>
+                                </div>
+                              </>
+                            );
+                          })()}
                         </div>
                       </TableCell>
                     )}

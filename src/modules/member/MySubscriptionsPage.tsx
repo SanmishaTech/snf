@@ -40,11 +40,18 @@ export interface MemberSubscription {
 
 const formatPeriod = (period: MemberSubscription['period']) => {
   const map = {
-    'DAYS_7': '7 Days',
-    'DAYS_15': '15 Days',
-    'DAYS_30': '1 Month',
-    'DAYS_90': '3 Months',
+    '7': '7 Days',
+    '15': '15 Days',
+    '30': '1 Month',
+    '90': '3 Months',
   };
+  console.log("PPASd",map, period)
+  if(period !== "1" ){
+    return `${period} Day`
+  }
+  if(period !== "7" & period !== "15" & period !== "30" & period !== "90"  ){
+    return `${period} Days`
+  }
   return map[period] || period;
 };
 
@@ -124,9 +131,18 @@ const MySubscriptionsPage: React.FC = () => {
                 </CardDescription> */}
               </CardHeader>
               <CardContent className="space-y-2 text-sm text-gray-700 dark:text-gray-300 p-4 flex-grow">
-                <p><strong>Quantity:</strong> {sub.qty} {sub.product.unit}{sub.qty > 1 ? 's' : ''}</p>
-                <p><strong>Period:</strong> {formatPeriod(sub.period)}</p>
+                <p>
+  <strong>Quantity:</strong> {sub.qty} {sub.product.unit}{sub.qty > 1 ? 's' : ''}
+  {sub.altQty ? (
+    <>
+      {' '} &amp; {sub.altQty} {sub.product.unit}{sub.altQty > 1 ? 's' : ''}
+    </>
+  ) : null}
+</p>
+                <p><strong>Period:</strong> {formatPeriod(sub.period) }</p>
                 <p><strong>Starts On:</strong> {format(new Date(sub.startDate), 'dd MMM yyyy')}</p>
+                <p><strong>Expires On:</strong> {format(new Date(sub.expiryDate), 'dd MMM yyyy')}</p>
+
                 <p><strong>Delivery:</strong> {formatDeliverySchedule(sub.deliverySchedule, sub.selectedDays, sub.qty, sub.altQty)}</p>
                 {sub.paymentStatus && <p><strong>Payment:</strong> <span className={`capitalize font-medium ${sub.paymentStatus === 'PAID' ? 'text-green-600' : 'text-orange-500'}`}>{sub.paymentStatus.toLowerCase()}</span></p>}
                 {sub.agency && <p><strong>Assigned Agent:</strong> {sub.agency.user.name}</p>}

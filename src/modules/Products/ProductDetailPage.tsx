@@ -371,7 +371,7 @@ const ProductDetailPage: React.FC = () => {
                   asChild
                   className="w-full bg-green-500 hover:bg-green-600 text-white py-6 rounded-lg text-lg font-semibold transition-transform duration-200 hover:scale-105"
                 >
-                  <Link to="/">Subscribe</Link>
+                  <Link to="/login">Subscribe</Link>
                 </Button>
               ) : (
                 <>

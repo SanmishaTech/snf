@@ -241,13 +241,13 @@ const OrderDetailsPage = () => {
                   <div>
                     <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Order Date</h3>
                     <p className="mt-1 text-gray-900 dark:text-gray-100">
-                      {format(new Date(order.orderDate), "dd/MM/yy")}
+                      {format(new Date(order.orderDate), "dd/MM/yyyy")}
                     </p>
                   </div>
                   <div>
                     <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Delivery Date</h3>
                     <p className="mt-1 text-gray-900 dark:text-gray-100">
-                      {format(new Date(order.deliveryDate), "dd/MM/yy")}
+                      {format(new Date(order.deliveryDate), "dd/MM/yyyy")}
                     </p>
                   </div>
                   <div>
@@ -400,7 +400,7 @@ const OrderDetailsPage = () => {
                     title: "Order Created",
                     icon: <ShoppingCart className="h-5 w-5 text-white" />,
                     iconBg: "bg-blue-500",
-                    time: format(new Date(order.createdAt), "dd/MM/yy"),
+                    time: format(new Date(order.createdAt), "dd/MM/yyyy"),
                     description: `Order #${order.poNumber} was created with ${order.items.length} product(s).`,
                     stepStatus: "PENDING",
                   },
@@ -410,7 +410,7 @@ const OrderDetailsPage = () => {
                     activeIconBg: "bg-green-500",
                     placeholderIcon: <Truck className="h-5 w-5 text-gray-600 dark:text-gray-400" />,
                     placeholderIconBg: "bg-gray-300 dark:bg-gray-700",
-                    time: (order.status === "DELIVERED" || order.status === "RECEIVED") ? format(new Date(order.updatedAt), "dd/MM/yy HH:mm") : "Awaiting delivery",
+                    time: (order.status === "DELIVERED" || order.status === "RECEIVED") ? format(new Date(order.updatedAt), "dd/MM/yyyy HH:mm") : "Awaiting delivery",
                     description: "Order has been marked as delivered by the vendor.",
                     stepStatus: "DELIVERED",
                   },
@@ -420,7 +420,7 @@ const OrderDetailsPage = () => {
                     activeIconBg: "bg-purple-500",
                     placeholderIcon: <Package className="h-5 w-5 text-gray-600 dark:text-gray-400" />,
                     placeholderIconBg: "bg-gray-300 dark:bg-gray-700",
-                    time: order.status === "RECEIVED" ? format(new Date(order.updatedAt), "dd/MM/yy HH:mm") : "Awaiting confirmation",
+                    time: order.status === "RECEIVED" ? format(new Date(order.updatedAt), "dd/MM/yyyy HH:mm") : "Awaiting confirmation",
                     description: "Order has been received and verified.",
                     stepStatus: "RECEIVED",
                   },

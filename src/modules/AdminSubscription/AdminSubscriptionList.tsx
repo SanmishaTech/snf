@@ -32,6 +32,7 @@ interface Member {
 
 interface Product {
   name: string;
+  unit?: string; // Added to include product unit
 }
 
 interface DeliveryAddress {
@@ -58,6 +59,7 @@ interface Subscription {
   deliverySchedule: string; // DAILY, WEEKDAYS, ALTERNATE_DAYS, SELECT_DAYS, VARYING
   weekdays?: string | null; // JSON string array like '["MONDAY", "TUESDAY"]'
   qty: number;
+  altQty?: number | null;
   paymentStatus: string; // PENDING, PAID, FAILED
   amount: number;
   startDate: string; // Date when the subscription effectively starts
@@ -912,7 +914,14 @@ const AdminSubscriptionList: React.FC = () => {
                 <div className="flex gap-4 text-sm">
                   <div className="flex items-center gap-1">
                     <ShoppingCartIcon className="h-3.5 w-3.5" />
-                    <span>Qty: {sub.qty}</span>
+                    <span>
+                    Qty: {sub.qty} {sub.product?.unit}{sub.qty > 1 ? 's' : ''}
+                    {sub.deliverySchedule === 'ALTERNATE_DAYS' && sub.altQty ? (
+                      <>
+                        {' '}&amp; {sub.altQty} {sub.product?.unit}{sub.altQty > 1 ? 's' : ''}
+                      </>
+                    ) : null}
+                  </span>
                   </div>
                   <div className="flex items-center gap-1">
                     <IndianRupeeIcon className="h-3.5 w-3.5" />
@@ -994,11 +1003,11 @@ const AdminSubscriptionList: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <CalendarCheckIcon className="h-4 w-4 text-gray-500" />
-                  <span>Expiry: {sub.expiryDate ? format(new Date(sub.expiryDate), 'dd/MM/yy') : 'N/A'}</span>
+                  <span>Expiry: {sub.expiryDate ? format(new Date(sub.expiryDate), 'dd/MM/yyyy') : 'N/A'}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CalendarIcon className="h-4 w-4 text-gray-500" />
-                  <span>Created: {sub.createdAt ? format(new Date(sub.createdAt), 'dd/MM/yy') : 'N/A'}</span>
+                  <span>Created: {sub.createdAt ? format(new Date(sub.createdAt), 'dd/MM/yyyy') : 'N/A'}</span>
                 </div>
               </div>
             </TableCell>

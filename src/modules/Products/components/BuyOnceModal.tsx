@@ -8,13 +8,15 @@ import { DialogClose } from "@/components/ui/dialog"; // For explicit close butt
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { get } from "@/services/apiService";
 import { toast } from "sonner";
-import AddressForm  from "@/modules/Address/components/AddressForm"; // Please verify/correct this path
+import AddressForm  from "@/modules/Address/components/AddressForm"; 
+import { formatDate }from "@/lib/formatter"
 
 interface ProductData {
   id: number;
   name: string;
   price: number;
   rate: number;
+  unit?: string; // Added to display unit with quantity
 }
 
 interface AddressData {
@@ -273,7 +275,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Quantity:</span>
-                <span className="text-sm font-medium text-gray-800">{quantity}</span>
+                <span className="text-sm font-medium text-gray-800">{quantity} {product?.unit || ''}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Price per unit:</span>
@@ -283,7 +285,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Delivery Date:</span>
                 <span className="text-sm font-medium text-gray-800">
-                  {selectedDate ? format(selectedDate, "dd MMM, yyyy") : 'Not selected'}
+                  {selectedDate ? format(selectedDate, "dd/MM/yyyy") : 'Not selected'}
                 </span>
               </div>
               <div className="flex justify-between items-start">
@@ -304,7 +306,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Calculation:</span>
                 <span className="text-sm font-medium text-green-600">
-                  {quantity} × ₹{product?.rate?.toFixed(2)} = ₹{(quantity * (product?.rate || 0)).toFixed(2)}
+                  {quantity} {product?.unit || ''} × ₹{product?.rate?.toFixed(2)} = ₹{(quantity * (product?.rate || 0)).toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between pt-2 mt-2 border-t border-dashed">

@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,7 +11,7 @@ import { post, get, patch } from "@/services/apiService"; // Added patch
 import { appName, allowRegistration } from "@/config";
 import { LoaderCircle } from "lucide-react";
 import { toast } from "sonner";
-import { Link } from "react-router-dom"; // Import Link from react-router-dom
+import { Link, useLocation, useNavigate } from "react-router-dom"; // Import Link, useLocation, and useNavigate
 
 // User object structure within LoginResponse and for localStorage
 interface User {
@@ -59,16 +58,15 @@ const loginSchema = z.object({
 type LoginFormInputs = z.infer<typeof loginSchema>; // No longer needs agreedToPolicy here
 
 // Define props for Login component
-interface LoginProps {
-  setActiveTab: (tab: string) => void;
-}
+interface LoginProps {}
 
-const Login: React.FC<LoginProps> = ({ setActiveTab }) => {
+const Login: React.FC<LoginProps> = () => {
   const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
   const [policyText, setPolicyText] = useState("");
   const [isPolicyLoading, setIsPolicyLoading] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const isAdminPath = location.pathname.startsWith("/admin");
   const queryClient = useQueryClient(); // Obtain queryClient
 
   // Helper function to determine redirect path based on user role
@@ -256,63 +254,59 @@ const Login: React.FC<LoginProps> = ({ setActiveTab }) => {
   });
 
   const onSubmit: SubmitHandler<LoginFormInputs> = (data) => {
-    // All checks for admin/policy status are now done by the backend.
-    // Frontend just submits login credentials.
-    console.log("onSubmit: Submitting login data to backend:", data);
-    loginMutation.mutate(data); // agreedToPolicy is no longer part of LoginFormInputs or sent here
-  };
-
-  const handleAgreeAndLogin = () => {
-    // User agrees to policy after successful initial authentication.
-    // Call the mutation to record policy acceptance on the backend.
-    console.log("Policy modal: User agreed. Calling acceptPolicyMutation.");
-    acceptPolicyMutation.mutate();
-    // Modal will be closed by acceptPolicyMutation.onSuccess
+    loginMutation.mutate(data);
   };
 
   const handleDisagree = () => {
     setIsPolicyModalOpen(false);
-    toast.info("Policy agreement is required to log in.");
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("user");
-    localStorage.removeItem("roles");
-    localStorage.removeItem("memberId");
-    queryClient.clear(); // Clear react-query cache
-    setIsPolicyModalOpen(false);
-    toast.error("Policy agreement is required. You have been logged out.");
-    navigate("/");
+    // Optionally, you could log out or redirect if disagreement means they cannot proceed
+    // For now, just closes the modal.
   };
 
-  const isLoading = loginMutation.isPending || isPolicyLoading;
+  const handleAgreeAndLogin = () => {
+    acceptPolicyMutation.mutate(); // This will trigger login via its onSuccess if policy acceptance is successful
+  };
 
   return (
     <>
-      {/* Policy Modal */}
+      {/* Policy Modal - Enhanced with better styling */}
       {isPolicyModalOpen && (
-        <div className="fixed inset-0 bg-transparent  bg-opacity-75 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-card text-card-foreground p-6 sm:p-8 rounded-xl shadow-2xl max-w-lg w-full border">
-            <h2 className="text-3xl font-bold mb-6 text-center">Our Policy</h2>
-            <div className="max-h-120 overflow-y-auto mb-8 text-sm text-muted-foreground whitespace-pre-wrap p-6 border rounded-lg bg-background">
-              {policyText || "Loading policy..."}
+        <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-card border border-border rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+            <div className="p-6 border-b border-border">
+              <h2 className="text-2xl font-bold text-center">Accept Terms & Conditions</h2>
+              <p className="text-center text-muted-foreground mt-2">
+                To continue using {appName}, please review and accept our policy
+              </p>
             </div>
-            <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4">
+            
+            <div className="p-6 overflow-y-auto flex-grow bg-gray-50 dark:bg-gray-900">
+              <div className="prose prose-sm max-w-none bg-white dark:bg-gray-800 p-6 rounded-lg border">
+                {isPolicyLoading ? (
+                  <div className="flex justify-center items-center h-40">
+                    <LoaderCircle className="animate-spin text-primary" size={24} />
+                  </div>
+                ) : (
+                  <div dangerouslySetInnerHTML={{ __html: policyText }} />
+                )}
+              </div>
+            </div>
+            
+            <div className="p-6 border-t border-border flex flex-col sm:flex-row justify-end gap-3">
               <Button
                 variant="outline"
                 onClick={handleDisagree}
-                disabled={isPolicyLoading || loginMutation.isPending}
+                disabled={isPolicyLoading || loginMutation.isPending || acceptPolicyMutation.isPending}
                 className="w-full sm:w-auto"
               >
-                Disagree
+                Cancel
               </Button>
               <Button
                 onClick={handleAgreeAndLogin}
-                disabled={
-                  isPolicyLoading || loginMutation.isPending || !policyText
-                }
+                disabled={isPolicyLoading || loginMutation.isPending || !policyText || acceptPolicyMutation.isPending}
                 className="w-full sm:w-auto"
               >
-                {loginMutation.isPending ? (
+                {acceptPolicyMutation.isPending ? (
                   <LoaderCircle className="animate-spin mr-2" size={16} />
                 ) : null}
                 Agree & Continue
@@ -322,84 +316,105 @@ const Login: React.FC<LoginProps> = ({ setActiveTab }) => {
         </div>
       )}
 
-      {/* Login Form using Shadcn UI structure */}
-      <form className="p-6 md:p-8" onSubmit={handleSubmit(onSubmit)}>
-        {/* ... rest of your form JSX ... no changes needed below this line for this step, just ensure it's within the fragment <></> */}
-        {/* Header */}
-        <div className="flex flex-col gap-6">
-          <div className="flex flex-col items-center text-center">
-            <h1 className="text-2xl font-bold">Welcome back</h1>
-            <p className="text-balance text-muted-foreground">
-              Login to your {appName} account
-            </p>
-          </div>
-
-          {/* Email Field */}
-          <div className="grid gap-2 relative pb-3">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-               {...register("email")}
-              required
-              disabled={isLoading}
-              aria-invalid={errors.email ? "true" : "false"}
-            />
-            {errors.email && (
-              <p className="text-destructive text-xs absolute -bottom-1 left-0">
-                {errors.email.message}
-              </p>
-            )}
-          </div>
-
-          {/* Password Field */}
-          <div className="grid gap-2 relative pb-3">
-            <Label htmlFor="password">Password</Label>
-            <PasswordInput
-              id="password"
-               {...register("password")}
-              required
-              disabled={isLoading}
-              aria-invalid={errors.password ? "true" : "false"}
-            />
-            {errors.password && (
-              <p className="text-destructive text-xs absolute -bottom-1 left-0">
-                {errors.password.message}
-              </p>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between text-sm">
-            {/* This is a good place for 'Remember me' if you add it later */}
-            <Link to="/forgot-password" className="font-medium text-primary hover:underline">
-              Forgot Password?
-            </Link>
-          </div>
-
-          {/* Submit Button */}
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? (
-              <LoaderCircle className="animate-spin mr-2" size={16} />
-            ) : null}
-            Login
-          </Button>
-
-          {/* Registration Button */}
-          {allowRegistration && (
-            <p className="text-center text-sm text-muted-foreground mt-4">
-              Are you new?{" "}
-              <Button 
-                variant="link"
-                className="font-semibold p-0 h-auto text-primary hover:underline"
-                onClick={() => setActiveTab("register")}
-                type="button" // Add type button to prevent form submission
-              >
-                Register
-              </Button>
-            </p>
-          )}
+      {/* Enhanced Login Form */}
+      <div className="w-full max-w-md mx-auto">
+        <div className="text-center mb-8">
+        {location.pathname !== "/" &&  <div className="mx-auto bg-gradient-to-br from-primary to-purple-600 w-16 h-16 rounded-xl flex items-center justify-center mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="w-8 h-8">
+              <path fillRule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clipRule="evenodd" />
+            </svg>
+          </div>}
+      { location.pathname !== "/" &&
+          <h1 className="text-3xl font-bold mb-2">Welcome back</h1>}
+     {location.pathname !== "/" &&      <p className="text-muted-foreground">
+            Sign in to continue to {appName}
+          </p>}
         </div>
-      </form>
+
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div className="space-y-5">
+            {/* Email Field */}
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="name@example.com"
+                {...register("email")}
+                disabled={loginMutation.isPending || acceptPolicyMutation.isPending}
+                className="py-5 px-4"
+              />
+              {errors.email && (
+                <p className="text-destructive text-sm flex items-center mt-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 mr-1">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                  </svg>
+                  {errors.email.message}
+                </p>
+              )}
+            </div>
+
+            {/* Password Field */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link 
+                  to={isAdminPath ? "/admin/forgot-password" : "/forgot-password"} 
+                  className="text-sm font-medium text-primary hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+              <PasswordInput
+                id="password"
+                placeholder="••••••••"
+                {...register("password")}
+                disabled={loginMutation.isPending || acceptPolicyMutation.isPending}
+                className="py-5 px-4"
+              />
+              {errors.password && (
+                <p className="text-destructive text-sm flex items-center mt-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 mr-1">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                  </svg>
+                  {errors.password.message}
+                </p>
+              )}
+            </div>
+
+            {/* Submit Button */}
+            <Button 
+              type="submit" 
+              className="w-full py-5 font-semibold"
+              disabled={loginMutation.isPending || acceptPolicyMutation.isPending}
+            >
+              {loginMutation.isPending ? (
+                <>
+                  <LoaderCircle className="animate-spin mr-2" size={20} />
+                  Signing in...
+                </>
+              ) : "Sign In"}
+            </Button>
+
+           
+
+             
+
+            {/* Registration Link */}
+            {allowRegistration && location.pathname !== "/" &&(
+              <p className="text-center text-sm text-muted-foreground mt-6 pt-4 border-t border-border">
+                Don't have an account?{" "}
+                <Link
+                  to={isAdminPath ? "/admin/register" : "/register"}
+                  className="font-semibold text-primary hover:underline p-0 h-auto"
+                >
+                  Create account
+                </Link>
+              </p>
+            )}
+          </div>
+        </form>
+      </div>
     </>
   );
 };

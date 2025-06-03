@@ -44,27 +44,6 @@ export default function MemberLayout({ children }: MemberLayoutProps) { // Destr
   const storedUserData = localStorage.getItem("user");
   const userData = storedUserData ? JSON.parse(storedUserData) : null;
   
-  // Calculate subscription remaining time (mock data - would need to be fetched from API)
-  const [subscriptionDaysLeft, setSubscriptionDaysLeft] = useState<number | null>(null);
-  
-  useEffect(() => {
-    // Mock fetch subscription data - replace with actual API call
-    const fetchSubscriptionData = async () => {
-      try {
-        // This would be an API call in production
-        // const response = await get("/api/member/subscription");
-        // setSubscriptionDaysLeft(response.daysLeft);
-        
-        // Mock data for now
-        setSubscriptionDaysLeft(30);
-      } catch (error) {
-        console.error("Failed to fetch subscription data", error);
-      }
-    };
-    
-    fetchSubscriptionData();
-  }, []);
-
   // Effect to sync dark mode state with HTML class
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDarkMode);
@@ -183,10 +162,12 @@ export default function MemberLayout({ children }: MemberLayoutProps) { // Destr
               <Package className="h-5 w-5 mr-2" />
               Products
             </Button> */}
-            <Button variant="ghost" onClick={() => navigate("/member/subscriptions")}>
-              <Repeat className="h-5 w-5 mr-2" />
-              My Subscriptions
-            </Button>
+            {userData && (
+              <Button variant="ghost" onClick={() => navigate("/member/subscriptions")}>
+                <Repeat className="h-5 w-5 mr-2" />
+                My Subscriptions
+              </Button>
+            )}
           </nav>
 
           {/* Right side controls */}
@@ -202,7 +183,7 @@ export default function MemberLayout({ children }: MemberLayoutProps) { // Destr
             </Button>
 
             {/* User dropdown */}
-            <DropdownMenu>
+            {userData && <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative rounded-full h-8 w-8 p-0">
                   <Avatar>
@@ -243,19 +224,19 @@ export default function MemberLayout({ children }: MemberLayoutProps) { // Destr
                   <span>Logout</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
-            </DropdownMenu>
+            </DropdownMenu>}
           </div>
         </div>
       </header>
 
       {/* Main content */}
-      <main className="flex-grow container mx-auto px-4 py-6">
+      <main className="flex-grow container mx-auto px-4 py-6 ml-4">
         {children || <Outlet />}
       </main>
       
       {/* Footer */}
-      <footer className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-4">
-        <div className="container mx-auto px-4 text-center text-sm text-gray-500 dark:text-gray-400">
+      <footer className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-4 ml-4">
+        <div className="container mx-auto px-4 text-center text-sm text-gray-500 dark:text-gray-400 ml-4">
           &copy; {new Date().getFullYear()} {appName}. All rights reserved.
         </div>
       </footer>

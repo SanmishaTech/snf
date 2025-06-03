@@ -278,8 +278,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
             disabled={isSubmitting || mutation.isPending}
           />
           <p className="text-sm text-muted-foreground mt-1">
-            Recommended: Landscape image (e.g., 4:3 aspect ratio, like 400x300 pixels).
-            Max 5MB. Allowed types: JPG, PNG, GIF, WEBP.
+            Recommended: Landscape image (e.g., 4:3 aspect ratio, like 3179x4239 pixels)
           </p>
           {attachmentFileName && !errors.attachmentUrl && <p className="text-xs text-muted-foreground mt-1">Selected: {attachmentFileName}</p>}
           {errors.attachmentUrl && <p className="text-red-500 text-xs mt-1">{errors.attachmentUrl.message as string}</p>}
