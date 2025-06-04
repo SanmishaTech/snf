@@ -373,7 +373,7 @@ const LandingPage = () => {
                             </span>
                             <button 
                               className="inline-flex items-center justify-center rounded-full bg-primary/10 text-primary h-9 px-4 text-sm font-medium hover:bg-primary/20 transition-colors"
-                              onClick={() => navigate(`/products/${product.id}`, { state: { fromLanding: true } })}
+                              onClick={() => navigate(`/member/products/${product.id}`, { state: { fromLanding: true } })}
                             >
                               View Details
                             </button>
@@ -423,7 +423,7 @@ const LandingPage = () => {
                     </TabsTrigger>
                   </TabsList>
                 </div>
-                                  <div className="p-6 pt-2">
+                <div className="p-6 pt-2">
                   <TabsContent value="login">
                     <Login setActiveTab={setActiveTab} />
                   </TabsContent>
