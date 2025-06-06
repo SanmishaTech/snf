@@ -1,7 +1,6 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import React, { useState, useEffect } from "react"; // Added React import
-import { Sun, Moon, LogOut, Settings, Repeat, Package } from "lucide-react"; // Removed User, Clock
-import WalletButton from "@/modules/Wallet/Components/Walletmenu"; // Import WalletButton
+import { Sun, Moon, LogOut, Settings, Repeat } from "lucide-react"; // Removed User, Clock
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -87,9 +86,10 @@ export default function MemberLayout({ children }: MemberLayoutProps) { // Destr
       }
     };
 
-    // Only attempt redirect if the user lands on /dashboard initially.
-    // Navigating to other specific member pages (like /manage-subscription) should not trigger this redirect.
-    if (location.pathname === '/dashboard') {
+    // Only attempt redirect if not already on a product-related page
+    // This check is important if the user lands on /dashboard initially
+    if (location.pathname === '/dashboard' || !location.pathname.startsWith('/member/')) {
+        // Or any other logic to determine if it's an initial member area entry point
         fetchAndRedirect();
     }
 
@@ -158,17 +158,20 @@ export default function MemberLayout({ children }: MemberLayoutProps) { // Destr
               Dashboard
             </Button> */}
          
-            <Button variant="ghost" onClick={() => navigate("/member/products")}>
+            {/* <Button variant="ghost" onClick={() => navigate("/member/products")}>
               <Package className="h-5 w-5 mr-2" />
               Products
-            </Button>
-           
+            </Button> */}
+            {userData && (
+              <Button variant="ghost" onClick={() => navigate("/member/subscriptions")}>
+                <Repeat className="h-5 w-5 mr-2" />
+                My Subscriptions
+              </Button>
+            )}
           </nav>
 
           {/* Right side controls */}
           <div className="flex items-center space-x-4">
-            {/* Wallet Button */}
-            <WalletButton />
             {/* Dark mode toggle */}
             <Button
               onClick={toggleDarkMode}

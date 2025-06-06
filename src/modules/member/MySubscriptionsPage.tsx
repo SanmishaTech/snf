@@ -1,9 +1,11 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { get } from '../../services/apiService'; // Corrected to import 'get' named export
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'; // Added CardFooter
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, PackageSearch } from 'lucide-react'; // Added PackageSearch for empty state
+import { Button } from '@/components/ui/button'; // Added Button
+import { Link } from 'react-router-dom'; // Added Link
 import { format } from 'date-fns';
 
 interface Product {
@@ -31,6 +33,7 @@ export interface MemberSubscription {
   deliverySchedule: 'DAILY' | 'SELECT_DAYS' | 'VARYING' | 'ALTERNATE_DAYS';
   selectedDays?: string[] | null;
   startDate: string; // ISO string date
+  expiryDate: string; // ISO string date
   period: 'DAYS_7' | 'DAYS_15' | 'DAYS_30' | 'DAYS_90';
   status: string; // e.g., 'ACTIVE', 'PENDING_PAYMENT', 'CANCELLED', 'COMPLETED', 'PAUSED'
   paymentStatus?: 'PENDING' | 'PAID' | 'FAILED';
@@ -38,21 +41,44 @@ export interface MemberSubscription {
   amount?: number;
 }
 
-const formatPeriod = (period: MemberSubscription['period']) => {
-  const map = {
+const formatPeriod = (inputPeriod: MemberSubscription['period'] | string | number) => {
+  // The official type for period in MemberSubscription
+  const typedPeriodMap: Record<string, string> = { // Allow any string as key for broader matching initially
+    'DAYS_7': '7 Days',
+    'DAYS_15': '15 Days',
+    'DAYS_30': '1 Month',
+    'DAYS_90': '3 Months',
+  };
+
+  // Check if inputPeriod matches the strictly typed values if it's a string
+  if (typeof inputPeriod === 'string' && typedPeriodMap[inputPeriod]) {
+    return typedPeriodMap[inputPeriod];
+  }
+
+  // Handle cases where inputPeriod might be a number (e.g., 7) or a numeric string (e.g., "7")
+  const periodStr = String(inputPeriod); // Convert to string for consistent handling
+  
+  const numericEquivalentMap: Record<string, string> = {
     '7': '7 Days',
     '15': '15 Days',
     '30': '1 Month',
     '90': '3 Months',
   };
-  console.log("PPASd",map, period)
-  if(period !== "1" ){
-    return `${period} Day`
+
+  if (numericEquivalentMap[periodStr]) {
+    return numericEquivalentMap[periodStr];
   }
-  if(period !== "7" & period !== "15" & period !== "30" & period !== "90"  ){
-    return `${period} Days`
+
+  // Fallback for other 'DAYS_X' patterns or numeric strings not in maps
+  if (periodStr.startsWith('DAYS_')) {
+    return periodStr.replace('DAYS_', '') + ' Days';
   }
-  return map[period] || period;
+  // Check if it's a number string (e.g. "1", "2") that wasn't in numericEquivalentMap
+  if (!isNaN(Number(periodStr))) { 
+      return `${periodStr} Days`;
+  }
+
+  return periodStr; // Return the stringified input as a last resort if no other format matches
 };
 
 const formatDeliverySchedule = (schedule: MemberSubscription['deliverySchedule'], selectedDays?: string[] | null, qty?: number, altQty?: number | null) => {
@@ -114,13 +140,13 @@ const MySubscriptionsPage: React.FC = () => {
     <div className="container mx-auto p-4 md:p-6">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800">My Active Subscriptions</h1>
-        {subscriptions?.length > 0 && (
+        {subscriptions && subscriptions.length > 0 && (
             <span className="px-3 py-1 text-sm font-semibold text-primary bg-primary-foreground rounded-full">
-                {subscriptions?.length} Active
+                {subscriptions.length} Active
             </span>
         )}
       </div>
-      {subscriptions?.length > 0 ? (
+      {subscriptions && subscriptions.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {subscriptions?.map((sub: MemberSubscription) => (
             <Card key={sub.id} className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out rounded-lg overflow-hidden flex flex-col">
@@ -148,6 +174,13 @@ const MySubscriptionsPage: React.FC = () => {
                 {sub.agency && <p><strong>Assigned Agent:</strong> {sub.agency.user.name}</p>}
                 {sub.amount !== undefined && <p className="font-semibold text-base"><strong>Total Amount:</strong> ₹{sub.amount.toFixed(2)}</p>}
               </CardContent>
+              <CardFooter className="p-4 pt-0">
+                {sub.paymentStatus === 'PAID' && (
+                  <Link to={`/manage-subscription/${sub.id}`} className="w-full">
+                    <Button variant="outline" className="w-full">Manage</Button>
+                  </Link>
+                )}
+              </CardFooter>
             </Card>
           ))}
         </div>

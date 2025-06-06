@@ -29,6 +29,7 @@ import EditOrderPage from "./modules/Order/EditOrderPage";
 import OrderDeliveryPage from "./modules/Order/OrderDeliveryPage"
 // import OrderHistoryPage from './modules/member/OrderHistoryPage'; // File not found, commented out
 import MySubscriptionsPage from './modules/member/MySubscriptionsPage'; // Added for member subscriptions
+import ManageSubscriptionPage from './modules/member/ManageSubscriptionPage'; // Added for managing individual subscriptions
 import OrderReceivedPage from "./modules/Order/OrderReceivedPage"; // Added for admin receipt recording
 import ProductList from "./modules/Products/ProductList"
 import LandingPage from "./modules/Homepage/LandingPage"; // Added for milk subscription landing page
@@ -43,6 +44,9 @@ import EditAddressPage from "./modules/Address/EditAddressPage";
 import { Toaster } from "sonner";
 import AdminSubscriptionList from "./modules/AdminSubscription/AdminSubscriptionList"; // Added for admin subscriptions list
 import AgencyDeliveryView from "./modules/agency-delivery/AgencyDeliveryView"; // Added for agency delivery management
+import WalletAdmin from "./modules/Wallet/AdminWalletPage";
+import AdminMembersListPage from "./modules/Wallet/AdminMembersListPage"; // Added for Admin Members List Page
+import UserWallet from "./modules/Wallet/UserWallet";
 import "./App.css";
 // MembershipList wrapper component to handle showing all memberships
  
@@ -93,6 +97,9 @@ const App = () => {
             <Route path="/admin/orders/:id/edit" element={<EditOrderPage />} />
             <Route path="/admin/orders/:id/record-receipt" element={<OrderReceivedPage />} /> {/* New route for recording receipt */}
             <Route path="/admin/products" element={<ProductList />} />
+            <Route path="/admin/wallet" element={<WalletAdmin />} />
+            <Route path="/admin/members" element={<AdminMembersListPage />} /> {/* Added for Admin Members List Page */}
+
             <Route path="/admin/products/create" element={<CreateProductPage />} />
             <Route path="/admin/products/edit/:id" element={<EditProductPage />} />
             <Route path="/admin/products/:id" element={<ProductDetailPage />} /> {/* New route for product detail */}
@@ -119,12 +126,14 @@ const App = () => {
             <Route path="/member/profile" element={<div className="space-y-4">
               <h1 className="text-2xl font-bold">Profile Management</h1>
               <p>Manage your personal information and preferences here.</p>
-              {/* Profile management content would go here */}
-            </div>} />
+             </div>} />
             <Route path="/member/addresses" element={<AddressListPage />} />
+            <Route path="/member/wallet" element={<UserWallet />} />
+
             <Route path="/member/addresses/create" element={<CreateAddressPage />} />
             <Route path="/member/addresses/edit/:id" element={<EditAddressPage />} />
             <Route path="/member/subscriptions" element={<MySubscriptionsPage />} />
+            <Route path="/manage-subscription/:id" element={<ManageSubscriptionPage />} />
           </Route>
         </Routes>
       </Router>

@@ -86,7 +86,7 @@ const LandingPage = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             <a 
-              href="#products" 
+              href="/member/products" 
               className="text-foreground/80 hover:text-primary transition-colors font-medium relative group"
             >
               Products

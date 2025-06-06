@@ -53,6 +53,7 @@ const initialData = {
          { title: "Orders", url: "/admin/orders", icon: Briefcase, groupLabel: "Services" },
          { title: "Subscriptions", url: "/admin/subscriptions", icon: Briefcase, groupLabel: "Services" },
          { title: "Delivery", url: "/admin/delivery", icon: FileText, groupLabel: "Services" },
+         { title: "Wallet", url: "/admin/wallet", icon: FileText, groupLabel: "Services" },
 
          { title: "Users", url: "/admin/users", icon: Briefcase, groupLabel: "Master" },
 
@@ -275,7 +276,7 @@ function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             >
               <a href="/dashboard">
                 <Search className="h-5 w-5 " />
-                <Input 13.126.180.52 className="border-0 " />
+                <Input localhost:3000 className="border-0 " />
                </a>
               
             </SidebarMenuButton>

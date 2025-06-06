@@ -61,7 +61,10 @@ interface Subscription {
   qty: number;
   altQty?: number | null;
   paymentStatus: string; // PENDING, PAID, FAILED
-  amount: number;
+  amount: number; // Total gross amount of the subscription
+  walletamt: number; // Amount paid from wallet
+  payableamt: number; // Net amount due after wallet deduction (amount - walletamt)
+  receivedamt: number; // Amount actually received against payableamt
   startDate: string; // Date when the subscription effectively starts
   createdAt: string; // Date when the record was created
   agencyId?: number | null;
@@ -86,12 +89,13 @@ interface PaymentUpdateModalProps {
   onOpenChange: (isOpen: boolean) => void;
   subscription: Subscription | null;
   onUpdateSubscription: (updatedDetails: {
-    subscriptionId: number;
-    paymentMode?: string;
-    paymentReference?: string;
-    paymentDate?: string;
-    paymentStatus?: string;
-  }) => Promise<boolean>; // Expect a boolean return type
+      subscriptionId: number;
+      paymentMode?: string;
+      paymentReference?: string;
+      paymentDate?: string;
+      paymentStatus?: string;
+      receivedAmount?: number; // <-- Add this
+    }) => Promise<boolean>; // Expect a boolean return type
 }
 
 const paymentModeOptions = [
@@ -112,6 +116,8 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
   const [paymentDate, setPaymentDate] = useState<string>('');
   const [paymentStatusState, setPaymentStatusState] = useState<string>('');
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
+  const [receivedAmount, setReceivedAmount] = useState<string>('');
+  const [payableAmount, setPayableAmount] = useState<string>('');
 
   const isPaymentSectionDisabled = subscription?.paymentStatus === 'PAID';
 
@@ -121,11 +127,16 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
       setPaymentReference(subscription.paymentReference || '');
       setPaymentDate(subscription.paymentDate ? format(new Date(subscription.paymentDate), 'yyyy-MM-dd') : '');
       setPaymentStatusState(subscription.paymentStatus || '');
+      // Use payableamt to pre-fill received amount, as this is what's due
+      setPayableAmount(subscription.payableamt?.toString() || '');
+      setReceivedAmount(subscription.payableamt?.toString() || ''); // <-- Pre-fill with payable amount
+
     } else {
       setPaymentMode('');
       setPaymentReference('');
       setPaymentDate('');
       setPaymentStatusState('');
+      setPayableAmount(''); // <-- Reset on close
     }
   }, [subscription]);
 
@@ -141,32 +152,46 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
   };
 
   const handleSubmit = async () => {
-    if (!subscription || isPaymentSectionDisabled) return;
-    
-    if (!validateForm()) return;
-    console.log(paymentStatusState)
-    if (paymentStatusState !== "PAID" && paymentStatusState !== "FAILED"){
-      toast.error("Payment Status is Required")
-      return
-    }
+      if (!subscription || isPaymentSectionDisabled) return;
+      if (!validateForm()) return; // Keep existing validation
 
-    const updatedDetails: any = {
-      subscriptionId: subscription.id,
-      paymentMode,
-      paymentReference,
-      paymentDate: paymentDate, // Pass as string, validation handled by parent
-      paymentStatus: paymentStatusState,
-    };
-
-    try {
-      const success = await onUpdateSubscription(updatedDetails);
-      if (success) {
-        onOpenChange(false); 
+      const received = parseFloat(receivedAmount);
+      
+      if (isNaN(received) || received <= 0) {
+        toast.error("Please enter a valid received amount.");
+        return;
       }
-    } catch (error) {
-      console.error('Failed to update payment:', error);
-    }
-  };
+
+      // The core new logic: check amounts if status is being set to PAID
+      // Compare received amount with payableamt (net amount due)
+      if (paymentStatusState === "PAID" && received !== subscription.payableamt) {
+        toast.error(`Received amount (₹${received.toFixed(2)}) must equal the payable amount (₹${subscription.payableamt.toFixed(2)}) to mark as PAID.`);
+        return;
+      }
+
+      if (paymentStatusState !== "PAID" && paymentStatusState !== "FAILED") {
+        toast.error("Payment Status is Required");
+        return;
+      }
+
+      const updatedDetails: any = {
+        subscriptionId: subscription.id,
+        paymentMode,
+        paymentReference,
+        paymentDate: paymentDate,
+        paymentStatus: paymentStatusState,
+        receivedAmount: received, // <-- Add received amount to the payload
+      };
+
+      try {
+        const success = await onUpdateSubscription(updatedDetails);
+        if (success) {
+          onOpenChange(false);
+        }
+      } catch (error) {
+        console.error('Failed to update payment:', error);
+      }
+    };
 
   if (!isOpen || !subscription) return null;
 
@@ -218,6 +243,26 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPaymentDate(e.target.value)}
                 className="col-span-3"
               />
+            </div>
+            {/* Add this section after the "Payment Date" input */}
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="payable-amount" className="text-right col-span-1">Payable Amount</Label>
+                <div className="col-span-3 flex items-center gap-2">
+                    <IndianRupeeIcon className="h-4 w-4 text-gray-500" />
+                    <span id="payable-amount" className="font-semibold">{payableAmount}</span>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="received-amount" className="text-right col-span-1">Received Amount <span className="text-red-500">*</span></Label>
+                <Input 
+                    id="received-amount" 
+                    type="number"
+                    value={receivedAmount} 
+                    onChange={(e) => setReceivedAmount(e.target.value)} 
+                    className="col-span-3"
+                    placeholder="Enter amount received"
+                />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right col-span-1" htmlFor="payment-status-modal">
@@ -614,58 +659,46 @@ const AdminSubscriptionList: React.FC = () => {
 
 
   const handlePaymentDetailsUpdate = async (updatedDetails: {
-  subscriptionId: number;
-  paymentMode?: string;
-  paymentReference?: string; // This is paymentReferenceNo
-  paymentDate?: string; // Changed to string to align with <input type="date">
-  paymentStatus?: string;
-}): Promise<boolean> => { // Added return type boolean
-    if (!selectedSubscription) {
-      toast.error("No subscription selected for update.");
-      return false;
-    }
+      subscriptionId: number;
+      paymentMode?: string;
+      paymentReference?: string;
+      paymentDate?: string;
+      paymentStatus?: string;
+      receivedAmount?: number; // <-- Receive the new field
+    }): Promise<boolean> => {
+      if (!selectedSubscription) {
+        toast.error("No subscription selected for update.");
+        return false;
+      }
 
-    const { subscriptionId, paymentMode, paymentReference, paymentDate, paymentStatus } = updatedDetails;
+      const { subscriptionId, paymentMode, paymentReference, paymentDate, paymentStatus, receivedAmount } = updatedDetails;
 
-    // Validation
-    if (!paymentMode || paymentMode.trim() === "") {
-      toast.error("Payment mode is required.");
-      return false;
-    }
-    // Assuming paymentDate from <input type="date"> is a 'YYYY-MM-DD' string or empty
-    if (!paymentDate || paymentDate.trim() === "") {
-      toast.error("Payment date is required.");
-      return false;
-    }
-    if (!paymentStatus || paymentStatus.trim() === "") {
-      toast.error("Payment status is required.");
-      return false;
-    }
-    if (paymentMode !== 'CASH' && (!paymentReference || paymentReference.trim() === "")) {
-      toast.error("Payment reference number is required for non-CASH payments.");
-      return false;
-    }
+      // Validation (can be simplified since modal handles most of it)
+      if (!paymentMode || !paymentDate || !paymentStatus || receivedAmount === undefined) {
+        toast.error("Missing required payment details.");
+        return false;
+      }
+      
+      const apiPayload = {
+        paymentMode: paymentMode,
+        paymentReference: paymentMode === 'CASH' ? null : paymentReference,
+        paymentDate: paymentDate,
+        paymentStatus: paymentStatus,
+        receivedAmount: receivedAmount, // <-- Add to the API payload
+      };
 
-    const apiPayload = {
-      paymentMode: paymentMode,
-      paymentReference: paymentMode === 'CASH' ? null : paymentReference,
-      paymentDate: paymentDate, // Already validated to be non-empty string 'YYYY-MM-DD'
-      paymentStatus: paymentStatus,
+      try {
+        await put(`/subscriptions/${subscriptionId}`, apiPayload);
+        toast.success('Payment details updated successfully');
+        fetchSubscriptions(currentPage, limit, filters);
+        return true;
+      } catch (err: any) {
+        console.error('Failed to update payment details:', err);
+        const errorMessage = err.response?.data?.message || 'Failed to update payment details.';
+        toast.error(errorMessage);
+        return false;
+      }
     };
-
-    try {
-      await put(`/subscriptions/${subscriptionId}`, apiPayload);
-      toast.success('Payment details updated successfully');
-      fetchSubscriptions(currentPage, limit, filters); // Pass filters
-      // setIsPaymentModalOpen(false); // Modal closing is now handled by the caller
-      return true;
-    } catch (err: any) {
-      console.error('Failed to update payment details:', err);
-      const errorMessage = err.response?.data?.message || 'Failed to update payment details.';
-      toast.error(errorMessage);
-      return false;
-    }
-  };
 
   const handleAgentAssignmentUpdate = async (updatedDetails: { subscriptionId: number; agencyId?: number | null }) => {
     if (!selectedSubscription) return;
