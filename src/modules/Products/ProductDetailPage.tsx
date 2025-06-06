@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useLocation, Link } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { get, post } from "@/services/apiService";
 import { toast } from "sonner";
@@ -43,8 +43,7 @@ interface ProductData {
 
 const ProductDetailPage: React.FC = () => {
   const { id: productId } = useParams<{ id: string }>();
-  const location = useLocation();
-  const showSubscribeButton = !location.state?.fromLanding;
+  // const showSubscribeButton logic related to location.state?.fromLanding was removed.
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
   const [isBuyOnceModalOpen, setIsBuyOnceModalOpen] = useState(false);
   const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false);
@@ -375,8 +374,8 @@ const ProductDetailPage: React.FC = () => {
                 </Button>
               ) : (
                 <>
-                  {/* This is the original block for logged-in users */}
-                  {!isAdmin && showSubscribeButton && (
+                  {/* Buttons for logged-in users */}
+                  {isLoggedIn && !isAdmin && (
                     <div className="flex flex-col sm:flex-row gap-4">
                       <motion.div 
                         whileHover={{ scale: 1.02 }}
