@@ -46,6 +46,9 @@ import AdminSubscriptionList from "./modules/AdminSubscription/AdminSubscription
 import AgencyDeliveryView from "./modules/agency-delivery/AgencyDeliveryView"; // Added for agency delivery management
 import WalletAdmin from "./modules/Wallet/AdminWalletPage";
 import AdminMembersListPage from "./modules/Wallet/AdminMembersListPage"; // Added for Admin Members List Page
+import AreaMasterListPage from "./modules/Areamaster/AreaMasterListPage"; // Added for Area Master Management
+import CategoryMasterListPage from "./modules/CategoryMaster/CategoryMasterListPage"; // Added for Category Master Management
+import DepotMasterListPage from "./modules/DepotMaster/DepotMasterListPage"; // Added for Depot Master Management
 import UserWallet from "./modules/Wallet/UserWallet";
 import "./App.css";
 // MembershipList wrapper component to handle showing all memberships
@@ -105,6 +108,9 @@ const App = () => {
             <Route path="/admin/products/:id" element={<ProductDetailPage />} /> {/* New route for product detail */}
             <Route path="/admin/subscriptions" element={<AdminSubscriptionList />} /> {/* Added for admin subscriptions list */}
             <Route path="/admin/delivery" element={<AgencyDeliveryView />} /> {/* Added for agency delivery management */}
+            <Route path="/admin/categories" element={<CategoryMasterListPage />} /> {/* Route for Category Master */}
+            <Route path="/admin/areamasters" element={<AreaMasterListPage />} /> {/* Added for Area Master Management */}
+            <Route path="/admin/depots" element={<DepotMasterListPage />} /> {/* Added for Depot Master Management */}
 
             {/* Vendor specific routes */}
             <Route path="/vendor/orders/:id" element={<OrderDetailsPage />} />
