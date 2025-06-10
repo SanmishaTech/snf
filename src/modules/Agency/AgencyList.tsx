@@ -257,9 +257,9 @@ const AgencyList: React.FC = () => {
         <CardHeader className="pb-2">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <CardTitle className="text-2xl">Agencies</CardTitle>
+              <CardTitle className="text-2xl">Delivery Agencies</CardTitle>
               <CardDescription>
-                Manage your agencies and their details.
+                Manage your delivery agencies and their details.
               </CardDescription>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -278,7 +278,7 @@ const AgencyList: React.FC = () => {
                 className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white"
               >
                 <PlusCircle size={16} className="mr-2" />
-                Add Agency
+                Add Delivery Agency
               </Button>
             </div>
           </div>
@@ -330,7 +330,7 @@ const AgencyList: React.FC = () => {
                       className="pl-6 cursor-pointer hover:bg-muted/80 transition-colors w-[200px]"
                       onClick={() => handleSort("name")}
                     >
-                      <div className="flex items-center gap-1">Agency Name {getSortIndicator("name")}</div>
+                      <div className="flex items-center gap-1">Delivery Agency Name {getSortIndicator("name")}</div>
                     </TableHead>
                     <TableHead
                       className="cursor-pointer hover:bg-muted/80 transition-colors w-[180px]"
@@ -447,19 +447,19 @@ const AgencyList: React.FC = () => {
             <div className="py-24 flex flex-col items-center justify-center text-center">
               <div className="mb-3 text-muted-foreground">
                 <Search size={40} className="mx-auto mb-2" />
-                <h3 className="text-lg font-semibold">No agencies found</h3>
+                <h3 className="text-lg font-semibold">No Delivery Agencies found</h3>
               </div>
               <p className="mb-6 text-muted-foreground max-w-sm">
                 {search
                   ? "Try a different search term or clear filters"
-                  : "Get started by adding your first agency"}
+                  : "Get started by adding your first Delivery Agency"}
               </p>
               <Button
                 onClick={() => navigate("/admin/agencies/create")}
                 className="bg-green-600 hover:bg-green-700 text-white"
               >
                 <PlusCircle size={16} className="mr-2" />
-                Add Agency
+                Add Delivery Agency
               </Button>
             </div>
           ) : (
@@ -520,14 +520,14 @@ const AgencyList: React.FC = () => {
       {/* Confirm Delete Dialog */}
       <ConfirmDialog
         isOpen={showConfirmDeleteDialog}
-        title="Delete Agency"
-        description="Are you sure you want to delete this agency? This action cannot be undone."
+        title="Delete Delivery Agency"
+        description="Are you sure you want to delete this delivery agency? This action cannot be undone."
         onCancel={() => {
           setShowConfirmDeleteDialog(false);
           setAgencyToDeleteId(null);
         }}
         onConfirm={handleDeleteAgency}
-        confirmLabel="Delete Agency"
+        confirmLabel="Delete Delivery Agency"
       />
     </div>
   );

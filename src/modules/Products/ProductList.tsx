@@ -206,17 +206,7 @@ const ProductList: React.FC = () => {
               Manage your product inventory.
             </CardDescription>
           </div>
-             <Button
-              onClick={() => navigate("/admin/products/create")}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              <PlusCircle size={18} className="mr-2" />
-              Add Product
-            </Button>
-         
-        </CardHeader>
-        <CardContent>
-          <div className="mb-4 flex items-center">
+          <div className="mb-4 flex items-center gap-4">
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -226,7 +216,19 @@ const ProductList: React.FC = () => {
                 className="pl-8 w-full"
               />
             </div>
+            <Button
+              onClick={() => navigate("/admin/products/create")}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <PlusCircle size={18} className="mr-2" />
+              Add Product
+            </Button>
           </div>
+           
+         
+        </CardHeader>
+        <CardContent>
+           
 
           {isLoading && products.length === 0 ? (
             <div className="flex justify-center items-center py-24">

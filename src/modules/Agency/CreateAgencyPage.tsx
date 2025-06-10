@@ -20,11 +20,11 @@ const CreateAgencyPage: React.FC = () => {
       
       <Card className=" mx-auto">
         <CardHeader>
-          <CardTitle className="text-2xl font-semibold">Create New Agency</CardTitle>
+          <CardTitle className="text-2xl font-semibold">Create New Delivery Agency</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground mb-6">
-            Fill in the details below to create a new agency and an associated user account.
+            Fill in the details below to create a new delivery agency and an associated user account.
           </p>
           <AgencyForm mode="create" onSuccess={handleSuccess} />
         </CardContent>

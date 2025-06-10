@@ -1,7 +1,7 @@
 // frontend/src/modules/Wallet/AdminMembersListPage.tsx
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { get } from '@/services/apiService'; // Corrected API service import
+import { get, patch } from '@/services/apiService'; // Corrected API service import, added patch
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -12,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Loader2, AlertCircle, Edit } from 'lucide-react'; // Icons
+import { Loader2, AlertCircle, Edit, CheckCircle2, XCircle, UserCog, Wallet } from 'lucide-react'; // Icons
 import { Input } from "@/components/ui/input"; // Assuming Input component exists
 import { useDebounce } from '@/hooks/useDebounce'; // Assuming a debounce hook
 import {
@@ -54,6 +54,22 @@ const AdminMembersListPage: React.FC = () => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>("asc"); // Default sort order
 
   const debouncedSearchTerm = useDebounce(searchTerm, 500); // Debounce search term by 500ms
+
+  const handleToggleMemberStatus = async (memberId: string, currentStatus: boolean) => {
+    try {
+      // Optimistically update UI or wait for response
+      // For now, let's update after successful API call
+      await patch(`/admin/members/${memberId}/status`, { active: !currentStatus });
+      setMembers(prevMembers =>
+        prevMembers.map(m => (m._id === memberId ? { ...m, active: !currentStatus } : m))
+      );
+      // Optionally, show a success toast notification here
+    } catch (err: any) {
+      setError(err.response?.data?.message || err.message || 'Failed to update member status');
+      console.error('Failed to update member status:', err);
+      // Optionally, show an error toast notification here
+    }
+  };
 
   const fetchMembers = async (page = currentPage, currentLimit = limit, search = debouncedSearchTerm, currentSortBy = sortBy, currentSortOrder = sortOrder) => {
     setLoading(true);
@@ -136,10 +152,11 @@ const AdminMembersListPage: React.FC = () => {
     <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8">
       <Card>
         <CardHeader>
-          <CardTitle>Admin - Members Wallets</CardTitle>
-        </CardHeader>
+         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap items-center gap-4 mb-4">
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-2xl font-bold mb-4">Admin - Members Wallets</h1>
+          <div className="flex  justify-end items-center gap-4 mb-4">
             <Input
               type="text"
               placeholder="Search members by name or email..."
@@ -162,6 +179,8 @@ const AdminMembersListPage: React.FC = () => {
               </Select>
             </div>
           </div>
+          </div>
+          
 
           {members.length === 0 && !loading ? (
             <p className="text-center text-gray-500 py-4">No members found.</p>
@@ -178,7 +197,10 @@ const AdminMembersListPage: React.FC = () => {
                   <TableHead onClick={() => handleSort('walletBalance')} className="cursor-pointer">
                     Wallet Balance {sortBy === 'walletBalance' && (sortOrder === 'asc' ? '▲' : '▼')}
                   </TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead onClick={() => handleSort('active')} className="cursor-pointer">
+                    Status {sortBy === 'active' && (sortOrder === 'asc' ? '▲' : '▼')}
+                  </TableHead>
+                  <TableHead className="text-center">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -187,12 +209,46 @@ const AdminMembersListPage: React.FC = () => {
                     <TableCell>{member.name}</TableCell>
                     <TableCell>{member.email}</TableCell>
                     <TableCell>₹{member.walletBalance.toFixed(2)}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell>
+                      {member.active === undefined ? (
+                        <span className="text-gray-500">Unknown</span>
+                      ) : member.active ? (
+                        <span className="text-green-600 font-semibold">Active</span>
+                      ) : (
+                        <span className="text-red-600 font-semibold">Inactive</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center space-x-1">
                       <Button asChild variant="outline" size="sm">
                         <Link to={`/admin/wallet?memberId=${member._id}`}>
-                          <Edit className="mr-2 h-4 w-4" /> Manage Wallet
+                           <Wallet className="h-4 w-4" />
+
                         </Link>
                       </Button>
+                      {/* Edit Member Button */}
+                      <Button asChild variant="outline" size="sm" className="ml-2" title="Edit Member Details">
+                        <Link to={`/admin/members/${member._id}/edit`}> {/* Ensure this route exists or will be created */}
+
+                          <Edit className="h-4 w-4" />
+
+                        </Link>
+                      </Button>
+                      {/* Activate/Deactivate Button */}
+                      {member.active !== undefined && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="ml-2" 
+                          onClick={() => handleToggleMemberStatus(member._id, member.active!)}
+                          title={member.active ? "Deactivate Member" : "Activate Member"}
+                        >
+                          {member.active ? (
+                            <XCircle className="h-4 w-4 text-red-500" />
+                          ) : (
+                            <CheckCircle2 className="h-4 w-4 text-green-500" />
+                          )}
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}

@@ -378,6 +378,22 @@ const VendorList: React.FC = () => {
                           >
                             <Trash2 size={16} />
                           </Button>
+                          {vendor.user && (
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 ml-2"
+                              onClick={() => handleChangeVendorStatus(vendor)}
+                              disabled={statusMutation.isPending}
+                              title={vendor.user.active ? "Deactivate Vendor User" : "Activate Vendor User"}
+                            >
+                              {vendor.user.active ? (
+                                <XCircle size={16} className="text-red-500" />
+                              ) : (
+                                <CheckCircle size={16} className="text-green-500" />
+                              )}
+                            </Button>
+                          )}
                           {/* <DropdownMenu modal={false} >
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon" className="h-8 w-8">

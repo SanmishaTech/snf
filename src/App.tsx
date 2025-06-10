@@ -9,6 +9,8 @@ import {
 
 import AuthLayout from "./layouts/AuthLayout";
 import MainLayout from "./layouts/MainLayout";
+import AdminProtectedRoute from "./layouts/AdminProtectedRoute"; // Added for admin route protection
+import Header from "./layouts/Header"; // Import the Header component
 import MemberLayout from "./layouts/MemberLayout";
 import Login from "./modules/Auth/Login";
 import Register from "./modules/Auth/Register";
@@ -16,6 +18,7 @@ import ForgotPassword from "./modules/Auth/ForgotPassword";
 import ResetPassword from "./modules/Auth/ResetPassword";
 import UserList from "./modules/User/UserList";
 import UserForm from "./modules/User/UserForm";
+import AdminMemberEditPage from "./modules/User/AdminMemberEditPage"; // Added for editing member details
 import VendorList from "./modules/Vendor/VendorList";
 import AgencyList from "./modules/Agency/AgencyList"
 import CreateVendorPage from "./modules/Vendor/CreateVendorPage";
@@ -33,6 +36,13 @@ import ManageSubscriptionPage from './modules/member/ManageSubscriptionPage'; //
 import OrderReceivedPage from "./modules/Order/OrderReceivedPage"; // Added for admin receipt recording
 import ProductList from "./modules/Products/ProductList"
 import LandingPage from "./modules/Homepage/LandingPage"; // Added for milk subscription landing page
+import AboutUsPage from "./modules/StaticPages/AboutUsPage"; // Added for About Us page
+import ContactUsPage from "./modules/StaticPages/ContactUsPage"; // Added for Contact Us page
+import GratitudePage from "./modules/StaticPages/GratitudePage"; // Added for Gratitude page
+import PrivacyPolicy from "./pages/PrivacyPolicy"; // Added for Privacy Policy page
+import RefundPolicy from "./pages/RefundPolicy"; // Added for Refund Policy page
+import ShippingPolicyPage from "./modules/StaticPages/ShippingPolicyPage"; // Added for Shipping Policy page
+import TermsAndConditionsPage from "./modules/StaticPages/TermsAndConditionsPage"; // Added for Terms and Conditions page
 import CreateProductPage from "./modules/Products/CreateProductPage";
 import EditProductPage from "./modules/Products/EditProductPage";
 import ProductDetailPage from "./modules/Products/ProductDetailPage"; // Added for product detail page
@@ -49,6 +59,7 @@ import AdminMembersListPage from "./modules/Wallet/AdminMembersListPage"; // Add
 import AreaMasterListPage from "./modules/Areamaster/AreaMasterListPage"; // Added for Area Master Management
 import CategoryMasterListPage from "./modules/CategoryMaster/CategoryMasterListPage"; // Added for Category Master Management
 import DepotMasterListPage from "./modules/DepotMaster/DepotMasterListPage"; // Added for Depot Master Management
+import BannerListPage from "./modules/BannerMaster/BannerListPage"; // Added for Banner Master Management
 import UserWallet from "./modules/Wallet/UserWallet";
 import "./App.css";
 // MembershipList wrapper component to handle showing all memberships
@@ -68,7 +79,7 @@ const App = () => {
         <Routes>
           {/* Landing page */}
           <Route path="/" element={<LandingPage />} />
-          <Route path="/products/:id" element={<ProductDetailWrapper />} />
+           <Route path="/products/:id" element={<ProductDetailWrapper />} />
           
           {/* Auth routes with minimal layout */}
           <Route element={<AuthLayout />}>
@@ -81,10 +92,22 @@ const App = () => {
           {/* Public routes with MemberLayout (includes navbar/footer) */}
           <Route element={<MemberLayout />}>
             <Route path="/login" element={<Login />} />
+            <Route path="/about" element={<AboutUsPage />} />
+            <Route path="/contact" element={<ContactUsPage />} />
+            <Route path="/gratitude" element={<GratitudePage />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/refund-policy" element={<RefundPolicy />} />
+          <Route path="/shipping-policy" element={<ShippingPolicyPage />} />
+            <Route path="/terms-and-conditions" element={<TermsAndConditionsPage />} />
             <Route path="/register" element={<Register />} />
           </Route>
-          <Route element={<MainLayout />}> 
-          
+          {/* Protected Admin Routes with MainLayout */}
+          <Route element={<AdminProtectedRoute><MainLayout /></AdminProtectedRoute>}>
+            <Route path="/admin/dashboard" element={<div className="space-y-4 ml-4">
+              <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+              <p>Welcome to your dashboard. Here you can manage orders.</p>
+              {/* Dashboard content would go here */}
+            </div>} />
             <Route path="/admin/users" element={<UserList />} />
             <Route path="/admin/users/create" element={<UserForm mode='create' />} />
             <Route path="/admin/users/edit/:id" element={<UserForm mode='edit' />} />
@@ -102,7 +125,7 @@ const App = () => {
             <Route path="/admin/products" element={<ProductList />} />
             <Route path="/admin/wallet" element={<WalletAdmin />} />
             <Route path="/admin/members" element={<AdminMembersListPage />} /> {/* Added for Admin Members List Page */}
-
+            <Route path="/admin/members/:memberId/edit" element={<AdminMemberEditPage />} /> {/* Added for editing member details */}
             <Route path="/admin/products/create" element={<CreateProductPage />} />
             <Route path="/admin/products/edit/:id" element={<EditProductPage />} />
             <Route path="/admin/products/:id" element={<ProductDetailPage />} /> {/* New route for product detail */}
@@ -111,20 +134,20 @@ const App = () => {
             <Route path="/admin/categories" element={<CategoryMasterListPage />} /> {/* Route for Category Master */}
             <Route path="/admin/areamasters" element={<AreaMasterListPage />} /> {/* Added for Area Master Management */}
             <Route path="/admin/depots" element={<DepotMasterListPage />} /> {/* Added for Depot Master Management */}
+            <Route path="/admin/banners" element={<BannerListPage />} /> {/* Added for Banner Master Management */}
+          </Route>
 
+          {/* Other routes using MainLayout (e.g., Vendor routes) - not protected by AdminProtectedRoute */}
+          <Route element={<MainLayout />}> 
             {/* Vendor specific routes */}
             <Route path="/vendor/orders/:id" element={<OrderDetailsPage />} />
             <Route path="/vendor/orders/:id/record-delivery" element={<OrderDeliveryPage />} />
-          
+            {/* Add any other non-admin routes here that should use MainLayout but not admin protection */}
           </Route>
           
           {/* Member specific routes with MemberLayout */}
           <Route element={<MemberLayout />}>
-            <Route path="/dashboard" element={<div className="space-y-4">
-              <h1 className="text-2xl font-bold">Member Dashboard</h1>
-              <p>Welcome to your dashboard. Here you can manage your milk subscription and orders.</p>
-              {/* Dashboard content would go here */}
-            </div>} />
+          
             <Route path="/member/orders" element={<Orderlist />} />
             <Route path="/member/orders/:id" element={<OrderDetailsPage />} />
             <Route path="/member/products" element={<MemberProductDisplayPage />} /> {/* Member product display page */}

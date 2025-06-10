@@ -64,6 +64,113 @@ interface Agency {
   name: string;
 }
 
+// Helper functions from user's Calendar28
+function formatDate(date: Date | undefined) {
+  if (!date) {
+    return ""
+  }
+
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  })
+}
+
+function isValidDate(date: Date | undefined) {
+  if (!date) {
+    return false
+  }
+  return !isNaN(date.getTime())
+}
+
+// Adapted Calendar28 for react-hook-form
+interface ControlledCalendar28Props {
+  value: Date | undefined;
+  onChange: (date: Date | undefined) => void;
+  label: string;
+  id: string;
+  fromDate?: Date;
+}
+
+function ControlledCalendar28({ value, onChange, label, id, fromDate }: ControlledCalendar28Props) {
+  const [open, setOpen] = useState(false);
+  const [month, setMonth] = useState<Date | undefined>(value);
+  const [inputValue, setInputValue] = useState(formatDate(value));
+
+  useEffect(() => {
+    setInputValue(formatDate(value));
+    if (isValidDate(value)) {
+        setMonth(value);
+    }
+  }, [value]);
+
+  return (
+    <div className="flex flex-col gap-3">
+      <Label htmlFor={id} className="px-1">
+        {label}
+      </Label>
+      <div className="relative flex gap-2">
+        <Input
+          id={id}
+          value={inputValue}
+          placeholder="01/06/2025"
+          className="bg-background pr-10"
+          onChange={(e) => {
+            const newInputValue = e.target.value;
+            setInputValue(newInputValue);
+            const parsedDate = new Date(newInputValue);
+            if (isValidDate(parsedDate)) {
+              onChange(parsedDate);
+              setMonth(parsedDate);
+            } else {
+              onChange(undefined);
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowDown") {
+              e.preventDefault();
+              setOpen(true);
+            }
+          }}
+        />
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              className="absolute top-1/2 right-2 size-6 -translate-y-1/2"
+            >
+              <CalendarIcon className="size-3.5" />
+              <span className="sr-only">Select date</span>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            className="w-auto overflow-hidden p-0"
+            align="end"
+            alignOffset={-8}
+            sideOffset={10}
+          >
+            <Calendar
+              mode="single"
+              selected={value}
+              captionLayout="dropdown"
+              month={month}
+              onMonthChange={setMonth}
+              onSelect={(selectedDate) => {
+                onChange(selectedDate);
+                setInputValue(formatDate(selectedDate));
+                setOpen(false);
+              }}
+              fromDate={fromDate}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+    </div>
+  );
+}
+
 const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuccess }) => {
   const queryClient = useQueryClient();
   const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -146,7 +253,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
   useEffect(() => {
     const fetchVendors = async () => {
       try {
-        const response = await get("/vendors");
+        const response = await get("/vendors?limit=1000&dairyOnly=true"); // Fetch only dairy vendors, up to 1000
         if (response && Array.isArray(response)) {
             setVendors(response.map(v => ({ ...v, id: String(v.id) })));
         } else if (response && response.data && Array.isArray(response.data)) {
@@ -397,72 +504,34 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="relative">
-                  <Label htmlFor="orderDate" className="text-gray-700 dark:text-gray-300 font-medium">Order Date</Label>
                   <Controller
                     control={control}
                     name="orderDate"
                     render={({ field }) => (
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full justify-start text-left font-normal bg-white/80 dark:bg-gray-900/80 border-blue-200 dark:border-blue-800",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {field.value ? format(field.value, "dd/MM/yyyy") : <span>Pick a date</span>}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            initialFocus
-                            fromDate={new Date()} // Disable past dates
-                          />
-                        </PopoverContent>
-                      </Popover>
+                      <ControlledCalendar28
+                        id="orderDate"
+                        label="Order Date"
+                        value={field.value}
+                        onChange={field.onChange}
+                        fromDate={new Date()} // Disable past dates
+                      />
                     )}
                   />
                   {errors.orderDate && <span className="text-gray-500 text-xs absolute -bottom-5">{errors.orderDate.message}</span>}
                 </div>
                 
                 <div className="relative">
-                  <Label htmlFor="deliveryDate" className="text-gray-700 dark:text-gray-300 font-medium">Delivery Date</Label>
                   <Controller
                     control={control}
                     name="deliveryDate"
                     render={({ field }) => (
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full justify-start text-left font-normal bg-white/80 dark:bg-gray-900/80 border-blue-200 dark:border-blue-800",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {field.value ? format(field.value, "dd/MM/yyyy") : <span>Pick a date</span>}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={(date) => {
-                              field.onChange(date);
-                              // Optional: If orderDate is later, clear deliveryDate or show error
-                              // For now, just restrict selection
-                            }}
-                            initialFocus
-                            fromDate={watch("orderDate") || new Date()} // Disable dates before selected orderDate or today
-                          />
-                        </PopoverContent>
-                      </Popover>
+                      <ControlledCalendar28
+                        id="deliveryDate"
+                        label="Delivery Date"
+                        value={field.value}
+                        onChange={field.onChange}
+                        fromDate={watch("orderDate") || new Date()} // Disable dates before selected orderDate or today
+                      />
                     )}
                   />
                   {errors.deliveryDate && <span className="text-gray-500 text-xs absolute -bottom-5">{errors.deliveryDate.message}</span>}
@@ -482,7 +551,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
               </div>
 
               <div className="relative mt-2">
-                <Label htmlFor="notes" className="text-gray-700 dark:text-gray-300 font-medium">Notes / Special Instructions</Label>
+                <Label htmlFor="notes" className="text-gray-700 dark:text-gray-300 font-medium mb-2">Notes / Special Instructions</Label>
                 <Textarea 
                   id="notes" 
                   {...register("notes")} 
@@ -505,7 +574,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
             
             <div className="grid gap-4">
               <div className="relative">
-                <Label htmlFor="vendorId" className="text-gray-700 dark:text-gray-300 font-medium">Select Vendor</Label>
+                <Label htmlFor="vendorId" className="text-gray-700 dark:text-gray-300 font-medium mb-2">Select Vendor</Label>
                 <Controller
                   control={control}
                   name="vendorId"
@@ -515,7 +584,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                       value={field.value || ""} 
                       defaultValue={field.value || ""}
                     >
-                      <SelectTrigger className="bg-white dark:bg-gray-700">
+                      <SelectTrigger className="bg-white dark:bg-gray-700 w-full">
                         <SelectValue  />
                       </SelectTrigger>
                       <SelectContent>
@@ -530,7 +599,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
               </div>
               
               <div className="relative">
-                <Label htmlFor="contactPersonName" className="text-gray-700 dark:text-gray-300 font-medium">Contact Person</Label>
+                <Label htmlFor="contactPersonName" className="text-gray-700 dark:text-gray-300 font-medium mb-2">Contact Person</Label>
                 <Input 
                   id="contactPersonName" 
                   disabled
@@ -625,7 +694,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                               name={`orderItems.${index}.agencyId`}
                               render={({ field: agencyField }) => (
                                 <Select onValueChange={agencyField.onChange} value={agencyField.value || ""}>
-                                  <SelectTrigger className="h-9 text-sm bg-white dark:bg-gray-700">
+                                  <SelectTrigger className="h-9 text-sm bg-white dark:bg-gray-700 min-w-full">
                                     <SelectValue  />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -785,7 +854,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
   };
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto p-4 sm:p-6 lg:p-8">
+    <div className="space-y-8 mx-auto p-4 sm:p-6 lg:p-8">
       <div className="space-y-6">
         <h2 className="text-2xl font-bold">
           {mode === "create" ? "Create New Order" : "Edit Order"}

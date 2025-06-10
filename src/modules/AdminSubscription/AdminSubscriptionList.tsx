@@ -900,9 +900,9 @@ const AdminSubscriptionList: React.FC = () => {
       </div>
 
       <div className="overflow-x-auto rounded-lg border shadow-sm">
-  <Table>
+  <Table >
     <TableHeader>
-      <TableRow>
+      <TableRow >
         <TableHead>Member</TableHead>
         <TableHead>Product & Quantity</TableHead>
         <TableHead>Delivery Schedule</TableHead>

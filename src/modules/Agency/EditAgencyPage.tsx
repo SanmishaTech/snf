@@ -61,7 +61,7 @@ const EditAgencyPage: React.FC = () => {
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
-          <AlertDescription>No Agency ID provided. Please go back and select an agency to edit.</AlertDescription>
+          <AlertDescription>No Delivery Agency ID provided. Please go back and select a delivery agency to edit.</AlertDescription>
         </Alert>
       </div>
     );
@@ -90,9 +90,9 @@ const EditAgencyPage: React.FC = () => {
       <div className="container mx-auto p-6">
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Error Fetching Agency</AlertTitle>
+          <AlertTitle>Error Fetching Delivery Agency</AlertTitle>
           <AlertDescription>
-            There was a problem retrieving the agency details. Error: {error?.message || 'Unknown error'}
+            There was a problem retrieving the delivery agency details. Error: {error?.message || 'Unknown error'}
           </AlertDescription>
         </Alert>
       </div>
@@ -105,7 +105,7 @@ const EditAgencyPage: React.FC = () => {
         <Alert variant="default">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Not Found</AlertTitle>
-          <AlertDescription>Agency data could not be loaded or found.</AlertDescription>
+          <AlertDescription>Delivery Agency data could not be loaded or found.</AlertDescription>
         </Alert>
       </div>
     );
@@ -128,7 +128,7 @@ const EditAgencyPage: React.FC = () => {
     <div className="container mx-auto p-6"> 
       <Card className="max-w-4xl mx-auto"> 
         <CardHeader>
-          <CardTitle className="text-2xl font-semibold">Edit Agency</CardTitle> 
+          <CardTitle className="text-2xl font-semibold">Edit Delivery Agency</CardTitle> 
         </CardHeader>
         <CardContent>
           <AgencyForm

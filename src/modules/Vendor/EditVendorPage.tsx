@@ -29,6 +29,7 @@ interface VendorData {
   alternateMobile?: string | null;
   userId: number;
   user?: VendorUser; // Nested user details, optional if not always populated
+  isDairySupplier?: boolean; // Added isDairySupplier
   // Add any other fields returned by your /vendors/:id endpoint
 }
 
@@ -136,6 +137,7 @@ const EditVendorPage: React.FC = () => {
     // However, our VendorForm now has user fields for create mode. For edit mode, these aren't used by the PUT request.
     userFullName: vendorData.user?.name || '', // For potential display, not submission in edit mode
     userLoginEmail: vendorData.user?.email || '', // For potential display, not submission in edit mode
+    isDairySupplier: vendorData.isDairySupplier || false, // Added isDairySupplier
   };
 
   return (

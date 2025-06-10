@@ -7,16 +7,28 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatCurrency } from "@/lib/formatter.js";
 import { motion } from "framer-motion";
-import { FaLeaf, FaTruck, FaGlassWhiskey } from "react-icons/fa";
+import { FaLeaf, FaTruck, FaGlassWhiskey,FaTimes } from "react-icons/fa";
 import { FaCow,FaBars } from "react-icons/fa6";
-import Banner from '@/images/banner1.webp'
+import { Leaf } from "lucide-react"; // For AppFooter
+// import Banner from '@/images/banner1.webp'; // Replaced by dynamic banners
+import * as apiService from '@/services/apiService';
+import InfiniteImageCarousel from './Coursel'; // Assuming Coursel.tsx exports this
+import type { Banner as ApiBanner } from '../BannerMaster/BannerListPage'; // Renamed to avoid conflict if Banner is used locally
+import Header from '@/layouts/Header';
 
 interface Product {
   id: string | number;
-  name: string;
+name: string;
   rate: number;
   url?: string | null;
   unit?: string;
+}
+
+interface CarouselImage {
+  id: string; // Made 'id' required as per lint error indication
+  src: string;
+  alt: string;
+  title?: string;
 }
 
 const LandingPage = () => {
@@ -27,6 +39,13 @@ const LandingPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+  const [heroBanners, setHeroBanners] = useState<CarouselImage[]>([]);
+  const [isLoadingBanners, setIsLoadingBanners] = useState(true);
+  const [bannerError, setBannerError] = useState<string | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userName, setUserName] = useState<string | null>(null);
+
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://13.126.180.52';
   useEffect(() => {
     const fetchProducts = async () => {
       setIsLoading(true);
@@ -51,16 +70,60 @@ const LandingPage = () => {
     if (userDetailsString) {
       try {
         const userDetails = JSON.parse(userDetailsString);
-        if (userDetails && userDetails.role) {
-          setCurrentUserRole(userDetails.role);
+        if (userDetails) {
+          setIsLoggedIn(true);
+          setUserName(userDetails.name || userDetails.username || userDetails.email || 'User'); // Adjust based on your user object
+          if (userDetails.role) {
+            setCurrentUserRole(userDetails.role);
+          }
         }
       } catch (e) {
         console.error("Failed to parse user data from localStorage", e);
         setCurrentUserRole(null);
+        setIsLoggedIn(false);
+        setUserName(null);
       }
     } else {
       setCurrentUserRole(null);
+      setIsLoggedIn(false);
+      setUserName(null);
     }
+  }, []);
+
+  useEffect(() => {
+    const fetchHeroBanners = async () => {
+      setIsLoadingBanners(true);
+      setBannerError(null);
+      try {
+        const responseData = await apiService.get<{ banners: ApiBanner[] }>(
+          '/api/admin/public/banners', // Updated to use the new public endpoint
+          { sortBy: 'listOrder', sortOrder: 'asc', limit: 7 } // Fetch active banners, sorted
+        );
+        
+        if (responseData && responseData.banners) {
+          const transformedBanners = responseData.banners
+            .filter(banner => banner.imagePath)
+            .map(banner => ({
+              id: banner.id,
+              src: `${BACKEND_URL}${banner.imagePath}`,
+              alt: banner.caption || `Indraai Milk Banner ${banner.id}`,
+              title: banner.description || undefined,
+            }));
+          setHeroBanners(transformedBanners);
+        } else {
+          setHeroBanners([]);
+        }
+      } catch (e) {
+        const errorMsg = e instanceof Error ? e.message : "Failed to fetch banners for hero section";
+        console.error("Error fetching hero banners:", errorMsg);
+        setBannerError(errorMsg);
+        setHeroBanners([]);
+      } finally {
+        setIsLoadingBanners(false);
+      }
+    };
+
+    fetchHeroBanners();
   }, []);
 
   const handleLogout = () => {
@@ -71,139 +134,43 @@ const LandingPage = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      {/* Enhanced Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-muted/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
-        <div className="container flex h-20 items-center justify-between px-4 sm:px-6">
-          <div className="flex items-center">
-            <a href="/" className="flex items-center space-x-3">
-              <div className="bg-primary/90 rounded-full h-10 w-10 flex items-center justify-center text-white font-bold text-xl">
-                <FaCow />
-              </div>
-              <span className="font-bold text-2xl text-primary">Indrai</span>
-            </a>
-          </div>
-          
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            <a 
-              href="/member/products" 
-              className="text-foreground/80 hover:text-primary transition-colors font-medium relative group"
-            >
-              Products
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
-            </a>
-            <a 
-              href="#benefits" 
-              className="text-foreground/80 hover:text-primary transition-colors font-medium relative group"
-            >
-              Benefits
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
-            </a>
-            {/* <a 
-              href="#subscribe" 
-              className="text-foreground/80 hover:text-primary transition-colors font-medium relative group"
-            >
-              Subscribe
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
-            </a> */}
-            <motion.div 
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <a 
-                href="#subscribe" 
-                className="bg-primary text-white px-5 py-2 rounded-full text-sm font-medium shadow-md hover:bg-primary/90 transition-colors"
-              >
-                Get Started
-              </a>
-            </motion.div>
-          </div>
-          
-          {/* Mobile Menu Button */}
-          <button 
-            className="md:hidden text-foreground/80 hover:text-primary transition-colors"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? (
-              <FaTimes className="h-6 w-6" />
-            ) : (
-              <FaBars className="h-6 w-6" />
-            )}
-          </button>
-        </div>
-        
-        {/* Mobile Navigation */}
-        {mobileMenuOpen && (
-          <motion.div 
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="md:hidden bg-card border-t border-muted/30"
-          >
-            <div className="container py-4 px-4 flex flex-col space-y-4">
-              <a 
-                href="#products" 
-                className="text-foreground/80 hover:text-primary transition-colors font-medium py-2"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Products
-              </a>
-              <a 
-                href="#benefits" 
-                className="text-foreground/80 hover:text-primary transition-colors font-medium py-2"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Benefits
-              </a>
-              <a 
-                href="#subscribe" 
-                className="text-foreground/80 hover:text-primary transition-colors font-medium py-2"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Subscribe
-              </a>
-              <motion.div 
-                whileTap={{ scale: 0.95 }}
-                className="pt-2"
-              >
-                <a 
-                  href="#subscribe" 
-                  className="block bg-primary text-white px-5 py-3 rounded-full text-center font-medium shadow-md hover:bg-primary/90 transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Get Started
-                </a>
-              </motion.div>
-            </div>
-          </motion.div>
-        )}
-      </header>
+      <Header isLoggedIn={isLoggedIn} userName={userName} onLogout={handleLogout} />
 
-      {/* Improved Hero Section */}
-      <section className="relative py-24 md:py-32">
+      {/*  Hero Section */}
+      <section className="relative h-[600px] max-md:h-[600px] max-lg:h-[800px] py-24 md:py-32"> {/* Hero Section - Check if text is legible after removing gradient overlay */}
         <div className="absolute inset-0 z-0 overflow-hidden">
-          <div 
-            className="absolute inset-0 bg-cover bg-center" 
-            style={{  
-              backgroundImage: `url(${Banner})`,
-              backgroundRepeat: "no-repeat",
-              backgroundSize: "cover",
-              filter: "brightness(0.8)"
-            }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-background/0"></div>
+          {isLoadingBanners && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-200">
+              <p>Loading images...</p> {/* Or a spinner component */}
+            </div>
+          )}
+          {!isLoadingBanners && bannerError && (
+            <div className="absolute inset-0 flex items-center justify-center bg-red-100">
+              <p className="text-red-700">Could not load banner images: {bannerError}</p>
+            </div>
+          )}
+          {!isLoadingBanners && !bannerError && heroBanners.length > 0 && (
+            <InfiniteImageCarousel images={heroBanners} />
+          )}
+          {!isLoadingBanners && !bannerError && heroBanners.length === 0 && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-200">
+              <p>No banner images available.</p>
+            </div>
+          )}
+          <div className="absolute inset-0 bg-black/30"></div> {/* Dark overlay for text contrast */}
+          {/* <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-background/0"></div> */}
+          {/* The above gradient was removed to reduce 'white aura'. If text legibility on carousel is an issue, consider a darker, simpler overlay e.g., bg-black/30 */}
         </div>
         
-        <div className="container relative z-10 flex flex-col items-center text-center px-4">
+        <div className="container absolute bottom-32 left-0 right-0 z-10 flex flex-col items-center text-center px-4">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             className="max-w-3xl"
           >
-            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-white mb-6">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-primary/80">
+            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-white mb-6 ">
+              <span className="bg-clip-text ">
                 Fresh Milk Delivered Daily
               </span>
             </h1>
@@ -223,10 +190,10 @@ const LandingPage = () => {
       </section>
 
       {/* Benefits Section */}
-      <section id="benefits" className="py-16 bg-muted/20">
+      <section id="benefits" className="py-16"> {/* Removed bg-muted/20 */}
         <div className="container max-w-6xl mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight mb-3">Why Choose Indrai?</h2>
+            <h2 className="text-3xl font-bold tracking-tight mb-3">Why Choose Indraai?</h2>
             <div className="flex justify-center">
               <div className="h-1 w-20 bg-primary rounded-full"></div>
             </div>
@@ -235,7 +202,7 @@ const LandingPage = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             <motion.div 
               whileHover={{ y: -5 }}
-              className="bg-card p-6 rounded-xl shadow-sm border border-muted/30 text-center"
+              className="bg-card p-6 rounded-xl border border-muted/30 text-center"
             >
               <div className="flex justify-center mb-4">
                 <div className="bg-primary/10 p-4 rounded-full text-primary">
@@ -248,7 +215,7 @@ const LandingPage = () => {
             
             <motion.div 
               whileHover={{ y: -5 }}
-              className="bg-card p-6 rounded-xl shadow-sm border border-muted/30 text-center"
+              className="bg-card p-6 rounded-xl border border-muted/30 text-center"
             >
               <div className="flex justify-center mb-4">
                 <div className="bg-primary/10 p-4 rounded-full text-primary">
@@ -261,7 +228,7 @@ const LandingPage = () => {
             
             <motion.div 
               whileHover={{ y: -5 }}
-              className="bg-card p-6 rounded-xl shadow-sm border border-muted/30 text-center"
+              className="bg-card p-6 rounded-xl border border-muted/30 text-center"
             >
               <div className="flex justify-center mb-4">
                 <div className="bg-primary/10 p-4 rounded-full text-primary">
@@ -274,7 +241,7 @@ const LandingPage = () => {
             
             <motion.div 
               whileHover={{ y: -5 }}
-              className="bg-card p-6 rounded-xl shadow-sm border border-muted/30 text-center"
+              className="bg-card p-6 rounded-xl border border-muted/30 text-center"
             >
               <div className="flex justify-center mb-4">
                 <div className="bg-primary/10 p-4 rounded-full text-primary">
@@ -400,45 +367,46 @@ const LandingPage = () => {
               </div>
             ) : (
               // Original Auth Section for non-members
-            <div className="sticky top-24 bg-card rounded-2xl shadow-lg overflow-hidden border border-muted/50">
-              <div className="bg-gradient-to-r from-primary/90 to-primary p-6 text-white">
-                <h2 className="text-2xl font-bold mb-2">Join Our Milk Club</h2>
-                <p className="opacity-90">Sign in or create an account to start your subscription</p>
+              <div className="sticky top-24 bg-card rounded-2xl shadow-lg overflow-hidden border border-muted/50">
+                <div className="bg-gradient-to-r from-primary/90 to-primary p-6 text-white">
+                  <h2 className="text-2xl font-bold mb-2">Join Our Milk Club</h2>
+                  <p className="opacity-90">Sign in or create an account to start your subscription</p>
                 </div> {/* This was the missing closing tag */}
-              
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <div className="px-6 pt-6 pb-2">
-                  <TabsList className="grid w-full grid-cols-2 bg-muted/10 p-1.5 rounded-xl border border-muted/30">
-                    <TabsTrigger 
-                      value="login" 
-                      className="px-4 py-3 rounded-lg font-medium text-sm transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground hover:text-primary/80"
-                    >
-                      Login
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="register" 
-                      className="px-4 py-3 rounded-lg font-medium text-sm transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground hover:text-primary/80"
-                    >
-                      Register
-                    </TabsTrigger>
-                  </TabsList>
+                
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                  <div className="px-6 pt-6 pb-2">
+                    <TabsList className="grid w-full grid-cols-2 bg-muted/10 p-1.5 rounded-xl border border-muted/30">
+                      <TabsTrigger 
+                        value="login" 
+                        className="px-4 py-3 rounded-lg font-medium text-sm transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground hover:text-primary/80"
+                      >
+                        Login
+                      </TabsTrigger>
+                      <TabsTrigger 
+                        value="register" 
+                        className="px-4 py-3 rounded-lg font-medium text-sm transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground hover:text-primary/80"
+                      >
+                        Register
+                      </TabsTrigger>
+                    </TabsList>
+                  </div>
+                  
+                  <div className="p-6 pt-2">
+                    <TabsContent value="login">
+                      <Login setActiveTab={setActiveTab} />
+                    </TabsContent>
+                    <TabsContent value="register">
+                      <Register setActiveTab={setActiveTab} />
+                    </TabsContent>
+                  </div>
+                </Tabs>
+                <div className="px-6 pb-6">
+                  <div className="border-t border-muted/30 pt-6 text-center">
+                    <p className="text-muted-foreground text-sm">
+                      By joining, you agree to our <a href="#" className="text-primary hover:underline">Terms</a> and <a href="#" className="text-primary hover:underline">Privacy Policy</a>
+                    </p>
+                  </div>
                 </div>
-                <div className="p-6 pt-2">
-                  <TabsContent value="login">
-                    <Login setActiveTab={setActiveTab} />
-                  </TabsContent>
-                  <TabsContent value="register">
-                    <Register setActiveTab={setActiveTab} />
-                  </TabsContent>
-                </div>
-              </Tabs>
-              <div className="px-6 pb-6">
-                <div className="border-t border-muted/30 pt-6 text-center">
-                  <p className="text-muted-foreground text-sm">
-                    By joining, you agree to our <a href="#" className="text-primary hover:underline">Terms</a> and <a href="#" className="text-primary hover:underline">Privacy Policy</a>
-                  </p>
-                </div>
-              </div>
               </div>
             )} {/* End of conditional rendering for Auth Section */}
           </div>
@@ -447,31 +415,81 @@ const LandingPage = () => {
 
    
       {/* Footer */}
-      <footer className="border-t py-8 bg-muted/20">
-        <div className="container">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center mb-4 md:mb-0">
-              <a href="/" className="flex items-center space-x-2">
-                <div className="bg-primary/90 rounded-full h-8 w-8 flex items-center justify-center text-white">
-                  <FaCow />
-                </div>
-                <span className="font-medium text-primary">Indrai</span>
-              </a>
-              <div className="mx-6 h-4 w-px bg-border hidden md:block"></div>
-              <div className="text-sm text-muted-foreground">
-                {new Date().getFullYear()} Indrai. All rights reserved.
-              </div>
+      <AppFooter />
+    </div>
+  );
+};
+
+// New AppFooter component
+const AppFooter = () => {
+  return (
+    <footer className="bg-slate-50 dark:bg-gray-900 text-gray-700 dark:text-gray-300 border-t border-gray-200 dark:border-gray-700">
+      {/* Main Footer Content */}
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-x-8 gap-y-10">
+          {/* Column 1: Logo, Description, Payment */}
+          <div className="md:col-span-12 lg:col-span-4">
+            <div className="mb-6 flex items-center">
+              <Leaf className="h-10 w-10 text-green-600 mr-3" />
+              <span className="text-2xl font-bold text-green-700 dark:text-green-500">Sarkhot Natural Farms</span>
             </div>
-            
-            <div className="flex space-x-6">
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">Terms</a>
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">Privacy</a>
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">Contact</a>
+            <p className="text-sm mb-6 leading-relaxed">
+              Sarkhot Natural farms denote the community of natural farmers. Natural means <span className="font-semibold text-red-500">💯%</span> chemical free, preservative free and poison free.
+            </p>
+            <h3 className="text-[0.9rem] font-semibold mb-3 text-gray-600 dark:text-gray-400">Payment Accepted</h3>
+            <div className="flex flex-wrap gap-2 items-center">
+              {['Mastercard', 'Discover', 'BitPay', 'Visa', 'Stripe'].map(method => (
+                <span key={method} className="text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-md shadow-sm">{method}</span>
+              ))}
             </div>
           </div>
+
+          {/* Spacer for large screens to push link columns to the right */} 
+          <div className="hidden lg:block lg:col-span-1"></div>
+
+          {/* Column 2: Policies */}
+          <div className="md:col-span-4 lg:col-span-2">
+            <h3 className="text-md font-semibold mb-4 text-green-700 dark:text-green-500 border-b-2 border-green-500 pb-1 inline-block">Policies</h3>
+            <ul className="space-y-2.5 text-sm">
+              <li><a href="/privacy-policy" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Privacy Policy</a></li>
+              <li><a href="/refund-policy" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Refund and Returns Policy</a></li>
+              <li><a href="/shipping-policy" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Shipping and delivery policy</a></li>
+              <li><a href="/terms-conditions" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Terms and Conditions</a></li>
+            </ul>
+          </div>
+
+          {/* Column 3: Useful Links */}
+          <div className="md:col-span-4 lg:col-span-2">
+            <h3 className="text-md font-semibold mb-4 text-green-700 dark:text-green-500 border-b-2 border-green-500 pb-1 inline-block">Useful Links</h3>
+            <ul className="space-y-2.5 text-sm">
+              <li><a href="/" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Home</a></li>
+              <li><a href="/member/products" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Shop</a></li>
+              <li><a href="/about" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">About</a></li>
+              <li><a href="/contact" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Contact Us</a></li>
+            </ul>
+          </div>
+
+          {/* Column 4: Contact */}
+          <div className="md:col-span-4 lg:col-span-3">
+            <h3 className="text-md font-semibold mb-4 text-green-700 dark:text-green-500 border-b-2 border-green-500 pb-1 inline-block">Contact</h3>
+            <address className="text-sm not-italic space-y-2 leading-relaxed">
+              <p>Sarkhot Natural Farms, Shop no 3, Chidghan society, Opp. Maharashtra Steel, Tilak cross Phadke Road, Dombivli East - 421201</p>
+              <p><strong className="text-gray-800 dark:text-gray-200">Landmark</strong> - Near Brahman Sabha hall.</p>
+              <p><a href="mailto:sarkhotnaturalfarms@gmail.com" className="hover:text-green-600 dark:hover:text-green-400 transition-colors break-all">sarkhotnaturalfarms@gmail.com</a></p>
+              <p><a href="tel:+919920999100" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">+91 9920999100</a></p>
+            </address>
+          </div>
         </div>
-      </footer>
-    </div>
+      </div>
+
+      {/* Sub-Footer */}
+      <div className="bg-gray-200 dark:bg-gray-800 py-4 border-t border-gray-300 dark:border-gray-700">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-xs text-gray-600 dark:text-gray-400">
+          <p className="mb-2 md:mb-0 text-center md:text-left">&copy; {new Date().getFullYear()} Sarkhot Natural Farms. All Rights Reserved.</p>
+          <p className="text-center md:text-right">Powered by <a href="#" className="font-semibold text-green-700 dark:text-green-500 hover:underline">Brospro</a></p>
+        </div>
+      </div>
+    </footer>
   );
 };
 

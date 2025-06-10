@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import {
+import {  
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -10,12 +10,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Wallet, Plus, Send, Download, History, CreditCard, ChevronDown, Loader2 } from "lucide-react";
+import { Wallet, Plus, ChevronDown, Loader2 } from "lucide-react";
 import { get } from "@/services/apiService"; // Assuming you have an apiService
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom"
 ;
-export default function WalletButton() {
+interface WalletButtonProps {
+  isLoggedIn?: boolean;
+}
+
+export default function WalletButton({ isLoggedIn }: WalletButtonProps) {
   const navigate = useNavigate();
   const [balance, setBalance] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -55,8 +59,14 @@ export default function WalletButton() {
       setIsLoading(false);
     };
 
-    fetchWalletBalance();
-  }, []);
+    if (isLoggedIn) {
+      fetchWalletBalance();
+    }
+  }, [isLoggedIn]);
+
+  if (!isLoggedIn) {
+    return null; // Don't render anything if not logged in
+  }
 
   if (isLoading) {
     return (

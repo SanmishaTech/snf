@@ -171,7 +171,7 @@ const CategoryMasterListPage: React.FC = () => {
     );
   };
 
-  const tableHeaders = ['Image', 'ID', 'Category Name', 'Actions'];
+  const tableHeaders = ['Image', 'Category Name', 'Actions'];
 
   return (
     <div className="container mx-auto p-6 bg-gray-50 min-h-screen">
@@ -182,26 +182,29 @@ const CategoryMasterListPage: React.FC = () => {
         }
       }}>
         <div className="bg-white p-8 rounded-xl shadow-lg">
-          <h1 className="text-3xl font-semibold mb-6 text-gray-800">Category Master</h1>
+         <div className='flex justify-between items-center mb-6'>
+         <h1 className="text-3xl font-semibold mb-6 text-gray-800">Category Master</h1>
 
-          <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-            <div className="relative w-full md:w-2/5">
+          <div className="flex flex-col md:flex-row justify-end items-center mb-6 gap-2">
+            <div className="relative w-full max-md:w-2/5">
               <Input
                 type="text"
                 placeholder="Search by category name..."
                 value={searchTerm}
                 onChange={handleSearchChange}
-                className="pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
+                className="pl-10 min-h-10  border border-gray-300 rounded-lg  min-w-32 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-            </div>
+            </div>                            
             <DialogTrigger asChild>
               <Button variant="default" size="lg" onClick={handleAddNew} className="shadow-md hover:shadow-lg transition-all duration-150">
-                <PlusCircle size={20} className="mr-2" /> Add New Category
+                <PlusCircle size={20} className="" /> Add New Category
               </Button>
             </DialogTrigger>
           </div>
 
+         </div>
+           
           {isLoading && <p className="text-center py-6 text-gray-600">Loading categories...</p>}
           {error && <p className="text-center py-6 text-red-600 font-medium">Error: {error}</p>}
 
@@ -238,8 +241,7 @@ const CategoryMasterListPage: React.FC = () => {
                           <div className="h-10 w-10 rounded-md bg-gray-100 flex items-center justify-center text-xs text-gray-400">No Image</div>
                         )}
                       </TableCell>
-                      <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{cat.id}</TableCell>
-                      <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">{cat.name}</TableCell>
+                       <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">{cat.name}</TableCell>
                       <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-3">
                         <button onClick={() => handleEdit(cat)} className="text-blue-600 hover:text-blue-800 transition-colors" title="Edit">
                           <Edit size={18} />

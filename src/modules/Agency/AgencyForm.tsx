@@ -191,11 +191,11 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
     <form onSubmit={handleSubmit(onSubmit)} className={`space-y-6 ${className}`}>
       {/* Agency Details Section */}
       <div className="border-b pb-4 mb-4 mt-6">
-          <h3 className="text-lg font-medium leading-6 text-gray-900">Agency Details</h3>
+          <h3 className="text-lg font-medium leading-6 text-gray-900">Delivery Agency Details</h3>
       </div>
 
       <div className="grid gap-2 relative">
-        <Label htmlFor="name">Agency Name</Label>
+        <Label htmlFor="name">Delivery Agency Name</Label>
         <Input id="name" type="text"  {...register("name")} disabled={isSubmitting} />
         {errors.name && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.name.message}</span>}
       </div>
@@ -282,17 +282,17 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
       {mode === "create" && (
         <>
           <div className="border-b pb-4 mb-4 pt-6"> 
-            <h3 className="text-lg font-medium leading-6 text-gray-900">Agency User Account Details</h3>
+            <h3 className="text-lg font-medium leading-6 text-gray-900">Account Details</h3>
            </div>
 
           <div className="grid gap-2 relative">
-            <Label htmlFor="userLoginEmail">Agency Login Email</Label>
+            <Label htmlFor="userLoginEmail">Login Email</Label>
             <Input id="userLoginEmail" type="email"  {...register("userLoginEmail")} disabled={isSubmitting} />
             {errors.userLoginEmail && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.userLoginEmail.message}</span>}
           </div>
 
           <div className="grid gap-2 relative">
-            <Label htmlFor="userPassword">Agency Password</Label>
+            <Label htmlFor="userPassword">Password</Label>
             <PasswordInput id="userPassword"  {...register("userPassword")} disabled={isSubmitting} />
             {errors.userPassword && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.userPassword.message}</span>}
           </div>
@@ -307,7 +307,7 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
               {mode === "create" ? "Creating..." : "Updating..."}
             </>
           ) : (
-            <>{mode === "create" ? "Create Agency" : "Update Agency"}</>
+            <>{mode === "create" ? "Create Delivery Agency" : "Update Delivery Agency"}</>
           )}
         </Button>
       </div>

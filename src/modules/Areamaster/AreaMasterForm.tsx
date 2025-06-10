@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/select';
 
 interface AreaMasterFormProps {
-  initialData?: AreaMaster | null;
+  initialData?: AreaMaster;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -22,8 +22,8 @@ const AreaMasterForm: React.FC<AreaMasterFormProps> = ({ initialData, onClose, o
   const [formData, setFormData] = useState<AreaMasterFormData>({
     name: '',
     pincodes: '',
-    depotId: null,
-    deliveryType: DeliveryType.HandDelivery, // Default value
+    depotId: '', // depotId is now required
+    deliveryType: DeliveryType.HandDelivery,
   });
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [depots, setDepots] = useState<DepotLite[]>([]);
@@ -31,23 +31,23 @@ const AreaMasterForm: React.FC<AreaMasterFormProps> = ({ initialData, onClose, o
   const [pincodeTags, setPincodeTags] = useState<string[]>([]);
 
   useEffect(() => {
-    if (initialData) {
+    if (initialData && depots.length > 0) {
       setFormData({
         name: initialData.name,
         pincodes: initialData.pincodes,
-        depotId: initialData.depotId || null, // Ensure it's string or null
-        deliveryType: initialData.deliveryType,
+        depotId: initialData.depotId || '', // Fallback to empty string for pre-filling, addressing potential null/undefined from backend
+        deliveryType: initialData.deliveryType || DeliveryType.HandDelivery, // Ensure valid DeliveryType
       });
-    } else {
-      // Reset for new form
+    } else if (!initialData) {
+      // Reset for new form only if initialData is not present
       setFormData({
         name: '',
         pincodes: '',
-        depotId: null,
+        depotId: '',
         deliveryType: DeliveryType.HandDelivery,
       });
     }
-  }, [initialData]);
+  }, [initialData, depots]);
 
   useEffect(() => {
     const fetchDepots = async () => {
@@ -112,6 +112,9 @@ const AreaMasterForm: React.FC<AreaMasterFormProps> = ({ initialData, onClose, o
     if (!formData.deliveryType) {
       newErrors.deliveryType = 'Delivery type is required';
     }
+    if (!formData.depotId) {
+      newErrors.depotId = 'Depot is required';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -154,7 +157,7 @@ const AreaMasterForm: React.FC<AreaMasterFormProps> = ({ initialData, onClose, o
     try {
       const payload: AreaMasterFormData = {
         ...formData,
-        depotId: formData.depotId || null, // depotId is already string | null
+        depotId: formData.depotId,
       };
 
       if (initialData && initialData.id) {
@@ -233,17 +236,18 @@ const AreaMasterForm: React.FC<AreaMasterFormProps> = ({ initialData, onClose, o
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="depotId">Depot (Optional)</Label>
+        <Label htmlFor="depotId">
+          Depot <span className="text-red-500">*</span>
+        </Label>
         <Select
           name="depotId"
-          value={formData.depotId || ''} // Ensure value is a string for Select
-          onValueChange={(value) => handleSelectChange('depotId', value === '__NONE__' ? null : value) // Pass null if __NONE__ selected
-        }>
+          value={formData.depotId}
+          onValueChange={(value) => handleSelectChange('depotId', value)}
+        >
           <SelectTrigger id="depotId" className={`${errors.depotId ? 'border-red-500' : ''}`}>
-            <SelectValue placeholder="Select a depot (optional)" />
+            <SelectValue placeholder="Select a depot" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="__NONE__"><em>None</em></SelectItem> {/* Option for no depot */}
             {depots.map(depot => (
               <SelectItem key={depot.id} value={depot.id}>
                 {depot.name}

@@ -6,7 +6,6 @@ import {
   Command,
   UsersRound,
   GalleryVerticalEnd,
-  PieChart,
   SquareTerminal,
   FileText,
   Briefcase,
@@ -14,7 +13,6 @@ import {
 
 import { NavMain } from "@/components/common/nav-main";
 import { NavUser } from "@/components/common/nav-user";
-import { Search } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -47,20 +45,23 @@ const initialData = {
   roles: {
     super_admin: {
       projects: [
-         { title: "Vendors", url: "/admin/vendors", icon: Briefcase, groupLabel: "Services" },
-        { title: "Agency", url: "/admin/agencies", icon: Briefcase, groupLabel: "Services" },
-         { title: "Products", url: "/admin/products", icon: Briefcase, groupLabel: "Services" },
-         { title: "Orders", url: "/admin/orders", icon: Briefcase, groupLabel: "Services" },
-         { title: "Subscriptions", url: "/admin/subscriptions", icon: Briefcase, groupLabel: "Services" },
-         { title: "Delivery", url: "/admin/delivery", icon: FileText, groupLabel: "Services" },
-         { title: "Wallet", url: "/admin/wallet", icon: FileText, groupLabel: "Services" },
-         { title: "Categories", url: "/admin/categories", icon: FileText, groupLabel: "Services" },
-         { title: "AreaMasters", url: "/admin/areamasters", icon: FileText, groupLabel: "Services" },
-         { title: "Depots", url: "/admin/depots", icon: FileText, groupLabel: "Services" },
-
+        //master
+        { title: "AreaMasters", url: "/admin/areamasters", icon: FileText, groupLabel: "Master" },
+        { title: "Depots", url: "/admin/depots", icon: FileText, groupLabel: "Master" },
+        { title: "Vendors", url: "/admin/vendors", icon: Briefcase, groupLabel: "Master" },
+        { title: "Banners", url: "/admin/banners", icon: GalleryVerticalEnd, groupLabel: "Master" },
+        //products
+        { title: "Categories", url: "/admin/categories", icon: FileText, groupLabel: "Products" },
+        { title: "Products", url: "/admin/products", icon: Briefcase, groupLabel: "Products" },
+        //indraai
+         { title: "Delivery Agencies", url: "/admin/agencies", icon: Briefcase, groupLabel: "Indraai" },
+         { title: "Orders", url: "/admin/orders", icon: Briefcase, groupLabel: "Indraai" },
+         { title: "Subscriptions", url: "/admin/subscriptions", icon: Briefcase, groupLabel: "Indraai" },
+         { title: "Delivery", url: "/admin/delivery", icon: FileText, groupLabel: "Indraai" },
         
-         { title: "Members", url: "/admin/members", icon: Briefcase, groupLabel: "Master" },
-         { title: "Users", url: "/admin/users", icon: Briefcase, groupLabel: "Master" },
+        
+         { title: "Members", url: "/admin/members", icon: Briefcase, groupLabel: "Member" },
+         { title: "Users", url: "/admin/users", icon: Briefcase, groupLabel: "System" },
 
       ],
       navMain: [

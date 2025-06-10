@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import UserChangePasswordDialog from "@/components/common/UserChangePasswordDialog"; // Assuming moved to auth directory
 import { LogOut, UserPen, ChevronsUpDown, KeySquare } from "lucide-react";
 import ConfirmDialog from "@/components/common/confirm-dialog";
 import { useNavigate } from "react-router-dom";
@@ -34,6 +35,7 @@ export function NavUser({
   const { isMobile } = useSidebar();
   const navigate = useNavigate();
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem("authToken"); // Remove auth token
@@ -85,6 +87,18 @@ export function NavUser({
                   </div>
                 </div>
               </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onSelect={(e) => {
+                  e.preventDefault();
+                  setShowChangePasswordDialog(true);
+                }}
+                className="cursor-pointer"
+              >
+                <KeySquare className="mr-2 h-4 w-4" />
+                <span>Change Password</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
                  <DropdownMenuItem
                   onSelect={(e) => {
                   e.preventDefault();
@@ -100,6 +114,11 @@ export function NavUser({
           </DropdownMenu>
         </SidebarMenuItem>
       </SidebarMenu>
+
+      <UserChangePasswordDialog
+        isOpen={showChangePasswordDialog}
+        onClose={() => setShowChangePasswordDialog(false)}
+      />
 
       <ConfirmDialog
         isOpen={showConfirmation}

@@ -1,9 +1,10 @@
 import { useEffect } from "react";
-import { useForm, SubmitHandler } from "react-hook-form"; 
+import { useForm, SubmitHandler, Controller, ControllerRenderProps } from "react-hook-form"; 
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { LoaderCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -22,6 +23,7 @@ const baseVendorSchema = z.object({
   address2: z.string().nullable().optional(),
   city: z.string().optional().nullable(),
   pincode: z.coerce.number().int("Pincode must be an integer").positive("Pincode must be positive").refine(val => String(val).length === 6, "Pincode must be 6 digits"),
+  isDairySupplier: z.boolean().optional(),
 });
 
 const newUserSchema = z.object({
@@ -59,6 +61,7 @@ const VendorForm: React.FC<VendorFormProps> = ({ mode, vendorId, onSuccess, init
     setValue,
     setError,
     formState: { errors, isSubmitting },
+    control,
   } = useForm<VendorFormInputs>({
     mode: 'onChange', // Validate on every change for immediate error clearing
     resolver: zodResolver(mode === "create" ? createResolverSchema : updateResolverSchema),
@@ -72,6 +75,7 @@ const VendorForm: React.FC<VendorFormProps> = ({ mode, vendorId, onSuccess, init
       address2: null, // Already present, kept for clarity
       city: '',
       pincode: undefined, // Or a suitable default number like 0
+      isDairySupplier: false,
       ...(mode === "create" ? { userFullName: '', userLoginEmail: '', userPassword: '' } : {}),
     },
   });
@@ -89,7 +93,8 @@ const VendorForm: React.FC<VendorFormProps> = ({ mode, vendorId, onSuccess, init
           setValue("address2", vendor.address2 || null);
           setValue("city", vendor.city);
           setValue("pincode", vendor.pincode);
-          setValue("email", vendor.email); 
+          setValue("email", vendor.email);
+          setValue("isDairySupplier", vendor.isDairySupplier || false);
         } catch (error: any) {
           toast.error("Failed to fetch vendor details");
         }
@@ -97,7 +102,8 @@ const VendorForm: React.FC<VendorFormProps> = ({ mode, vendorId, onSuccess, init
       fetchVendor();
     } else if (initialData) { // Populate form if initialData is provided (e.g., from EditVendorPage)
         Object.keys(initialData).forEach(key => {
-            setValue(key as keyof VendorFormInputs, initialData[key as keyof VendorFormInputs]);
+            const val = initialData[key as keyof VendorFormInputs];
+            setValue(key as keyof VendorFormInputs, val);
         });
     }
   }, [vendorId, mode, setValue, initialData]);
@@ -115,6 +121,7 @@ const VendorForm: React.FC<VendorFormProps> = ({ mode, vendorId, onSuccess, init
           address2: data.address2,
           city: data.city,
           pincode: data.pincode,
+          isDairySupplier: data.isDairySupplier,
           userFullName: data.name, // Send contactPersonName as userFullName
           userLoginEmail: data.userLoginEmail,
           userPassword: data.userPassword,
@@ -134,6 +141,7 @@ const VendorForm: React.FC<VendorFormProps> = ({ mode, vendorId, onSuccess, init
             address2: vendorData.address2,
             city: vendorData.city,
             pincode: vendorData.pincode,
+            isDairySupplier: vendorData.isDairySupplier,
         };
         return put(`/vendors/${vendorId}`, updatePayload);
       }
@@ -220,6 +228,25 @@ const VendorForm: React.FC<VendorFormProps> = ({ mode, vendorId, onSuccess, init
           <Input id="pincode" type="number" {...register("pincode")} disabled={isSubmitting} />
           {errors.pincode && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.pincode.message}</span>}
         </div>
+      </div>
+
+      <div className="flex items-center space-x-2 my-4">
+        <Controller
+          name="isDairySupplier"
+          control={control} // Assuming 'control' is available from useForm
+          render={({ field }: { field: ControllerRenderProps<VendorFormInputs, 'isDairySupplier'> }) => (
+            <Checkbox 
+              id="isDairySupplier" 
+              checked={field.value} 
+              onCheckedChange={field.onChange} 
+              disabled={isSubmitting} 
+            />
+          )}
+        />
+        <Label htmlFor="isDairySupplier" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+          Is Dairy Supplier?
+        </Label>
+        {errors.isDairySupplier && <span className="text-red-500 text-xs">{errors.isDairySupplier.message}</span>}
       </div>
       {mode === "create" && (
         <>

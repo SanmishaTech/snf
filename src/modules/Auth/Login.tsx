@@ -75,13 +75,13 @@ const Login: React.FC<LoginProps> = () => {
       return '/member/products'; // Redirect members to the dashboard
     }
     if(user && user.role === 'ADMIN') {
-      return '/admin/orders';
+      return '/admin/dashboard';
     }
     if(user && user.role === 'VENDOR') {
-      return '/admin/orders';
+      return '/admin/dashboard';
     }
     if(user && user.role === 'AGENCY') {
-      return '/admin/orders';
+      return '/admin/dashboard';
     }
     // Add other role-based redirects here if needed in the future
     // e.g., if (user && user.role === 'ADMIN') return '/admin/overview';
@@ -186,14 +186,20 @@ const Login: React.FC<LoginProps> = () => {
         return false; // No field-specific errors to handle
       };
 
-      // First try to handle field-specific validation errors
-      const hadFieldErrors = handleValidationErrors();
+      // Attempt to handle field-specific validation errors first
+      const didDisplayFieldErrors = handleValidationErrors();
 
-      // If we didn't have field-specific errors OR we want to show both field and general errors
-      if (!hadFieldErrors || error.status === 401) {
-        // Use our improved error message from apiService
-        toast.error(error.message || "An error occurred during login.");
+      // Now, handle general errors or specific non-field errors
+      const errorMessage = error.data?.message || error.message;
+
+      if (error.status === 403 && errorMessage && errorMessage.toLowerCase().includes("account is inactive")) {
+        toast.error(errorMessage); // Specific message for inactive account
+      } else if (!didDisplayFieldErrors || error.status === 401) {
+        // If field errors weren't displayed OR it's a 401 (likely "Invalid credentials"), show a general toast.
+        // For 401, error.message from the backend is usually "Invalid credentials"
+        toast.error(errorMessage || "An error occurred during login.");
       }
+      // If didDisplayFieldErrors is true and it's not a 403 inactive or 401, field errors are already set, so no general toast needed.
 
       // Log detailed error information for debugging
       console.error("Login error details:", error);
