@@ -282,7 +282,7 @@ function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             >
               <a href="/dashboard">
                 <Search className="h-5 w-5 " />
-                <Input 13.126.180.52 className="border-0 " />
+                <Input localhost:3000 className="border-0 " />
                </a>
               
             </SidebarMenuButton>
