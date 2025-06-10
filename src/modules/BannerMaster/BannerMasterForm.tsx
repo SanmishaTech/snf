@@ -27,10 +27,19 @@ const BACKEND_URL =
     ? ""
     : "http://13.126.180.52"; // Adjust as needed for production
 
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+
 const bannerFormSchema = z.object({
   caption: z.string().optional().default(""),
   description: z.string().optional().default(""),
-  bannerImageFile: z.instanceof(FileList).optional(), // FileList for the image upload
+  bannerImageFile: z
+    .instanceof(FileList)
+    .optional()
+    .refine((files) => !files || files.length === 0 || files?.[0]?.size <= 5_000_000, `Max image size is 5MB.`)
+    .refine(
+      (files) => !files || files.length === 0 || ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
+      "Only .jpg, .jpeg, .png and .webp formats are supported."
+    ),
   listOrder: z.preprocess(
     (val) => (typeof val === "string" ? parseInt(val, 10) : val),
     z
@@ -179,7 +188,7 @@ const BannerMasterForm: React.FC<BannerMasterFormProps> = ({
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">
           <div>
-            <Label htmlFor="listOrder">List Order</Label>
+            <Label htmlFor="listOrder" className="mb-2">List Order</Label>
             <Input id="listOrder" type="number" {...register("listOrder")} />
             {errors.listOrder && (
               <p className="text-red-500 text-xs mt-1">
@@ -189,7 +198,7 @@ const BannerMasterForm: React.FC<BannerMasterFormProps> = ({
           </div>
 
           <div>
-            <Label htmlFor="caption">Caption (Optional)</Label>
+            <Label className="mb-2" htmlFor="caption">Caption (Optional)</Label>
             <Input id="caption" {...register("caption")} />
             {errors.caption && (
               <p className="text-red-500 text-xs mt-1">
@@ -199,7 +208,7 @@ const BannerMasterForm: React.FC<BannerMasterFormProps> = ({
           </div>
 
           <div>
-            <Label htmlFor="description">Description (Optional)</Label>
+            <Label className="mb-2" htmlFor="description">Description (Optional)</Label>
             <Textarea id="description" {...register("description")} />
             {errors.description && (
               <p className="text-red-500 text-xs mt-1">
@@ -209,10 +218,11 @@ const BannerMasterForm: React.FC<BannerMasterFormProps> = ({
           </div>
 
           <div>
-            <Label htmlFor="bannerImageFile">Banner Image</Label>
+            <Label className="mb-2" htmlFor="bannerImageFile">Banner Image</Label>
             <Input
               id="bannerImageFile"
               type="file"
+              accept={ACCEPTED_IMAGE_TYPES.join(",")}
               {...register("bannerImageFile")}
             />
             {errors.bannerImageFile && (

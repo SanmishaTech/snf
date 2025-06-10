@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import axios from 'axios';
+import { post, put } from '../../services/apiService';
 import { Button } from '@/components/ui/button';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose
@@ -53,18 +53,17 @@ const DepotMasterForm: React.FC<DepotMasterFormProps> = ({ isOpen, onClose, onSu
   const onSubmit = async (data: DepotFormData) => {
     try {
       if (initialData?.id) {
-        await axios.put(`/api/admin/depots/${initialData.id}`, data);
+        await put(`/admin/depots/${initialData.id}`, data);
         toast.success('Depot updated successfully.');
       } else {
-        await axios.post('/api/admin/depots', data);
+        await post('/admin/depots', data);
         toast.success('Depot created successfully.');
       }
       onSubmitSuccess();
       onClose();
     } catch (error: any) {
       console.error('Failed to save depot:', error);
-      const errorMessage = error.response?.data?.error || error.message || 'Failed to save depot.';
-      toast.error(errorMessage);
+      toast.error(error.message || 'An unknown error occurred while saving the depot.');
     }
   };
 

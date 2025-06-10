@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import axios from 'axios';
+import { get, del } from '../../services/apiService';
 import { PlusCircle, Edit, Trash2, Search, ChevronsUpDown, ArrowDown, ArrowUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,7 +21,7 @@ interface Depot extends DepotFormData {
   createdAt: string;
 }
 
-const API_BASE_URL = '/api/admin/depots';
+const API_BASE_URL = '/admin/depots';
 
 const DepotMasterListPage: React.FC = () => {
   const [depots, setDepots] = useState<Depot[]>([]);
@@ -44,21 +44,23 @@ const DepotMasterListPage: React.FC = () => {
   const fetchDepots = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await axios.get(API_BASE_URL, {
-        params: {
-          page: currentPage,
-          limit: limit,
-          search: searchTerm,
-          sortBy: sortColumn,
-          sortOrder: sortOrder,
-        },
+      const response = await get<{ 
+        depots: Depot[]; 
+        totalPages: number; 
+        totalRecords: number; 
+      }>(API_BASE_URL, {
+        page: currentPage,
+        limit: limit,
+        search: searchTerm,
+        sortBy: sortColumn,
+        sortOrder: sortOrder,
       });
-      setDepots(response.data.depots || []);
-      setTotalPages(response.data.totalPages || 1);
-      setTotalRecords(response.data.totalRecords || 0);
-    } catch (error) {
+      setDepots(response.depots || []);
+      setTotalPages(response.totalPages || 1);
+      setTotalRecords(response.totalRecords || 0);
+    } catch (error: any) {
       console.error('Failed to fetch depots:', error);
-      toast.error('Failed to fetch depots.');
+      toast.error(error.message || 'Failed to fetch depots.');
       setDepots([]);
     } finally {
       setLoading(false);
@@ -98,14 +100,14 @@ const DepotMasterListPage: React.FC = () => {
   const handleDelete = async () => {
     if (!depotToDelete) return;
     try {
-      await axios.delete(`${API_BASE_URL}/${depotToDelete.id}`);
+      await del(`${API_BASE_URL}/${depotToDelete.id}`);
       toast.success('Depot deleted successfully.');
       fetchDepots(); // Refresh list
       setShowDeleteConfirm(false);
       setDepotToDelete(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to delete depot:', error);
-      toast.error('Failed to delete depot.');
+      toast.error(error.message || 'Failed to delete depot.');
       setShowDeleteConfirm(false);
     }
   };
