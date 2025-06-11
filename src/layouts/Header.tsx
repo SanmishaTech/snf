@@ -84,12 +84,12 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout }) => {
   }, [headerVisible, mobileMenuOpen]);
 
   return (
-    <header 
-      ref={headerRef}
+      <header
+        ref={headerRef}
       className={`fixed top-0 w-full z-50 transition-all duration-500 ease-out ${
         headerVisible ? 'translate-y-0' : '-translate-y-full'
       } ${scrolled ? 'shadow-lg' : 'shadow-sm'}`}
-    >
+      >
       {/* Top Bar */}
       <div className={`transition-colors duration-300 ${scrolled ? 'bg-white' : 'bg-gradient-to-r from-green-50 to-amber-50'}`}>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -277,7 +277,7 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout }) => {
           </div>
         </div>
       )}
-    </header>
+      </header>
   );
 };
 

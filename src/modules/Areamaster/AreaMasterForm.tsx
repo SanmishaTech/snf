@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { AreaMaster, AreaMasterFormData, DeliveryType, createAreaMaster, updateAreaMaster, getAllDepots, DepotLite } from '../../services/areaMasterService'; // Adjusted path
+import { AreaMaster, AreaMasterFormData, DeliveryType, createAreaMaster, updateAreaMaster } from '../../services/areaMasterService'; // Adjusted path
+import { getAllDepotsList, DepotListItem } from '../../services/depotService';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,7 +27,7 @@ const AreaMasterForm: React.FC<AreaMasterFormProps> = ({ initialData, onClose, o
     deliveryType: DeliveryType.HandDelivery,
   });
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [depots, setDepots] = useState<DepotLite[]>([]);
+  const [depots, setDepots] = useState<DepotListItem[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pincodeTags, setPincodeTags] = useState<string[]>([]);
 
@@ -52,7 +53,7 @@ const AreaMasterForm: React.FC<AreaMasterFormProps> = ({ initialData, onClose, o
   useEffect(() => {
     const fetchDepots = async () => {
       try {
-        const depotsData = await getAllDepots();
+        const depotsData = await getAllDepotsList();
         setDepots(depotsData);
       } catch (error) {
         console.error('Failed to fetch depots', error);
@@ -249,7 +250,7 @@ const AreaMasterForm: React.FC<AreaMasterFormProps> = ({ initialData, onClose, o
           </SelectTrigger>
           <SelectContent>
             {depots.map(depot => (
-              <SelectItem key={depot.id} value={depot.id}>
+              <SelectItem key={depot.id} value={String(depot.id)}>
                 {depot.name}
               </SelectItem>
             ))}

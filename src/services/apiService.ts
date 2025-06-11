@@ -81,10 +81,10 @@ export const get = async <T = any>(url: string, params?: any, config?: any): Pro
   }
 };
 
-export const post = async <T = any>(url: string, data: any, params?: any): Promise<T> => {
+export const post = async <T = any>(url: string, data: any, config?: any): Promise<T> => {
   try {
-    const response = await api.post(ensureApiPrefix(url), data);
-    if (params?.responseType === "blob") {
+    const response = await api.post(ensureApiPrefix(url), data, config);
+    if (config?.responseType === "blob") {
       return response as T;
     }
 

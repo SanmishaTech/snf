@@ -1,21 +1,42 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import ReactQuill from 'react-quill-new';
-import 'react-quill-new/dist/quill.snow.css'; // Import Quill styles
-import { useForm, SubmitHandler, Controller } from "react-hook-form";
+import 'react-quill-new/dist/quill.snow.css';
+import { useForm, SubmitHandler, Controller, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { LoaderCircle } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { LoaderCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { post, put } from "@/services/apiService";
+import { getAllCategories } from "@/services/categoryService";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { bulkUpdateVariants, ProductVariantDto } from "@/services/productVariantService";
 import { cn } from "@/lib/utils";
+
+// Define the Category type based on the backend model
+interface Category {
+  id: number;
+  name: string;
+  // Add other category fields if needed
+}
+
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
+
+const productVariantSchema = z.object({
+  id: z.number().optional(),
+  hsnCode: z.string().optional().nullable(),
+  mrp: z.coerce.number().positive("MRP must be positive"),
+  sellingPrice: z.coerce.number().positive("Selling price must be positive"),
+  purchasePrice: z.coerce.number().positive("Purchase price must be positive"),
+  name: z.string().min(1, "Variant name is required"),
+  gstRate: z.coerce.number().min(0, "GST rate cannot be negative"),
+});
 
 const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
@@ -23,6 +44,8 @@ const productSchema = z.object({
   rate: z.coerce.number().positive({ message: "Rate must be a positive number" }),
   unit: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
+  isDairyProduct: z.boolean().default(false),
+  categoryId: z.coerce.number().positive("Please select a category").optional().nullable(),
   attachmentUrl: z
     .instanceof(FileList)
     .optional()
@@ -32,6 +55,7 @@ const productSchema = z.object({
       (files) => !files || files.length === 0 || ACCEPTED_IMAGE_TYPES.includes(files[0].type),
       "Only .jpg, .jpeg, .png, .webp and .gif formats are supported."
     ),
+  variants: z.array(productVariantSchema).optional(),
 });
 
 export type ProductFormInputs = z.infer<typeof productSchema>;
@@ -39,7 +63,7 @@ export type ProductFormInputs = z.infer<typeof productSchema>;
 export interface ProductFormProps {
   mode: "create" | "edit";
   productId?: string;
-  initialData?: Partial<ProductFormInputs>;
+  initialData?: Partial<ProductFormInputs & { variants: ProductVariantDto[] }>;
   onSuccess?: () => void;
   className?: string;
 }
@@ -52,16 +76,15 @@ const ProductForm: React.FC<ProductFormProps> = ({
   className,
 }) => {
   const queryClient = useQueryClient();
-  const [currentAttachmentPreview, setCurrentAttachmentPreview] = React.useState<string | null>(null);
-  const [attachmentFileName, setAttachmentFileName] = React.useState<string>("");
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    control, // Added for Controller
-    formState: { errors, isSubmitting },
-  } = useForm<ProductFormInputs>({
+  const { data: categories, isLoading: isLoadingCategories } = useQuery<Category[], Error>({ 
+    queryKey: ['categories'], 
+    queryFn: getAllCategories 
+  });
+  const [currentAttachmentPreview, setCurrentAttachmentPreview] = useState<string | null>(null);
+  const [attachmentFileName, setAttachmentFileName] = useState<string>("");
+
+  const form = useForm<ProductFormInputs>({
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: "",
@@ -69,247 +92,270 @@ const ProductForm: React.FC<ProductFormProps> = ({
       rate: undefined,
       unit: null,
       description: "",
+      isDairyProduct: false,
       attachmentUrl: null,
+      variants: [],
+      categoryId: null,
     },
   });
 
+  const { register, handleSubmit, reset, control, formState: { errors, isDirty } } = form;
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "variants",
+  });
+
   useEffect(() => {
-    if (initialData) {
-      const resetValues: Partial<ProductFormInputs & { attachmentUrl_existing?: string }> = {
+    // Only reset the form if initialData is present AND categories have been loaded.
+    // This prevents a race condition where the form is reset before the dropdown has its options.
+    if (mode === 'edit' && initialData && categories) {
+      const resetValues = {
         name: initialData.name || "",
         price: initialData.price !== undefined ? Number(initialData.price) : undefined,
         rate: initialData.rate !== undefined ? Number(initialData.rate) : undefined,
         unit: initialData.unit || null,
         description: (initialData as any).description || "",
+        isDairyProduct: initialData.isDairyProduct || false,
+        variants: initialData.variants || [],
+        categoryId: (initialData as any).categoryId || null,
       };
-      reset(resetValues as any); // Cast as any because attachmentUrl is FileList in form but string in initialData
+      reset(resetValues as any);
       if ((initialData as any).attachmentUrl) {
         const initialurl = `${import.meta.env.VITE_BACKEND_URL}${initialData?.attachmentUrl}`
         setCurrentAttachmentPreview(initialurl);
       } else {
         setCurrentAttachmentPreview(null);
       }
-      setAttachmentFileName("");
     } else if (mode === 'create') {
-      reset({
-        name: "",
-        price: undefined,
-        rate: undefined,
-        unit: null,
-        description: "",
-        attachmentUrl: null,
-      });
+      reset();
       setCurrentAttachmentPreview(null);
       setAttachmentFileName("");
     }
-  }, [initialData, mode, reset]);
+  }, [initialData, mode, reset, categories]);
 
-  const mutation = useMutation<
-    any,
-    Error,
-    ProductFormInputs
-  >({
-    mutationFn: async (data: ProductFormInputs) => {
-      const formData = new FormData();
-      formData.append("name", data.name);
-      formData.append("price", String(data.price)); // Ensure price is string for FormData
-      formData.append("rate", String(data.rate));   // Ensure rate is string for FormData
-      if (data.unit) {
-        formData.append("unit", data.unit);
-      }
-      if (data.description) {
-        formData.append("description", data.description);
-      }
-      // Append other text fields from 'data' as needed, e.g., 'url' if it exists in your schema for product
-      // Assuming 'url' is part of ProductFormInputs if it's a general purpose URL field for the product
-      // For this example, let's assume 'url' is not part of ProductFormInputs or is handled elsewhere.
-      // If you have a general 'url' field for the product distinct from 'attachmentUrl':
-      // if (data.url) { formData.append("url", data.url); }
+  const mutation = useMutation<any, Error, { productData: FormData, variants: ProductVariantDto[] }>({
+    mutationFn: async ({ productData, variants }) => {
+      // Step 1: Create or Update the product
+      const endpoint = mode === 'create' ? '/products' : `/products/${productId}`;
+      const method = mode === 'create' ? post : put;
+      if (mode === 'edit' && !productId) throw new Error("Product ID is required for update.");
 
-      // Handle file attachment
-      if (data.attachmentUrl && data.attachmentUrl.length > 0) {
-        formData.append("productAttachment", data.attachmentUrl[0], data.attachmentUrl[0].name);
-      } else {
-        // No new file selected. Check if we need to signal removal of existing attachment.
-        if (initialData?.attachmentUrl && currentAttachmentPreview === null) {
-          // An attachment existed, and user cleared the preview (wants to remove)
-          formData.append("attachmentUrl", ""); // Signal backend to clear this field
-        }
-        // If an attachment existed and preview is still there, or no attachment ever existed,
-        // do nothing here; backend will keep existing or leave as null.
+      const productResult = await method(endpoint, productData);
+      const returnedProductId = productResult?.id || productId;
+
+      if (!returnedProductId) throw new Error('Failed to get product ID.');
+
+      // Step 2: Bulk update the variants for that product
+      if (variants && variants.length > 0) {
+        await bulkUpdateVariants(returnedProductId, variants);
       }
 
-      // DEBUG: Log FormData entries
-      console.log("Frontend FormData entries before sending:");
-      for (const pair of formData.entries()) {
-        console.log(pair[0] + ": ", pair[1]);
-      }
-
-      const endpoint = mode === "create" ? "/products" : `/products/${productId}`;
-      const method = mode === "create" ? post : put;
-
-      if (mode === "edit" && !productId) {
-        throw new Error("Product ID is required for update.");
-      }
-
-      return await method(endpoint, formData);
+      return productResult;
     },
-    onSuccess: () => {
-      toast.success(`Product ${mode === "create" ? "created" : "updated"} successfully!`);
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      if (productId) {
-        queryClient.invalidateQueries({ queryKey: ["product", productId] });
+    onSuccess: (data) => {
+      toast.success(`Product ${mode === 'create' ? 'created' : 'updated'} successfully!`);
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      const returnedId = data?.id || productId;
+      if (returnedId) {
+        queryClient.invalidateQueries({ queryKey: ['product', returnedId] });
       }
-      if (onSuccess) {
-        onSuccess();
-      }
+      if (onSuccess) onSuccess();
     },
     onError: (error: any) => {
       const errorMsg = error.response?.data?.message || error.message || "An unexpected error occurred";
-      toast.error(`Failed to ${mode} product: ${errorMsg}`);
+      toast.error(`Failed to save product: ${errorMsg}`);
     },
   });
 
   const onSubmit: SubmitHandler<ProductFormInputs> = (data) => {
-    mutation.mutate(data);
+    console.log("Submitting variants:", data.variants); // Debugging line
+    const formData = new FormData();
+    formData.append("name", data.name);
+    formData.append("price", String(data.price));
+    formData.append("rate", String(data.rate));
+    formData.append("isDairyProduct", String(data.isDairyProduct));
+    if (data.unit) formData.append("unit", data.unit);
+    if (data.description) formData.append("description", data.description);
+    if (data.categoryId) formData.append("categoryId", String(data.categoryId));
+
+    if (data.attachmentUrl && data.attachmentUrl.length > 0) {
+      formData.append("productAttachment", data.attachmentUrl[0], data.attachmentUrl[0].name);
+    } else if (initialData?.attachmentUrl && currentAttachmentPreview === null) {
+      formData.append("attachmentUrl", "");
+    }
+
+    mutation.mutate({ productData: formData, variants: data.variants || [] });
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className={cn("space-y-6", className)}>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="md:col-span-2 space-y-2">
-          <Label htmlFor="name">Product Name</Label>
-          <Input
-            id="name"
-            type="text"
-            {...register("name")}
-            disabled={isSubmitting || mutation.isPending}
-          />
-          {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
-        </div>
+    <form onSubmit={handleSubmit(onSubmit)} className={cn("space-y-8", className)}>
+      {/* Product Details Section */}
+      <div className="space-y-6">
+        <h3 className="text-lg font-medium border-b pb-2">Product Details</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+           <div className="md:col-span-2 space-y-2">
+            <Label htmlFor="name">Product Name</Label>
+            <Input id="name" type="text" {...register("name")} disabled={mutation.isPending} />
+            {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
+          </div>
 
-        <div className="md:col-span-2 space-y-2">
-          <Label htmlFor="description">Description</Label>
-          <Controller
-            name="description"
-            control={control}
-            render={({ field }) => (
-              <ReactQuill
-                theme="snow"
-                value={field.value || ""}
-                onChange={field.onChange}
-                onBlur={field.onBlur}
-                readOnly={isSubmitting || mutation.isPending}
-                placeholder="Enter product description (optional)"
-                modules={{
-                  toolbar: [
-                    [{ 'header': '1'}, {'header': '2'}, { 'font': [] }],
-                    [{size: []}],
-                    ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-                    [{'list': 'ordered'}, {'list': 'bullet'}, 
-                     {'indent': '-1'}, {'indent': '+1'}],
-                    ['link', 'image'], // 'image' and 'video' can be added if needed
-                    ['clean']
-                  ],
-                }}
-                formats={[
-                  'header', 'font', 'size',
-                  'bold', 'italic', 'underline', 'strike', 'blockquote',
-                  'list', 'bullet', 'indent',
-                  'link', 'image'
-                ]}
-                style={{ backgroundColor: (isSubmitting || mutation.isPending) ? '#f3f4f6' : 'white' }} // Optional: style to indicate readOnly
-              />
-            )}
-          />
-          {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description.message}</p>}
-        </div>
+          <div className="space-y-2">
+            <Label htmlFor="categoryId">Category</Label>
+            <Controller
+              name="categoryId"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  key={field.value} // Add key to force re-render
+                  onValueChange={field.onChange}
+                  value={field.value ? String(field.value) : ""}
+                  disabled={mutation.isPending || isLoadingCategories}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={isLoadingCategories ? "Loading..." : "Select a category"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories?.map((category) => (
+                      <SelectItem key={category.id} value={String(category.id)}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.categoryId && <p className="text-red-500 text-xs mt-1">{errors.categoryId.message}</p>}
+          </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="price">Purchase Price</Label>
-          <Input
-            id="price"
-            type="number"
-            step="any" // Allow decimal inputs
-            {...register("price")}
-            disabled={isSubmitting || mutation.isPending}
-          />
-          {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price.message}</p>}
-        </div>
+          <div className="md:col-span-2 space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Controller name="description" control={control} render={({ field }) => (<ReactQuill theme="snow" value={field.value || ""} onChange={field.onChange} onBlur={field.onBlur} />)} />
+            {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description.message}</p>}
+          </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="rate">Selling Price</Label>
-          <Input
-            id="rate"
-            type="number"
-            step="any" // Allow decimal inputs
-            {...register("rate")}
-            disabled={isSubmitting || mutation.isPending}
-          />
-          {errors.rate && <p className="text-red-500 text-xs mt-1">{errors.rate.message}</p>}
-        </div>
+          <div className="space-y-2">
+            <Label htmlFor="price">Price</Label>
+            <Input id="price" type="number" step="0.01" {...register("price")} disabled={mutation.isPending} />
+            {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price.message}</p>}
+          </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="unit">Unit (e.g., kg, pcs, ltr)</Label>
-          <Input
-            id="unit"
-            type="text"
-            {...register("unit")}
-            disabled={isSubmitting || mutation.isPending}
-          />
-          {errors.unit && <p className="text-red-500 text-xs mt-1">{errors.unit.message}</p>}
-        </div>
+          <div className="space-y-2">
+            <Label htmlFor="rate">Rate</Label>
+            <Input id="rate" type="number" step="0.01" {...register("rate")} disabled={mutation.isPending} />
+            {errors.rate && <p className="text-red-500 text-xs mt-1">{errors.rate.message}</p>}
+          </div>
 
-        <div className="md:col-span-2 space-y-2">
-          <Label htmlFor="attachmentUrl">Product Image</Label>
-          <Input
-            id="attachmentUrl"
-            type="file"
-            accept={ACCEPTED_IMAGE_TYPES.join(",")}
-            {...register("attachmentUrl", {
-              onChange: (e) => {
-                if (e.target.files && e.target.files[0]) {
-                  setAttachmentFileName(e.target.files[0].name);
-                } else {
-                  setAttachmentFileName("");
+          <div className="space-y-2">
+            <Label htmlFor="unit">Unit</Label>
+            <Input id="unit" type="text" {...register("unit")} disabled={mutation.isPending} />
+            {errors.unit && <p className="text-red-500 text-xs mt-1">{errors.unit.message}</p>}
+          </div>
+
+          <div className="flex items-center space-x-2 pt-8">
+            <Controller
+              name="isDairyProduct"
+              control={control}
+              render={({ field }) => (
+                <Checkbox id="isDairyProduct" checked={field.value} onCheckedChange={field.onChange} disabled={mutation.isPending} />
+              )}
+            />
+            <Label htmlFor="isDairyProduct">Is this a Dairy Product?</Label>
+          </div>
+
+          <div className="md:col-span-2 space-y-2">
+            <Label htmlFor="attachmentUrl">Product Image</Label>
+            <Input
+              id="attachmentUrl"
+              type="file"
+              accept={ACCEPTED_IMAGE_TYPES.join(",")}
+              {...register("attachmentUrl", {
+                onChange: (e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const previewUrl = URL.createObjectURL(file);
+                    setCurrentAttachmentPreview(previewUrl);
+                    setAttachmentFileName(file.name);
+                  } else {
+                    setCurrentAttachmentPreview(null);
+                    setAttachmentFileName("");
+                  }
                 }
-              }
-            })}
-            disabled={isSubmitting || mutation.isPending}
-          />
-          <p className="text-sm text-muted-foreground mt-1">
-            Recommended: Landscape image (e.g., 4:3 aspect ratio, like 3179x4239 pixels)
-          </p>
-          {attachmentFileName && !errors.attachmentUrl && <p className="text-xs text-muted-foreground mt-1">Selected: {attachmentFileName}</p>}
-          {errors.attachmentUrl && <p className="text-red-500 text-xs mt-1">{errors.attachmentUrl.message as string}</p>}
+              })}
+              disabled={mutation.isPending}
+            />
+            {attachmentFileName && <p className="text-xs text-gray-500 mt-1">Selected: {attachmentFileName}</p>}
+            {errors.attachmentUrl && <p className="text-red-500 text-xs mt-1">{errors.attachmentUrl.message as string}</p>}
+            {currentAttachmentPreview && (
+              <div className="mt-4 relative w-48 h-48 border rounded-md overflow-hidden">
+                <img src={currentAttachmentPreview} alt="Preview" className="w-full h-full object-cover" />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  className="absolute top-1 right-1 h-6 w-6 p-0"
+                  onClick={() => {
+                    setCurrentAttachmentPreview(null);
+                    setAttachmentFileName("");
+                    form.setValue("attachmentUrl", null, { shouldDirty: true });
+                  }}
+                >
+                  X
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
-      </div> {/* End of grid */} 
+      </div>
 
-      {currentAttachmentPreview && (
-        <div className="mt-4">
-          <p className="text-sm font-medium mb-1">Image Preview:</p>
-          <img src={currentAttachmentPreview} alt="Current attachment" className="h-32 w-auto object-contain rounded border" />
-          <Button 
-            type="button" 
-            variant="link" 
-            size="sm" 
-            className="text-red-600 hover:text-red-800 px-0 pt-1"
-            onClick={() => {
-              setCurrentAttachmentPreview(null); 
-              setAttachmentFileName("");
-              reset(prev => ({...prev, attachmentUrl: null})); 
-            }}>
-            Remove Image
-          </Button>
+      {/* Product Variants Section */}
+      <div className="space-y-6">
+        <h3 className="text-lg font-medium border-b pb-2">Product Variants</h3>
+        <div className="space-y-4">
+          {fields.map((field, index) => (
+            <div key={field.id} className="grid grid-cols-1 md:grid-cols-6 gap-3 p-4 border rounded-md relative">
+              <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 h-6 w-6" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+              <div className="space-y-1">
+                <Label>Variant Name</Label>
+                <Input {...register(`variants.${index}.name`)} placeholder="Variant Name" className="w-full" disabled={mutation.isPending} />
+                {errors.variants?.[index]?.name && <p className="text-red-500 text-xs mt-1">{errors.variants?.[index]?.name?.message}</p>}
+              </div>
+              <div className="space-y-1">
+                <Label>HSN Code</Label>
+                <Input {...register(`variants.${index}.hsnCode`)} placeholder="HSN Code" className="w-full" disabled={mutation.isPending} />
+              </div>
+              <div className="space-y-1">
+                <Label>MRP</Label>
+                <Input type="number" {...register(`variants.${index}.mrp`)} placeholder="MRP" className="w-full" disabled={mutation.isPending} />
+                {errors.variants?.[index]?.mrp && <p className="text-red-500 text-xs mt-1">{errors.variants?.[index]?.mrp?.message}</p>}
+              </div>
+              <div className="space-y-1">
+                <Label>Selling Price</Label>
+                <Input type="number" {...register(`variants.${index}.sellingPrice`)} placeholder="95.00" disabled={mutation.isPending} />
+                {errors.variants?.[index]?.sellingPrice && <p className="text-red-500 text-xs mt-1">{errors.variants[index].sellingPrice.message}</p>}
+              </div>
+              <div className="space-y-1">
+                <Label>Purchase Price</Label>
+                <Input type="number" {...register(`variants.${index}.purchasePrice`)} placeholder="80.00" disabled={mutation.isPending} />
+                {errors.variants?.[index]?.purchasePrice && <p className="text-red-500 text-xs mt-1">{errors.variants[index].purchasePrice.message}</p>}
+              </div>
+              <div className="space-y-1">
+                <Label>GST Rate (%)</Label>
+                <Input type="number" {...register(`variants.${index}.gstRate`)} placeholder="GST Rate" className="w-full" disabled={mutation.isPending} />
+                {errors.variants?.[index]?.gstRate && <p className="text-red-500 text-xs mt-1">{errors.variants?.[index]?.gstRate?.message}</p>}
+              </div>
+            </div>
+          ))}
         </div>
-      )}
+        <Button type="button" variant="outline" onClick={() => append({ mrp: 0, sellingPrice: 0, purchasePrice: 0, gstRate: 0, name: "" })} disabled={mutation.isPending}>+ Add Variant</Button>
+      </div>
 
-      <div className="flex justify-end pt-4">
-        <Button type="submit" disabled={isSubmitting || mutation.isPending} className="min-w-[120px]">
-          {isSubmitting || mutation.isPending ? (
-            <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-          ) : null}
-          {mode === "create" ? "Create Product" : "Save Changes"}
+      {/* Form Actions */}
+      <div className="flex justify-end space-x-4 pt-6">
+        <Button type="button" variant="outline" onClick={() => onSuccess?.()} disabled={mutation.isPending}>Cancel</Button>
+        <Button type="submit" disabled={mutation.isPending || !isDirty}>
+            {mutation.isPending ? <LoaderCircle className="animate-spin mr-2" /> : null}
+            {mode === 'create' ? 'Create Product' : 'Save Changes'}
         </Button>
       </div>
     </form>

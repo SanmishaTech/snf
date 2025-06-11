@@ -12,7 +12,11 @@ import MainLayout from "./layouts/MainLayout";
 import AdminProtectedRoute from "./layouts/AdminProtectedRoute"; // Added for admin route protection
 import Header from "./layouts/Header"; // Import the Header component
 import MemberLayout from "./layouts/MemberLayout";
+import WastageList from "./modules/Wastage/WastageList";
+import CreateWastagePage from "./modules/Wastage/CreateWastagePage";
+import EditWastagePage from "./modules/Wastage/EditWastagePage";
 import Login from "./modules/Auth/Login";
+import VarientstockListPage from "./modules/Varientstock/VarientstockListPage";
 import Register from "./modules/Auth/Register";
 import ForgotPassword from "./modules/Auth/ForgotPassword";
 import ResetPassword from "./modules/Auth/ResetPassword";
@@ -25,7 +29,7 @@ import CreateVendorPage from "./modules/Vendor/CreateVendorPage";
 import EditVendorPage from "./modules/Vendor/EditVendorPage";
 import CreateAgencyPage from "./modules/Agency/CreateAgencyPage";
 import EditAgencyPage from "./modules/Agency/EditAgencyPage";
-import Orderlist from "./modules/Order/OrderList"
+import Orderlist from "./modules/Order/OrderList";
 import CreateOrderPage from "./modules/Order/CreateOrderPage"
 import OrderDetailsPage from "./modules/Order/OrderDetailsPage"
 import EditOrderPage from "./modules/Order/EditOrderPage";
@@ -59,8 +63,12 @@ import AdminMembersListPage from "./modules/Wallet/AdminMembersListPage"; // Add
 import AreaMasterListPage from "./modules/Areamaster/AreaMasterListPage"; // Added for Area Master Management
 import CategoryMasterListPage from "./modules/CategoryMaster/CategoryMasterListPage"; // Added for Category Master Management
 import DepotMasterListPage from "./modules/DepotMaster/DepotMasterListPage"; // Added for Depot Master Management
+import Teams from "./modules/Teams/Teams"; // Added for Teams Management
 import BannerListPage from "./modules/BannerMaster/BannerListPage"; // Added for Banner Master Management
 import UserWallet from "./modules/Wallet/UserWallet";
+import PurchaseList from "./modules/Purchase/PurchaseList";
+import CreatePurchasePage from "./modules/Purchase/CreatePurchasePage";
+import EditPurchasePage from "./modules/Purchase/EditPurchasePage";
 import "./App.css";
 // MembershipList wrapper component to handle showing all memberships
  
@@ -109,9 +117,13 @@ const App = () => {
               {/* Dashboard content would go here */}
             </div>} />
             <Route path="/admin/users" element={<UserList />} />
+            <Route path="/admin/variantstock" element={<VarientstockListPage />} />
             <Route path="/admin/users/create" element={<UserForm mode='create' />} />
             <Route path="/admin/users/edit/:id" element={<UserForm mode='edit' />} />
             <Route path="/admin/vendors" element={<VendorList />} />
+            <Route path="/admin/wastages" element={<WastageList />} />
+            <Route path="/admin/wastages/create" element={<CreateWastagePage />} />
+            <Route path="/admin/wastages/edit/:id" element={<EditWastagePage />} />
             <Route path="/admin/vendors/create" element={<CreateVendorPage />} /> 
             <Route path="/admin/vendors/edit/:id" element={<EditVendorPage />} /> 
             <Route path="/admin/agencies" element={<AgencyList />} />
@@ -122,6 +134,9 @@ const App = () => {
             <Route path="/admin/orders/:id" element={<OrderDetailsPage />} />
             <Route path="/admin/orders/:id/edit" element={<EditOrderPage />} />
             <Route path="/admin/orders/:id/record-receipt" element={<OrderReceivedPage />} /> {/* New route for recording receipt */}
+            <Route path="/admin/purchases" element={<PurchaseList />} />
+            <Route path="/admin/purchases/create" element={<CreatePurchasePage />} />
+            <Route path="/admin/purchases/edit/:id" element={<EditPurchasePage />} />
             <Route path="/admin/products" element={<ProductList />} />
             <Route path="/admin/wallet" element={<WalletAdmin />} />
             <Route path="/admin/members" element={<AdminMembersListPage />} /> {/* Added for Admin Members List Page */}
@@ -133,7 +148,8 @@ const App = () => {
             <Route path="/admin/delivery" element={<AgencyDeliveryView />} /> {/* Added for agency delivery management */}
             <Route path="/admin/categories" element={<CategoryMasterListPage />} /> {/* Route for Category Master */}
             <Route path="/admin/areamasters" element={<AreaMasterListPage />} /> {/* Added for Area Master Management */}
-            <Route path="/admin/depots" element={<DepotMasterListPage />} /> {/* Added for Depot Master Management */}
+              <Route path="/admin/depots" element={<DepotMasterListPage />} /> {/* Added for Depot Master Management */}
+            <Route path="/admin/teams" element={<Teams />} /> {/* Added for Teams Management */}
             <Route path="/admin/banners" element={<BannerListPage />} /> {/* Added for Banner Master Management */}
           </Route>
 
