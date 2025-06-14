@@ -93,6 +93,12 @@ const initialData = {
           icon: GalleryVerticalEnd,
           groupLabel: "Master",
         },
+        {
+          title: "Purchase Payments",
+          url: "/admin/purchase-payments",
+          icon: FileText,
+          groupLabel: "Master",
+        },
         //products
         {
           title: "Categories",
@@ -381,7 +387,7 @@ export function AppSidebar(props: AppSidebarProps) {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent className="space-y-1">
+      <SidebarContent className="space-y-1 overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {data.isOB && (
           <div className="mb-4">
             <div className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500">

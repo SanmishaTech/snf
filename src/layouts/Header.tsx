@@ -9,9 +9,10 @@ interface HeaderProps {
   isLoggedIn?: boolean;
   userName?: string;
   onLogout?: () => void;
+  showWallet?: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout }) => {
+const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWallet }) => {
   const headerRef = useRef<HTMLElement>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
@@ -206,7 +207,7 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout }) => {
                 />
                 <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               </div> */}
-              <WalletButton isLoggedIn={isLoggedIn} />
+              {showWallet && <WalletButton isLoggedIn={isLoggedIn} />}
             </div>
 
             {/* Mobile Menu Button */}

@@ -36,7 +36,7 @@ const AreaMasterForm: React.FC<AreaMasterFormProps> = ({ initialData, onClose, o
       setFormData({
         name: initialData.name,
         pincodes: initialData.pincodes,
-        depotId: initialData.depotId || '', // Fallback to empty string for pre-filling, addressing potential null/undefined from backend
+        depotId: initialData.depotId ? String(initialData.depotId) : '', // Always string for Select
         deliveryType: initialData.deliveryType || DeliveryType.HandDelivery, // Ensure valid DeliveryType
       });
     } else if (!initialData) {

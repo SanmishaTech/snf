@@ -1,7 +1,6 @@
-
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,6 +12,10 @@ import { Separator } from "@/components/ui/separator"
 import { get, post } from "../../services/apiService" // Adjust path if needed
 import { formatCurrency } from "@/lib/formatter" // Adjust path if needed
 
+// Generic API response interface (align with backend response structure)
+interface ApiResponse<T> {
+  data: T;
+}
 
 interface ApiTransaction {
   id: string | number;
@@ -30,6 +33,20 @@ interface UserWalletData {
   transactions: ApiTransaction[];
 }
 
+// Utility to deduplicate transactions by id
+const deduplicateTransactions = (txs: ApiTransaction[]): ApiTransaction[] => {
+  const seen = new Map<string | number, ApiTransaction>();
+  txs.forEach((tx) => {
+    if (!seen.has(tx.id)) {
+      seen.set(tx.id, tx);
+    }
+  });
+  return Array.from(seen.values());
+};
+
+// Polling interval for auto-refreshing wallet data (in milliseconds)
+const WALLET_POLL_INTERVAL = 15000; // 15 seconds – adjust as needed
+
 export default function WalletPage() {
   const [balance, setBalance] = useState(0) // Initial balance, will be updated from API
   const [transactions, setTransactions] = useState<ApiTransaction[]>([]);
@@ -39,6 +56,11 @@ export default function WalletPage() {
 
   const [isFetchingWallet, setIsFetchingWallet] = useState(true); // For fetching initial wallet data
   const [fetchWalletError, setFetchWalletError] = useState<string | null>(null);
+
+  // Keep a ref to store the polling interval ID so we can clear it on unmount
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  // Prevent duplicate form submissions
+  const isSubmittingRef = useRef(false);
 
   const validateAmount = (value: string): string | null => {
     if (!value.trim()) {
@@ -65,6 +87,7 @@ export default function WalletPage() {
 
   const handleAddBalance = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isSubmittingRef.current) return;
     setFormError("")
 
     const validationError = validateAmount(amount)
@@ -73,6 +96,8 @@ export default function WalletPage() {
       return
     }
 
+    // mark as submitting and show loader
+    isSubmittingRef.current = true
     setIsLoadingForm(true)
 
     try {
@@ -96,6 +121,8 @@ export default function WalletPage() {
         icon: <AlertCircle className="h-4 w-4" />
       })
     } finally {
+      // allow resubmission
+      isSubmittingRef.current = false
       setIsLoadingForm(false)
     }
   }
@@ -114,14 +141,17 @@ export default function WalletPage() {
     setIsFetchingWallet(true);
     setFetchWalletError(null);
     try {
-      const data = await get<UserWalletData>('/wallet'); // Assuming '/api' prefix is handled by apiService
-      // setWalletData(data); // Removed
-      if (data) {
-        console.log(data)
-        if (typeof data.data.balance === 'number') {
-          setBalance(data.data.balance);
+      const response = await get<ApiResponse<UserWalletData>>('/wallet');
+      if (response?.data) {
+        const wallet = response.data;
+        if (typeof wallet.balance === 'number') {
+          setBalance(wallet.balance);
         }
-        setTransactions(data.data.transactions || []);
+        if (Array.isArray(wallet.transactions)) {
+          setTransactions(deduplicateTransactions(wallet.transactions));
+        } else {
+          setTransactions([]);
+        }
       }
     } catch (err: any) {
       setFetchWalletError(err.message || "Failed to load wallet details.");
@@ -133,6 +163,29 @@ export default function WalletPage() {
 
   useEffect(() => {
     fetchWalletDetails();
+  }, []);
+
+  /* -------------------------------------------------------------------------- */
+  /*                               Auto Refreshing                              */
+  /* -------------------------------------------------------------------------- */
+
+  // Start polling when component mounts and clean up on unmount
+  useEffect(() => {
+    // Immediately fetch once on mount
+    fetchWalletDetails();
+
+    // Set up polling at a fixed interval
+    pollingIntervalRef.current = setInterval(() => {
+      fetchWalletDetails();
+    }, WALLET_POLL_INTERVAL);
+
+    // Clear interval on unmount to prevent memory leaks
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

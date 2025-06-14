@@ -99,6 +99,24 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [modalView, setModalView] = useState<'subscriptionDetails' | 'addressForm' | 'confirmation'>('subscriptionDetails');
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [userMobile, setUserMobile] = useState<string>('');
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const response = await get('/users/me');
+        if (response && response.mobile) {
+          setUserMobile(response.mobile);
+        }
+      } catch (error) {
+        console.error('Failed to fetch user profile:', error);
+      }
+    };
+    fetchUserProfile();
+  }, []);
+
+  // New wallet balance state
+  const [walletBalance, setWalletBalance] = useState<number>(0);
 
   const handleCancelAddAddress = () => {
     setModalView('subscriptionDetails');
@@ -158,7 +176,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   // New state for address form fields
   const [addressFormState, setAddressFormState] = useState<Omit<AddressData, 'id'>>({
     recipientName: "",
-    mobile: "",
+    mobile: userMobile, // Pre-fill with user's mobile
     plotBuilding: "",
     streetArea: "",
     landmark: "",
@@ -239,6 +257,28 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       }
     }
   };
+
+  useEffect(() => {
+    if (isOpen) {
+      // fetch wallet balance when modal opens
+      (async () => {
+        try {
+          const walletResp = await get('/api/wallet/balance');
+          let balance = 0;
+          if (typeof walletResp === 'number') {
+            balance = walletResp;
+          } else if (walletResp && typeof walletResp.balance === 'number') {
+            balance = walletResp.balance;
+          } else if (walletResp && walletResp.data && typeof walletResp.data.balance === 'number') {
+            balance = walletResp.data.balance;
+          }
+          setWalletBalance(balance);
+        } catch (err) {
+          console.error('Failed to fetch wallet balance', err);
+        }
+      })();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen && modalView === 'subscriptionDetails') {
@@ -451,9 +491,20 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       deliveryDescription,
       totalPrice,
       period: subscriptionPeriods.find(p => p.value === selectedPeriod)?.label || `${selectedPeriod} days`,
-      startDate: startDate ? format(startDate, "MMM dd, yyyy") : "Not set"
+      startDate: startDate && !isNaN(new Date(startDate).getTime()) ? format(new Date(startDate), "dd/MM/yyyy") : "Not set"
     };
   }, [product, deliveryOption, selectedPeriod, quantity, quantityVarying2, selectedDays, startDate]);
+
+  // derived wallet calculations
+  const walletDeduction = useMemo(() => {
+    if (!subscriptionSummary) return 0;
+    return Math.min(walletBalance || 0, subscriptionSummary.totalPrice || 0);
+  }, [walletBalance, subscriptionSummary]);
+
+  const remainingPayable = useMemo(() => {
+    if (!subscriptionSummary) return 0;
+    return (subscriptionSummary.totalPrice || 0) - walletDeduction;
+  }, [subscriptionSummary, walletDeduction]);
 
   if (!product) return null; // Don't render modal content if no product data
  return (
@@ -682,7 +733,10 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        onClick={() => setModalView('addressForm')}
+                        onClick={() => {
+                          setAddressFormState(prev => ({ ...prev, mobile: userMobile }));
+                          setModalView('addressForm');
+                        }}
                         className="text-xs h-8"
                       >
                         <Plus className="h-3 w-3 mr-1" /> Add New
@@ -735,7 +789,10 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => setModalView('addressForm')}
+                          onClick={() => {
+                            setAddressFormState(prev => ({ ...prev, mobile: userMobile }));
+                            setModalView('addressForm');
+                          }}
                         >
                           <Plus className="h-3 w-3 mr-1" /> Add Delivery Address
                         </Button>
@@ -758,7 +815,9 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">Start Date:</span>
-                          <span>{format(subscriptionSummary.startDate, "dd/MM/yyyy")}</span>
+                          <span>{subscriptionSummary.startDate && !isNaN(new Date(subscriptionSummary.startDate).getTime()) 
+                            ? format(new Date(subscriptionSummary.startDate), "dd/MM/yyyy") 
+                            : 'Not set'}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">Total Deliveries:</span>
@@ -826,11 +885,52 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     {subscriptionSummary?.totalQuantity || quantity} {product?.unit || ''} * ₹{product?.rate?.toFixed(2)} = ₹{((subscriptionSummary?.totalQuantity || quantity) * (product?.rate || 0)).toFixed(2)}
                   </span>
                 </div>
-                <div className="flex justify-between items-center pt-2 border-t">
-                  <span className="text-sm font-semibold">Total Amount:</span>
-                  <span className="text-lg font-bold text-green-600">₹{subscriptionSummary?.totalPrice}</span>
-                </div>
+                <div className="pt-2 border-t border-gray-200 space-y-2">
+        <div className="flex justify-between">
+          <span className="text-sm font-medium">Subtotal:</span>
+          <span className="text-sm">₹{subscriptionSummary?.totalPrice?.toFixed(2)}</span>
+        </div>
+        
+        <div className="flex justify-between">
+          <span className="text-sm font-medium">Wallet Credit:</span>
+          <span className="text-sm text-green-600">-₹{walletDeduction.toFixed(2)}</span>
+        </div>
+        
+        <div className="flex justify-between font-medium pt-2">
+          <span className="text-sm font-semibold">Amount Payable:</span>
+          <span className="text-sm font-semibold text-green-600">
+            ₹{remainingPayable.toFixed(2)}
+          </span>
+        </div>
+      </div>
               </div>
+              
+              {subscriptionSummary && (
+                <>
+                
+                  {remainingPayable > 0 ? (
+      <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
+        <p className="text-xs text-blue-700 flex items-start">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          {walletDeduction > 0 
+            ? `₹${walletDeduction.toFixed(2)} will be deducted from your wallet. The remaining ₹${remainingPayable.toFixed(2)} will be collected via Cash/UPI on delivery.`
+            : `Full amount of ₹${remainingPayable.toFixed(2)} will be collected via Cash/UPI on delivery.`}
+        </p>
+      </div>
+    ) : (
+      <div className="bg-green-50 p-3 rounded-md border border-green-100">
+        <p className="text-xs text-green-700 flex items-start">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Full amount of ₹{subscriptionSummary?.totalPrice?.toFixed(2)} will be deducted from your wallet.
+        </p>
+      </div>
+    )}
+                </>
+              )}
               
               <div className="bg-white p-4 rounded-md border">
                 <h4 className="text-sm font-medium mb-2">Delivery Address:</h4>

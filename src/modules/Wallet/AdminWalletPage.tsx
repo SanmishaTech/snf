@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, User, Wallet, TrendingUp, TrendingDown, CheckCircle2, AlertCircle } from "lucide-react"
+import { Loader2,Mail, User, Wallet, TrendingUp, TrendingDown, CheckCircle2, AlertCircle } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -79,6 +79,17 @@ interface ModifyFundsPayload {
   notes?: string;
 }
 
+// Utility to deduplicate transactions by id
+const deduplicateTransactions = (txs: ApiTransaction[]): ApiTransaction[] => {
+  const seen = new Map<string | number, ApiTransaction>();
+  txs.forEach((tx) => {
+    if (!seen.has(tx.id)) {
+      seen.set(tx.id, tx);
+    }
+  });
+  return Array.from(seen.values());
+};
+
 const AdminWalletPage: React.FC = () => {
   // Form state
   const [amount, setAmount] = useState<string>("");
@@ -144,6 +155,10 @@ const AdminWalletPage: React.FC = () => {
       try {
         // Use apiService.get for fetching member wallet details
         const response = await get<ApiResponse<SelectedMemberData>>(`/admin/wallets/${selectedId}`);
+        if (response?.data?.wallet?.transactions) {
+          // Remove duplicate transactions (same id)
+          response.data.wallet.transactions = deduplicateTransactions(response.data.wallet.transactions);
+        }
         setSelectedMemberData(response?.data);
       } catch (err: any) {
         setError(err.message || `Failed to load wallet for member ${selectedId}.`);
@@ -240,7 +255,11 @@ const AdminWalletPage: React.FC = () => {
 
       // Re-fetch wallet details to update balance and ensure data consistency
       if (selectedMemberId) {
-        await handleMemberSelect(selectedMemberId);
+        const response = await get<ApiResponse<SelectedMemberData>>(`/admin/wallets/${selectedMemberId}`);
+        if (response?.data?.wallet?.transactions) {
+          response.data.wallet.transactions = deduplicateTransactions(response.data.wallet.transactions);
+        }
+        setSelectedMemberData(response.data);
       }
 
       setIsViewTransactionDetailsDialogOpen(false);
@@ -301,6 +320,9 @@ const AdminWalletPage: React.FC = () => {
       // Refresh wallet details
       if (selectedMemberId) {
         const response = await get<ApiResponse<SelectedMemberData>>(`/admin/wallets/${selectedMemberId}`);
+        if (response?.data?.wallet?.transactions) {
+          response.data.wallet.transactions = deduplicateTransactions(response.data.wallet.transactions);
+        }
         setSelectedMemberData(response.data);
       }
       setIsModifyBalanceDialogOpen(false);
@@ -349,47 +371,40 @@ const AdminWalletPage: React.FC = () => {
       </div>
 
       {/* Compact Member Selection */}
-      <Card className="p-4">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 min-w-0">
-            <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <span className="text-sm font-medium whitespace-nowrap">Member:</span>
-          </div>
-          <Select onValueChange={handleMemberSelect} value={selectedMemberId ? String(selectedMemberId) : undefined}>
-            <SelectTrigger className="max-w-xs">
-              <SelectValue placeholder="Select a member" />
-            </SelectTrigger>
-            <SelectContent>
-              {membersList.map((member: MemberSummary) => (
-                <SelectItem key={String(member.memberId)} value={String(member.memberId)}>
-                  {member.memberName} {member.memberEmail ? `(${member.memberEmail})` : ''}
-                </SelectItem>
-              ))}
-              {membersList.length === 0 && !isLoadingMembers && (
-                <div className="p-2 text-center text-sm text-muted-foreground">No members found.</div>
-              )}
-              {/* Optional: if isLoadingMembers and list is also empty, show loading inside */}
-              {isLoadingMembers && membersList.length === 0 && (
-                 <div className="p-2 text-center text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin inline mr-2" />
-                    Loading members...
-                 </div>
-              )}
-            </SelectContent>
-          </Select>
+    
 
-          {isLoadingMembers && membersList.length > 0 && ( // Show spinner if loading but list already has items (e.g. re-fetch)
-            <div className="flex items-center gap-2 text-sm text-muted-foreground ml-4">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Updating...
+      {/* Selected Member Information */}
+      {selectedMemberData && !isLoadingDetails && (
+  <Card className="p-6 rounded-xl shadow-sm border bg-card transition-all hover:shadow-md">
+    <div className="flex items-start gap-5">
+      <div className="bg-primary/10 p-3 rounded-full">
+        <User className="h-8 w-8 text-primary flex-shrink-0" />
+      </div>
+      
+      <div className="space-y-2">
+        <div>
+          <h3 className="text-xl font-bold text-foreground tracking-tight">
+            {selectedMemberData.memberName}
+          </h3>
+          
+          {selectedMemberData.memberEmail && (
+            <div className="flex items-center gap-2 mt-1">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <a 
+                href={`mailto:${selectedMemberData.memberEmail}`}
+                className="text-muted-foreground hover:text-primary hover:underline transition-colors"
+              >
+                {selectedMemberData.memberEmail}
+              </a>
             </div>
           )}
         </div>
-
-        {error && (
-          <div className="bg-destructive/15 text-destructive px-3 py-2 rounded-md mt-3 text-sm">Error: {error}</div>
-        )}
-      </Card>
+        
+         
+      </div>
+    </div>
+  </Card>
+)}
 
       {/* Wallet Details Section - loading state */}
       {isLoadingDetails && (

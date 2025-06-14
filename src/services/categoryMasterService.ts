@@ -3,7 +3,7 @@ import {get, post,put, del} from './apiService'; // Assuming 'api.ts' is your co
 export interface Category {
   id: number; // Or string, if your backend uses UUIDs etc.
   name: string;
-  isPerishable: boolean;
+ 
   isDairy: boolean;
   imageUrl?: string;
   createdAt?: string; // Optional: if your backend sends these

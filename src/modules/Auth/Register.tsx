@@ -1,4 +1,3 @@
-
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -13,7 +12,7 @@ import { LoaderCircle } from "lucide-react"; // Spinner icon
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 import Validate from "@/lib/Handlevalidation";
- 
+
 // Define expected API response structure
 interface RegisterResponse {
   message: string;
@@ -28,15 +27,20 @@ type RegisterFormInputs = z.infer<typeof registerSchema>;
 const registerSchema = z
   .object({
     name: z.string().nonempty("Name is required"),
-    email: z
+    email: z.string().email("Invalid email address").optional(),
+    mobile: z
       .string()
-      .nonempty("Email is required")
-      .email("Invalid email address"),
+      .regex(/^\d{10}$/, "Mobile must be a 10 digit number")
+      .optional(),
     password: z
       .string()
       .nonempty("Password is required")
       .min(5, "Password must be at least 5 characters long"),
     confirmPassword: z.string().nonempty("Confirm Password is required"),
+  })
+  .refine((data) => !!(data.email || data.mobile), {
+    message: "Either email or mobile is required",
+    path: ["email"],
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords must match",
@@ -45,7 +49,7 @@ const registerSchema = z
 
 const Register: React.FC<RegisterProps> = () => {
   const location = useLocation();
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const isAdminRegisterPath = location.pathname === "/admin/register";
 
   const {
@@ -65,17 +69,28 @@ const Register: React.FC<RegisterProps> = () => {
     mutationFn: (data) => post("/auth/register", data),
     onSuccess: () => {
       toast.success("Registration successful! Please log in.");
-      if(location.pathname === "/admin/register"){
-        navigate("/admin")
+      if (location.pathname === "/admin/register") {
+        navigate("/admin");
       }
-      if(location.pathname === "/register"){
-        navigate("/login")
-      }else{
-
-        window.location.reload()
+      if (location.pathname === "/register") {
+        navigate("/login");
+      } else {
+        window.location.reload();
       }
-        },
+    },
     onError: (error: any) => {
+      // Show inline error for duplicate mobile/email conflicts
+      if (error.status === 409) {
+        if (error.message.toLowerCase().includes('mobile')) {
+          setError('mobile', { type: 'manual', message: error.message });
+        } else if (error.message.toLowerCase().includes('email')) {
+          setError('email', { type: 'manual', message: error.message });
+        } else {
+          toast.error(error.message);
+        }
+        return;
+      }
+      // Default validation and error toast
       Validate(error, setError);
       if (error.message) {
         toast.error(error.message);
@@ -92,16 +107,27 @@ const Register: React.FC<RegisterProps> = () => {
   return (
     <div className="w-full max-w-md mx-auto">
       <div className="text-center mb-8">
-      {location.pathname !== "/"  &&  <div className="mx-auto bg-gradient-to-br from-primary to-purple-600 w-16 h-16 rounded-xl flex items-center justify-center mb-4">
-          {/* You can use a different icon for registration, e.g., UserPlus */} 
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="w-8 h-8">
-            <path d="M12 2.5a5.5 5.5 0 0 1 5.5 5.5c0 1.826-.889 3.442-2.25 4.465A9.003 9.003 0 0 1 20 18.75a.75.75 0 0 1-1.5 0A7.503 7.503 0 0 0 13 12.198V13.5a.75.75 0 0 1-1.5 0v-1.302a7.503 7.503 0 0 0-5.5 6.552.75.75 0 0 1-1.5 0A9.003 9.003 0 0 1 8.75 12.465C7.389 11.442 6.5 9.826 6.5 8a5.5 5.5 0 0 1 5.5-5.5Zm2.506 17.084a.75.75 0 0 1 .988 0l2.25 1.5a.75.75 0 0 1-.988 1.424l-2.25-1.5a.75.75 0 0 1 0-1.424ZM19.25 18a.75.75 0 0 0 .75-.75v-1.5a.75.75 0 0 0-1.5 0v1.5a.75.75 0 0 0 .75.75ZM8.994 19.584a.75.75 0 0 1-.988 0l-2.25-1.5a.75.75 0 1 1 .988-1.424l2.25 1.5a.75.75 0 0 1 0 1.424ZM4.75 18a.75.75 0 0 0-.75-.75v-1.5a.75.75 0 0 0-1.5 0v1.5A.75.75 0 0 0 4 18Z" />
-          </svg>
-        </div>}
-{location.pathname !== "/"  &&        <h1 className="text-3xl font-bold mb-2">Create your account</h1>
-}     {location.pathname !== "/" &&   <p className="text-muted-foreground">
-          Join {appName} today to get started.
-        </p>}
+        {location.pathname !== "/" && (
+          <div className="mx-auto bg-gradient-to-br from-primary to-purple-600 w-16 h-16 rounded-xl flex items-center justify-center mb-4">
+            {/* You can use a different icon for registration, e.g., UserPlus */}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="white"
+              className="w-8 h-8"
+            >
+              <path d="M12 2.5a5.5 5.5 0 0 1 5.5 5.5c0 1.826-.889 3.442-2.25 4.465A9.003 9.003 0 0 1 20 18.75a.75.75 0 0 1-1.5 0A7.503 7.503 0 0 0 13 12.198V13.5a.75.75 0 0 1-1.5 0v-1.302a7.503 7.503 0 0 0-5.5 6.552.75.75 0 0 1-1.5 0A9.003 9.003 0 0 1 8.75 12.465C7.389 11.442 6.5 9.826 6.5 8a5.5 5.5 0 0 1 5.5-5.5Zm2.506 17.084a.75.75 0 0 1 .988 0l2.25 1.5a.75.75 0 0 1-.988 1.424l-2.25-1.5a.75.75 0 0 1 0-1.424ZM19.25 18a.75.75 0 0 0 .75-.75v-1.5a.75.75 0 0 0-1.5 0v1.5a.75.75 0 0 0 .75.75ZM8.994 19.584a.75.75 0 0 1-.988 0l-2.25-1.5a.75.75 0 1 1 .988-1.424l2.25 1.5a.75.75 0 0 1 0 1.424ZM4.75 18a.75.75 0 0 0-.75-.75v-1.5a.75.75 0 0 0-1.5 0v1.5A.75.75 0 0 0 4 18Z" />
+            </svg>
+          </div>
+        )}
+        {location.pathname !== "/" && (
+          <h1 className="text-3xl font-bold mb-2">Create your account</h1>
+        )}
+        {location.pathname !== "/" && (
+          <p className="text-muted-foreground">
+            Join {appName} today to get started.
+          </p>
+        )}
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -119,8 +145,17 @@ const Register: React.FC<RegisterProps> = () => {
             />
             {errors.name && (
               <p className="text-destructive text-sm flex items-center mt-1">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 mr-1">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  className="w-4 h-4 mr-1"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 {errors.name.message}
               </p>
@@ -140,10 +175,49 @@ const Register: React.FC<RegisterProps> = () => {
             />
             {errors.email && (
               <p className="text-destructive text-sm flex items-center mt-1">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 mr-1">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  className="w-4 h-4 mr-1"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z"
+                    clipRule="evenodd"
+                  />
                 </svg>
-                {errors.email.message}
+                {errors.email?.message}
+              </p>
+            )}
+          </div>
+
+          {/* Mobile Field */}
+          <div className="space-y-2">
+            <Label htmlFor="mobile">Mobile Number</Label>
+            <Input
+              id="mobile"
+              type="tel"
+              placeholder="9876543210"
+              {...register("mobile")}
+              disabled={registerMutation.isPending}
+              className="py-5 px-4"
+            />
+            {errors.mobile && (
+              <p className="text-destructive text-sm flex items-center mt-1">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  className="w-4 h-4 mr-1"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                {errors.mobile.message}
               </p>
             )}
           </div>
@@ -160,8 +234,17 @@ const Register: React.FC<RegisterProps> = () => {
             />
             {errors.password && (
               <p className="text-destructive text-sm flex items-center mt-1">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 mr-1">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  className="w-4 h-4 mr-1"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 {errors.password.message}
               </p>
@@ -180,8 +263,17 @@ const Register: React.FC<RegisterProps> = () => {
             />
             {errors.confirmPassword && (
               <p className="text-destructive text-sm flex items-center mt-1">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 mr-1">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  className="w-4 h-4 mr-1"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 {errors.confirmPassword.message}
               </p>
@@ -189,8 +281,8 @@ const Register: React.FC<RegisterProps> = () => {
           </div>
 
           {/* Submit Button */}
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             className="w-full py-5 font-semibold"
             disabled={registerMutation.isPending}
           >
@@ -199,19 +291,23 @@ const Register: React.FC<RegisterProps> = () => {
                 <LoaderCircle className="animate-spin mr-2" size={20} />
                 Creating account...
               </>
-            ) : "Create Account"}
+            ) : (
+              "Create Account"
+            )}
           </Button>
 
           {/* Login Link */}
-    {location.pathname !== "/" &&       <p className="text-center text-sm text-muted-foreground mt-6 pt-4 border-t border-border">
-            Already have an account?{" "}
-            <Link
-              to={isAdminRegisterPath ? "/admin" : "/login"}
-              className="font-semibold text-primary hover:underline p-0 h-auto"
-            >
-              Sign In
-            </Link>
-          </p>}
+          {location.pathname !== "/" && (
+            <p className="text-center text-sm text-muted-foreground mt-6 pt-4 border-t border-border">
+              Already have an account?{" "}
+              <Link
+                to={isAdminRegisterPath ? "/admin" : "/login"}
+                className="font-semibold text-primary hover:underline p-0 h-auto"
+              >
+                Sign In
+              </Link>
+            </p>
+          )}
         </div>
       </form>
     </div>

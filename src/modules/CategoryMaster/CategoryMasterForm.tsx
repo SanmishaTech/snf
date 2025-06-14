@@ -16,7 +16,7 @@ const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/web
 
 const categoryFormSchema = z.object({
   name: z.string().min(1, 'Category name is required').max(100, 'Name must be 100 characters or less'),
-  isPerishable: z.boolean().default(false),
+  // isPerishable: z.boolean().default(false),
   isDairy: z.boolean().default(false),
   attachment: z
     .custom<FileList>()
@@ -62,7 +62,7 @@ const CategoryMasterForm: React.FC<CategoryMasterFormProps> = ({ initialData, on
     resolver: zodResolver(categoryFormSchema),
     defaultValues: {
       name: initialData?.name || '',
-      isPerishable: initialData?.isPerishable || false,
+      // isPerishable: initialData?.isPerishable || false,
       isDairy: initialData?.isDairy || false,
       attachment: null,
       imageUrl: initialData?.imageUrl || null,
@@ -74,16 +74,16 @@ const CategoryMasterForm: React.FC<CategoryMasterFormProps> = ({ initialData, on
 
   useEffect(() => {
     if (initialData) {
-      reset({
+      reset({ 
         name: initialData.name,
-        isPerishable: initialData.isPerishable || false,
+        // isPerishable: initialData.isPerishable || false,
         isDairy: initialData.isDairy || false,
         attachment: null, // Don't repopulate file input for security reasons
         imageUrl: initialData.imageUrl || null,
       });
       setPreviewImage(initialData.imageUrl ? `${import.meta.env.VITE_BACKEND_URL}${initialData.imageUrl}` : null);
     } else {
-      reset({ name: '', isPerishable: false, isDairy: false, attachment: null, imageUrl: null });
+      reset({ name: '', isDairy: false, attachment: null, imageUrl: null });
       setPreviewImage(null);
     }
   }, [initialData, reset]);
@@ -116,7 +116,6 @@ const CategoryMasterForm: React.FC<CategoryMasterFormProps> = ({ initialData, on
   const onSubmit = async (data: CategoryFormData) => {
     const formDataToSubmit = new FormData();
     formDataToSubmit.append('name', data.name);
-    formDataToSubmit.append('isPerishable', String(data.isPerishable));
     formDataToSubmit.append('isDairy', String(data.isDairy));
 
     if (data.attachment) {
@@ -151,16 +150,6 @@ const CategoryMasterForm: React.FC<CategoryMasterFormProps> = ({ initialData, on
         <Label htmlFor="name">Category Name <span className="text-red-500">*</span></Label>
         <Input id="name" {...register('name')} autoFocus />
         {errors.name && <p className="text-sm text-red-600 mt-1">{errors.name.message}</p>}
-      </div>
-
-      <div className="flex items-center space-x-2">
-        <Switch 
-          id="isPerishable"
-          checked={watch('isPerishable')}
-          onCheckedChange={(checked) => setValue('isPerishable', checked)}
-        />
-        <Label htmlFor="isPerishable">Is Perishable?</Label>
-        {errors.isPerishable && <p className="text-sm text-red-600 mt-1">{errors.isPerishable.message}</p>}
       </div>
 
       <div className="flex items-center space-x-2">

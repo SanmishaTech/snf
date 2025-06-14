@@ -50,7 +50,7 @@ interface LoginResponse {
 }
 
 const loginSchema = z.object({
-  email: z.string().email("Invalid email address").min(1, "Email is required"),
+  identifier: z.string().min(1, "Email or mobile is required"),
   password: z.string().min(1, "Password is required"),
   // agreedToPolicy removed as it's no longer part of the initial form
 });
@@ -172,7 +172,7 @@ const Login: React.FC<LoginProps> = () => {
               // Set the error on the specific field if it matches our form fields
               if (
                 typeof fieldName === "string" &&
-                (fieldName === "email" || fieldName === "password")
+                (fieldName === "identifier" || fieldName === "password")
               ) {
                 setError(fieldName as keyof LoginFormInputs, {
                   type: "server",
@@ -341,21 +341,21 @@ const Login: React.FC<LoginProps> = () => {
           <div className="space-y-5">
             {/* Email Field */}
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="identifier">Email or Mobile</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="name@example.com"
-                {...register("email")}
+                id="identifier"
+                type="text"
+                placeholder="name@example.com or 9876543210"
+                {...register("identifier")}
                 disabled={loginMutation.isPending || acceptPolicyMutation.isPending}
                 className="py-5 px-4"
               />
-              {errors.email && (
+              {errors.identifier && (
                 <p className="text-destructive text-sm flex items-center mt-1">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 mr-1">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
                   </svg>
-                  {errors.email.message}
+                  {errors.identifier.message}
                 </p>
               )}
             </div>

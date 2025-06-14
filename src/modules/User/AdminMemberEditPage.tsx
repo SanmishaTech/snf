@@ -84,7 +84,7 @@ const AdminMemberEditPage: React.FC = () => {
     <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8 flex justify-center">
       <Card className="w-full ">
         <CardHeader>
-          <CardTitle>Edit Member Details (ID: {memberId})</CardTitle>
+          <CardTitle>Edit Member Details </CardTitle>
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-6">

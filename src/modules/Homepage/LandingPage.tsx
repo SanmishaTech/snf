@@ -42,6 +42,8 @@ const LandingPage = () => {
   const [heroBanners, setHeroBanners] = useState<CarouselImage[]>([]);
   const [isLoadingBanners, setIsLoadingBanners] = useState(true);
   const [bannerError, setBannerError] = useState<string | null>(null);
+  // helper for admin check
+  const adminRoles: string[] = ["ADMIN", "SUPER_ADMIN", "ADMINISTRATOR"];
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
 
@@ -141,12 +143,15 @@ const LandingPage = () => {
     window.location.reload(); // Force a reload to ensure all state is reset
   };
 
+  const showWallet = isLoggedIn && currentUserRole === "MEMBER";
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header
         isLoggedIn={isLoggedIn}
         userName={userName}
         onLogout={handleLogout}
+        showWallet={showWallet}
       />
 
       {/*  Hero Section */}

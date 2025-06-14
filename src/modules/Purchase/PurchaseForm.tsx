@@ -439,7 +439,7 @@ const PurchaseForm: React.FC<PurchaseFormProps> = ({
                 >
                   {/* Product */}
                   <div className="md:col-span-3">
-                    <Label>Product</Label>
+                    <Label className="mb-2">Product</Label>
                     <Controller
                       control={control}
                       name={`purchaseDetails.${idx}.productId`}
@@ -462,7 +462,7 @@ const PurchaseForm: React.FC<PurchaseFormProps> = ({
 
                   {/* Variant */}
                   <div className="md:col-span-3">
-                    <Label>Variant</Label>
+                    <Label className="mb-2">Variant</Label>
                     <Controller
                       control={control}
                       name={`purchaseDetails.${idx}.variantId`}
@@ -497,7 +497,7 @@ const PurchaseForm: React.FC<PurchaseFormProps> = ({
 
                   {/* Quantity */}
                   <div className="md:col-span-2">
-                    <Label>Quantity</Label>
+                    <Label className="mb-2">Quantity</Label>
                     <Input
                       type="number"
                       {...register(`purchaseDetails.${idx}.quantity`, {
@@ -508,7 +508,7 @@ const PurchaseForm: React.FC<PurchaseFormProps> = ({
 
                   {/* Rate */}
                   <div className="md:col-span-2">
-                    <Label>Rate</Label>
+                    <Label className="mb-2">Rate</Label>
                     <Input
                       type="number"
                       step="0.01"
@@ -521,7 +521,7 @@ const PurchaseForm: React.FC<PurchaseFormProps> = ({
                   {/* Total & Delete */}
                   <div className="md:col-span-2 flex items-end justify-between gap-2">
                     <div>
-                      <Label>Total</Label>
+                      <Label className="mb-2">Total</Label>
                       <p className="font-medium h-10 flex items-center">
                         {formatCurrency(lineTotal)}
                       </p>

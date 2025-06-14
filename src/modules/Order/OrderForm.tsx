@@ -823,7 +823,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                     // Show a fallback summary for each valid item
                     return validItems.map((item, idx) => (
                       <div key={`summary-fallback-${item.productId}-${idx}`} className="flex justify-between items-center border-b pb-2 mb-2 last:border-b-0 last:pb-0 last:mb-0">
-                        <p className="font-medium text-gray-700 dark:text-gray-300">Product ID: {item.productId}</p>
+                        {/* <p className="font-medium text-gray-700 dark:text-gray-300">Product ID: {item.productId}</p> */}
                         <p className="font-medium text-gray-700 dark:text-gray-300">Qty: {item.quantity}</p>
                       </div>
                     ));

@@ -19,6 +19,7 @@ interface ProductData {
   quantity: number;
   createdAt: string;
   updatedAt: string;
+  categoryId?: number | null; // ensure categoryId is typed if present
 }
 
 // Interface for the form, with date as Date object
@@ -114,7 +115,8 @@ const EditProductPage: React.FC = () => {
   // Prepare initialData for the form, converting date string to Date object
   const initialFormData: ProductFormDataForPage = {
     ...productData,
-    date: new Date(productData.date),
+    date: productData.date ? new Date(productData.date) : undefined,
+    categoryId: (productData as any).categoryId ?? null, // ensure categoryId is passed if present
   };
 
   return (

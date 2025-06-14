@@ -39,6 +39,7 @@ const productVariantSchema = z.object({
 });
 
 const productSchema = z.object({
+  maintainStock: z.boolean().default(false),
   name: z.string().min(1, "Product name is required"),
   price: z.coerce.number().positive({ message: "Price must be a positive number" }),
   rate: z.coerce.number().positive({ message: "Rate must be a positive number" }),
@@ -93,6 +94,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
       unit: null,
       description: "",
       isDairyProduct: false,
+      maintainStock: false,
       attachmentUrl: null,
       variants: [],
       categoryId: null,
@@ -117,6 +119,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
         unit: initialData.unit || null,
         description: (initialData as any).description || "",
         isDairyProduct: initialData.isDairyProduct || false,
+       maintainStock: initialData.maintainStock || false,
         variants: initialData.variants || [],
         categoryId: (initialData as any).categoryId || null,
       };
@@ -175,6 +178,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
     formData.append("price", String(data.price));
     formData.append("rate", String(data.rate));
     formData.append("isDairyProduct", String(data.isDairyProduct));
+    formData.append("maintainStock", String(data.maintainStock));
     if (data.unit) formData.append("unit", data.unit);
     if (data.description) formData.append("description", data.description);
     if (data.categoryId) formData.append("categoryId", String(data.categoryId));
@@ -227,9 +231,27 @@ const ProductForm: React.FC<ProductFormProps> = ({
             />
             {errors.categoryId && <p className="text-red-500 text-xs mt-1">{errors.categoryId.message}</p>}
           </div>
+           {/* Maintain Stock Checkbox */}
+         <div className="flex items-center space-x-2">
+           <Controller
+             name="maintainStock"
+             control={control}
+             render={({ field }) => (
+               <Checkbox
+                 id="maintainStock"
+                 checked={field.value}
+                 onCheckedChange={field.onChange}
+                 disabled={mutation.isPending}  
+               />
+             )}
+           />
+           <Label htmlFor="maintainStock">Maintain Stock</Label>
+         </div>
 
           <div className="md:col-span-2 space-y-2">
             <Label htmlFor="description">Description</Label>
+
+         
             <Controller name="description" control={control} render={({ field }) => (<ReactQuill theme="snow" value={field.value || ""} onChange={field.onChange} onBlur={field.onBlur} />)} />
             {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description.message}</p>}
           </div>

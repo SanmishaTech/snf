@@ -4,10 +4,79 @@ import { toast } from 'sonner';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, CalendarDays, CheckCircle, XCircle, SkipForward } from 'lucide-react';
 import { format, parseISO, isAfter, addDays, differenceInDays, startOfDay } from 'date-fns';
 import { MemberSubscription as BaseMemberSubscription } from './MySubscriptionsPage'; // Assuming the interface is exported
+
+// Utility function to format subscription period similar to MySubscriptionsPage
+const formatPeriod = (inputPeriod: ExtendedMemberSubscription['period'] | string | number) => {
+  const typedPeriodMap: Record<string, string> = {
+    'DAYS_7': '7 Days',
+    'DAYS_15': '15 Days',
+    'DAYS_30': '1 Month',
+    'DAYS_90': '3 Months',
+  };
+
+  if (typeof inputPeriod === 'string' && typedPeriodMap[inputPeriod]) {
+    return typedPeriodMap[inputPeriod];
+  }
+
+  const periodStr = String(inputPeriod);
+  const numericEquivalentMap: Record<string, string> = {
+    '7': '7 Days',
+    '15': '15 Days',
+    '30': '1 Month',
+    '90': '3 Months',
+  };
+
+  if (numericEquivalentMap[periodStr]) {
+    return numericEquivalentMap[periodStr];
+  }
+
+  if (periodStr.startsWith('DAYS_')) {
+    return periodStr.replace('DAYS_', '') + ' Days';
+  }
+  if (!isNaN(Number(periodStr))) {
+    return `${periodStr} Days`;
+  }
+
+  return periodStr;
+};
+
+// Utility to format delivery schedule text (simplified)
+const formatDeliveryScheduleText = (
+  schedule: ExtendedMemberSubscription['deliverySchedule'],
+  selectedDays?: string[] | null,
+  qty?: number,
+  altQty?: number | null,
+) => {
+  let scheduleText = '';
+  switch (schedule) {
+    case 'DAILY': scheduleText = 'Daily'; break;
+    case 'ALTERNATE_DAYS': scheduleText = 'Alternate Days'; break;
+    case 'SELECT_DAYS': scheduleText = `Selected Days (${selectedDays?.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ') || 'N/A'})`; break;
+    case 'VARYING': scheduleText = 'Varying Quantities'; break;
+    default: scheduleText = schedule as string;
+  }
+  if (schedule === 'VARYING' && qty && altQty) {
+    return `${scheduleText} (${qty} / ${altQty})`;
+  }
+  if (qty) {
+    return `${scheduleText} - ${qty} unit(s)`;
+  }
+  return scheduleText;
+};
 
 // API service to get subscription details using apiService
 const getSubscriptionDetails = async (id: string): Promise<ExtendedMemberSubscription | null> => {
@@ -62,6 +131,7 @@ const ManageSubscriptionPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [subscription, setSubscription] = useState<ExtendedMemberSubscription | null>(null);
   const [isSkipping, setIsSkipping] = useState<Record<number, boolean>>({}); // Tracks loading state for skip buttons by delivery ID
+  const [dialogState, setDialogState] = useState<{ isOpen: boolean; deliveryId: number | null }>({ isOpen: false, deliveryId: null });
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -147,8 +217,13 @@ const ManageSubscriptionPage: React.FC = () => {
     setDeliveries(processedDeliveries);
   };
 
-  const handleSkipDelivery = async (deliveryEntryId: number) => {
+  const handleConfirmSkip = async () => {
+    if (!dialogState.deliveryId) return;
+
+    const deliveryEntryId = dialogState.deliveryId;
     setIsSkipping(prev => ({ ...prev, [deliveryEntryId]: true }));
+    setDialogState({ isOpen: false, deliveryId: null }); // Close dialog immediately
+
     try {
       // The backend PATCH /subscriptions/member/deliveries/:deliveryEntryId/skip endpoint
       // is now responsible for both skipping the delivery and processing any applicable refund.
@@ -156,14 +231,11 @@ const ManageSubscriptionPage: React.FC = () => {
       
       // Update local state with the new status from the backend response
       setDeliveries(prevDeliveries =>
-        prevDeliveries.map(delivery =>
-          delivery.id === deliveryEntryId
-            ? { ...delivery, status: 'SKIPPED' } // Assuming SKIPPED_BY_MEMBER or similar maps to 'SKIPPED'
-            : delivery
+        prevDeliveries.map(d =>
+          d.id === deliveryEntryId ? { ...d, status: 'SKIPPED' } : d
         )
       );
-      // The backend should provide a comprehensive message, e.g., "Delivery skipped and refund processed."
-      // Or, if a refund wasn't applicable, "Delivery skipped."
+
       toast.success(response.message || 'Delivery action processed successfully!');
 
       // Optional: If the backend response includes specific details about the refund (e.g., amount),
@@ -175,6 +247,10 @@ const ManageSubscriptionPage: React.FC = () => {
       toast.error(errorMessage);
     }
     setIsSkipping(prev => ({ ...prev, [deliveryEntryId]: false }));
+  };
+
+  const handleSkipDelivery = async (deliveryEntryId: number) => {
+    setDialogState({ isOpen: true, deliveryId: deliveryEntryId });
   };
 
   if (isLoading) {
@@ -199,14 +275,53 @@ const ManageSubscriptionPage: React.FC = () => {
 
   return (
     <div className="container mx-auto p-4 md:p-6">
+      <Card className="shadow-lg mb-6">
+        <CardHeader className='bg-gray-50 dark:bg-gray-800 pb-4'>
+          <CardTitle className="text-xl md:text-2xl font-bold text-primary">
+            Subscription Info
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm text-gray-700 dark:text-gray-300 p-4">
+          <p>
+            <strong>Product:</strong> {subscription.product.name}
+          </p>
+          <p>
+            <strong>Quantity:</strong> {subscription.qty} {subscription.product.unit}{subscription.qty > 1 ? 's' : ''}
+            {subscription.altQty ? (
+              <>
+                {' '} &amp; {subscription.altQty} {subscription.product.unit}{subscription.altQty > 1 ? 's' : ''}
+              </>
+            ) : null}
+          </p>
+          <p><strong>Period:</strong> {formatPeriod(subscription.period)}</p>
+          <p><strong>Starts On:</strong> {format(new Date(subscription.startDate), 'dd/MM/yyyy')}</p>
+          <p><strong>Expires On:</strong> {format(new Date(subscription.expiryDate), 'dd/MM/yyyy')}</p>
+          <p><strong>Delivery:</strong> {formatDeliveryScheduleText(subscription.deliverySchedule, subscription.selectedDays, subscription.qty, subscription.altQty)}</p>
+          {subscription.paymentStatus && (
+            <p>
+              <strong>Payment:</strong> <span className={`capitalize font-medium ${subscription.paymentStatus === 'PAID' ? 'text-green-600' : 'text-orange-500'}`}>{subscription.paymentStatus.toLowerCase()}</span>
+            </p>
+          )}
+          {subscription.agency && (
+            <p><strong>Assigned Agent:</strong> {subscription.agency.user.name}</p>
+          )}
+          {subscription.deliveryAddress && (
+            <p>
+              <strong>Delivering to:</strong> {`${subscription.deliveryAddress?.streetArea && subscription.deliveryAddress?.streetArea}, ${subscription.deliveryAddress?.landmark && subscription.deliveryAddress?.landmark}, ${subscription.deliveryAddress.city}, ${subscription.deliveryAddress.state} ${subscription.deliveryAddress.pincode}`}
+            </p>
+          )}
+          {subscription.amount !== undefined && (
+            <p className="font-semibold text-base"><strong>Total Amount:</strong> ₹{subscription.amount.toFixed(2)}</p>
+          )}
+        </CardContent>
+      </Card>
+
       <Card className="shadow-lg">
         <CardHeader className='bg-gray-50 dark:bg-gray-800 pb-4'>
           <CardTitle className="text-xl md:text-2xl font-bold text-primary">
             Manage Subscription: {subscription.product.name}
           </CardTitle>
-          <CardDescription>
-            ID: {subscription.id} | Status: <span className={`font-medium ${subscription.status === 'ACTIVE' ? 'text-green-600' : 'text-yellow-600'}`}>{subscription.status}</span>
-          </CardDescription>
+           
         </CardHeader>
         <CardContent className="p-4 md:p-6">
           <h3 className="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-300 flex items-center">
@@ -233,7 +348,7 @@ const ManageSubscriptionPage: React.FC = () => {
                     {delivery.status === 'CANCELLED' && <XCircle className="h-5 w-5 mr-2 text-gray-400 flex-shrink-0" />}
                     {(delivery.status === 'PENDING' || delivery.status === 'SCHEDULED') && <CalendarDays className="h-5 w-5 mr-2 text-gray-500 flex-shrink-0" />}
                     <div>
-                      <span className="font-medium text-gray-800 dark:text-gray-100">{format(delivery.date, 'EEE, dd MMM yyyy')}</span>
+                      <span className="font-medium text-gray-800 dark:text-gray-100">{format(delivery.date, 'EEE, dd/MM/yyyy')}</span>
                       <span className={`ml-2 text-xs font-semibold px-2 py-0.5 rounded-full ${
                         delivery.status === 'SKIPPED' ? 'bg-red-100 text-red-700 dark:bg-red-700 dark:text-red-100'
                         : delivery.status === 'DELIVERED' ? 'bg-green-100 text-green-700 dark:bg-green-700 dark:text-green-100'
@@ -246,7 +361,7 @@ const ManageSubscriptionPage: React.FC = () => {
                       </span>
                     </div>
                   </div>
-                  {isAfter(delivery.date, today) && (delivery.status === 'PENDING' || (delivery.status === 'SCHEDULED' && delivery.date.getTime() !== today.getTime())) && (
+                  {isAfter(startOfDay(delivery.date), today) && (delivery.status === 'PENDING' || delivery.status === 'SCHEDULED') && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -270,6 +385,21 @@ const ManageSubscriptionPage: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={dialogState.isOpen} onOpenChange={(isOpen) => setDialogState({ ...dialogState, isOpen })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to skip this delivery?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. Skipping will prevent the delivery for the selected date. If a refund is applicable for a pre-paid delivery, it will be processed automatically to your wallet.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDialogState({ isOpen: false, deliveryId: null })}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmSkip}>Confirm Skip</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

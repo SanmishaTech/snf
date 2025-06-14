@@ -17,6 +17,7 @@ import { LoaderCircle } from "lucide-react"; // Import the LoaderCircle icon
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { get, post, put } from "@/services/apiService";
+import { useParams } from "react-router-dom";
 import { PasswordInput } from "@/components/ui/password-input";
 import Validate from "@/lib/Handlevalidation";
 
@@ -55,6 +56,8 @@ const AVAILABLE_ROLES = ["VENDOR", "AGENCY", "ADMIN", "MEMBER"];
 const UserForm = ({ mode, userId, onSuccess, className }: UserFormProps) => {
   const roles = AVAILABLE_ROLES; // Use predefined roles directly
   const queryClient = useQueryClient();
+  const { id: routeUserId } = useParams<{ id: string }>();
+  const effectiveUserId = userId ?? routeUserId;
 
   const {
     register,
@@ -72,10 +75,10 @@ const UserForm = ({ mode, userId, onSuccess, className }: UserFormProps) => {
 
   // Fetch user data for edit mode
   useEffect(() => {
-    if (mode === "edit" && userId) {
+    if (mode === "edit" && effectiveUserId) {
       const fetchUser = async () => {
         try {
-          const user = await get(`/users/${userId}`);
+          const user = await get(`/users/${effectiveUserId}`);
           setValue("name", user.name);
           setValue("email", user.email);
           setValue("role", user.role);
@@ -87,7 +90,7 @@ const UserForm = ({ mode, userId, onSuccess, className }: UserFormProps) => {
 
       fetchUser();
     }
-  }, [userId, mode, setValue]);
+  }, [effectiveUserId, mode, setValue]);
 
   // Mutation for creating a user
   const createUserMutation = useMutation({
@@ -109,7 +112,7 @@ const UserForm = ({ mode, userId, onSuccess, className }: UserFormProps) => {
 
   // Mutation for updating a user
   const updateUserMutation = useMutation({
-    mutationFn: (data: UserFormInputs) => put(`/users/${userId}`, data),
+    mutationFn: (data: UserFormInputs) => put(`/users/${effectiveUserId}`, data),
     onSuccess: () => {
       toast.success("User updated successfully");
       queryClient.invalidateQueries({ queryKey: ["users"] });

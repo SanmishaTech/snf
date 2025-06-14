@@ -69,6 +69,9 @@ import UserWallet from "./modules/Wallet/UserWallet";
 import PurchaseList from "./modules/Purchase/PurchaseList";
 import CreatePurchasePage from "./modules/Purchase/CreatePurchasePage";
 import EditPurchasePage from "./modules/Purchase/EditPurchasePage";
+import PurchasePaymentListPage from "./modules/PurchasePayment/PurchasePaymentListPage";
+import PurchasePaymentForm from "./modules/PurchasePayment/PurchasePaymentForm";
+import PurchasePaymentViewPage from "./modules/PurchasePayment/PurchasePaymentViewPage";
 import "./App.css";
 // MembershipList wrapper component to handle showing all memberships
  
@@ -137,6 +140,9 @@ const App = () => {
             <Route path="/admin/purchases" element={<PurchaseList />} />
             <Route path="/admin/purchases/create" element={<CreatePurchasePage />} />
             <Route path="/admin/purchases/edit/:id" element={<EditPurchasePage />} />
+            <Route path="/admin/purchase-payments" element={<PurchasePaymentListPage />} />
+            <Route path="/admin/purchase-payments/create" element={<PurchasePaymentForm />} />
+            <Route path="/admin/purchase-payments/:id" element={<PurchasePaymentViewPage />} />
             <Route path="/admin/products" element={<ProductList />} />
             <Route path="/admin/wallet" element={<WalletAdmin />} />
             <Route path="/admin/members" element={<AdminMembersListPage />} /> {/* Added for Admin Members List Page */}

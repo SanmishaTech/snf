@@ -19,49 +19,72 @@ interface WalletButtonProps {
   isLoggedIn?: boolean;
 }
 
+// Interval (in ms) at which the wallet balance should refresh
+const WALLET_POLL_INTERVAL = 15000; // 15 seconds
+
 export default function WalletButton({ isLoggedIn }: WalletButtonProps) {
   const navigate = useNavigate();
   const [balance, setBalance] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  /* -------------------------------------------------------------------------- */
+  /*                        Fetching & Auto-refresh Balance                      */
+  /* -------------------------------------------------------------------------- */
+
   useEffect(() => {
+    if (!isLoggedIn) return;
+
+    let isMounted = true;
+
     const fetchWalletBalance = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        // Adjust the endpoint and response structure as per your API
-        const response = await get("/api/wallet/balance"); 
-        // Assuming response structure is { success: true, data: { balance: 100 } } or similar
-        // Or directly { balance: 100 }
+        // Re-use the same endpoint used in the UserWallet page so data is consistent
+        const response = await get("/wallet");
+
         let newBalance: number | undefined;
-        // Assuming response structure is { success: true, data: { balance: 100, currency: 'INR' } }
-        if (response && response.success && response.data && typeof response.data.balance === 'number') {
+
+        if (response && response.data && typeof response.data.balance === "number") {
           newBalance = response.data.balance;
-        } else if (response && typeof response.balance === 'number') { // Fallback for direct balance if API changes
+        } else if (typeof response.balance === "number") {
           newBalance = response.balance;
         }
 
-        if (typeof newBalance === 'number') {
-          setBalance(newBalance);
-        } else {
-          console.warn("Unexpected response structure for wallet balance:", response);
-          setError("Failed to fetch balance: unexpected data format.");
-          setBalance(0); // Default to 0 or handle as needed
+        if (isMounted) {
+          if (typeof newBalance === "number") {
+            setBalance(newBalance);
+          } else {
+            console.warn("Unexpected response structure for wallet balance:", response);
+            setError("Failed to fetch balance: unexpected data format.");
+            setBalance(0);
+          }
         }
       } catch (err: any) {
-        console.error("Failed to fetch wallet balance:", err);
-        const errorMessage = err.response?.data?.message || err.message || "Failed to fetch wallet balance";
-        setError(errorMessage);
-        toast.error(errorMessage);
-        setBalance(0); // Default to 0 on error or handle as needed
+        if (isMounted) {
+          console.error("Failed to fetch wallet balance:", err);
+          const errorMessage = err.response?.data?.message || err.message || "Failed to fetch wallet balance";
+          setError(errorMessage);
+          toast.error(errorMessage);
+          setBalance(0);
+        }
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
-    if (isLoggedIn) {
-      fetchWalletBalance();
-    }
+    // Initial fetch
+    fetchWalletBalance();
+
+    // Start polling
+    const intervalId = setInterval(fetchWalletBalance, WALLET_POLL_INTERVAL);
+
+    // Cleanup on unmount
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
   }, [isLoggedIn]);
 
   if (!isLoggedIn) {

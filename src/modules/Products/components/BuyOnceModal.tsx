@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Plus, Minus, MapPin, X } from "lucide-react";
-import { format } from 'date-fns'; // For date formatting in summary
+import { format, addDays } from 'date-fns'; // For date formatting in summary
 import { DialogClose } from "@/components/ui/dialog"; // For explicit close button
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { get } from "@/services/apiService";
@@ -43,6 +43,8 @@ interface BuyOnceModalProps {
     quantity: number;
     selectedDate: Date | undefined;
     selectedAddress: string; // Address ID for delivery
+    walletDeduction: number; // Amount to deduct from wallet
+    payableAmount: number;   // Amount to be paid in cash/upi
   }) => void;
 }
 
@@ -63,13 +65,47 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
   onBuyOnceConfirm,
 }) => {
   const [quantity, setQuantity] = useState(1);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(addDays(new Date(), 1));
   
   // Address selection states
   const [userAddresses, setUserAddresses] = useState<AddressData[]>([]);
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [showAddressFormView, setShowAddressFormView] = useState(false);
+
+  // Wallet balance state
+  const [walletBalance, setWalletBalance] = useState<number>(0);
+
+  // Fetch wallet balance when modal opens
+  useEffect(() => {
+    const fetchWalletBalance = async () => {
+      try {
+        const resp = await get('/api/wallet/balance');
+        let balance = 0;
+        if (typeof resp === 'number') {
+          balance = resp;
+        } else if (resp && typeof resp.balance === 'number') {
+          balance = resp.balance;
+        } else if (resp && resp.data && typeof resp.data.balance === 'number') {
+          balance = resp.data.balance;
+        }
+        setWalletBalance(balance);
+      } catch (err) {
+        console.error('Failed to fetch wallet balance', err);
+      }
+    };
+
+    if (isOpen) {
+      fetchWalletBalance();
+    }
+  }, [isOpen]);
+
+  // Fetch user addresses when modal opens (restored)
+  useEffect(() => {
+    if (isOpen) {
+      fetchUserAddresses();
+    }
+  }, [isOpen]);
 
   // Helper to format date to YYYY-MM-DD for input[type="date"]
   const formatDateForInput = (date: Date | undefined): string => {
@@ -79,13 +115,6 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
     const day = date.getDate().toString().padStart(2, '0');
     return `${year}-${month}-${day}`;
   };
-
-  // Fetch user addresses when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      fetchUserAddresses();
-    }
-  }, [isOpen]);
 
   // Function to fetch user addresses
   const fetchUserAddresses = async () => {
@@ -109,6 +138,11 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
     }
   };
 
+  // Derived pricing calculations
+  const productTotal = useMemo(() => quantity * (product?.rate || 0), [quantity, product]);
+  const walletDeduction = useMemo(() => Math.min(walletBalance || 0, productTotal), [walletBalance, productTotal]);
+  const payableAmount = useMemo(() => productTotal - walletDeduction, [productTotal, walletDeduction]);
+
   const handleConfirm = () => {
     if (!selectedDate) {
       toast.error("Please select a delivery date.");
@@ -125,6 +159,8 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
       quantity,
       selectedDate,
       selectedAddress: selectedAddressId,
+      walletDeduction,
+      payableAmount,
     });
     
     onOpenChange(false);
@@ -304,15 +340,21 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                 )}
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Calculation:</span>
-                <span className="text-sm font-medium text-green-600">
-                  {quantity} {product?.unit || ''} × ₹{product?.rate?.toFixed(2)} = ₹{(quantity * (product?.rate || 0)).toFixed(2)}
+                <span className="text-sm text-gray-600">Product Total:</span>
+                <span className="text-sm font-medium text-gray-800">
+                  ₹{productTotal.toFixed(2)}
                 </span>
               </div>
+              {walletDeduction > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Wallet Deduction:</span>
+                  <span className="text-sm font-medium text-green-600">-₹{walletDeduction.toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between pt-2 mt-2 border-t border-dashed">
-                <span className="text-gray-700 font-semibold text-base">Total Amount:</span>
+                <span className="text-gray-700 font-semibold text-base">Amount Payable:</span>
                 <span className="font-bold text-green-600 text-base">
-                  ₹{(quantity * (product?.rate || 0)).toFixed(2)}
+                  ₹{payableAmount.toFixed(2)}
                 </span>
               </div>
             </div>
@@ -338,7 +380,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
               disabled={!selectedDate || !selectedAddressId || quantity < 1}
               className="w-full max-w-[20rem] bg-green-600 hover:bg-green-700 text-white py-3 text-base rounded-md disabled:bg-gray-300"
             >
-              Confirm Order & Pay ₹{(quantity * (product?.rate || 0)).toFixed(2)}
+              Confirm Order & Pay ₹{payableAmount.toFixed(2)}
             </Button>
           </DialogFooter>
         )}

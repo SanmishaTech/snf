@@ -1,7 +1,7 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import React, { useState, useEffect } from "react"; // Added React import
 import { Sun, Moon, LogOut, Settings, Repeat, Package, Leaf } from "lucide-react"; // Removed User, Clock, Added Leaf
-import WalletButton from "@/modules/Wallet/Components/Walletmenu"; // Import WalletButton
+
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -29,26 +29,25 @@ interface Product {
   // Add other relevant fields if needed for logic, though only 'id' is used here
 }
 
-export default function MemberLayout({ children }: MemberLayoutProps) { // Destructure children from props
+export default function MemberLayout({ children }: MemberLayoutProps) { 
   const location = useLocation();
   const navigate = useNavigate();
   const [isDarkMode, setIsDarkMode] = useState(() => {
-    // Check localStorage first
     const savedTheme = localStorage.getItem("theme");
     if (savedTheme) {
       return savedTheme === "dark";
     }
-    // If no saved preference, check system preference
     return window.matchMedia("(prefers-color-scheme: dark)").matches;
   });
 
-  // Retrieve user data from localStorage
   const storedUserData = localStorage.getItem("user");
   const userData = storedUserData ? JSON.parse(storedUserData) : null;
+  const role = (userData as any)?.role?.toString().toUpperCase() || undefined;
   const [isLoggedIn, setIsLoggedIn] = useState(!!userData);
-  const [userName, setUserName] = useState(userData?.name || userData?.username || userData?.email || null);
+  const initialName = userData?.name || userData?.username || userData?.email;
+  const [userName, setUserName] = useState<string | undefined>(initialName);
+  const showWallet = isLoggedIn && role === "MEMBER";
   
-  // Effect to sync dark mode state with HTML class
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDarkMode);
   }, [isDarkMode]);
@@ -160,7 +159,7 @@ export default function MemberLayout({ children }: MemberLayoutProps) { // Destr
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header isLoggedIn={isLoggedIn} userName={userName} onLogout={handleLogout} />
+      <Header isLoggedIn={isLoggedIn} userName={userName} onLogout={handleLogout} showWallet={showWallet} />
 
       {/* Main content */}
       <main 

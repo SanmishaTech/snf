@@ -55,6 +55,7 @@ interface Purchase {
   vendor: { id: string; name: string };
   depot?: { id: string; name: string };
   purchaseDetails: PurchaseDetail[];
+  paidAmt?: number;
 }
 
 const PurchaseList = () => {
@@ -166,6 +167,7 @@ const PurchaseList = () => {
                   <TableHead className="px-6 py-3">Invoice No</TableHead>
                   <TableHead className="px-6 py-3">Invoice Date</TableHead>
                   <TableHead className="px-6 py-3 text-right">Total Amount</TableHead>
+                  <TableHead className="px-6 py-3 text-right">Paid Amount</TableHead>
                   <TableHead className="px-6 py-3">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -184,13 +186,16 @@ const PurchaseList = () => {
                     <TableCell className="px-6 py-4 text-right">
                       {formatCurrency(calcTotal(p.purchaseDetails))}
                     </TableCell>
+                    <TableCell className="px-6 py-4 text-right">
+                      {formatCurrency(p.paidAmt || 0)}
+                    </TableCell>
                     <TableCell className="px-6 py-4 space-x-2">
                       <Link to={`/admin/purchases/edit/${p.id}`}>
                         <Button size="icon" variant="ghost">
                           <Pencil className="size-4" />
                         </Button>
                       </Link>
-                      <AlertDialog>
+                      {/* <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button
                             size="icon"
@@ -217,7 +222,7 @@ const PurchaseList = () => {
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
-                      </AlertDialog>
+                      </AlertDialog> */}
                     </TableCell>
                   </TableRow>
                 ))}

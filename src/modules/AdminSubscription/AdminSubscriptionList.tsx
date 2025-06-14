@@ -199,7 +199,7 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Update Payment: {subscription.product.name} (ID: {subscription.id})</DialogTitle>
+          <DialogTitle>Update Payment: {subscription.product.name}</DialogTitle>
           <DialogDescription>
             Modify payment details for the subscription.
           </DialogDescription>

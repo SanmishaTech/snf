@@ -25,6 +25,16 @@ interface Agency {
   user: AgencyUser;
 }
 
+interface Address {
+  id: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  country: string;
+  isDefault: boolean;
+}
+
 export interface MemberSubscription {
   id: string;
   product: Product;
@@ -39,6 +49,7 @@ export interface MemberSubscription {
   paymentStatus?: 'PENDING' | 'PAID' | 'FAILED';
   agency?: Agency | null;
   amount?: number;
+  deliveryAddress?: Address | null;
 }
 
 const formatPeriod = (inputPeriod: MemberSubscription['period'] | string | number) => {
@@ -166,12 +177,17 @@ const MySubscriptionsPage: React.FC = () => {
   ) : null}
 </p>
                 <p><strong>Period:</strong> {formatPeriod(sub.period) }</p>
-                <p><strong>Starts On:</strong> {format(new Date(sub.startDate), 'dd MMM yyyy')}</p>
-                <p><strong>Expires On:</strong> {format(new Date(sub.expiryDate), 'dd MMM yyyy')}</p>
+                <p><strong>Starts On:</strong> {format(new Date(sub.startDate), 'dd/MM/yyyy')}</p>
+                <p><strong>Expires On:</strong> {format(new Date(sub.expiryDate), 'dd/MM/yyyy')}</p>
 
                 <p><strong>Delivery:</strong> {formatDeliverySchedule(sub.deliverySchedule, sub.selectedDays, sub.qty, sub.altQty)}</p>
                 {sub.paymentStatus && <p><strong>Payment:</strong> <span className={`capitalize font-medium ${sub.paymentStatus === 'PAID' ? 'text-green-600' : 'text-orange-500'}`}>{sub.paymentStatus.toLowerCase()}</span></p>}
                 {sub.agency && <p><strong>Assigned Agent:</strong> {sub.agency.user.name}</p>}
+                {sub.deliveryAddress && (
+                  <p>
+                    <strong>Delivering to:</strong> {`${sub.deliveryAddress?.streetArea && sub.deliveryAddress?.streetArea}, ${sub.deliveryAddress.landmark && sub.deliveryAddress.landmark}, ${sub.deliveryAddress.city}, ${sub.deliveryAddress.state} ${sub.deliveryAddress.pincode}`}
+                  </p>
+                )}
                 {sub.amount !== undefined && <p className="font-semibold text-base"><strong>Total Amount:</strong> ₹{sub.amount.toFixed(2)}</p>}
               </CardContent>
               <CardFooter className="p-4 pt-0">
