@@ -121,7 +121,7 @@ const EnhancedProductCard: React.FC<EnhancedProductCardProps> = ({ product, onVi
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
       onClick={() => onViewDetails(product.id)} // Navigate on card click
-      className="rounded-xl overflow-hidden cursor-pointer"
+      className="h-full rounded-xl overflow-hidden cursor-pointer" 
     >
       <Card className="relative h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 transition-all duration-300 group">
         {/* Image Container */}
@@ -428,3 +428,4 @@ const MemberProductDisplayPage: React.FC = () => {
 };
 
 export default MemberProductDisplayPage;
+
