@@ -26,7 +26,11 @@ import {
 } from "@/components/ui/sidebar";
 import { appName } from "@/config";
 import { useLocation } from "react-router-dom";
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 
 // This is sample data.
@@ -54,25 +58,25 @@ const initialData = {
           title: "Purchases",
           url: "/admin/purchases",
           icon: FileText,
-          groupLabel: "Master", 
+          groupLabel: "Master",
         },
         {
           title: "Depot Varients",
           url: "/admin/depot-variants",
           icon: FileText,
-          groupLabel: "Master", 
+          groupLabel: "Master",
         },
         {
           title: "Variant Stock",
           url: "/admin/variantstock",
           icon: FileText,
-          groupLabel: "Master", 
+          groupLabel: "Master",
         },
         {
           title: "Wastage",
           url: "/admin/wastages",
           icon: FileText,
-          groupLabel: "Master", 
+          groupLabel: "Master",
         },
         {
           title: "Areas",
@@ -80,7 +84,7 @@ const initialData = {
           icon: FileText,
           groupLabel: "Master",
         },
-        
+
         {
           title: "Depots",
           url: "/admin/depots",
@@ -243,7 +247,7 @@ const initialData = {
           icon: FileText,
           groupLabel: "Depot",
         },
-      ],
+      ],    
       navMain: [] as any[],
     },
     AGENCY: {
@@ -298,9 +302,11 @@ export function AppSidebar(props: AppSidebarProps) {
     obNav: [] as typeof initialData.obNavigation,
     isOB: false,
   });
-  
+
   // State to track open/closed groups
-  const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>({});
+  const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>(
+    {}
+  );
 
   React.useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -350,9 +356,11 @@ export function AppSidebar(props: AppSidebarProps) {
           obNav: isUserOB ? initialData.obNavigation : [],
           isOB: isUserOB,
         }));
-        
+
         // Initialize all groups as open by default
-        const groups = [...new Set(roleData?.projects.map(p => p.groupLabel))];
+        const groups = [
+          ...new Set(roleData?.projects.map((p) => p.groupLabel)),
+        ];
         const initialOpenState = groups.reduce((acc, group) => {
           acc[group] = true;
           return acc;
@@ -381,15 +389,15 @@ export function AppSidebar(props: AppSidebarProps) {
 
   // Toggle group open/closed state
   const toggleGroup = (groupLabel: string) => {
-    setOpenGroups(prev => ({
+    setOpenGroups((prev) => ({
       ...prev,
-      [groupLabel]: !prev[groupLabel]
+      [groupLabel]: !prev[groupLabel],
     }));
   };
 
   // Group items by groupLabel
   const groupedItems = data.projects.reduce((groups, item) => {
-    const group = item.groupLabel || 'Other';
+    const group = item.groupLabel || "Other";
     if (!groups[group]) {
       groups[group] = [];
     }
@@ -404,12 +412,14 @@ export function AppSidebar(props: AppSidebarProps) {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              className="data-[slot=sidebar-menu-button]:!p-1.5 hover:bg-gray-800"
+              className="data-[slot=sidebar-menu-button]:!p-1.5 hover:bg-gray-200"
             >
               <div className="flex items-center gap-2 justify-between">
                 <a href="/" className="flex items-center gap-2">
                   <ArrowUpCircleIcon className="h-5 w-5 hover:text-gray-200" />
-                  <span className="text-base font-semibold text-gray-200">{appName}</span>
+                  <span className="text-base font-semibold text-gray-200">
+                    {appName}
+                  </span>
                 </a>
               </div>
             </SidebarMenuButton>
@@ -434,11 +444,11 @@ export function AppSidebar(props: AppSidebarProps) {
                       key={item.url}
                       href={item.url}
                       className={cn(
-                      "block px-3 py-2 text-sm rounded transition-colors",
-                      pathname === item.url
-                        ? "bg-primary text-primary-foreground"
-                        : "text-gray-700 hover:bg-gray-600"
-                    )}
+                        "block w-full px-3 py-2 text-sm rounded transition-colors",
+                        pathname === item.url
+                          ? "bg-primary text-primary-foreground"
+                          : "text-gray-700 hover:bg-gray-600"
+                      )}
                     >
                       {item.title}
                     </a>
@@ -460,8 +470,10 @@ export function AppSidebar(props: AppSidebarProps) {
                 <CollapsibleTrigger className="w-full">
                   <div className="px-4 py-2 flex items-center justify-between text-sm font-medium  hover:bg-gray-600 rounded cursor-pointer transition-colors">
                     <div className="flex items-center gap-2">
-                      <ChevronDown 
-                        className={`h-4 w-4 transition-transform ${openGroups[groupLabel] ? 'rotate-0' : '-rotate-90'}`} 
+                      <ChevronDown
+                        className={`h-4 w-4 transition-transform ${
+                          openGroups[groupLabel] ? "rotate-0" : "-rotate-90"
+                        }`}
                       />
                       <span>{groupLabel}</span>
                     </div>
@@ -480,16 +492,16 @@ export function AppSidebar(props: AppSidebarProps) {
                           "flex items-center gap-3 px-3 py-2 text-sm rounded transition-colors",
                           pathname === item.url
                             ? "bg-primary text-primary-foreground"
-                            : "text-gray-500 hover:bg-gray-800"
+                            : "text-gray-500 hover:bg-[#3F5BA9] hover:text-white"
                         )}
                       >
                         {item.icon && (
                           <item.icon
                             className={cn(
-                              "h-4 w-4 flex-shrink-0",
+                              "h-4 w-4 flex-shrink-0 hover:text-white",
                               pathname === item.url
-                                ? "text-primary-foreground"
-                                : "text-gray-500"
+                                ? "text-primary-foreground hover:text-white"
+                                : "text-gray-500 hover:text-white"
                             )}
                           />
                         )}
@@ -514,19 +526,19 @@ export function AppSidebar(props: AppSidebarProps) {
                 key={item.url}
                 href={item.url}
                 className={cn(
-                  "flex items-center gap-3 px-4 py-2 text-sm rounded transition-colors",
+                  "flex items-center gap-3 w-full px-4 py-2 text-sm rounded transition-colors",
                   pathname === item.url
-                    ? "bg-primary text-primary-foreground"
-                    : "text-gray-700 hover:bg-gray-800"
+                    ? "bg-primary text-primary-foreground hover:text-white"
+                    : "text-gray-700 hover:bg-[#3F5BA9] hover:text-white"
                 )}
               >
                 {item.icon && (
                   <item.icon
                     className={cn(
-                      "h-4 w-4",
+                      "h-4 w-4 hover:text-white",
                       pathname === item.url
-                        ? "text-primary-foreground"
-                        : "text-gray-500"
+                        ? "text-primary-foreground hover:text-white"
+                        : "text-gray-500 hover:text-white"
                     )}
                   />
                 )}
