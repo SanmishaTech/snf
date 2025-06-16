@@ -412,7 +412,7 @@ export function AppSidebar(props: AppSidebarProps) {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              className="data-[slot=sidebar-menu-button]:!p-1.5 hover:bg-gray-200"
+              className="data-[slot=sidebar-menu-button]:!p-1.5 hover:bg-gray-500"
             >
               <div className="flex items-center gap-2 justify-between">
                 <a href="/" className="flex items-center gap-2">
