@@ -59,6 +59,9 @@ interface Purchase {
 }
 
 const PurchaseList = () => {
+  const storedUser = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+  const loggedUser: { role?: string; depotId?: number } | null = storedUser ? JSON.parse(storedUser) : null;
+  const isDepotAdmin = loggedUser?.role === 'DepotAdmin';
   const [page, setPage] = useState(1);
   const pageSize = 10;
   const [inputValue, setInputValue] = useState("");
@@ -84,6 +87,9 @@ const PurchaseList = () => {
     queryKey: ["purchases", page, searchTerm, dateFilter],
     queryFn: async () => {
       let url = `/purchases?page=${page}&limit=${pageSize}`;
+      if (isDepotAdmin && loggedUser?.depotId) {
+        url += `&depotId=${loggedUser.depotId}`;
+      }
       if (searchTerm) url += `&search=${searchTerm}`;
       if (dateFilter) url += `&date=${format(dateFilter, "yyyy-MM-dd")}`;
       return get(url);

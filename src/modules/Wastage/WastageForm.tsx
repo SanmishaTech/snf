@@ -77,8 +77,9 @@ interface Product {
   name: string;
   unit?: string;
 }
-interface Variant {
-  id: number;
+// Depot–specific variant (DepotProductVariant)
+interface DepotVariant {
+  id: number; // depotProductVariant ID
   name: string;
   productId: number;
   purchasePrice?: number;
@@ -196,6 +197,10 @@ const WastageForm: React.FC<WastageFormProps> = ({
   const navigate = useNavigate();
   const qc = useQueryClient();
 
+  // Logged-in user info (parsed once)
+  const storedUser = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+  const loggedUser: { role?: string; depotId?: number } | null = storedUser ? JSON.parse(storedUser) : null;
+
   const {
     register,
     control,
@@ -217,7 +222,12 @@ const WastageForm: React.FC<WastageFormProps> = ({
           ? new Date(initialData.invoiceDate)
           : new Date(),
       vendorId: initialData?.vendorId ? String(initialData.vendorId) : "",
-      depotId: initialData?.depotId ? String(initialData.depotId) : "",
+      depotId:
+        mode === "edit" && initialData?.depotId
+          ? String(initialData.depotId)
+          : loggedUser?.depotId
+          ? String(loggedUser.depotId)
+          : "",
       notes: initialData?.notes || "",
       details:
         mode === "edit" && initialData?.details?.length
@@ -238,9 +248,22 @@ const WastageForm: React.FC<WastageFormProps> = ({
 
   // Lookup data --------------------------------------------------------------
   const [products, setProducts] = useState<Product[]>([]);
-  const [variants, setVariants] = useState<Variant[]>([]);
+  const [variants, setVariants] = useState<DepotVariant[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [depots, setDepots] = useState<Depot[]>([]);
+
+  // Prefill depotId when depots list is fetched
+  useEffect(() => {
+    const current = watch("depotId");
+    if (!current) {
+      if (loggedUser?.depotId) {
+        setValue("depotId", String(loggedUser.depotId));
+      } else if (depots.length) {
+        setValue("depotId", String(depots[0].id));
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [depots, loggedUser?.depotId]);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
 
   useEffect(() => {
@@ -248,8 +271,7 @@ const WastageForm: React.FC<WastageFormProps> = ({
       try {
         const prodRes = await get("/products");
         setProducts(prodRes?.data || prodRes || []);
-        const varRes = await get("/product-variants");
-        setVariants(varRes?.data || varRes || []);
+        // Variants will be fetched separately based on selected depot
         const venRes = await get("/vendors?limit=1000");
         setVendors(venRes?.data || venRes || []);
         const depRes = await get("/depots");
@@ -259,6 +281,26 @@ const WastageForm: React.FC<WastageFormProps> = ({
       }
     })();
   }, []);
+
+  // -------------------------------------------------------------------------
+  // Fetch depot variants whenever depotId changes (and on mount if preset)
+  // -------------------------------------------------------------------------
+  const selectedDepotId = watch("depotId");
+  const variantsDepotId = loggedUser?.depotId ?? selectedDepotId;
+  useEffect(() => {
+    if (!variantsDepotId) {
+      setVariants([]);
+      return;
+    }
+    (async () => {
+      try {
+        const res = await get(`/depot-product-variants?depotId=${variantsDepotId}&limit=1000`);
+        setVariants(res?.data || res || []);
+      } catch {
+        toast.error("Failed to fetch depot variants");
+      }
+    })();
+  }, [variantsDepotId, loggedUser?.depotId]);
 
   // Field array --------------------------------------------------------------
   const { fields, append, remove } = useFieldArray({
@@ -348,6 +390,7 @@ const WastageForm: React.FC<WastageFormProps> = ({
           <CardHeader>
             <CardTitle>Vendor & Depot</CardTitle>
           </CardHeader>
+
           <CardContent className="space-y-4">
             <Controller
               control={control}
@@ -379,7 +422,7 @@ const WastageForm: React.FC<WastageFormProps> = ({
               render={({ field }) => (
                 <div>
                   <Label className="mb-2 block w-full" htmlFor="depotId">Depot</Label>
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select value={field.value} onValueChange={field.onChange} disabled={!!loggedUser?.depotId}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select depot" />
                     </SelectTrigger>

@@ -16,8 +16,11 @@ import { Loader2, PlusCircle, Save } from 'lucide-react';
 const depotSchema = z.object({
   name: z.string().min(1, 'Depot name is required').max(100, 'Name must be 100 characters or less'),
   address: z.string().min(1, 'Address is required').max(255, 'Address must be 255 characters or less'),
-  contactPerson: z.string().max(100, 'Contact person must be 100 characters or less').optional().or(z.literal('')), // Allow empty string
-  contactNumber: z.string().max(20, 'Contact number must be 20 characters or less').optional().or(z.literal('')), // Allow empty string
+  contactPerson: z.string().max(100, 'Contact person must be 100 characters or less').optional().or(z.literal('')),
+  contactNumber: z.string().max(20, 'Contact number must be 20 characters or less').optional().or(z.literal('')),
+  userFullName: z.string().min(2, 'Admin full name is required'),
+  userLoginEmail: z.string().email('Invalid email address').optional().or(z.literal('')),
+  userPassword: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
 export type DepotFormData = z.infer<typeof depotSchema>;
@@ -37,7 +40,7 @@ const DepotMasterForm: React.FC<DepotMasterFormProps> = ({ isOpen, onClose, onSu
     formState: { errors, isSubmitting },
   } = useForm<DepotFormData>({
     resolver: zodResolver(depotSchema),
-    defaultValues: initialData || { name: '', address: '', contactPerson: '', contactNumber: '' },
+    defaultValues: initialData || { name: '', address: '', contactPerson: '', contactNumber: '', userFullName: '', userLoginEmail: '', userPassword: '' },
   });
 
   useEffect(() => {
@@ -45,7 +48,7 @@ const DepotMasterForm: React.FC<DepotMasterFormProps> = ({ isOpen, onClose, onSu
       if (initialData) {
         reset(initialData);
       } else {
-        reset({ name: '', address: '', contactPerson: '', contactNumber: '' });
+        reset({ name: '', address: '', contactPerson: '', contactNumber: '', userFullName: '', userLoginEmail: '', userPassword: '' });
       }
     }
   }, [initialData, reset, isOpen]);
@@ -53,7 +56,8 @@ const DepotMasterForm: React.FC<DepotMasterFormProps> = ({ isOpen, onClose, onSu
   const onSubmit = async (data: DepotFormData) => {
     try {
       if (initialData?.id) {
-        await put(`/admin/depots/${initialData.id}`, data);
+        const { userFullName, userLoginEmail, userPassword, ...depotPayload } = data as any;
+        await put(`/admin/depots/${initialData.id}`, depotPayload);
         toast.success('Depot updated successfully.');
       } else {
         await post('/admin/depots', data);
@@ -99,6 +103,27 @@ const DepotMasterForm: React.FC<DepotMasterFormProps> = ({ isOpen, onClose, onSu
             <Input id="contactNumber" {...register('contactNumber')} placeholder="e.g. +1-555-123-4567" />
             {errors.contactNumber && <p className="text-sm text-red-600 mt-1">{errors.contactNumber.message}</p>}
           </div>
+
+          {/* Admin user fields: only shown when creating */}
+          {!initialData?.id && (
+            <>
+              <div className="grid gap-2">
+                <Label htmlFor="userFullName">Admin Full Name <span className="text-red-500">*</span></Label>
+                <Input id="userFullName" {...register('userFullName')} placeholder="e.g. Jane Admin" />
+                {errors.userFullName && <p className="text-sm text-red-600 mt-1">{errors.userFullName.message}</p>}
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="userLoginEmail">Admin Email</Label>
+                <Input id="userLoginEmail" {...register('userLoginEmail')} placeholder="e.g. depot@company.com" />
+                {errors.userLoginEmail && <p className="text-sm text-red-600 mt-1">{errors.userLoginEmail.message}</p>}
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="userPassword">Admin Password <span className="text-red-500">*</span></Label>
+                <Input id="userPassword" type="password" {...register('userPassword')} placeholder="Min 6 characters" />
+                {errors.userPassword && <p className="text-sm text-red-600 mt-1">{errors.userPassword.message}</p>}
+              </div>
+            </>
+          )}
           <DialogFooter className="mt-2">
             <DialogClose asChild>
               <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>

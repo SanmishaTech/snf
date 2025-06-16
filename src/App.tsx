@@ -63,6 +63,7 @@ import AdminMembersListPage from "./modules/Wallet/AdminMembersListPage"; // Add
 import AreaMasterListPage from "./modules/Areamaster/AreaMasterListPage"; // Added for Area Master Management
 import CategoryMasterListPage from "./modules/CategoryMaster/CategoryMasterListPage"; // Added for Category Master Management
 import DepotMasterListPage from "./modules/DepotMaster/DepotMasterListPage"; // Added for Depot Master Management
+import DepotProductVariantListPage from "./modules/DepotProductVariant/DepotProductVariantListPage"; // Added for Depot Product Variant Management
 import Teams from "./modules/Teams/Teams"; // Added for Teams Management
 import BannerListPage from "./modules/BannerMaster/BannerListPage"; // Added for Banner Master Management
 import UserWallet from "./modules/Wallet/UserWallet";
@@ -157,6 +158,7 @@ const App = () => {
               <Route path="/admin/depots" element={<DepotMasterListPage />} /> {/* Added for Depot Master Management */}
             <Route path="/admin/teams" element={<Teams />} /> {/* Added for Teams Management */}
             <Route path="/admin/banners" element={<BannerListPage />} /> {/* Added for Banner Master Management */}
+            <Route path="/admin/depot-variants" element={<DepotProductVariantListPage />} /> {/* Added for Depot Product Variant Management */}
           </Route>
 
           {/* Other routes using MainLayout (e.g., Vendor routes) - not protected by AdminProtectedRoute */}

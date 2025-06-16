@@ -80,3 +80,8 @@ SNF is a modern React-based project built with Vite, TypeScript, TailwindCSS, an
 8. **License**: Mentions the licensing details.
 
 Let me know if you'd like to customize this further!
+
+
+
+
+ 

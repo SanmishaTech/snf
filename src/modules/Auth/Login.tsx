@@ -74,6 +74,9 @@ const Login: React.FC<LoginProps> = () => {
     if (user && user.role === 'MEMBER') {
       return '/member/products'; // Redirect members to the dashboard
     }
+    if (user && user.role === 'DepotAdmin') {
+      return '/admin/purchases';
+    }
     if(user && user.role === 'ADMIN') {
       return '/admin/dashboard';
     }

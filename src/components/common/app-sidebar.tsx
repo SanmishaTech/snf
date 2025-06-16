@@ -57,6 +57,12 @@ const initialData = {
           groupLabel: "Master", 
         },
         {
+          title: "Depot Varients",
+          url: "/admin/depot-variants",
+          icon: FileText,
+          groupLabel: "Master", 
+        },
+        {
           title: "Variant Stock",
           url: "/admin/variantstock",
           icon: FileText,
@@ -213,6 +219,29 @@ const initialData = {
           url: "/admin/orders",
           icon: FileText,
           groupLabel: "Vendor Portal",
+        },
+      ],
+      navMain: [] as any[],
+    },
+    DepotAdmin: {
+      projects: [
+        {
+          title: "Purchases",
+          url: "/admin/purchases",
+          icon: FileText,
+          groupLabel: "Depot",
+        },
+        {
+          title: "Wastage",
+          url: "/admin/wastages",
+          icon: FileText,
+          groupLabel: "Depot",
+        },
+        {
+          title: "Depot Variants",
+          url: "/admin/depot-variants",
+          icon: FileText,
+          groupLabel: "Depot",
         },
       ],
       navMain: [] as any[],

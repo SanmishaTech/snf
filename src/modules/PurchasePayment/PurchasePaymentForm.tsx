@@ -119,29 +119,12 @@ const PurchasePaymentForm: React.FC<PurchasePaymentFormProps> = ({ onSuccess }) 
           startDate: dateStr,
           endDate: dateStr,
         });
-        // The service returns the full response, so we use res.data
-        const purchasesData = (res || [])
-          .map((p: any) => {
-            const total = p.details.reduce(
-              (sum: number, item: any) => sum + parseFloat(item.purchaseRate) * item.quantity,
-              0,
-            );
-            const paid = p.paidAmt ?? 0;
-            return {
-              ...p,
-              totalAmount: total,
-              paidAmt: paid,
-              outstanding: Math.max(total - paid, 0),
-            };
-          })
-          // Exclude fully-paid purchases (outstanding 0)
-          .filter((p: any) => p.outstanding > 0);
+        const purchasesData = res || [];
         setPurchases(purchasesData);
         console.log('purchases', purchasesData);
-        // Initialise details with outstanding balance
         setValue(
           'details',
-          purchasesData.map((p: any) => ({ purchaseId: p.id, amount: p.outstanding }))
+          purchasesData.map((p: any) => ({ purchaseId: p.id, amount: p.outstanding ?? 0 }))
         );
       } catch (e: any) {
         toast.error(e.message || 'Failed to load purchases');
@@ -155,6 +138,12 @@ const PurchasePaymentForm: React.FC<PurchasePaymentFormProps> = ({ onSuccess }) 
   const totalAmount = useMemo(() => details?.reduce((sum, d) => sum + (d.amount || 0), 0), [details]);
 
   const onSubmit = async (data: PaymentFormData) => {
+    // Ensure at least one amount entered
+    if (totalAmount <= 0) {
+      toast.error('Enter at least one payment amount');
+      return;
+    }
+
     // runtime validation for each detail not exceeding outstanding
     for (const d of data.details) {
       const purch = purchases.find((p) => p.id === d.purchaseId);
@@ -172,7 +161,7 @@ const PurchasePaymentForm: React.FC<PurchasePaymentFormProps> = ({ onSuccess }) 
         referenceNo: data.referenceNo || undefined,
         notes: data.notes || undefined,
         totalAmount: totalAmount,
-        details: data.details,
+        details: data.details.filter((d) => d.amount > 0),
       };
       await createPurchasePayment(payload);
       toast.success('Payment recorded');
@@ -192,7 +181,7 @@ const PurchasePaymentForm: React.FC<PurchasePaymentFormProps> = ({ onSuccess }) 
       newVal = maxOwe;
     }
     const detailsArr = [...details];
-    detailsArr[index].amount = newVal;
+    detailsArr[index].amount = isNaN(newVal) ? 0 : newVal;
     setValue('details', detailsArr as any);
   };
 

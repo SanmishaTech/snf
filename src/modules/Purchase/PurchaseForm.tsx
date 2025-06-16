@@ -79,8 +79,9 @@ interface Product {
   name: string;
   unit?: string;
 }
-interface Variant {
-  id: number;
+// Depot–specific variant (DepotProductVariant)
+interface DepotVariant {
+  id: number;           // depotProductVariant ID
   name: string;
   productId: number;
   purchasePrice?: number;
@@ -198,6 +199,12 @@ const PurchaseForm: React.FC<PurchaseFormProps> = ({
   const navigate = useNavigate();
   const qc = useQueryClient();
 
+  // Logged-in user information (parsed once at component start)
+  const storedUser = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+  const loggedUser: { role?: string; depotId?: number } | null = storedUser ? JSON.parse(storedUser) : null;
+
+  console.log("PurchaseForm initial data", initialData);
+
   const {
     register,
     control,
@@ -219,7 +226,12 @@ const PurchaseForm: React.FC<PurchaseFormProps> = ({
           ? new Date(initialData.invoiceDate)
           : new Date(),
       vendorId: initialData?.vendorId ? String(initialData.vendorId) : "",
-      depotId: initialData?.depotId ? String(initialData.depotId) : "",
+      depotId:
+        mode === "edit" && initialData?.depotId
+          ? String(initialData.depotId)
+          : loggedUser?.depotId
+          ? String(loggedUser.depotId)
+          : "",
       notes: initialData?.notes || "",
       purchaseDetails:
         mode === "edit" && initialData?.purchaseDetails?.length
@@ -242,18 +254,33 @@ const PurchaseForm: React.FC<PurchaseFormProps> = ({
 
   // Lookup data --------------------------------------------------------------
   const [products, setProducts] = useState<Product[]>([]);
-  const [variants, setVariants] = useState<Variant[]>([]);
+  const [variants, setVariants] = useState<DepotVariant[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [depots, setDepots] = useState<Depot[]>([]);
+
+  // When depots list is fetched, prefill depotId if it is still empty
+  useEffect(() => {
+    const currentDepotId = watch("depotId");
+    if (!currentDepotId) {
+      if (loggedUser?.depotId) {
+        setValue("depotId", String(loggedUser.depotId));
+      } else if (depots.length) {
+        setValue("depotId", String(depots[0].id));
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [depots, loggedUser?.depotId]);
+
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
 
+  
   useEffect(() => {
     (async () => {
       try {
         const prodRes = await get("/products");
         setProducts(prodRes?.data || prodRes || []);
-        const varRes = await get("/product-variants");
-        setVariants(varRes?.data || varRes || []);
+        // Variants will be fetched separately based on selected depot
+
         const venRes = await get("/vendors?limit=1000");
         setVendors(venRes?.data || venRes || []);
         const depRes = await get("/depots");
@@ -263,6 +290,27 @@ const PurchaseForm: React.FC<PurchaseFormProps> = ({
       }
     })();
   }, []);
+
+  // -------------------------------------------------------------------------
+  // Fetch depot variants whenever depotId changes (and on mount if preset)
+  // -------------------------------------------------------------------------
+  const selectedDepotId = watch("depotId");
+  // Use loggedUser.depotId when present (DepotAdmin) otherwise the selected form value
+  const variantsDepotId = loggedUser?.depotId ?? selectedDepotId;
+  useEffect(() => {
+    if (!variantsDepotId) {
+      setVariants([]);
+      return;
+    }
+    (async () => {
+      try {
+        const res = await get(`/depot-product-variants?depotId=${variantsDepotId}&limit=1000`);
+        setVariants(res?.data || res || []);
+      } catch {
+        toast.error("Failed to fetch depot variants");
+      }
+    })();
+  }, [variantsDepotId, loggedUser?.depotId]); // Added loggedUser?.depotId to the dependency array
 
   // Field array --------------------------------------------------------------
   const { fields, append, remove } = useFieldArray({
@@ -294,7 +342,12 @@ const PurchaseForm: React.FC<PurchaseFormProps> = ({
     onError: (e: any) => toast.error(e.message || "Error saving purchase"),
   });
 
-  const onSubmit: SubmitHandler<PurchaseFormData> = (data) => mutation.mutate(data);
+  const onSubmit: SubmitHandler<PurchaseFormData> = (data) => {
+    if (loggedUser?.role === 'DepotAdmin') {
+      data.depotId = String(loggedUser?.depotId);
+    }
+    mutation.mutate(data);
+  };
 
   // --------------------------- UI ------------------------------------------
   return (
@@ -386,7 +439,8 @@ const PurchaseForm: React.FC<PurchaseFormProps> = ({
               render={({ field }) => (
                 <div>
                   <Label className="mb-2 block w-full" htmlFor="depotId">Depot</Label>
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select value={field.value} onValueChange={field.onChange}
+                    disabled={loggedUser?.role === 'DepotAdmin'}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select depot" />
                     </SelectTrigger>
@@ -425,7 +479,8 @@ const PurchaseForm: React.FC<PurchaseFormProps> = ({
         <CardContent>
           <div className="space-y-4">
             {fields.map((field, idx) => {
-              const selectedProductId = watch(`purchaseDetails.${idx}.productId`);
+              const selectedProductId = details[idx]?.productId;
+              // Removed depotId filter
               const variantsForProduct = variants.filter(
                 (v) => String(v.productId) === selectedProductId
               );
