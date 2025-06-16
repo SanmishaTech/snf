@@ -375,7 +375,7 @@ const WastageForm: React.FC<WastageFormProps> = ({
           </CardContent>
         </Card>
 
-        {/* Vendor & Depot */}
+        {/* Depot */}
         <Card>
           <CardHeader>
             <CardTitle>Depot</CardTitle>
