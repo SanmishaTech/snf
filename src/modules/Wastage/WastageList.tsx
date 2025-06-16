@@ -50,7 +50,7 @@ interface Wastage {
   wastageDate: string;
   invoiceNo: string;
   invoiceDate: string;
-  vendor: { id: string; name: string };
+
   depot?: { id: string; name: string };
   details: WastageDetail[];
 }
@@ -129,7 +129,7 @@ const WastageList = () => {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <Input
-              placeholder="Search by wastage no / vendor"
+              placeholder="Search by wastage no"
               value={inputValue}
               onChange={handleInputChange}
             />
@@ -159,7 +159,7 @@ const WastageList = () => {
               <TableHeader className="bg-gray-100">
                 <TableRow>
                   <TableHead className="px-6 py-3">Wastage No</TableHead>
-                  <TableHead className="px-6 py-3">Vendor</TableHead>
+
                   <TableHead className="px-6 py-3">Wastage Date</TableHead>
                   <TableHead className="px-6 py-3">Invoice No</TableHead>
                   <TableHead className="px-6 py-3">Invoice Date</TableHead>
@@ -171,7 +171,7 @@ const WastageList = () => {
                 {wastages.map((w) => (
                   <TableRow key={w.id} className="hover:bg-gray-50">
                     <TableCell className="px-6 py-4 font-medium">{w.wastageNo}</TableCell>
-                    <TableCell className="px-6 py-4">{w.vendor?.name}</TableCell>
+
                     <TableCell className="px-6 py-4">
                       {format(new Date(w.wastageDate), "dd/MM/yyyy")}
                     </TableCell>

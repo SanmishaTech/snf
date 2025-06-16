@@ -11,6 +11,7 @@ export interface DepotProductVariant {
   purchasePrice: number;
   minimumQty: number;
   closingQty: number;
+  depot?: { id: number; name: string };
   notInStock: boolean;
   isHidden: boolean;
   createdAt?: string;

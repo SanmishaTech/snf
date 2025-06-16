@@ -48,7 +48,7 @@ const wastageSchema = z.object({
   wastageDate: z.date(),
   invoiceNo: z.string().min(1, "Invoice number is required"),
   invoiceDate: z.date(),
-  vendorId: z.string().min(1, "Vendor is required"),
+
   depotId: z.string().min(1, "Depot is required"),
   notes: z.string().optional(),
   details: z
@@ -84,10 +84,7 @@ interface DepotVariant {
   productId: number;
   purchasePrice?: number;
 }
-interface Vendor {
-  id: number;
-  name: string;
-}
+
 interface Depot {
   id: number;
   name: string;
@@ -122,19 +119,13 @@ function ControlledCalendar({
   const [open, setOpen] = useState(false);
   const [month, setMonth] = useState<Date | undefined>(value);
   const [inputValue, setInputValue] = useState(formatDate(value));
-  const [vendors, setvendors] = useState()
+
   useEffect(() => {
     setInputValue(formatDate(value));
     if (isValidDate(value)) setMonth(value);
   }, [value]);
 
-  useEffect(()=>{
-    const fetchVendor = async() =>{
-      const response = await get("/vendors")
-       setvendors(response.data)
-    }
-     fetchVendor()
-  },[])
+
 
 
   return (
@@ -221,7 +212,7 @@ const WastageForm: React.FC<WastageFormProps> = ({
         mode === "edit" && initialData?.invoiceDate
           ? new Date(initialData.invoiceDate)
           : new Date(),
-      vendorId: initialData?.vendorId ? String(initialData.vendorId) : "",
+
       depotId:
         mode === "edit" && initialData?.depotId
           ? String(initialData.depotId)
@@ -249,7 +240,7 @@ const WastageForm: React.FC<WastageFormProps> = ({
   // Lookup data --------------------------------------------------------------
   const [products, setProducts] = useState<Product[]>([]);
   const [variants, setVariants] = useState<DepotVariant[]>([]);
-  const [vendors, setVendors] = useState<Vendor[]>([]);
+
   const [depots, setDepots] = useState<Depot[]>([]);
 
   // Prefill depotId when depots list is fetched
@@ -272,8 +263,7 @@ const WastageForm: React.FC<WastageFormProps> = ({
         const prodRes = await get("/products");
         setProducts(prodRes?.data || prodRes || []);
         // Variants will be fetched separately based on selected depot
-        const venRes = await get("/vendors?limit=1000");
-        setVendors(venRes?.data || venRes || []);
+
         const depRes = await get("/depots");
         setDepots(depRes?.data || depRes || []);
       } catch {
@@ -388,34 +378,11 @@ const WastageForm: React.FC<WastageFormProps> = ({
         {/* Vendor & Depot */}
         <Card>
           <CardHeader>
-            <CardTitle>Vendor & Depot</CardTitle>
+            <CardTitle>Depot</CardTitle>
           </CardHeader>
 
           <CardContent className="space-y-4">
-            <Controller
-              control={control}
-              name="vendorId"
-              render={({ field }) => (
-                <div>
-                  <Label className="mb-2">Vendor</Label>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select vendor" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {vendors.map((v) => (
-                        <SelectItem key={v.id} value={String(v.id)}>
-                          {v.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.vendorId && (
-                    <p className="text-xs text-red-600">{errors.vendorId.message}</p>
-                  )}
-                </div>
-              )}
-            />
+
             <Controller
               control={control}
               name="depotId"
