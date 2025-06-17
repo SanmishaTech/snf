@@ -38,9 +38,10 @@ apiClient.interceptors.response.use(
     const status: number | undefined = error.response?.status;
     const message: string | undefined = error.response?.data?.error?.message || error.response?.data?.message;
     if (status === 403 && message?.toLowerCase().includes("insufficient privileges")) {
+      const role = error.response?.data?.error?.role?.toLowerCase();
       // Optionally clear token
       // localStorage.removeItem("authToken");
-      window.location.href = "/";
+            window.location.href = role === 'member' ? '/' : '/admin/dashboard';
     }
     return Promise.reject(error);
   }

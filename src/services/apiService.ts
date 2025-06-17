@@ -15,9 +15,10 @@ api.interceptors.response.use(
 
     // If the backend indicates the user has insufficient privileges, force logout/redirect
     if (status === 403 && message?.toLowerCase().includes("insufficient privileges")) {
+      const role = error.response?.data?.error?.role?.toLowerCase();
       // Optionally clear any auth-related storage here if needed
       // localStorage.removeItem("authToken");
-      window.location.href = "/";
+            window.location.href = role === 'member' ? '/' : '/admin/dashboard';
     }
 
     // Propagate the error so that individual callers can still handle it if needed
