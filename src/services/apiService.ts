@@ -1,5 +1,6 @@
 import axios from "axios";
 import { backendUrl } from "../config";
+import { toast } from "sonner";
 
 const api = axios.create({
   baseURL: backendUrl,
@@ -14,11 +15,17 @@ api.interceptors.response.use(
       error.response?.data?.error?.message || error.response?.data?.message;
 
     // If the backend indicates the user has insufficient privileges, force logout/redirect
-    if (status === 403 && message?.toLowerCase().includes("insufficient privileges")) {
+    if (
+      status === 403 &&
+      message?.toLowerCase().includes("insufficient privileges")
+    ) {
       const role = error.response?.data?.error?.role?.toLowerCase();
+      toast(
+        `Insufficient privileges detected. Redirecting user with role: ${role}`
+      );
       // Optionally clear any auth-related storage here if needed
       // localStorage.removeItem("authToken");
-            window.location.href = role === 'member' ? '/' : '/admin/dashboard';
+      window.location.href = role === "MEMBER" ? "/" : "/admin/dashboard";
     }
 
     // Propagate the error so that individual callers can still handle it if needed
@@ -29,41 +36,41 @@ api.interceptors.response.use(
 // Helper function to ensure URLs are prefixed with '/api'
 const ensureApiPrefix = (url: string): string => {
   // If URL already starts with '/api', return as is
-  if (url.startsWith('/api')) {
+  if (url.startsWith("/api")) {
     return url;
   }
   // Otherwise, add the '/api' prefix
-  return `/api${url.startsWith('/') ? '' : '/'}${url}`;
+  return `/api${url.startsWith("/") ? "" : "/"}${url}`;
 };
 
 // Helper function to extract the most meaningful error message
 const extractErrorMessage = (error: any): string => {
   // Check different common locations for error messages
-  const message = (
+  const message =
     error.response?.data?.message ||
     error.response?.data?.error?.message ||
     error.response?.data?.errors?.message ||
     error.response?.data?.errors?.[0]?.message ||
     error.message ||
-    'Request failed'
-  );
-  
+    "Request failed";
+
   // Add HTTP status context to the error message for more clarity
   if (error.response?.status) {
     const statusMap: Record<number, string> = {
-      400: 'Bad Request: ',
-      401: 'Unauthorized: ',
-      403: 'Forbidden: ',
-      404: 'Not Found: ',
-      409: 'Conflict: ',
-      422: 'Validation Error: ',
-      500: 'Server Error: '
+      400: "Bad Request: ",
+      401: "Unauthorized: ",
+      403: "Forbidden: ",
+      404: "Not Found: ",
+      409: "Conflict: ",
+      422: "Validation Error: ",
+      500: "Server Error: ",
     };
-    
-    const statusPrefix = statusMap[error.response.status] || `Error ${error.response.status}: `;
+
+    const statusPrefix =
+      statusMap[error.response.status] || `Error ${error.response.status}: `;
     return `${statusPrefix}${message}`;
   }
-  
+
   return message;
 };
 
@@ -76,7 +83,11 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-export const get = async <T = any>(url: string, params?: any, config?: any): Promise<T> => {
+export const get = async <T = any>(
+  url: string,
+  params?: any,
+  config?: any
+): Promise<T> => {
   try {
     const finalConfig = {
       params,
@@ -91,18 +102,22 @@ export const get = async <T = any>(url: string, params?: any, config?: any): Pro
 
     return response.data as T;
   } catch (error: any) {
-    console.error('GET request error details:', error.response?.data);
+    console.error("GET request error details:", error.response?.data);
     throw {
       status: error.response?.status,
       errors: error.response?.data?.errors || [],
       message: extractErrorMessage(error),
       data: error.response?.data, // Include the full error data for more detailed debugging
-      originalError: error // Keep the original error for reference
+      originalError: error, // Keep the original error for reference
     };
   }
 };
 
-export const post = async <T = any>(url: string, data: any, config?: any): Promise<T> => {
+export const post = async <T = any>(
+  url: string,
+  data: any,
+  config?: any
+): Promise<T> => {
   try {
     const response = await api.post(ensureApiPrefix(url), data, config);
     if (config?.responseType === "blob") {
@@ -111,13 +126,13 @@ export const post = async <T = any>(url: string, data: any, config?: any): Promi
 
     return response.data as T;
   } catch (error: any) {
-    console.error('POST request error details:', error.response?.data);
+    console.error("POST request error details:", error.response?.data);
     throw {
       status: error.response?.status,
       errors: error.response?.data?.errors || [],
       message: extractErrorMessage(error),
       data: error.response?.data, // Include the full error data for more detailed debugging
-      originalError: error // Keep the original error for reference
+      originalError: error, // Keep the original error for reference
     };
   }
 };
@@ -127,13 +142,13 @@ export const put = async <T = any>(url: string, data: any): Promise<T> => {
     const response = await api.put(ensureApiPrefix(url), data);
     return response.data as T;
   } catch (error: any) {
-    console.error('PUT request error details:', error.response?.data);
+    console.error("PUT request error details:", error.response?.data);
     throw {
       status: error.response?.status,
       errors: error.response?.data?.errors || [],
       message: extractErrorMessage(error),
       data: error.response?.data,
-      originalError: error
+      originalError: error,
     };
   }
 };
@@ -143,13 +158,13 @@ export const patch = async <T = any>(url: string, data: any): Promise<T> => {
     const response = await api.patch(ensureApiPrefix(url), data);
     return response.data as T;
   } catch (error: any) {
-    console.error('PATCH request error details:', error.response?.data);
+    console.error("PATCH request error details:", error.response?.data);
     throw {
       status: error.response?.status,
       errors: error.response?.data?.errors || [],
       message: extractErrorMessage(error),
       data: error.response?.data,
-      originalError: error
+      originalError: error,
     };
   }
 };
@@ -159,13 +174,13 @@ export const del = async <T = any>(url: string): Promise<T> => {
     const response = await api.delete(ensureApiPrefix(url));
     return response.data as T;
   } catch (error: any) {
-    console.error('DELETE request error details:', error.response?.data);
+    console.error("DELETE request error details:", error.response?.data);
     throw {
       status: error.response?.status,
       errors: error.response?.data?.errors || [],
       message: extractErrorMessage(error),
       data: error.response?.data,
-      originalError: error
+      originalError: error,
     };
   }
 };
@@ -190,16 +205,20 @@ export const postupload = async (
       return config;
     });
 
-    const response = await uploadInstance.post(ensureApiPrefix(url), formData, config);
+    const response = await uploadInstance.post(
+      ensureApiPrefix(url),
+      formData,
+      config
+    );
     return response.data;
   } catch (error: any) {
-    console.error('POST UPLOAD request error details:', error.response?.data);
+    console.error("POST UPLOAD request error details:", error.response?.data);
     throw {
       status: error.response?.status,
       errors: error.response?.data?.errors || [],
       message: extractErrorMessage(error),
       data: error.response?.data,
-      originalError: error
+      originalError: error,
     };
   }
 };
@@ -224,26 +243,30 @@ export const putupload = async (
       return config;
     });
 
-    const response = await uploadInstance.put(ensureApiPrefix(url), formData, config);
+    const response = await uploadInstance.put(
+      ensureApiPrefix(url),
+      formData,
+      config
+    );
     return response.data;
   } catch (error: any) {
-    console.error('PUT UPLOAD request error details:', error.response?.data);
+    console.error("PUT UPLOAD request error details:", error.response?.data);
     throw {
       status: error.response?.status,
       errors: error.response?.data?.errors || [],
       message: extractErrorMessage(error),
       data: error.response?.data,
-      originalError: error
+      originalError: error,
     };
   }
 };
 
 // Types for Delivery Schedule Management
 export enum DeliveryStatus {
-  PENDING = 'PENDING',
-  DELIVERED = 'DELIVERED',
-  NOT_DELIVERED = 'NOT_DELIVERED',
-  CANCELLED = 'CANCELLED',
+  PENDING = "PENDING",
+  DELIVERED = "DELIVERED",
+  NOT_DELIVERED = "NOT_DELIVERED",
+  CANCELLED = "CANCELLED",
 }
 
 export interface ApiUser {
@@ -280,8 +303,8 @@ export interface ApiDeliveryAddress {
 }
 
 export interface ApiSubscriptionInfo {
-    id: number;
-    // Add other relevant subscription fields if needed by the frontend for context
+  id: number;
+  // Add other relevant subscription fields if needed by the frontend for context
 }
 
 export interface ApiDeliveryScheduleEntry {
@@ -298,6 +321,5 @@ export interface ApiDeliveryScheduleEntry {
   product: ApiProduct;
   member: ApiMember;
   deliveryAddress: ApiDeliveryAddress;
-  subscription: ApiSubscriptionInfo; 
+  subscription: ApiSubscriptionInfo;
 }
-

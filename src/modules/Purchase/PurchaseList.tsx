@@ -201,7 +201,7 @@ const PurchaseList = () => {
                           <Pencil className="size-4" />
                         </Button>
                       </Link>
-                      {/* <AlertDialog>
+                      <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button
                             size="icon"
@@ -228,7 +228,7 @@ const PurchaseList = () => {
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
-                      </AlertDialog> */}
+                      </AlertDialog>
                     </TableCell>
                   </TableRow>
                 ))}
