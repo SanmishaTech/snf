@@ -13,7 +13,7 @@ import {
 
 // --- Configuration ---
 // TODO: Replace with your actual API base URL and token retrieval logic
-const API_BASE_URL = "http://13.126.180.52api"; // Adjust as per your setup
+const API_BASE_URL = "http://localhost:3000api"; // Adjust as per your setup
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -30,6 +30,22 @@ apiClient.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Response interceptor to catch insufficient privilege errors (403) and redirect to '/'
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status: number | undefined = error.response?.status;
+    const message: string | undefined = error.response?.data?.error?.message || error.response?.data?.message;
+    if (status === 403 && message?.toLowerCase().includes("insufficient privileges")) {
+      // Optionally clear token
+      // localStorage.removeItem("authToken");
+      window.location.href = "/";
+    }
+    return Promise.reject(error);
+  }
+);
+
 
 // --- Category API --- (Needed for the PowerTeam form)
 

@@ -1,11 +1,7 @@
-import axios from 'axios';
+import { get, post, put, patch } from './apiService';
 
-// Simple auth token getter (using localStorage directly since we don't have a dedicated utility yet)
-const getToken = (): string | null => {
-  return localStorage.getItem('authToken');
-};
-
-const API_URL = '/api/subscriptions';
+// Base path for subscription endpoints (apiService will prefix with /api)
+const API_URL = '/subscriptions';
 
 // Types
 export interface SubscriptionRequest {
@@ -45,66 +41,30 @@ export interface Subscription {
 
 // Create new subscription
 export const createSubscription = async (subscriptionData: SubscriptionRequest): Promise<Subscription> => {
-  const token = getToken();
-  const response = await axios.post(API_URL, subscriptionData, {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  });
-  return response.data;
+  return post<Subscription>(API_URL, subscriptionData);
 };
 
 // Get all subscriptions for current user
 export const getSubscriptions = async (): Promise<Subscription[]> => {
-  const token = getToken();
-  const response = await axios.get(API_URL, {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  });
-  return response.data;
+  return get<Subscription[]>(API_URL);
 };
 
 // Get subscription by ID
 export const getSubscriptionById = async (id: string): Promise<Subscription> => {
-  const token = getToken();
-  const response = await axios.get(`${API_URL}/${id}`, {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  });
-  return response.data;
+  return get<Subscription>(`${API_URL}/${id}`);
 };
 
 // Update subscription
 export const updateSubscription = async (id: string, data: Partial<SubscriptionRequest>): Promise<Subscription> => {
-  const token = getToken();
-  const response = await axios.put(`${API_URL}/${id}`, data, {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  });
-  return response.data;
+  return put<Subscription>(`${API_URL}/${id}`, data);
 };
 
 // Cancel subscription
 export const cancelSubscription = async (id: string): Promise<Subscription> => {
-  const token = getToken();
-  const response = await axios.patch(`${API_URL}/${id}/cancel`, {}, {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  });
-  return response.data;
+  return patch<Subscription>(`${API_URL}/${id}/cancel`, {});
 };
 
 // Renew subscription
 export const renewSubscription = async (id: string): Promise<Subscription> => {
-  const token = getToken();
-  const response = await axios.post(`${API_URL}/${id}/renew`, {}, {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  });
-  return response.data;
+  return post<Subscription>(`${API_URL}/${id}/renew`, {});
 };
