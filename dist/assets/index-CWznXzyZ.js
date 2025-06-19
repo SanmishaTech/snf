@@ -14802,7 +14802,7 @@ Error generating stack: ` +
     return { ...a, mutate: i, mutateAsync: a.mutate };
   }
   const kg = "SNF",
-    mG = () => "http://13.126.180.52/",
+    mG = () => "http://13.126.180.52",
     Fb = mG();
   var Up = {},
     F3;
@@ -64884,7 +64884,7 @@ For more information, see https://radix-ui.com/primitives/docs/components/${t.do
         [j, A] = x.useState(null),
         [S, k] = x.useState(!1),
         [T, D] = x.useState(null),
-        C = "http://13.126.180.52/";
+        C = "http://13.126.180.52";
       x.useEffect(() => {
         (async () => {
           o(!0), d(null);
@@ -65282,7 +65282,7 @@ For more information, see https://radix-ui.com/primitives/docs/components/${t.do
                                         "h-48 overflow-hidden bg-muted/10 flex items-center justify-center",
                                       children: z.attachmentUrl
                                         ? s.jsx("img", {
-                                            src: `http://13.126.180.52/${z.attachmentUrl}`,
+                                            src: `http://13.126.180.52${z.attachmentUrl}`,
                                             alt: z.name,
                                             className:
                                               "w-full h-full object-cover transition-transform hover:scale-105",
@@ -78434,7 +78434,7 @@ ${Vw(this.code(t, r))}
               categoryId: r.categoryId || null,
             };
             if ((b(T), r.attachmentUrl)) {
-              const D = `http://13.126.180.52/${
+              const D = `http://13.126.180.52${
                 r == null ? void 0 : r.attachmentUrl
               }`;
               f(D);
@@ -82190,7 +82190,7 @@ ${Vw(this.code(t, r))}
                       "bg-muted/10 rounded-2xl flex items-center justify-center p-8 border border-muted/20",
                     children: g.attachmentUrl
                       ? s.jsx(Pn.img, {
-                          src: `http://13.126.180.52/${g.attachmentUrl}`,
+                          src: `http://13.126.180.52${g.attachmentUrl}`,
                           alt: g.name,
                           className:
                             "object-cover max-h-[900px] min-h-[600px] rounded-xl",
@@ -82534,7 +82534,7 @@ ${Vw(this.code(t, r))}
                     ? s.jsx("img", {
                         src: e.attachmentUrl.startsWith("http")
                           ? e.attachmentUrl
-                          : `http://13.126.180.52/${e.attachmentUrl}`,
+                          : `http://13.126.180.52${e.attachmentUrl}`,
                         alt: e.name,
                         className:
                           "h-full w-full object-cover transition-transform duration-300 group-hover:scale-105",
@@ -103740,19 +103740,17 @@ ${Vw(this.code(t, r))}
                 s.jsxs("div", {
                   className: "mt-2 flex flex-wrap items-center gap-2",
                   children: [
-                    p
-                      .slice(0, 5)
-                      .map((S) =>
-                        s.jsx(
-                          "span",
-                          {
-                            className:
-                              "px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full",
-                            children: S,
-                          },
-                          S
-                        )
-                      ),
+                    p.slice(0, 5).map((S) =>
+                      s.jsx(
+                        "span",
+                        {
+                          className:
+                            "px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full",
+                          children: S,
+                        },
+                        S
+                      )
+                    ),
                     p.length > 5 &&
                       s.jsxs("span", {
                         className:
@@ -104619,7 +104617,7 @@ ${Vw(this.code(t, r))}
               attachment: null,
               imageUrl: e.imageUrl || null,
             }),
-            a(e.imageUrl ? `http://13.126.180.52/${e.imageUrl}` : null))
+            a(e.imageUrl ? `http://13.126.180.52${e.imageUrl}` : null))
           : (c({ name: "", isDairy: !1, attachment: null, imageUrl: null }),
             a(null));
       }, [e, c]),
@@ -104632,9 +104630,9 @@ ${Vw(this.code(t, r))}
               N.readAsDataURL(g);
           } else
             y
-              ? a(y.startsWith("data:") ? y : `http://13.126.180.52/${y}`)
+              ? a(y.startsWith("data:") ? y : `http://13.126.180.52${y}`)
               : g || a(null);
-        }, [g, y, "http://13.126.180.52/"]);
+        }, [g, y, "http://13.126.180.52"]);
       const w = () => {
           d("attachment", null, { shouldValidate: !0 }),
             d("imageUrl", null),
@@ -104733,7 +104731,7 @@ ${Vw(this.code(t, r))}
                   src:
                     n.startsWith("data:") || n.startsWith("http")
                       ? n
-                      : `http://13.126.180.52/${n}`,
+                      : `http://13.126.180.52${n}`,
                   alt: "Preview",
                   className: "w-full h-full object-cover",
                 }),
@@ -107035,7 +107033,7 @@ ${Vw(this.code(t, r))}
       });
     },
     v6 = "/api/admin/banners",
-    BOe = "http://13.126.180.52/",
+    BOe = "http://13.126.180.52",
     kz = ["image/jpeg", "image/jpg", "image/png", "image/webp"],
     UOe = Fn({
       caption: ft().optional().default(""),

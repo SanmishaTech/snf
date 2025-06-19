@@ -2,7 +2,7 @@
  * Utility functions for handling member photos
  */
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://13.126.180.52/";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://13.126.180.52";
 
 /**
  * Returns the first available photo URL from a member record
