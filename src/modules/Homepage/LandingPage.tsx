@@ -48,7 +48,7 @@ const LandingPage = () => {
   const [userName, setUserName] = useState<string | null>(null);
 
   const BACKEND_URL =
-    import.meta.env.VITE_BACKEND_URL || "http://13.126.180.52";
+    import.meta.env.VITE_BACKEND_URL || "http://13.126.180.52/";
   useEffect(() => {
     const fetchProducts = async () => {
       setIsLoading(true);

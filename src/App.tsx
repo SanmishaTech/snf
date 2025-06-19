@@ -73,6 +73,9 @@ import EditPurchasePage from "./modules/Purchase/EditPurchasePage";
 import PurchasePaymentListPage from "./modules/PurchasePayment/PurchasePaymentListPage";
 import PurchasePaymentForm from "./modules/PurchasePayment/PurchasePaymentForm";
 import PurchasePaymentViewPage from "./modules/PurchasePayment/PurchasePaymentViewPage";
+import TransferList from "./modules/Transfer/TransferList";
+import CreateTransferPage from "./modules/Transfer/CreateTransferPage";
+import EditTransferPage from "./modules/Transfer/EditTransferPage";
 import "./App.css";
 // MembershipList wrapper component to handle showing all memberships
  
@@ -128,6 +131,9 @@ const App = () => {
             <Route path="/admin/wastages" element={<WastageList />} />
             <Route path="/admin/wastages/create" element={<CreateWastagePage />} />
             <Route path="/admin/wastages/edit/:id" element={<EditWastagePage />} />
+            <Route path="/admin/transfers" element={<TransferList />} />
+            <Route path="/admin/transfers/create" element={<CreateTransferPage />} />
+            <Route path="/admin/transfers/edit/:id" element={<EditTransferPage />} />
             <Route path="/admin/vendors/create" element={<CreateVendorPage />} /> 
             <Route path="/admin/vendors/edit/:id" element={<EditVendorPage />} /> 
             <Route path="/admin/agencies" element={<AgencyList />} />

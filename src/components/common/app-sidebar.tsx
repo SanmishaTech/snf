@@ -55,6 +55,12 @@ const initialData = {
       projects: [
         //master
         {
+          title: "Transfers",
+          url: "/admin/transfers",
+          icon: FileText,
+          groupLabel: "Master",
+        },
+        {
           title: "Purchases",
           url: "/admin/purchases",
           icon: FileText,
@@ -244,6 +250,12 @@ const initialData = {
         {
           title: "Depot Variants",
           url: "/admin/depot-variants",
+          icon: FileText,
+          groupLabel: "Depot",
+        },
+        {
+          title: "Transfers",
+          url: "/admin/transfers",
           icon: FileText,
           groupLabel: "Depot",
         },
