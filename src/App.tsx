@@ -10,7 +10,7 @@ import {
 import AuthLayout from "./layouts/AuthLayout";
 import MainLayout from "./layouts/MainLayout";
 import AdminProtectedRoute from "./layouts/AdminProtectedRoute"; // Added for admin route protection
-import Header from "./layouts/Header"; // Import the Header component
+
 import MemberLayout from "./layouts/MemberLayout";
 import WastageList from "./modules/Wastage/WastageList";
 import CreateWastagePage from "./modules/Wastage/CreateWastagePage";
@@ -62,6 +62,8 @@ import WalletAdmin from "./modules/Wallet/AdminWalletPage";
 import AdminMembersListPage from "./modules/Wallet/AdminMembersListPage"; // Added for Admin Members List Page
 import AreaMasterListPage from "./modules/Areamaster/AreaMasterListPage"; // Added for Area Master Management
 import CategoryMasterListPage from "./modules/CategoryMaster/CategoryMasterListPage"; // Added for Category Master Management
+import CityMasterListPage from "./modules/CityMaster/CityMasterListPage";
+import LocationMasterListPage from "./modules/LocationMaster/LocationMasterListPage";
 import DepotMasterListPage from "./modules/DepotMaster/DepotMasterListPage"; // Added for Depot Master Management
 import DepotProductVariantListPage from "./modules/DepotProductVariant/DepotProductVariantListPage"; // Added for Depot Product Variant Management
 import Teams from "./modules/Teams/Teams"; // Added for Teams Management
@@ -160,6 +162,8 @@ const App = () => {
             <Route path="/admin/subscriptions" element={<AdminSubscriptionList />} /> {/* Added for admin subscriptions list */}
             <Route path="/admin/delivery" element={<AgencyDeliveryView />} /> {/* Added for agency delivery management */}
             <Route path="/admin/categories" element={<CategoryMasterListPage />} /> {/* Route for Category Master */}
+            <Route path="/admin/cities" element={<CityMasterListPage />} />
+            <Route path="/admin/locations" element={<LocationMasterListPage />} />
             <Route path="/admin/areamasters" element={<AreaMasterListPage />} /> {/* Added for Area Master Management */}
               <Route path="/admin/depots" element={<DepotMasterListPage />} /> {/* Added for Depot Master Management */}
             <Route path="/admin/teams" element={<Teams />} /> {/* Added for Teams Management */}

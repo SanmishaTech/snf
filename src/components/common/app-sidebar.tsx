@@ -12,7 +12,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 
-import { NavMain } from "@/components/common/nav-main";
+
 import { NavUser } from "@/components/common/nav-user";
 import {
   Sidebar,
@@ -121,6 +121,18 @@ const initialData = {
           url: "/admin/categories",
           icon: FileText,
           groupLabel: "Products",
+        },
+        {
+          title: "Cities",
+          url: "/admin/cities",
+          icon: FileText,
+          groupLabel: "Master",
+        },
+        {
+          title: "Locations",
+          url: "/admin/locations",
+          icon: FileText,
+          groupLabel: "Master",
         },
         {
           title: "Products",
@@ -304,6 +316,8 @@ const initialData = {
     },
   ],
 };
+
+interface AppSidebarProps {}
 
 export function AppSidebar(props: AppSidebarProps) {
   const { pathname } = useLocation();
