@@ -2,7 +2,7 @@ import axios from "axios";
 import { backendUrl } from "../config";
 import { toast } from "sonner";
 
-const api = axios.create({
+export const api = axios.create({
   baseURL: backendUrl,
 });
 

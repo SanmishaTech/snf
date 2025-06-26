@@ -8,9 +8,9 @@ import { Skeleton } from '@/components/ui/skeleton'; // For loading state
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { X, FilePenLine, UserPlus, UserIcon, PhoneIcon, MailIcon, PackageIcon, ShoppingCartIcon, IndianRupeeIcon, CalendarIcon, CalendarCheckIcon, UserCheckIcon, Calendar } from 'lucide-react';
+import { X, UserPlus, UserIcon, PhoneIcon, MailIcon, PackageIcon, ShoppingCartIcon, IndianRupeeIcon, CalendarIcon, CalendarCheckIcon, UserCheckIcon, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
-import { toast, Toaster } from "sonner"; // Using Sonner for toasts
+import { toast } from "sonner"; // Using Sonner for toasts
 
 // Define interfaces based on expected API response and schema
 interface Agency {
@@ -76,26 +76,45 @@ interface Subscription {
   deliveryAddress?: DeliveryAddress;
 }
 
+// API shape when fetching product orders
 interface ApiResponse {
-  data: Subscription[];
+  data: ProductOrder[];
   totalPages: number;
   currentPage: number;
   totalCount: number;
+}
+
+// --- New ProductOrder interface ---
+interface ProductOrder {
+  id: string;
+  orderNo: string;
+  totalQty: number;
+  totalAmount: number;
+  walletamt: number;
+  payableamt: number;
+  receivedamt: number;
+  paymentStatus: string; // PENDING, PAID, FAILED
+  paymentMode?: string | null;
+  paymentReferenceNo?: string | null;
+  paymentDate?: string | null;
+  createdAt: string;
+  member: Member;
+  subscriptions: Subscription[];
 }
 
 // --- SubscriptionEditModal Component Definition ---
 interface PaymentUpdateModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  subscription: Subscription | null;
-  onUpdateSubscription: (updatedDetails: {
-      subscriptionId: number;
+  order: ProductOrder | null;
+  onUpdateOrder: (updatedDetails: {
+      orderId: string;
       paymentMode?: string;
       paymentReference?: string;
       paymentDate?: string;
       paymentStatus?: string;
-      receivedAmount?: number; // <-- Add this
-    }) => Promise<boolean>; // Expect a boolean return type
+      receivedAmount?: number;
+    }) => Promise<boolean>;
 }
 
 const paymentModeOptions = [
@@ -108,8 +127,8 @@ const paymentModeOptions = [
 const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
   isOpen,
   onOpenChange,
-  subscription,
-  onUpdateSubscription,
+  order,
+  onUpdateOrder,
 }) => {
   const [paymentMode, setPaymentMode] = useState<string>('');
   const [paymentReference, setPaymentReference] = useState<string>('');
@@ -119,26 +138,26 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
   const [receivedAmount, setReceivedAmount] = useState<string>('');
   const [payableAmount, setPayableAmount] = useState<string>('');
 
-  const isPaymentSectionDisabled = subscription?.paymentStatus === 'PAID';
+  const isPaymentSectionDisabled = order?.paymentStatus === 'PAID';
 
   useEffect(() => {
-    if (subscription) {
-      setPaymentMode(subscription.paymentMode || '');
-      setPaymentReference(subscription.paymentReference || '');
-      setPaymentDate(subscription.paymentDate ? format(new Date(subscription.paymentDate), 'yyyy-MM-dd') : '');
-      setPaymentStatusState(subscription.paymentStatus || '');
-      // Use payableamt to pre-fill received amount, as this is what's due
-      setPayableAmount(subscription.payableamt?.toString() || '');
-      setReceivedAmount(subscription.payableamt?.toString() || ''); // <-- Pre-fill with payable amount
-
+    if (order) {
+      console.log("Data.asd",order)
+      setPaymentMode(order.paymentMode || '');
+      setPaymentReference(order.paymentReferenceNo || '');
+      setPaymentDate(order.paymentDate ? format(new Date(order.paymentDate), 'yyyy-MM-dd') : '');
+      setPaymentStatusState(order.paymentStatus || '');
+      setPayableAmount(order.totalAmount?.toString() || '0');
+      setReceivedAmount(order.totalAmount?.toString() || '0');
     } else {
       setPaymentMode('');
       setPaymentReference('');
       setPaymentDate('');
       setPaymentStatusState('');
-      setPayableAmount(''); // <-- Reset on close
+      setPayableAmount('');
+      setReceivedAmount('');
     }
-  }, [subscription]);
+  }, [order]);
 
   const validateForm = () => {
     const errors: { [key: string]: string } = {};
@@ -152,8 +171,8 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
   };
 
   const handleSubmit = async () => {
-      if (!subscription || isPaymentSectionDisabled) return;
-      if (!validateForm()) return; // Keep existing validation
+      if (!order || isPaymentSectionDisabled) return;
+      if (!validateForm()) return;
 
       const received = parseFloat(receivedAmount);
       
@@ -162,11 +181,18 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
         return;
       }
 
-      // The core new logic: check amounts if status is being set to PAID
-      // Compare received amount with payableamt (net amount due)
-      if (paymentStatusState === "PAID" && received !== subscription.payableamt) {
-        toast.error(`Received amount (₹${received.toFixed(2)}) must equal the payable amount (₹${subscription.payableamt.toFixed(2)}) to mark as PAID.`);
-        return;
+      const payable = order.totalAmount ?? 0;
+      const total = order.totalAmount ?? 0;
+      console.log("payable", payable, "total", total)
+
+      if (paymentStatusState === "PAID") {
+        // Allow received to match totalAmount if payable is 0 (workaround for old orders)
+        const isValidAmount = (received === payable) || (payable === 0 && received === total);
+        if (!isValidAmount) {
+          const expectedAmount = (payable === 0 && total > 0) ? total : payable;
+          toast.error(`Received amount (₹${received.toFixed(2)}) must equal the payable amount (₹${expectedAmount.toFixed(2)}) to mark as PAID.`);
+          return;
+        }
       }
 
       if (paymentStatusState !== "PAID" && paymentStatusState !== "FAILED") {
@@ -174,17 +200,17 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
         return;
       }
 
-      const updatedDetails: any = {
-        subscriptionId: subscription.id,
+      const updatedDetails = {
+        orderId: order.id,
         paymentMode,
         paymentReference,
         paymentDate: paymentDate,
         paymentStatus: paymentStatusState,
-        receivedAmount: received, // <-- Add received amount to the payload
+        receivedAmount: received,
       };
 
       try {
-        const success = await onUpdateSubscription(updatedDetails);
+        const success = await onUpdateOrder(updatedDetails);
         if (success) {
           onOpenChange(false);
         }
@@ -193,15 +219,15 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
       }
     };
 
-  if (!isOpen || !subscription) return null;
+  if (!isOpen || !order) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Update Payment: {subscription.product.name}</DialogTitle>
+          <DialogTitle>Update Payment for Order: {order.orderNo}</DialogTitle>
           <DialogDescription>
-            Modify payment details for the subscription.
+            Modify payment details for the entire order.
           </DialogDescription>
         </DialogHeader>
         <DialogClose className="absolute right-4 top-4 z-10" onClick={() => onOpenChange(false)}>
@@ -210,7 +236,7 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
 
         <div className="grid gap-6 py-4">
           <fieldset disabled={isPaymentSectionDisabled} className="grid gap-4 border p-4 rounded-md">
-            <legend className="text-sm font-medium px-1">Payment Information {isPaymentSectionDisabled ? `(Status: ${subscription.paymentStatus} - Disabled)` : ""}</legend>
+            <legend className="text-sm font-medium px-1">Payment Information {isPaymentSectionDisabled ? `(Status: ${order.paymentStatus} - Disabled)` : ""}</legend>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="paymentMode" className="text-right col-span-1">Payment Mode <span className="text-red-500">*</span></Label>
               <Select
@@ -412,7 +438,11 @@ const AssignAgentModal: React.FC<AssignAgentModalProps> = ({
               </div>
               <div>
                 <p className="text-gray-500">Quantity</p>
-                <p className="font-medium">{subscription.qty}</p>
+                <p className="font-medium">
+                  {subscription.deliverySchedule === 'ALTERNATE_DAYS'
+                    ? `${subscription.qty} / ${subscription.altQty ?? '-'}`
+                    : subscription.qty}
+                </p>
               </div>
               <div>
                 <p className="text-gray-500">Delivery Schedule</p>
@@ -509,17 +539,18 @@ const AssignAgentModal: React.FC<AssignAgentModalProps> = ({
 };
 
 const AdminSubscriptionList: React.FC = () => {
-   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+   const [productOrders, setProductOrders] = useState<ProductOrder[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [limit, setLimit] = useState<number>(10);
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [showFilters, setShowFilters] = useState<boolean>(false); // Restore showFilters state
+  const [selectedOrder, setSelectedOrder] = useState<ProductOrder | null>(null);
   const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
-  const [isAssignAgentModalOpen, setIsAssignAgentModalOpen] = useState<boolean>(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isAssignAgentModalOpen, setIsAssignAgentModalOpen] = useState(false);
   const [agencies, setAgencies] = useState<Agency[]>([]);
   const [isLoadingAgencies, setIsLoadingAgencies] = useState<boolean>(false);
+  const [showFilters] = useState<boolean>(false);
   const [filters, setFilters] = useState<{[key: string]: string | undefined}>({
     searchTerm: '',
     memberName: '',
@@ -532,7 +563,8 @@ const AdminSubscriptionList: React.FC = () => {
   });
   
 
-  const fetchSubscriptions = useCallback(async (page = currentPage, currentLimit = 10, currentFilters = filters) => {
+  // Fetch product orders instead of subscriptions
+  const fetchProductOrders = useCallback(async (page = currentPage, currentLimit = 10, currentFilters = filters) => {
     setIsLoading(true);
 
     // Determine effective values for pagination and filters, providing fallbacks
@@ -568,15 +600,15 @@ const AdminSubscriptionList: React.FC = () => {
     }).toString();
 
     try {
-      const response: ApiResponse = await get(`/subscriptions?${queryParams}`);
-      setSubscriptions(response || []);
+      const response: ApiResponse = await get(`/product-orders?${queryParams}`);
+      setProductOrders(response.data || []);
       setTotalPages(response.totalPages);
       setCurrentPage(response.currentPage);
     } catch (err: any) {
       console.error('Failed to fetch subscriptions:', err);
       const errorMessage = err.response?.data?.message || err.message || 'Failed to fetch subscriptions.';
       toast.error(errorMessage);
-      setSubscriptions([]); // Ensure subscriptions is an empty array on error
+      setProductOrders([]); // Ensure productOrders is an empty array on error
     } finally {
       setIsLoading(false);
     }
@@ -598,8 +630,8 @@ const AdminSubscriptionList: React.FC = () => {
   }, []); // No dependencies needed if it's only fetching all agencies
 
   useEffect(() => {
-    fetchSubscriptions(currentPage, limit, filters);
-  }, [fetchSubscriptions, currentPage, limit, filters]); // fetchSubscriptions is memoized, so this runs on mount and when filters/pagination affecting fetchSubscriptions change
+    fetchProductOrders(currentPage, limit, filters);
+  }, [fetchProductOrders, currentPage, limit, filters]); // fetchProductOrders is memoized, so this runs on mount and when filters/pagination affecting fetchProductOrders change
 
   // Fetch agencies once on mount, or when assign agent modal is opened (as per previous logic)
   // For simplicity here, fetching once on mount. Can be refined if agencies list is very dynamic or large.
@@ -609,13 +641,13 @@ const AdminSubscriptionList: React.FC = () => {
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
-    fetchSubscriptions(newPage, limit, filters);
+    fetchProductOrders(newPage, limit, filters);
   };
 
   const handleLimitChange = (newLimit: number) => {
     setLimit(newLimit);
     setCurrentPage(1); // Reset to page 1 when limit changes
-    fetchSubscriptions(1, newLimit, filters);
+    fetchProductOrders(1, newLimit, filters);
   };
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -629,7 +661,7 @@ const AdminSubscriptionList: React.FC = () => {
   const handleFilterSubmit = (e?: React.FormEvent<HTMLFormElement>) => {
     if (e) e.preventDefault();
     setCurrentPage(1); // Reset to page 1 on new filter submission
-    fetchSubscriptions(1, limit, filters);
+    fetchProductOrders(1, limit, filters);
   };
 
   // Clear a specific filter or all filters
@@ -659,43 +691,30 @@ const AdminSubscriptionList: React.FC = () => {
 
 
   const handlePaymentDetailsUpdate = async (updatedDetails: {
-      subscriptionId: number;
+      orderId: string;
       paymentMode?: string;
       paymentReference?: string;
       paymentDate?: string;
       paymentStatus?: string;
-      receivedAmount?: number; // <-- Receive the new field
+      receivedAmount?: number;
     }): Promise<boolean> => {
-      if (!selectedSubscription) {
-        toast.error("No subscription selected for update.");
+      if (!selectedOrder) {
+        toast.error("No order selected for update.");
         return false;
       }
 
-      const { subscriptionId, paymentMode, paymentReference, paymentDate, paymentStatus, receivedAmount } = updatedDetails;
-
-      // Validation (can be simplified since modal handles most of it)
-      if (!paymentMode || !paymentDate || !paymentStatus || receivedAmount === undefined) {
-        toast.error("Missing required payment details.");
-        return false;
-      }
-      
-      const apiPayload = {
-        paymentMode: paymentMode,
-        paymentReference: paymentMode === 'CASH' ? null : paymentReference,
-        paymentDate: paymentDate,
-        paymentStatus: paymentStatus,
-        receivedAmount: receivedAmount, // <-- Add to the API payload
-      };
+      const { orderId, ...payload } = updatedDetails;
 
       try {
-        await put(`/subscriptions/${subscriptionId}`, apiPayload);
-        toast.success('Payment details updated successfully');
-        fetchSubscriptions(currentPage, limit, filters);
+        // Use selectedOrder.id for the API call, which is the reliable source.
+        await put(`/product-orders/${selectedOrder.id}/payment`, payload);
+        toast.success("Payment updated successfully!");
+        fetchProductOrders(); // Refresh the list
         return true;
-      } catch (err: any) {
-        console.error('Failed to update payment details:', err);
-        const errorMessage = err.response?.data?.message || 'Failed to update payment details.';
+      } catch (error: any) {
+        const errorMessage = error.response?.data?.message || "Failed to update payment.";
         toast.error(errorMessage);
+        console.error("Error updating payment:", error);
         return false;
       }
     };
@@ -707,27 +726,28 @@ const AdminSubscriptionList: React.FC = () => {
     const apiPayload = { agencyId: agencyId === undefined ? null : Number(agencyId) };
 
     try {
-      await put(`/subscriptions/${subscriptionId}`, apiPayload);
-      toast.success('Agent assignment updated successfully');
-      fetchSubscriptions(currentPage, limit); // Refresh the list
-      setIsAssignAgentModalOpen(false); // Close assign agent modal
-    } catch (err: any) {
-      console.error('Failed to assign agent:', err);
-      toast.error('Failed to assign agent');
-      throw err;
+      await put(`/subscriptions/${subscriptionId}/assign-agent`, apiPayload);
+      toast.success("Agent assigned successfully!");
+      fetchProductOrders(); // Refresh list to show updated agent
+    } catch (error) {
+      toast.error("Failed to assign agent.");
+      console.error("Error assigning agent:", error);
     }
   };
 
-  const handleOpenPaymentModal = (subscription: Subscription) => {
-    setSelectedSubscription(subscription);
-    setIsPaymentModalOpen(true);
+  const handleOpenPaymentModal = (order: ProductOrder | null) => {
+    if (order) {
+      setSelectedOrder(order);
+      setIsPaymentModalOpen(true);
+    }
   };
 
-  const handleOpenAssignAgentModal = (subscription: Subscription) => {
-    setSelectedSubscription(subscription);
-    setIsAssignAgentModalOpen(true);
-    fetchAgencies(); // Ensure agencies are fresh if not loaded on mount or if they can change
-    // setCurrentPage(1); // This was likely a mistake here, page context is for subscriptions list
+  const handleOpenAssignAgentModal = (subscription: Subscription | null) => {
+    if (subscription) {
+      setSelectedSubscription(subscription);
+      setIsAssignAgentModalOpen(true);
+      fetchAgencies();
+    }
   };
 
   const formatWeekdayToShort = (day: string): string => {
@@ -899,209 +919,241 @@ const AdminSubscriptionList: React.FC = () => {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border shadow-sm">
-  <Table >
-    <TableHeader>
-      <TableRow >
-        <TableHead>Member</TableHead>
-        <TableHead>Product & Quantity</TableHead>
-        <TableHead>Delivery Schedule</TableHead>
-        <TableHead>Payment Status</TableHead>
-        <TableHead>Subscription Dates</TableHead>
-        <TableHead>Assigned Agent</TableHead>
-        <TableHead>Actions</TableHead>
+      <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+  <Table className="min-w-full">
+    <TableHeader className="bg-gray-50">
+      <TableRow className="border-b border-gray-200">
+        <TableHead className="px-4 py-3 font-medium text-gray-700">Member</TableHead>
+        <TableHead className="px-4 py-3 font-medium text-gray-700">Subscription Details</TableHead>
+        <TableHead className="px-4 py-3 font-medium text-gray-700">Delivery</TableHead>
+        <TableHead className="px-4 py-3 font-medium text-gray-700">Payment</TableHead>
+        <TableHead className="px-4 py-3 font-medium text-gray-700">Dates</TableHead>
+        <TableHead className="px-4 py-3 font-medium text-gray-700">Agent</TableHead>
+        <TableHead className="px-4 py-3 font-medium text-gray-700 text-right">Actions</TableHead>
       </TableRow>
     </TableHeader>
+    
     <TableBody>
       {isLoading ? (
-        renderSkeletons(7) // Adjusted for new column count
-      ) : subscriptions.length > 0 ? (
-        subscriptions.map((sub) => (
-          <TableRow key={sub.id}>
-            {/* Member Details Group */}
-            <TableCell>
-              <div className="flex flex-col gap-1">
-                <div className="font-medium flex items-center gap-2">
-                  <UserIcon className="h-4 w-4 text-gray-500" />
-                  {sub.member?.user?.name || 'N/A'}
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <PhoneIcon className="h-3.5 w-3.5" />
-                  {sub?.deliveryAddress?.mobile || 'N/A'}
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-500 truncate">
-                  <MailIcon className="h-3.5 w-3.5" />
-                  <span>{sub.member.user.email}</span>
-                </div>
-            
-              </div>
-            </TableCell>
-
-            {/* Product & Quantity Group */}
-            <TableCell>
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-2">
-                  <PackageIcon className="h-4 w-4 text-gray-500" />
-                  <span className="font-medium">{sub.product?.name || 'N/A'}</span>
-                </div>
-                <div className="flex gap-4 text-sm">
-                  <div className="flex items-center gap-1">
-                    <ShoppingCartIcon className="h-3.5 w-3.5" />
-                    <span>
-                    Qty: {sub.qty} {sub.product?.unit}{sub.qty > 1 ? 's' : ''}
-                    {sub.deliverySchedule === 'ALTERNATE_DAYS' && sub.altQty ? (
-                      <>
-                        {' '}&amp; {sub.altQty} {sub.product?.unit}{sub.altQty > 1 ? 's' : ''}
-                      </>
-                    ) : null}
-                  </span>
+        renderSkeletons(7)
+      ) : productOrders.length > 0 ? (
+        productOrders.map((order) => {
+          const firstSub = order.subscriptions[0];
+                    const totalAmount = order.subscriptions.reduce((sum: number, sub: Subscription) => sum + sub.amount, 0);
+          
+          return (
+            <TableRow key={order.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+              {/* Member Information */}  
+              <TableCell className="px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <div className="bg-gray-100 border-2 border-dashed rounded-xl w-10 h-10 flex items-center justify-center">
+                    <UserIcon className="h-5 w-5 text-gray-400" />
                   </div>
-                  <div className="flex items-center gap-1">
-                    <IndianRupeeIcon className="h-3.5 w-3.5" />
-                    <span>Total: ₹{sub.amount.toFixed(2)}</span>
+                  <div>
+                    <div className="font-medium text-gray-900 flex items-center gap-2">
+                      {order.member?.user?.name || 'N/A'}
+                    </div>
+                    <div className="flex flex-col gap-1 mt-1 text-xs text-gray-500">
+                      <div className="flex items-center gap-1.5">
+                        <PhoneIcon className="h-3.5 w-3.5" />
+                        <span>{order?.member?.user?.mobile || 'N/A'}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <MailIcon className="h-3.5 w-3.5" />
+                        <span className="truncate max-w-[120px]">{order.member.user.email}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </TableCell>
+              </TableCell>
 
-            {/* Delivery Schedule */}
-            <TableCell>
-              <div className="flex flex-col gap-1">
-                {(() => {
-                  const { scheduleType, weekdaysArray, isSpecificDays } = formatDeliverySchedule(sub.deliverySchedule, sub.weekdays);
-                  return (
-                    <>
-                      <span className="text-sm font-medium">{scheduleType}</span>
-                      {isSpecificDays && (
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {weekdaysArray.length > 0 ? (
-                            weekdaysArray.map((day, index) => (
+              {/* Subscription Details */}
+              <TableCell className="px-4 py-3">
+                <div className="flex flex-col gap-2">
+                  <div className="flex flex-wrap gap-1.5">
+                                        {order.subscriptions.map((sub: Subscription) => (
+                      <div key={sub.id} className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full flex items-center gap-1.5 text-xs">
+                        <PackageIcon className="h-3.5 w-3.5" />
+                        <span className="font-medium">{sub.product?.name}</span>
+                         <span>
+                           {sub.deliverySchedule === 'ALTERNATE_DAYS'
+                             ? `×${sub.qty}/${sub.altQty ?? '-'}`
+                             : `×${sub.qty}`}
+                         </span>
+                        <span className="text-blue-600">{sub.product?.unit}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-3 text-sm mt-1">
+                    <div className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded">
+                      <ShoppingCartIcon className="h-4 w-4 text-gray-500" />
+                      <span>{order.subscriptions.length} item{order.subscriptions.length > 1 ? 's' : ''}</span>
+                    </div>
+                    <div className="flex items-center gap-1 font-medium">
+                      <IndianRupeeIcon className="h-4 w-4" />
+                      <span>₹{totalAmount.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+              </TableCell>
+
+              {/* Delivery Schedule */}
+              <TableCell className="px-4 py-3">
+                <div className="flex flex-col gap-2">
+                                    {order.subscriptions.map((sub: Subscription) => {
+                    const { weekdaysArray, isSpecificDays } = formatDeliverySchedule(sub.deliverySchedule, sub.weekdays);
+                    return (
+                      <div key={sub.id} className="flex flex-col gap-1">
+                        <div className="text-sm font-medium">
+                           {sub.deliverySchedule === 'DAILY' ? 'Daily' :
+                            sub.deliverySchedule === 'WEEKDAYS' ? 'Weekdays' :
+                            sub.deliverySchedule === 'WEEKENDS' ? 'Weekends' :
+                            sub.deliverySchedule === 'ALTERNATE_DAYS' ? 'Alternate Days' :
+                            sub.deliverySchedule === 'DAY1_DAY2' ? 'Day1-Day2' :
+                            'Custom'}
+                        </div>
+                        {((sub.deliverySchedule === 'ALTERNATE_DAYS' || sub.deliverySchedule === 'DAY1_DAY2') && (sub.qty || sub.altQty)) && (
+                           <div className="flex flex-wrap gap-1">
+                             {sub.qty !== undefined && (
+                               <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                                 Day 1 ×{sub.qty}
+                               </span>
+                             )}
+                             {sub.altQty !== null && sub.altQty !== undefined && (
+                               <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                                 Day 2 ×{sub.altQty}
+                               </span>
+                             )}
+                           </div>
+                         )}
+                         {isSpecificDays && weekdaysArray.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {weekdaysArray.map((day, idx) => (
                               <span 
-                                key={index} 
-                                className="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-100"
+                                key={idx} 
+                                className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800"
                               >
                                 {formatWeekdayToShort(day)}
                               </span>
-                            ))
-                          ) : (
-                            <span className="text-xs text-gray-500">
-                              {sub.deliverySchedule === 'WEEKDAYS' ? 'Mon-Fri' : 'No days specified'}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                      {!isSpecificDays && sub.deliverySchedule === 'DAILY' && (
-                        <span className="text-xs text-gray-500">Every day</span>
-                      )}
-                      {!isSpecificDays && sub.deliverySchedule === 'ALTERNATE_DAYS' && (
-                        <span className="text-xs text-gray-500">Every other day</span>
-                      )}
-                    </>
-                  );
-                })()}
-              </div>
-            </TableCell>
-
-            {/* Payment Status */}
-            <TableCell>
-              <div className="flex flex-col gap-1">
-                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                  sub.paymentStatus === 'PAID' 
-                    ? 'bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-100' 
-                    : sub.paymentStatus === 'PENDING' 
-                      ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-600 dark:text-yellow-100' 
-                      : 'bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-100'
-                }`}>
-                  {sub.paymentStatus}
-                </span>
-                <div className="text-xs text-gray-500">
-                  {sub.paymentStatus === 'PAID' 
-                    ? 'Completed' 
-                    : sub.paymentStatus === 'PENDING' 
-                      ? 'Processing' 
-                      : 'Action Needed'}
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-              </div>
-            </TableCell>
+              </TableCell>
 
-            {/* Create Date */}
-        
-
-            {/* Subscription Dates Group */}
-            <TableCell>
-              <div className="flex flex-col gap-1 text-sm">
-                <div className="flex items-center gap-2">
-                  <CalendarIcon className="h-4 w-4 text-gray-500" />
-                  <span>Start: {sub.startDate ? new Date(sub.startDate).toLocaleDateString() : 'N/A'}</span>
+              {/* Payment Status */}
+              <TableCell className="px-4 py-3">
+                <div className="flex flex-col gap-1">
+                  <div className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                    order.paymentStatus === 'PAID' 
+                      ? 'bg-green-100 text-green-800' 
+                      : order.paymentStatus === 'PENDING' 
+                        ? 'bg-amber-100 text-amber-800' 
+                        : 'bg-red-100 text-red-800'
+                  }`}>
+                    {order.paymentStatus}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {order.paymentStatus === 'PAID' 
+                      ? 'Payment completed' 
+                      : order.paymentStatus === 'PENDING' 
+                        ? 'Processing payment' 
+                        : 'Payment required'}
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <CalendarCheckIcon className="h-4 w-4 text-gray-500" />
-                  <span>Expiry: {sub.expiryDate ? format(new Date(sub.expiryDate), 'dd/MM/yyyy') : 'N/A'}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CalendarIcon className="h-4 w-4 text-gray-500" />
-                  <span>Created: {sub.createdAt ? format(new Date(sub.createdAt), 'dd/MM/yyyy') : 'N/A'}</span>
-                </div>
-              </div>
-            </TableCell>
+              </TableCell>
 
-            {/* Assigned Agent */}
-            <TableCell>
-                <div className="flex items-center gap-2">
-                  <UserCheckIcon className="h-4 w-4 text-gray-500" />
-                  <span>{sub.agency?.user?.name || sub.agency?.name || 'Unassigned'}</span>
-              </div>
-            </TableCell>
+              {/* Dates */}
+              <TableCell className="px-4 py-3">
+                <div className="flex flex-col gap-1 text-sm">
+                  <div className="flex items-center gap-2">
+                    <CalendarIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                    <div className="flex flex-col">
+                      <span className="text-xs text-gray-500">Start</span>
+                      <span>{format(new Date(firstSub.startDate), 'dd MMM')}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <CalendarCheckIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                    <div className="flex flex-col">
+                      <span className="text-xs text-gray-500">Expiry</span>
+                      <span>{firstSub.expiryDate ? format(new Date(firstSub.expiryDate), 'dd MMM yyyy') : 'N/A'}</span>
+                    </div>
+                  </div>
+                </div>
+              </TableCell>
 
-            {/* Actions */}
-            <TableCell>
-              <div className="flex gap-1">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => handleOpenPaymentModal(sub)}
-                        disabled={sub.paymentStatus === 'PAID'}
-                      >
-                        <FilePenLine className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top">
-                      <p>Update Payment</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => handleOpenAssignAgentModal(sub)}
-                        disabled={sub.paymentStatus !== 'PAID' || !!sub.agencyId}
-                      >
-                        <UserPlus className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top">
-                      <p>{!!sub.agencyId ? "Agent already assigned" : sub.paymentStatus !== 'PAID' ? "Payment required before agent assignment" : "Assign Agent"}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-            </TableCell>
-          </TableRow>
-        ))
-      ) : (
+              {/* Assigned Agent */}
+              <TableCell className="px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <div className="bg-gray-100 rounded-full p-1.5">
+                    <UserCheckIcon className="h-4 w-4 text-gray-500" />
+                  </div>
+                  <span className="text-sm">
+                    {firstSub.agency?.user?.name || 
+                     firstSub.agency?.name || 
+                     <span className="text-gray-400">Unassigned</span>}
+                  </span>
+                </div>
+              </TableCell>
+
+              {/* Actions */}
+              <TableCell className="px-4 py-3 text-right">
+                <div className="flex justify-end gap-1.5">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                          <Button 
+                          variant="outline" 
+                          size="icon"
+                          className="h-8 w-8 rounded-full bg-white hover:bg-gray-50"
+                          onClick={() => handleOpenPaymentModal(order)}
+                          disabled={order.paymentStatus === 'PAID'}
+                        >
+                          <PackageIcon className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
+                        <p>Update Payment</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="icon"
+                          className="h-8 w-8 rounded-full bg-white hover:bg-gray-50"
+                          onClick={() => handleOpenAssignAgentModal(firstSub)}
+                          disabled={firstSub.paymentStatus !== 'PAID' || !!firstSub.agencyId}
+                        >
+                          <UserPlus className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
+                        <p>{!!firstSub.agencyId ? "Agent assigned" : firstSub.paymentStatus !== 'PAID' ? "Complete payment first" : "Assign Agent"}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+              </TableCell>
+            </TableRow>
+          );
+        })
+      ) : 
         <TableRow>
-          <TableCell colSpan={7} className="text-center text-gray-500 py-8">
-            No subscriptions found
+          <TableCell colSpan={7} className="px-4 py-12 text-center text-gray-500">
+            <div className="flex flex-col items-center justify-center gap-3">
+                            <PackageIcon className="h-10 w-10 text-gray-300" />
+              <div className="text-gray-600">No subscriptions found</div>
+              <div className="text-sm text-gray-500 mt-1">Start by creating a new subscription</div>
+            </div>
           </TableCell>
         </TableRow>
-      )}
+      }
     </TableBody>
   </Table>
 </div>
@@ -1120,12 +1172,12 @@ const AdminSubscriptionList: React.FC = () => {
         </div>
       )}
 
-      {selectedSubscription && (
+      {selectedOrder && (
         <PaymentUpdateModal
           isOpen={isPaymentModalOpen}
           onOpenChange={setIsPaymentModalOpen}
-          subscription={selectedSubscription}
-          onUpdateSubscription={handlePaymentDetailsUpdate}
+          order={selectedOrder}
+          onUpdateOrder={handlePaymentDetailsUpdate}
         />
       )}
       {selectedSubscription && (

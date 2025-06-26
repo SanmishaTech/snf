@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+
 import { get, post } from "@/services/apiService";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle, Star, Leaf, Truck, Calendar } from "lucide-react";
@@ -31,6 +33,17 @@ const StarRating: React.FC<{ rating: number }> = ({ rating }) => {
   );
 };
 
+interface Depot {
+  id: number;
+  name: string;
+  isOnline: boolean;
+  address: string;
+  addressId: string;
+  city: string;
+  state: string;
+  pincode: string;
+}
+
 interface ProductData {
   id: number;
   name: string;
@@ -42,6 +55,9 @@ interface ProductData {
 }
 
 const ProductDetailPage: React.FC = () => {
+  // depot state
+  const [selectedDepotId, setSelectedDepotId] = useState<number | null>(null);
+
   const { id: productId } = useParams<{ id: string }>();
   // const showSubscribeButton logic related to location.state?.fromLanding was removed.
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
@@ -69,6 +85,23 @@ const ProductDetailPage: React.FC = () => {
     }
   }, []);
 
+  const fetchDepots = async (): Promise<Depot[]> => {
+    const response = await get('/depots?limit=1000');
+    // backend returns { data: [...] }
+    return (response?.data ?? response) as Depot[];
+  };
+
+  const { data: depots = [], isLoading: depotsLoading } = useQuery<Depot[]>({
+    queryKey: ['depots'],
+    queryFn: fetchDepots,
+  });
+
+  useEffect(() => {
+    if (!selectedDepotId && depots && depots.length > 0) {
+      setSelectedDepotId(depots[0].id);
+    }
+  }, [depots, selectedDepotId]);
+
   const fetchProductById = async (id: string): Promise<ProductData> => {
     const response = await get(`/products/${id}`);
     return response;
@@ -79,6 +112,8 @@ const ProductDetailPage: React.FC = () => {
     queryFn: () => fetchProductById(productId!),
     enabled: !!productId,
   });
+
+  const selectedDepot = depots.find(d => d.id === selectedDepotId);
 
   const handleSubscribe = () => {
     setIsSubscriptionModalOpen(true);
@@ -255,13 +290,9 @@ const ProductDetailPage: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <SubscriptionModal
-        isOpen={isSubscriptionModalOpen}
-        onOpenChange={setIsSubscriptionModalOpen}
-        product={product}
-        productId={productId}
-        onSubscribeConfirm={handleSubscriptionConfirm}
-      />
+      {/* Depot Selector */}
+     
+      
 
       <motion.div 
         initial={{ opacity: 0 }}
@@ -340,8 +371,35 @@ const ProductDetailPage: React.FC = () => {
               </div>
             </div>
             
-            <div className="border-t border-muted/20 my-8"></div>
             
+            <div className="border-t border-muted/20 my-4"></div>
+            
+            <div className="mb-4">
+        <label className="mr-2 mb-2 font-medium">Select Depot:</label>
+        {depotsLoading ? (
+          <Skeleton className="h-10 w-full" />
+        ) : (
+          <Select
+            value={selectedDepotId?.toString() ?? ''}
+            onValueChange={(value) => setSelectedDepotId(parseInt(value, 10))}
+          >
+            <SelectTrigger className="w-full mt-2">
+              <SelectValue placeholder="Select a depot" />
+            </SelectTrigger>
+            <SelectContent>
+              {depots.map((d) => (
+                <SelectItem key={d.id} value={d.id.toString()}>
+                  {d.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </div>
+
+      
+      <div className="border-t border-muted/20 my-4"></div>
+
             {/* Benefits */}
             <div className="mb-8">
               <h2 className="text-xl font-semibold mb-4">Benefits</h2>
@@ -412,12 +470,14 @@ const ProductDetailPage: React.FC = () => {
      
 
         <SubscriptionModal
-          isOpen={isSubscriptionModalOpen}
+           depotId={selectedDepotId}
+           isOpen={isSubscriptionModalOpen}
           onOpenChange={setIsSubscriptionModalOpen}
           product={product}
           productId={productId}
+          selectedDepot={selectedDepot}
           onSubscribeConfirm={handleSubscriptionConfirm}
-        />
+         />
 
         <BuyOnceModal
           isOpen={isBuyOnceModalOpen}
@@ -427,7 +487,7 @@ const ProductDetailPage: React.FC = () => {
           onBuyOnceConfirm={handleBuyOnceConfirm}
         />
         
-        {/* Description Modal */}
+        {/* Description Modal removed */}
         <Dialog open={isDescriptionModalOpen} onOpenChange={setIsDescriptionModalOpen}>
           <DialogContent className="sm:max-w-2xl">
             <DialogHeader>

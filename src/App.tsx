@@ -95,7 +95,6 @@ const App = () => {
       <Router>
         <Routes>
           {/* Landing page */}
-          <Route path="/" element={<LandingPage />} />
            <Route path="/products/:id" element={<ProductDetailWrapper />} />
           
           {/* Auth routes with minimal layout */}
@@ -108,6 +107,7 @@ const App = () => {
 
           {/* Public routes with MemberLayout (includes navbar/footer) */}
           <Route element={<MemberLayout />}>
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/about" element={<AboutUsPage />} />
             <Route path="/contact" element={<ContactUsPage />} />

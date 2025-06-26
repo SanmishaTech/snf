@@ -1,11 +1,25 @@
 import {get, post,put, del} from './apiService';
-import { City } from './cityMasterService';
+import { Agency } from './agencyService';
+
+export interface AgencyLocation {
+  agencyId: number;
+  locationId: number;
+  agency: {
+    id: number;
+    name: string;
+  };
+}
 
 export interface Location {
   id: number;
   name: string;
   cityId: number;
-  city: City;
+  city: {
+    id: number;
+    name: string;
+  };
+  agencyId?: number | null;
+  agency?: Agency | null;
   createdAt?: string;
   updatedAt?: string;
 }

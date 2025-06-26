@@ -39,6 +39,10 @@ const DepotVariantForm: React.FC<Props> = ({ initialData, onClose, onSuccess }) 
     minimumQty: '',
     notInStock: false,
     isHidden: false,
+    price3Day: '',
+    price7Day: '',
+    price15Day: '',
+    price1Month: '',
   });
 
   // fetch products for dropdown
@@ -66,6 +70,10 @@ const DepotVariantForm: React.FC<Props> = ({ initialData, onClose, onSuccess }) 
         minimumQty: initialData.minimumQty !== undefined ? String(initialData.minimumQty) : '',
         notInStock: initialData.notInStock ?? false,
         isHidden: initialData.isHidden ?? false,
+        price3Day: initialData.price3Day !== undefined ? String(initialData.price3Day) : '',
+        price7Day: initialData.price7Day !== undefined ? String(initialData.price7Day) : '',
+        price15Day: initialData.price15Day !== undefined ? String(initialData.price15Day) : '',
+        price1Month: initialData.price1Month !== undefined ? String(initialData.price1Month) : '',
       });
     }
   }, [initialData]);
@@ -156,6 +164,26 @@ const DepotVariantForm: React.FC<Props> = ({ initialData, onClose, onSuccess }) 
       <div className="space-y-2">
         <Label>Minimum Qty</Label>
         <Input name="minimumQty" type="number" value={formData.minimumQty} onChange={handleChange} />
+      </div>
+
+      {/* Time-based Pricing */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="space-y-2">
+          <Label>Price – 3 Day</Label>
+          <Input name="price3Day" type="number" step="0.01" value={formData.price3Day} onChange={handleChange} />
+        </div>
+        <div className="space-y-2">
+          <Label>Price – 7 Day</Label>
+          <Input name="price7Day" type="number" step="0.01" value={formData.price7Day} onChange={handleChange} />
+        </div>
+        <div className="space-y-2">
+          <Label>Price – 15 Day</Label>
+          <Input name="price15Day" type="number" step="0.01" value={formData.price15Day} onChange={handleChange} />
+        </div>
+        <div className="space-y-2">
+          <Label>Price – 1 Month</Label>
+          <Input name="price1Month" type="number" step="0.01" value={formData.price1Month} onChange={handleChange} />
+        </div>
       </div>
 
       <div className="flex items-center space-x-4">

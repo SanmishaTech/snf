@@ -10,6 +10,10 @@ export interface DepotProductVariant {
   sellingPrice: number;
   purchasePrice: number;
   minimumQty: number;
+  price3Day?: number;
+  price7Day?: number;
+  price15Day?: number;
+  price1Month?: number;
   closingQty: number;
   depot?: { id: number; name: string };
   notInStock: boolean;

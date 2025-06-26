@@ -19,6 +19,7 @@ import { useState, useEffect } from "react";
 import { Sun, Moon } from "lucide-react";
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
+import BottomNavBar from "../components/BottomNavBar";
 interface RouteConfig {
   parent?: string;
   label: string;
@@ -178,6 +179,7 @@ export default function MainLayout() {
           <Outlet />
         </main>
       </SidebarInset>
+      <BottomNavBar />
     </SidebarProvider>
   );
 }

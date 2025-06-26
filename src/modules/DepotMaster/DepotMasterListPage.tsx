@@ -16,9 +16,10 @@ import { toast } from 'sonner';
 import DepotMasterForm, { DepotFormData } from './DepotMasterForm';
 import { Pagination } from '@/components/common/Pagination';
 
-interface Depot extends DepotFormData {
+interface Depot extends Omit<DepotFormData, 'agencyId'> {
   id: string;
   createdAt: string;
+  agency?: { id: number; name: string };
 }
 
 const API_BASE_URL = '/admin/depots';
@@ -88,7 +89,11 @@ const DepotMasterListPage: React.FC = () => {
   };
 
   const handleEdit = (depot: Depot) => {
-    setEditingDepot(depot);
+    const depotToEdit = {
+      ...depot,
+      agencyId: depot.agency?.id,
+    };
+    setEditingDepot(depotToEdit as any);
     setIsFormOpen(true);
   };
 

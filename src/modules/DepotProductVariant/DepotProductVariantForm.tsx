@@ -23,6 +23,10 @@ const formSchema = z.object({
   sellingPrice: z.coerce.number({ invalid_type_error: 'Selling price must be a number' }).nonnegative(),
   purchasePrice: z.coerce.number({ invalid_type_error: 'Purchase price must be a number' }).nonnegative(),
   minimumQty: z.coerce.number().int().nonnegative(),
+  price3Day: z.coerce.number({ invalid_type_error: '3-day price must be a number' }).nonnegative().optional(),
+  price7Day: z.coerce.number({ invalid_type_error: '7-day price must be a number' }).nonnegative().optional(),
+  price15Day: z.coerce.number({ invalid_type_error: '15-day price must be a number' }).nonnegative().optional(),
+  price1Month: z.coerce.number({ invalid_type_error: '1-month price must be a number' }).nonnegative().optional(),
   notInStock: z.boolean().default(false),
   isHidden: z.boolean().default(false),
 });
@@ -54,6 +58,10 @@ const DepotProductVariantForm: React.FC<Props> = ({ initialData, onClose, onSucc
       purchasePrice: initialData?.purchasePrice || 0,
       minimumQty: initialData?.minimumQty || 0,
       notInStock: initialData?.notInStock || false,
+      price3Day: initialData?.price3Day ?? 0,
+      price7Day: initialData?.price7Day ?? 0,
+      price15Day: initialData?.price15Day ?? 0,
+      price1Month: initialData?.price1Month ?? 0,
       isHidden: initialData?.isHidden || false,
     },
   });
@@ -81,6 +89,10 @@ const DepotProductVariantForm: React.FC<Props> = ({ initialData, onClose, onSucc
         minimumQty: initialData.minimumQty,
         notInStock: initialData.notInStock,
         isHidden: initialData.isHidden,
+        price3Day: initialData.price3Day ?? 0,
+        price7Day: initialData.price7Day ?? 0,
+        price15Day: initialData.price15Day ?? 0,
+        price1Month: initialData.price1Month ?? 0,
       });
     }
   }, [initialData, reset]);
@@ -151,16 +163,25 @@ const DepotProductVariantForm: React.FC<Props> = ({ initialData, onClose, onSucc
         {errors.minimumQty && <p className="text-sm text-red-600">{errors.minimumQty.message}</p>}
       </div>
 
-      {/* <div className="grid gap-2">
-        <Label htmlFor="closingQty">Closing Qty</Label>
-         <Input
-          type="number"
-          id="closingQty"
-          readOnly
-          className="bg-gray-100 cursor-not-allowed"
-          {...register('closingQty')}
-        />
-      </div> */}
+      {/* Time-based Pricing */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid gap-2">
+          <Label htmlFor="price3Day">Price – 3 Day</Label>
+          <Input type="number" step="0.01" id="price3Day" {...register('price3Day')} />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="price7Day">Price – 7 Day</Label>
+          <Input type="number" step="0.01" id="price7Day" {...register('price7Day')} />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="price15Day">Price – 15 Day</Label>
+          <Input type="number" step="0.01" id="price15Day" {...register('price15Day')} />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="price1Month">Price – 1 Month</Label>
+          <Input type="number" step="0.01" id="price1Month" {...register('price1Month')} />
+        </div>
+      </div>
 
       <div className="flex items-center space-x-2">
         <Switch

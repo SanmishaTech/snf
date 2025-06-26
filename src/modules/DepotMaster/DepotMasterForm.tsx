@@ -1,62 +1,128 @@
-import React, { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import React, { useEffect, useState } from 'react';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { post, put } from '../../services/apiService';
+import { get, post, put } from '../../services/apiService';
 import { Button } from '@/components/ui/button';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Loader2, PlusCircle, Save } from 'lucide-react';
 
 // Define the Zod schema for validation
-const depotSchema = z.object({
+const depotBaseSchema = z.object({
   name: z.string().min(1, 'Depot name is required').max(100, 'Name must be 100 characters or less'),
   address: z.string().min(1, 'Address is required').max(255, 'Address must be 255 characters or less'),
   contactPerson: z.string().max(100, 'Contact person must be 100 characters or less').optional().or(z.literal('')),
   contactNumber: z.string().max(20, 'Contact number must be 20 characters or less').optional().or(z.literal('')),
-  userFullName: z.string().min(2, 'Admin full name is required'),
+  userFullName: z.string().optional(),
   userLoginEmail: z.string().email('Invalid email address').optional().or(z.literal('')),
-  userPassword: z.string().min(6, 'Password must be at least 6 characters'),
+  userPassword: z.string().optional(),
+  isOnline: z.boolean().optional(),
+  agencyId: z.preprocess((val) => (val ? Number(val) : null), z.number().optional().nullable()),
 });
 
-export type DepotFormData = z.infer<typeof depotSchema>;
+export type DepotFormData = z.infer<typeof depotBaseSchema>;
+
+interface Agency {
+    id: number;
+    name: string;
+}
 
 interface DepotMasterFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmitSuccess: () => void;
-  initialData?: DepotFormData & { id?: string };
+  initialData?: DepotFormData & { id?: string; agencyId?: number | null };
 }
 
 const DepotMasterForm: React.FC<DepotMasterFormProps> = ({ isOpen, onClose, onSubmitSuccess, initialData }) => {
+  const isEditMode = !!initialData?.id;
+
+  const depotSchema = depotBaseSchema.superRefine((data, ctx) => {
+    if (!isEditMode) {
+      if (!data.userFullName || data.userFullName.length < 2) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Admin full name is required',
+          path: ['userFullName'],
+        });
+      }
+      if (!data.userPassword || data.userPassword.length < 6) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Password must be at least 6 characters',
+          path: ['userPassword'],
+        });
+      }
+    }
+  });
+  const [agencies, setAgencies] = useState<Agency[]>([]);
   const {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<DepotFormData>({
+    context: { isEditMode },
     resolver: zodResolver(depotSchema),
-    defaultValues: initialData || { name: '', address: '', contactPerson: '', contactNumber: '', userFullName: '', userLoginEmail: '', userPassword: '' },
   });
 
   useEffect(() => {
     if (isOpen) {
+      const fetchAgencies = async () => {
+        try {
+          const response = await get('/agencies');
+          setAgencies(response.data || []);
+        } catch (error) {
+          console.error('Failed to fetch agencies:', error);
+          toast.error('Failed to load agencies for selection.');
+        }
+      };
+      fetchAgencies();
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      const defaultValues = {
+        name: '',
+        address: '',
+        contactPerson: '',
+        contactNumber: '',
+        userFullName: '',
+        userLoginEmail: '',
+        userPassword: '',
+        isOnline: false,
+        agencyId: null,
+      };
+
       if (initialData) {
-        reset(initialData);
+        reset({ ...defaultValues, ...initialData });
       } else {
-        reset({ name: '', address: '', contactPerson: '', contactNumber: '', userFullName: '', userLoginEmail: '', userPassword: '' });
+        reset(defaultValues);
       }
     }
-  }, [initialData, reset, isOpen]);
+  }, [agencies, initialData, isOpen, reset]);
 
   const onSubmit = async (data: DepotFormData) => {
+    console.log('Submitting data:', data);
     try {
       if (initialData?.id) {
         const { userFullName, userLoginEmail, userPassword, ...depotPayload } = data as any;
+        console.log('Payload for PUT request:', depotPayload);
         await put(`/admin/depots/${initialData.id}`, depotPayload);
         toast.success('Depot updated successfully.');
       } else {
@@ -75,7 +141,7 @@ const DepotMasterForm: React.FC<DepotMasterFormProps> = ({ isOpen, onClose, onSu
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg h-[550px] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{initialData?.id ? 'Edit Depot' : 'Add New Depot'}</DialogTitle>
           <DialogDescription>
@@ -102,6 +168,50 @@ const DepotMasterForm: React.FC<DepotMasterFormProps> = ({ isOpen, onClose, onSu
             <Label htmlFor="contactNumber">Contact Number</Label>
             <Input id="contactNumber" {...register('contactNumber')} placeholder="e.g. +1-555-123-4567" />
             {errors.contactNumber && <p className="text-sm text-red-600 mt-1">{errors.contactNumber.message}</p>}
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Controller
+              name="isOnline"
+              control={control}
+              render={({ field }) => (
+                <Checkbox
+                  id="isOnline"
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              )}
+            />
+            <Label htmlFor="isOnline" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              Depot is Online
+            </Label>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="agencyId">Assign Agency</Label>
+            <Controller
+                name="agencyId"
+                control={control}
+                render={({ field }) => (
+                    <Select
+                        onValueChange={(value) => field.onChange(value === 'null' ? null : value)}
+                        value={field.value ? String(field.value) : 'null'}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select an agency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="null">None</SelectItem>
+                            {agencies.map((agency) => (
+                                <SelectItem key={agency.id} value={String(agency.id)}>
+                                    {agency.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                )}
+            />
+            {errors.agencyId && <p className="text-sm text-red-600 mt-1">{errors.agencyId.message}</p>}
           </div>
 
           {/* Admin user fields: only shown when creating */}

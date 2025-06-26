@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { appName } from "@/config";
 import { get } from "@/services/apiService"; // For fetching products
 import Header from '@/layouts/Header';
+import BottomNavBar from '@/components/BottomNavBar';
  
 // Define Product type (ensure this matches your actual Product structure)
 
@@ -171,6 +172,7 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
       
       {/* Footer */}
       <AppFooter />
+      <BottomNavBar />
     </div>
   );
 }

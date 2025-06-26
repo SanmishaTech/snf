@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Location, createLocation, updateLocation } from '../../services/locationMasterService';
 import { City, getCitiesList } from '../../services/cityMasterService';
+import { getAgenciesList, Agency } from '@/services/agencyService';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,12 +12,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Save } from 'lucide-react';
 
-const locationFormSchema = z.object({
-  name: z.string().min(1, 'Location name is required').max(100, 'Name must be 100 characters or less'),
-  cityId: z.number().min(1, 'City is required'),
+const formSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  cityId: z.number({ required_error: 'City is required' }).min(1, 'City is required'),
+  agencyId: z.number().nullable().optional(),
 });
 
-export type LocationFormData = z.infer<typeof locationFormSchema>;
+export type LocationFormData = z.infer<typeof formSchema>;
 
 interface LocationMasterFormProps {
   initialData?: Location | null;
@@ -26,54 +28,56 @@ interface LocationMasterFormProps {
 
 const LocationMasterForm: React.FC<LocationMasterFormProps> = ({ initialData, onClose, onSuccess }) => {
   const [cities, setCities] = useState<City[]>([]);
-  const {
-    register,
-    handleSubmit,
-    reset,
-    setValue,
-    watch,
-    formState: { errors, isSubmitting },
-  } = useForm<LocationFormData>({
-    resolver: zodResolver(locationFormSchema),
+  const [agencies, setAgencies] = useState<Agency[]>([]);
+
+  const form = useForm<LocationFormData>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       name: initialData?.name || '',
-      cityId: initialData?.cityId || 0,
+      cityId: initialData?.cityId,
+      agencyId: initialData?.agencyId || null,
     },
   });
 
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } = form;
+
   useEffect(() => {
-    const fetchCities = async () => {
+    const fetchDependencies = async () => {
       try {
-        const citiesList = await getCitiesList();
+        const [citiesList, agenciesList] = await Promise.all([
+          getCitiesList(),
+          getAgenciesList(),
+        ]);
         setCities(citiesList);
+        setAgencies(agenciesList);
       } catch (error) {
-        toast.error('Failed to fetch cities');
+        toast.error('Failed to fetch cities or agencies');
       }
     };
-    fetchCities();
+    fetchDependencies();
   }, []);
 
   useEffect(() => {
     if (initialData) {
-      reset({ name: initialData.name, cityId: initialData.cityId });
+      reset({
+        name: initialData.name,
+        cityId: initialData.cityId,
+        agencyId: initialData.agencyId || null,
+      });
     } else {
-      reset({ name: '', cityId: 0 });
+      reset({ name: '', cityId: undefined, agencyId: null });
     }
   }, [initialData, reset]);
 
-  const onSubmit = async (data: LocationFormData) => {
+  const onSubmit = async (values: LocationFormData) => {
     try {
-      let result: Location;
-      if (initialData && initialData.id) {
-        result = await updateLocation(initialData.id, data);
-        toast.success('Location updated successfully!');
-      } else {
-        result = await createLocation(data);
-        toast.success('Location created successfully!');
-      }
+      const result = await (initialData?.id
+        ? updateLocation(initialData.id, values)
+        : createLocation(values));
+      toast.success(`Location ${initialData?.id ? 'updated' : 'created'} successfully!`);
       onSuccess(result);
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || (initialData ? 'Failed to update location' : 'Failed to create location');
+      const errorMessage = err.response?.data?.message || err.message || 'An unexpected error occurred';
       toast.error(errorMessage);
     }
   };
@@ -88,17 +92,41 @@ const LocationMasterForm: React.FC<LocationMasterFormProps> = ({ initialData, on
 
       <div className="grid gap-2">
         <Label htmlFor="cityId">City <span className="text-red-500">*</span></Label>
-        <Select onValueChange={(value) => setValue('cityId', parseInt(value))} value={watch('cityId')?.toString()}>
-            <SelectTrigger>
-                <SelectValue placeholder="Select a city" />
-            </SelectTrigger>
-            <SelectContent>
-                {cities.map(city => (
-                    <SelectItem key={city.id} value={city.id.toString()}>{city.name}</SelectItem>
-                ))}
-            </SelectContent>
+        <Select
+          onValueChange={(value) => setValue('cityId', parseInt(value, 10))}
+          value={watch('cityId')?.toString() || ''}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select a city" />
+          </SelectTrigger>
+          <SelectContent>
+            {cities.map(city => (
+              <SelectItem key={city.id} value={city.id.toString()}>{city.name}</SelectItem>
+            ))}
+          </SelectContent>
         </Select>
         {errors.cityId && <p className="text-sm text-red-600 mt-1">{errors.cityId.message}</p>}
+      </div>
+
+      <div className="grid gap-2">
+        <Label>Agency</Label>
+                <Select
+          onValueChange={(value) => setValue('agencyId', value === 'null' ? null : parseInt(value, 10))}
+          value={watch('agencyId') != null ? String(watch('agencyId')) : 'null'}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select an agency" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="null">None</SelectItem>
+            {agencies.map(agency => (
+              <SelectItem key={agency.id} value={agency.id.toString()}>
+                {agency.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {errors.agencyId && <p className="text-sm text-red-600 mt-1">{errors.agencyId.message}</p>}
       </div>
 
       <div className="flex justify-end space-x-3 pt-4">
@@ -106,9 +134,7 @@ const LocationMasterForm: React.FC<LocationMasterFormProps> = ({ initialData, on
           Cancel
         </Button>
         <Button type="submit" disabled={isSubmitting} className="gap-2">
-          {isSubmitting ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : <Save className="h-4 w-4" />}
+          {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           {isSubmitting ? 'Saving...' : 'Save'}
         </Button>
       </div>
