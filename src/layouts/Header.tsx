@@ -4,6 +4,8 @@ import { Facebook, Instagram, Search, Menu, X, UserCircle, LogOut, ShoppingBag }
 import { appName } from '@/config';
 import WalletButton from '@/modules/Wallet/Components/Walletmenu';
 import Sarkotlogo from "@/images/Sarkhot-Natural-Farms-Png.webp"
+import Indraipng from "@/images/WhatsApp Image 2025-06-24 at 18.32.39 (1) (1).png"
+
 
 interface HeaderProps {
   isLoggedIn?: boolean;
@@ -25,7 +27,6 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
     { name: 'Home', path: '/' },
     { name: 'About Us', path: '/about' },
     { name: 'Gratitude', path: '/gratitude' },
-    { name: 'Shop', path: '/member/products' },
     { name: 'Contact Us', path: '/contact' },
   ];
 
@@ -85,28 +86,38 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
   }, [headerVisible, mobileMenuOpen]);
 
   return (
-      <header
-        ref={headerRef}
-      className={`fixed top-0 w-full z-50 transition-all duration-500 ease-out ${
-        headerVisible ? 'translate-y-0' : '-translate-y-full'
-      } ${scrolled ? 'shadow-lg' : 'shadow-sm'}`}
-      >
+<header
+  ref={headerRef}
+  className={`fixed top-0 w-full z-50 transition-all duration-500 ease-out ${
+    headerVisible ? 'translate-y-0' : '-translate-y-full'
+  } ${scrolled ? 'shadow-lg' : 'shadow-sm'}`}
+>
       {/* Top Bar */}
-      <div className={`transition-colors duration-300 ${scrolled ? 'bg-white' : 'bg-gradient-to-r from-green-50 to-amber-50'}`}>
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-2">
-            {/* Logo */}
-            <Link to="/" className="flex items-center">
-            <img src={Sarkotlogo} alt="Logo" className="h-10 w-auto object-contain mr-2" />
+      <div className="bg-white transition-colors duration-300">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="flex justify-between items-center py-2">
+        {/* Logo */}
+        <Link to="/" className="flex items-center">
+          <img src={Sarkotlogo} alt="Logo" className="h-10 w-auto object-contain mr-2" />
+        </Link>
 
-            </Link>
-
-            {/* Right side: Social Icons & Top Links */}
-            <div className="flex items-center space-x-4">
-              <a href="#" aria-label="Facebook" className="text-gray-500 hover:text-green-600 transition-colors">
+             {/* Right side: Social Icons & Top Links */}
+             <div className="flex items-center space-x-4">
+              <a href="/" aria-label="Sarkhot Logo">
+                <img src={Indraipng} alt="Sarkhot Logo" className="h-8 w-auto object-contain" />
+              </a>
+             <a
+             target="_blank" 
+             rel="noopener noreferrer"
+             aria-label="Facebook" 
+             href="https://www.facebook.com/sarkhotnaturalfarms" className="text-gray-500 hover:text-green-600 transition-colors">
                 <Facebook size={18} />
               </a>
-              <a href="#" aria-label="Instagram" className="text-gray-500 hover:text-amber-600 transition-colors">
+              <a
+             target="_blank" 
+             rel="noopener noreferrer"
+             aria-label="Instagram" 
+             href="https://www.instagram.com/sarkhotnaturalfarms/" className="text-gray-500 hover:text-amber-600 transition-colors">
                 <Instagram size={18} />
               </a>
               <span className="hidden sm:block border-l border-gray-300 h-6 mx-2"></span>
@@ -173,33 +184,32 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
                   <span className="hidden sm:inline">Account</span>
                 </Link>
               )}
-              <Link to="/about" className="hidden sm:inline-block text-sm text-gray-700 hover:text-amber-600 transition-colors">About Us</Link>
-            </div>
+             </div>
           </div>
         </div>
       </div>
 
       {/* Main Navigation Bar */}
-      <div className={`transition-colors duration-300 ${scrolled ? 'bg-white' : 'bg-gradient-to-r from-green-100 to-amber-50'}`}>
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-3">
-            {/* Desktop Navigation Links */}
-            <div className="hidden md:flex space-x-6 items-center">
-              {navLinks.map((link) => (
-                <Link 
-                  key={link.name} 
-                  to={link.path} 
-                  className="text-gray-700 hover:text-green-600 transition-colors relative group"
-                >
-                  {link.name}
-                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-green-500 to-amber-500 transition-all duration-300 group-hover:w-full"></span>
-                </Link>
-              ))}
-            </div>
+      <div className="bg-primary transition-colors duration-300">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="flex justify-between items-center py-3">
+        {/* Desktop Navigation Links - WHITE AND BOLD */}
+        <div className="hidden md:flex space-x-6 items-center">
+          {navLinks.map((link) => (
+            <Link 
+              key={link.name} 
+              to={link.path} 
+              className="text-white font-semibold hover:text-white/90 transition-colors relative group"
+            >
+              {link.name}
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-white transition-all duration-300 group-hover:w-full"></span>
+            </Link>
+          ))}
+        </div>
 
             {/* Search Bar & Cart */}
             <div className="flex items-center space-x-4">
-              {/* <div className="relative hidden sm:block">
+            {/* <div className="relative hidden sm:block">
                 <input 
                   type="search" 
                   placeholder="Search products..." 
@@ -212,13 +222,13 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
 
             {/* Mobile Menu Button */}
             <div className="md:hidden flex items-center">
-              <button 
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
-                className={`p-2 rounded-full transition-colors ${mobileMenuOpen ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}
-                aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-              >
-                {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-              </button>
+            <button 
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
+            className={`p-2 rounded-full transition-colors text-white hover:bg-white/20 ${mobileMenuOpen ? 'bg-white/20' : ''}`}
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+          >
+            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
             </div>
           </div>
         </div>

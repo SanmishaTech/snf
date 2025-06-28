@@ -392,7 +392,7 @@ const AgencyDeliveryView: React.FC = () => {
                 <tr key={delivery.id} className={updatingStatus[delivery.id] ? 'opacity-50' : ''}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{delivery.member.name}</div>
-                    <div className="text-xs text-gray-500">{delivery.deliveryAddress.mobile || 'N/A'}</div>
+                    <div className="text-xs text-gray-500">{delivery.deliveryAddress?.mobile || 'N/A'}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">{delivery.product.name}</div>
@@ -401,13 +401,13 @@ const AgencyDeliveryView: React.FC = () => {
                     <span className="text-sm text-gray-900">{delivery.quantity}</span>
                   </td>
                   <td className="px-6 py-4 whitespace-normal max-w-xs"> {/* Allow address to wrap */}
-                    <div className="text-sm text-gray-900">{delivery.deliveryAddress.recipientName}</div>
-                    <div className="text-sm text-gray-900">{`${delivery.deliveryAddress.plotBuilding || ''}${delivery.deliveryAddress.plotBuilding && delivery.deliveryAddress.streetArea ? ', ' : ''}${delivery.deliveryAddress.streetArea || ''}`}</div>
-                    <div className="text-sm text-gray-500">{`${delivery.deliveryAddress.city}, ${delivery.deliveryAddress.pincode}`}</div>
+                    <div className="text-sm text-gray-900">{delivery.deliveryAddress?.recipientName}</div>
+                    <div className="text-sm text-gray-900">{delivery.deliveryAddress && `${delivery.deliveryAddress.plotBuilding || ''}${delivery.deliveryAddress.plotBuilding && delivery.deliveryAddress.streetArea ? ', ' : ''}${delivery.deliveryAddress.streetArea || ''}`}</div>
+                    <div className="text-sm text-gray-500">{delivery.deliveryAddress ? `${delivery.deliveryAddress.city}, ${delivery.deliveryAddress.pincode}` : 'Offline Depot Delivery'}</div>
                     {delivery.member.phoneNumber && (
                       <div className="text-sm text-blue-600 mt-1">Phone: {delivery.member.phoneNumber}</div>
                     )}
-                    {delivery.deliveryAddress.deliveryNotes && (
+                    {delivery.deliveryAddress?.deliveryNotes && (
                       <div className="text-xs text-gray-500 mt-1 italic">Notes: {delivery.deliveryAddress.deliveryNotes}</div>
                     )}
                   </td>

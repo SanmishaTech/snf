@@ -7,14 +7,17 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatCurrency } from "@/lib/formatter.js";
 import { motion } from "framer-motion";
-import { FaLeaf, FaTruck, FaGlassWhiskey, FaTimes } from "react-icons/fa";
+import { FaTruck, FaGlassWhiskey, FaTimes, FaHeart, FaShieldAlt } from "react-icons/fa";
 import { FaCow, FaBars } from "react-icons/fa6";
+import { GiMilkCarton, GiGrassMushroom } from "react-icons/gi";
+import { cn } from "@/lib/utils";
 import { Leaf } from "lucide-react"; // For AppFooter
 // import Banner from '@/images/banner1.webp'; // Replaced by dynamic banners
 import * as apiService from "@/services/apiService";
-import InfiniteImageCarousel from "./Coursel"; // Assuming Coursel.tsx exports this
+import HeroSection from "./Coursel";
 import type { Banner as ApiBanner } from "../BannerMaster/BannerListPage"; // Renamed to avoid conflict if Banner is used locally
 import Header from "@/layouts/Header";
+import Productdetail from "@/modules/Products/ProductDetailPage"
 
 interface Product {
   id: string | number;
@@ -48,7 +51,7 @@ const LandingPage = () => {
   const [userName, setUserName] = useState<string | null>(null);
 
   const BACKEND_URL =
-    import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+    import.meta.env.VITE_BACKEND_URL || "http://13.126.180.52";
   useEffect(() => {
     const fetchProducts = async () => {
       setIsLoading(true);
@@ -155,12 +158,12 @@ const LandingPage = () => {
       />
 
       {/*  Hero Section */}
-      <section className="relative h-[600px] max-md:h-[600px] max-lg:h-[800px] py-24 md:py-32">
-        {" "}
+                  <section className="relative mt-25 h-[600px] max-md:h-[800px] max-lg:h-[800px] py-24 md:py-32">
+         
         {/* Hero Section - Check if text is legible after removing gradient overlay */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           {isLoadingBanners && (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-200">
+            <div className="absolute inset-0 flex items-center justify-center ">
               <p>Loading images...</p> {/* Or a spinner component */}
             </div>
           )}
@@ -172,322 +175,108 @@ const LandingPage = () => {
             </div>
           )}
           {!isLoadingBanners && !bannerError && heroBanners.length > 0 && (
-            <InfiniteImageCarousel images={heroBanners} />
+            <HeroSection images={heroBanners} />
           )}
-          {!isLoadingBanners && !bannerError && heroBanners.length === 0 && (
+          {/* {!isLoadingBanners && !bannerError && heroBanners.length === 0 && (
             <div className="absolute inset-0 flex items-center justify-center bg-gray-200">
               <p>No banner images available.</p>
             </div>
-          )}
+          )} */}
           <div className="absolute inset-0 bg-black/30"></div>{" "}
           {/* Dark overlay for text contrast */}
           {/* <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-background/0"></div> */}
           {/* The above gradient was removed to reduce 'white aura'. If text legibility on carousel is an issue, consider a darker, simpler overlay e.g., bg-black/30 */}
         </div>
-        <div className="container absolute bottom-32 left-0 right-0 z-10 flex flex-col items-center text-center px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="max-w-3xl"
-          >
-            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-white mb-6 ">
-              <span className="bg-clip-text ">Fresh Milk Delivered Daily</span>
-            </h1>
-            <p className="text-xl text-white/90 max-w-2xl mb-10">
-              Subscribe to our premium milk delivery service and enjoy
-              farm-fresh dairy products delivered straight to your doorstep.
-            </p>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <a
-                href="#subscribe"
-                className="inline-flex items-center justify-center rounded-full bg-white text-primary px-8 py-4 text-lg font-medium shadow-lg hover:bg-gray-50 transition-colors"
-              >
-                Start Your Subscription
-              </a>
-            </motion.div>
-          </motion.div>
-        </div>
+     
       </section>
 
       {/* Benefits Section */}
-      <section id="benefits" className="py-16">
-        {" "}
-        {/* Removed bg-muted/20 */}
+      <section id="benefits" className="py-16 bg-white">
         <div className="container max-w-6xl mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold tracking-tight mb-3">
               Why Choose Indraai?
             </h2>
-            <div className="flex justify-center">
-              <div className="h-1 w-20 bg-primary rounded-full"></div>
+            <div className="flex justify-center mb-6">
+              <div className="h-1 w-20  rounded-full"></div>
             </div>
+            <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+              Our commitment to exceptional cow care and uncompromising milk quality sets us apart. 
+              From pasture to bottle, every step reflects our dedication to purity, nutrition, and sustainability.
+            </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <motion.div
-              whileHover={{ y: -5 }}
-              className="bg-card p-6 rounded-xl border border-muted/30 text-center"
-            >
-              <div className="flex justify-center mb-4">
-                <div className="bg-primary/10 p-4 rounded-full text-primary">
-                  <FaCow className="text-2xl" />
-                </div>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Farm Fresh</h3>
-              <p className="text-muted-foreground">
-                Direct from our organic farms within 24 hours of milking
-              </p>
-            </motion.div>
-
-            <motion.div
-              whileHover={{ y: -5 }}
-              className="bg-card p-6 rounded-xl border border-muted/30 text-center"
-            >
-              <div className="flex justify-center mb-4">
-                <div className="bg-primary/10 p-4 rounded-full text-primary">
-                  <FaLeaf className="text-2xl" />
-                </div>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">100% Natural</h3>
-              <p className="text-muted-foreground">
-                No additives, preservatives, or artificial hormones
-              </p>
-            </motion.div>
-
-            <motion.div
-              whileHover={{ y: -5 }}
-              className="bg-card p-6 rounded-xl border border-muted/30 text-center"
-            >
-              <div className="flex justify-center mb-4">
-                <div className="bg-primary/10 p-4 rounded-full text-primary">
-                  <FaTruck className="text-2xl" />
-                </div>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Daily Delivery</h3>
-              <p className="text-muted-foreground">
-                Fresh milk at your doorstep every morning
-              </p>
-            </motion.div>
-
-            <motion.div
-              whileHover={{ y: -5 }}
-              className="bg-card p-6 rounded-xl border border-muted/30 text-center"
-            >
-              <div className="flex justify-center mb-4">
-                <div className="bg-primary/10 p-4 rounded-full text-primary">
-                  <FaGlassWhiskey className="text-2xl" />
-                </div>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Glass Bottles</h3>
-              <p className="text-muted-foreground">
-                Eco-friendly packaging that preserves freshness
-              </p>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* Split Section */}
-      <section
-        className="py-24 bg-gradient-to-b from-background to-muted/10"
-        id="subscribe"
-      >
-        <div className="container max-w-7xl mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-12 items-start">
-            {/* Products Section */}
-            <div className="space-y-8" id="products">
-              <div>
-                <h2 className="text-3xl font-bold tracking-tight mb-3">
-                  Our Premium Selection
-                </h2>
-                <div className="h-1 w-20 bg-primary rounded-full"></div>
-              </div>
-
-              {isLoading && (
-                <div className="grid sm:grid-cols-2 gap-6">
-                  {[1, 2, 3, 4].map((i) => (
-                    <Card key={i} className="overflow-hidden animate-pulse">
-                      <div className="h-48 bg-muted/50" />
-                      <CardContent className="p-5">
-                        <div className="h-6 bg-muted/50 rounded mb-4 w-3/4"></div>
-                        <div className="h-8 bg-muted/50 rounded w-1/2"></div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-                  <p className="text-red-600">
-                    Error loading products: {error}
-                  </p>
-                  <button
-                    className="mt-4 text-sm text-primary hover:underline"
-                    onClick={() => window.location.reload()}
-                  >
-                    Try Again
-                  </button>
-                </div>
-              )}
-
-              {!isLoading && !error && products.length === 0 && (
-                <div className="bg-card rounded-xl p-8 text-center border border-muted/30">
-                  <div className="bg-muted/20 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                    <FaCow className="text-2xl text-primary" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 md:gap-2 max-w-7xl mx-auto bg-white">
+            {[
+              {
+                title: "Loving Bond & Ethical Cow Care",
+                description: "Our cows are treated with love, respect, and care by dedicated bharwads. We practice cruelty-free, humane farming with traditional hand-milking methods that preserve the gentle bond between humans and animals.",
+                icon: <FaHeart className="h-6 w-6" />,
+              },
+              {
+                title: "Pure & Natural Milk Quality",
+                description: "Pure A2 Gir cow milk with zero adulteration, no antibiotics, no hormones, and no artificial additives. Just natural, unadulterated goodness straight from our indigenous Gir cows.",
+                icon: <FaShieldAlt className="h-6 w-6" />,
+              },
+              {
+                title: "Free Grazing & Natural Nutrition",
+                description: "Our cows roam freely on open pastures, feeding naturally on fresh grass and herbs. This stress-free environment and natural diet contribute to healthier cows and superior milk quality.",
+                icon: <GiGrassMushroom className="h-6 w-6" />,
+              },
+              {
+                title: "Freshness & Daily Collection",
+                description: "Milk collected fresh at dawn and delivered the same day to preserve maximum nutritional value, taste, and natural goodness. Farm-to-table freshness guaranteed.",
+                icon: <FaTruck className="h-6 w-6" />,
+              },
+              {
+                title: "Quality Assurance & Eco-Friendly Packaging",
+                description: "Premium glass bottle packaging that preserves milk purity while being environmentally responsible. Our sustainable approach ensures quality while protecting our planet.",
+                icon: <FaGlassWhiskey className="h-6 w-6" />,
+              },
+              {
+                title: "Superior Nutritional Value",
+                description: "Rich in proteins, vitamins, minerals, and essential nutrients with enhanced digestibility and bioavailability. A2 protein makes it easier to digest compared to regular milk.",
+                icon: <GiMilkCarton className="h-6 w-6" />,
+              },
+            ].map((feature, index) => (
+              <div
+                key={feature.title}
+                className={cn(
+                  "relative overflow-hidden rounded-lg border p-2",
+                  // Apply left border on the first item of each row
+                  index % 3 === 0 ? "md:border-l" : "",
+                  // Apply right border on the last item of each row
+                  index % 3 === 2 ? "md:border-r" : "",
+                  // Apply top border on the first row
+                  index < 3 ? "md:border-t" : "",
+                  // Apply bottom border on all rows
+                  "md:border-b"
+                )}
+              >
+                <div className="group relative  p-6 h-full">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg text-primary">
+                    {feature.icon}
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">
-                    Our Cows Are Resting
-                  </h3>
-                  <p className="text-muted-foreground mb-4">
-                    No products available at the moment. Please check back
-                    later.
-                  </p>
-                  <button
-                    className="text-sm text-primary hover:underline"
-                    onClick={() => window.location.reload()}
-                  >
-                    Check Again
-                  </button>
-                </div>
-              )}
-
-              {!isLoading && !error && products.length > 0 && (
-                <div className="grid sm:grid-cols-2 gap-6">
-                  {products.map((product) => (
-                    <motion.div
-                      key={product.id}
-                      whileHover={{ y: -5 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <Card className="overflow-hidden transition-all duration-300 hover:shadow-lg flex flex-col h-full">
-                        <div className="h-48 overflow-hidden bg-muted/10 flex items-center justify-center">
-                          {product.attachmentUrl ? (
-                            <img
-                              src={`${import.meta.env.VITE_BACKEND_URL}${
-                                product.attachmentUrl
-                              }`}
-                              alt={product.name}
-                              className="w-full h-full object-cover transition-transform hover:scale-105"
-                            />
-                          ) : (
-                            <div className="flex flex-col items-center text-muted-foreground p-4">
-                              <FaCow className="text-4xl mb-2" />
-                              <span className="text-sm">Fresh Milk</span>
-                            </div>
-                          )}
-                        </div>
-                        <CardContent className="p-5 flex flex-col flex-grow">
-                          <h3 className="font-semibold text-lg mb-2">
-                            {product.name}
-                          </h3>
-                          <div className="flex justify-between items-center mt-auto">
-                            <span className="font-medium text-primary text-lg">
-                              {formatCurrency(product.rate)}
-                              {product.unit && (
-                                <span className="text-sm text-muted-foreground">
-                                  /{product.unit}
-                                </span>
-                              )}
-                            </span>
-                            <button
-                              className="inline-flex items-center justify-center rounded-full bg-primary/10 text-primary h-9 px-4 text-sm font-medium hover:bg-primary/20 transition-colors"
-                              onClick={() =>
-                                navigate(`/member/products/${product.id}`, {
-                                  state: { fromLanding: true },
-                                })
-                              }
-                            >
-                              View Details
-                            </button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-            </div>
-            {/* Auth Section - Enhanced - Conditionally rendered based on user role */}
-            {currentUserRole === "MEMBER" ? (
-              // Logout Prompt for Members
-              <div className="sticky top-24 bg-card rounded-2xl shadow-lg overflow-hidden border border-muted/50 p-6 text-center">
-                <h2 className="text-2xl font-bold mb-4">Welcome, Member!</h2>
-                <p className="text-muted-foreground mb-6">
-                  You are already logged in.
-                </p>
-                <button
-                  onClick={handleLogout}
-                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none h-10 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90"
-                >
-                  Logout
-                </button>
-              </div>
-            ) : (
-              // Original Auth Section for non-members
-              <div className="sticky top-24 bg-card rounded-2xl shadow-lg overflow-hidden border border-muted/50">
-                <div className="bg-gradient-to-r from-primary/90 to-primary p-6 text-white">
-                  <h2 className="text-2xl font-bold mb-2">
-                    Join Our Milk Club
-                  </h2>
-                  <p className="opacity-90">
-                    Sign in or create an account to start your subscription
-                  </p>
-                </div>{" "}
-                {/* This was the missing closing tag */}
-                <Tabs
-                  value={activeTab}
-                  onValueChange={setActiveTab}
-                  className="w-full"
-                >
-                  <div className="px-6 pt-6 pb-2">
-                    <TabsList className="grid w-full grid-cols-2 bg-muted/10 p-1.5 rounded-xl border border-muted/30">
-                      <TabsTrigger
-                        value="login"
-                        className="px-4 py-3 rounded-lg font-medium text-sm transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground hover:text-primary/80"
-                      >
-                        Login
-                      </TabsTrigger>
-                      <TabsTrigger
-                        value="register"
-                        className="px-4 py-3 rounded-lg font-medium text-sm transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground hover:text-primary/80"
-                      >
-                        Register
-                      </TabsTrigger>
-                    </TabsList>
-                  </div>
-
-                  <div className="p-6 pt-2">
-                    <TabsContent value="login">
-                      <Login setActiveTab={setActiveTab} />
-                    </TabsContent>
-                    <TabsContent value="register">
-                      <Register setActiveTab={setActiveTab} />
-                    </TabsContent>
-                  </div>
-                </Tabs>
-                <div className="px-6 pb-6">
-                  <div className="border-t border-muted/30 pt-6 text-center">
-                    <p className="text-muted-foreground text-sm">
-                      By joining, you agree to our{" "}
-                      <a href="#" className="text-primary hover:underline">
-                        Terms
-                      </a>{" "}
-                      and{" "}
-                      <a href="#" className="text-primary hover:underline">
-                        Privacy Policy
-                      </a>
+                  <div className="mt-6">
+                    <h3 className="text-lg font-semibold text-foreground">
+                      {feature.title}
+                    </h3>
+                    <p className="mt-2 text-muted-foreground">
+                      {feature.description}
                     </p>
                   </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-primary/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
                 </div>
               </div>
-            )}{" "}
-            {/* End of conditional rendering for Auth Section */}
+            ))}
           </div>
         </div>
       </section>
 
+    
+      <div id="product-detail-section">
+          <Productdetail/>
+        </div>
       {/* Footer */}
       <AppFooter />
     </div>
@@ -537,7 +326,7 @@ const AppFooter = () => {
 
           {/* Column 2: Policies */}
           <div className="md:col-span-4 lg:col-span-2">
-            <h3 className="text-md font-semibold mb-4 text-green-700 dark:text-green-500 border-b-2 border-green-500 pb-1 inline-block">
+            <h3 className="text-md font-semibold mb-4    border-b-2 border-primary pb-1 inline-block">
               Policies
             </h3>
             <ul className="space-y-2.5 text-sm">
@@ -578,7 +367,7 @@ const AppFooter = () => {
 
           {/* Column 3: Useful Links */}
           <div className="md:col-span-4 lg:col-span-2">
-            <h3 className="text-md font-semibold mb-4 text-green-700 dark:text-green-500 border-b-2 border-green-500 pb-1 inline-block">
+            <h3 className="text-md font-semibold mb-4    border-b-2 border-primary pb-1 inline-block">
               Useful Links
             </h3>
             <ul className="space-y-2.5 text-sm">
@@ -619,7 +408,7 @@ const AppFooter = () => {
 
           {/* Column 4: Contact */}
           <div className="md:col-span-4 lg:col-span-3">
-            <h3 className="text-md font-semibold mb-4 text-green-700 dark:text-green-500 border-b-2 border-green-500 pb-1 inline-block">
+            <h3 className="text-md font-semibold mb-4  dark  border-b-2 border-primary pb-1 inline-block">
               Contact
             </h3>
             <address className="text-sm not-italic space-y-2 leading-relaxed">
@@ -665,10 +454,10 @@ const AppFooter = () => {
           <p className="text-center md:text-right">
             Powered by{" "}
             <a
-              href="#"
-              className="font-semibold text-green-700 dark:text-green-500 hover:underline"
+              href="https://sanmisha.com/"
+              className="font-semibold text-primary dark:text-primary hover:underline"
             >
-              Brospro
+              Sanmisha Technologies
             </a>
           </p>
         </div>

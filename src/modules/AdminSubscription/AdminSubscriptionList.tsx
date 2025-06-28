@@ -999,39 +999,68 @@ const AdminSubscriptionList: React.FC = () => {
 
               {/* Delivery Schedule */}
               <TableCell className="px-4 py-3">
-                <div className="flex flex-col gap-2">
-                                    {order.subscriptions.map((sub: Subscription) => {
+                <div className="flex flex-col gap-1.5">
+                  {order.subscriptions.map((sub: Subscription) => {
                     const { weekdaysArray, isSpecificDays } = formatDeliverySchedule(sub.deliverySchedule, sub.weekdays);
+                    const scheduleLabel = sub.deliverySchedule === 'DAILY' ? 'Daily' :
+                                         sub.deliverySchedule === 'WEEKDAYS' ? 'Weekdays Only' :
+                                         sub.deliverySchedule === 'WEEKENDS' ? 'Weekends' :
+                                         sub.deliverySchedule === 'ALTERNATE_DAYS' ? 'Every Other Day' :
+                                         sub.deliverySchedule === 'DAY1_DAY2' ? 'Daily (Varying Qty)' :
+                                         'Custom';
+                    
                     return (
-                      <div key={sub.id} className="flex flex-col gap-1">
-                        <div className="text-sm font-medium">
-                           {sub.deliverySchedule === 'DAILY' ? 'Daily' :
-                            sub.deliverySchedule === 'WEEKDAYS' ? 'Weekdays' :
-                            sub.deliverySchedule === 'WEEKENDS' ? 'Weekends' :
-                            sub.deliverySchedule === 'ALTERNATE_DAYS' ? 'Alternate Days' :
-                            sub.deliverySchedule === 'DAY1_DAY2' ? 'Day1-Day2' :
-                            'Custom'}
-                        </div>
-                        {((sub.deliverySchedule === 'ALTERNATE_DAYS' || sub.deliverySchedule === 'DAY1_DAY2') && (sub.qty || sub.altQty)) && (
-                           <div className="flex flex-wrap gap-1">
-                             {sub.qty !== undefined && (
-                               <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                                 Day 1 ×{sub.qty}
-                               </span>
-                             )}
-                             {sub.altQty !== null && sub.altQty !== undefined && (
-                               <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                                 Day 2 ×{sub.altQty}
-                               </span>
-                             )}
-                           </div>
-                         )}
-                         {isSpecificDays && weekdaysArray.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
+                      <div key={sub.id} className="text-sm">
+                        <div className="font-medium text-gray-700 mb-1">{scheduleLabel}</div>
+                        
+                        {/* Alternate Days Display - Every Other Day (1,3,5,7...) */}
+                        {sub.deliverySchedule === 'ALTERNATE_DAYS' && (sub.qty || sub.altQty) ? (
+                          <div className="flex items-center gap-2 text-xs">
+                            <div className="flex items-center gap-1">
+                              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                              <span className="text-blue-700 font-medium">{sub.qty}{sub.product?.unit}</span>
+                            </div>
+                            <span className="text-gray-400">•</span>
+                            <div className="flex items-center gap-1">
+                              <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                              <span className="text-green-700 font-medium">{sub.altQty}{sub.product?.unit}</span>
+                            </div>
+                            <span className="text-gray-400 text-xs italic ml-1">skip day pattern</span>
+                          </div>
+                        ) : sub.deliverySchedule === 'DAY1_DAY2' && (sub.qty || sub.altQty) ? (
+                          /* Day1-Day2 Display - Daily with varying quantities */
+                          <div className="flex items-center gap-2 text-xs">
+                            <div className="flex items-center gap-1">
+                              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                              <span className="text-blue-700 font-medium">{sub.qty}{sub.product?.unit}</span>
+                            </div>
+                            <span className="text-gray-400">•</span>
+                            <div className="flex items-center gap-1">
+                              <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                              <span className="text-green-700 font-medium">{sub.altQty}{sub.product?.unit}</span>
+                            </div>
+                            <span className="text-gray-400 text-xs italic ml-1">daily rotation</span>
+                          </div>
+                        ) : (
+                          /* Regular Schedule Display */
+                          sub.qty && (
+                            <div className="text-xs text-gray-600">
+                              {sub.qty} {sub.product?.unit || 'units'}
+                              {sub.deliverySchedule === 'DAILY' ? ' daily' :
+                               sub.deliverySchedule === 'WEEKDAYS' ? ' on weekdays' :
+                               sub.deliverySchedule === 'WEEKENDS' ? ' on weekends' :
+                               ' per delivery'}
+                            </div>
+                          )
+                        )}
+                        
+                        {/* Compact Days Display for Custom Schedules */}
+                        {isSpecificDays && weekdaysArray.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
                             {weekdaysArray.map((day, idx) => (
                               <span 
                                 key={idx} 
-                                className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800"
+                                className="px-1.5 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-700"
                               >
                                 {formatWeekdayToShort(day)}
                               </span>

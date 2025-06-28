@@ -15,7 +15,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon, Plus, Minus, Package, Clock } from "lucide-react";
+import { CalendarIcon, Plus, Minus, Package, Clock, Sparkles, TrendingDown, Gift, Star, Zap } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -89,8 +89,7 @@ interface DepotData {
   id: number;
   name: string;
   isOnline: boolean;
-  addressId: string;
-  address: string;
+   address: string;
   pincode?: string;
   city?: string;
   state?: string;
@@ -116,10 +115,10 @@ const daysOfWeek = [
 ];
 
 const subscriptionPeriods = [
-  { value: 3, label: "3 Days" },
-  { value: 7, label: "7 Days" },
-  { value: 15, label: "15 Days" },
-  { value: 30, label: "1 Month" },
+  { value: 3, label: "3 Days (Trial Pack)" },
+  { value: 7, label: "7 Days (Regular Pack)" },
+  { value: 15, label: "15 Days (Mid Saver Pack)" },
+  { value: 30, label: "30 Days (Super Saver Pack)" },
 ] as const;
 
 type SubscriptionPeriodValue = (typeof subscriptionPeriods)[number]["value"];
@@ -165,6 +164,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   const [walletBalance, setWalletBalance] = useState<number>(0);
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [useWallet, setUseWallet] = useState(true);
   const [locations, setLocations] = useState<LocationData[]>([]);
 
   useEffect(() => {
@@ -556,9 +556,17 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       errors.selectedDays = "Please select at least one delivery day.";
     }
 
-    // Only validate selectedAddressId for offline depots
-    if (!selectedDepot?.isOnline && (!selectedAddressId || selectedAddressId.trim() === "")) {
-      errors.selectedAddressId = "Please select a delivery address.";
+    // Validate address based on depot type
+    if (selectedDepot?.isOnline) {
+      // For online depots, user must select a delivery address
+      if (selectedAddressId == null || String(selectedAddressId).trim() === "") {
+        errors.selectedAddressId = "Please select a delivery address.";
+      }
+    } else {
+      // For offline depots, ensure depot has an address ID for pickup
+      if (selectedDepot?.address == null) {
+        errors.depotAddress = "Depot address information is missing. Please contact support.";
+      }
     }
     
     if (hasVariants && selectedVariants.length === 0) {
@@ -676,7 +684,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     if (!isOpen) {
       setModalView("subscriptionDetails");
     }
-  }, [isOpen, modalView, selectedDepot]); // Add selectedDepot to dependency array
+  }, [isOpen, modalView, selectedDepot?.isOnline]); // Rerun when depot's online status changes
 
 
 
@@ -719,13 +727,154 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   };
 
   const handleProceedToConfirmation = () => {
-    if (!selectedAddressId) {
+    // Only require address selection for online depots (home delivery)
+    if (selectedDepot?.isOnline && selectedAddressId == null) {
       console.error("No address selected. Please select or add an address.");
       toast.error("Please select a delivery address");
       return;
     }
 
+    // For offline depots, ensure depot has address information
+    if (!selectedDepot?.isOnline && selectedDepot?.address == null) {
+      console.error("Depot address information is missing. AddressId:", selectedDepot?.address);
+      toast.error("Depot address information is missing. Please contact support.");
+      return;
+    }
+
     setModalView("confirmation");
+  };
+
+  // Helper to get the subscription price for a base product based on the period
+  const getProductPriceForPeriod = (
+    product: Product,
+    period: number
+  ): number => {
+    const pick = (val: number | null | undefined) =>
+      Number.isFinite(val) && val! > 0 ? val! : undefined;
+    let candidate: number | undefined;
+    switch (period) {
+      case 3:
+        candidate = pick(product.price3Day);
+        break;
+      case 7:
+        candidate = pick(product.price7Day);
+        break;
+      case 15:
+        candidate = pick(product.price15Day);
+        break;
+      case 30:
+        candidate = pick(product.price1Month);
+        break;
+    }
+    return candidate ?? product.rate; // Fallback to regular rate
+  };
+
+  // Helper to calculate delivery count for non-variant products
+  const calculateDeliveryCount = (): number => {
+    const dayMap = { mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6, sun: 0 };
+    switch (deliveryOption) {
+      case "daily":
+        return selectedPeriod;
+      case "select-days": {
+        if (!startDate || selectedDays.length === 0) return 0;
+        const selectedDayNumbers = selectedDays
+          .map((day) => dayMap[day as keyof typeof dayMap])
+          .filter((day): day is number => day !== undefined);
+        
+        let count = 0;
+        const endDate = new Date(startDate);
+        endDate.setDate(endDate.getDate() + selectedPeriod - 1);
+        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+          if (selectedDayNumbers.includes(d.getDay())) {
+            count++;
+          }
+        }
+        return count;
+      }
+      case "day1-day2":
+        return selectedPeriod;
+      case "alternate-days":
+        return Math.ceil(selectedPeriod / 2);
+      default:
+        return selectedPeriod;
+    }
+  };
+
+  // Calculate savings by comparing regular prices with subscription prices
+  const calculateSavings = () => {
+    if (!hasVariants || selectedVariants.length === 0) {
+      // For single product without variants
+      if (!product) return 0;
+
+      const deliveryCount = calculateDeliveryCount();
+      const regularRate = product.rate;
+      const subscriptionRate = getProductPriceForPeriod(product, selectedPeriod);
+
+      // --- DEBUG LOGS ---
+      console.log('--- Savings Calculation (No Variants) ---');
+      console.log('Product:', product);
+      console.log('Selected Period:', selectedPeriod);
+      console.log('Delivery Count:', deliveryCount);
+      console.log('Regular Rate:', regularRate);
+      console.log('Subscription Rate:', subscriptionRate);
+      // --- END DEBUG LOGS ---
+
+      // Only calculate savings if subscription rate is lower
+      if (subscriptionRate >= regularRate) return 0; // Hide savings if no discount
+
+      let totalQty = 0;
+      if (deliveryOption === 'day1-day2') {
+        const days1 = Math.ceil(selectedPeriod / 2);
+        const days2 = Math.floor(selectedPeriod / 2);
+        totalQty = quantity * days1 + quantityVarying2 * days2;
+      } else {
+        totalQty = quantity * deliveryCount;
+      }
+      
+      const totalRegularPrice = regularRate * totalQty;
+      const totalSubscriptionPrice = subscriptionRate * totalQty;
+
+      const savings = Math.max(0, totalRegularPrice - totalSubscriptionPrice);
+      console.log('Calculated Savings:', savings);
+      return savings;
+    }
+
+    // For products with variants
+    let totalRegularPrice = 0;
+    let totalSubscriptionPrice = 0;
+
+    selectedVariants.forEach(selectedVariant => {
+      const variant = productVariants.find(v => v.id === selectedVariant.variantId);
+      if (!variant) return;
+
+      const regularPrice = variant.rate; // Use .rate as it's more reliable for regular price
+      const subscriptionPrice = getVariantPriceForPeriod(variant, selectedPeriod);
+      const deliveryCount = calculateVariantDeliveryCount(selectedVariant);
+
+      let totalQty = 0;
+      switch (selectedVariant.deliveryOption) {
+        case "daily":
+        case "select-days":
+        case "alternate-days":
+          totalQty = selectedVariant.quantity * deliveryCount;
+          break;
+        case "day1-day2":
+          const days1 = Math.ceil(selectedPeriod / 2);
+          const days2 = Math.floor(selectedPeriod / 2);
+          totalQty = selectedVariant.quantity * days1 + (selectedVariant.quantityVarying2 || 1) * days2;
+          break;
+      }
+
+      totalRegularPrice += regularPrice * totalQty;
+      totalSubscriptionPrice += subscriptionPrice * totalQty;
+    });
+
+    const savings = Math.max(0, totalRegularPrice - totalSubscriptionPrice);
+    console.log('--- Savings Calculation (Variants) ---');
+    console.log('Total Regular Price:', totalRegularPrice);
+    console.log('Total Subscription Price:', totalSubscriptionPrice);
+    console.log('Calculated Savings:', savings);
+    return savings;
   };
 
   const handleConfirmSubscription = async () => {
@@ -734,10 +883,24 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     // Determine the correct address ID based on depot type
     const deliveryAddressIdForPayload = selectedDepot?.isOnline
       ? selectedAddressId
-      : selectedDepot?.addressId;
+      : selectedDepot?.address;
 
-    if (!product || !productId || !deliveryAddressIdForPayload || !startDate) {
-      toast.error("Missing product details or critical information.");
+
+    if (product == null || productId == null || deliveryAddressIdForPayload == null || startDate == null) {
+      const missingItems = [];
+      if (product == null) missingItems.push("product information");
+      if (productId == null) missingItems.push("product ID");
+      if (deliveryAddressIdForPayload == null) {
+        if (selectedDepot?.isOnline) {
+          missingItems.push("delivery address");
+        } else {
+          missingItems.push("depot address information");
+        }
+      }
+      if (startDate == null) missingItems.push("start date");
+      
+      const errorMessage = `Missing: ${missingItems.join(", ")}. Please ensure all required information is provided.`;
+      toast.error(errorMessage);
       return;
     }
 
@@ -800,8 +963,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
     const payload: OrderWithSubscriptionsRequest = {
       subscriptions,
-      deliveryAddressId: String(selectedAddressId),
-      walletamt: 0, // Wallet amount not handled in this form
+      deliveryAddressId: parseInt(String(deliveryAddressIdForPayload), 10),
+      walletamt: useWallet ? walletDeduction : 0, // Wallet amount not handled in this form
     };
 
     try {
@@ -999,14 +1162,15 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   ]);
 
   const walletDeduction = useMemo(() => {
-    if (!subscriptionSummary) return 0;
+    if (!subscriptionSummary || !useWallet) return 0;
     return Math.min(walletBalance || 0, subscriptionSummary.totalPrice || 0);
-  }, [walletBalance, subscriptionSummary]);
+  }, [walletBalance, subscriptionSummary, useWallet]);
 
   const remainingPayable = useMemo(() => {
     if (!subscriptionSummary) return 0;
-    return (subscriptionSummary.totalPrice || 0) - walletDeduction;
-  }, [subscriptionSummary, walletDeduction]);
+    const price = subscriptionSummary.totalPrice || 0;
+    return useWallet ? price - walletDeduction : price;
+  }, [subscriptionSummary, walletDeduction, useWallet]);
 
   if (!product) return null;
 
@@ -1037,21 +1201,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
             <DialogTitle className="text-xl font-semibold text-gray-800">
               Create Subscription for {product?.name}
             </DialogTitle>
-            <div className="flex items-center gap-1">
-              <span className="text-sm text-gray-500">
-                {hasVariants ? "From:" : "Price:"}
-              </span>
-              <p className="text-lg font-bold">
-                ₹
-                {hasVariants && productVariants.length > 0
-                  ? Math.min(
-                      ...productVariants.map((v) =>
-                        getVariantPriceForPeriod(v, selectedPeriod)
-                      )
-                    )
-                  : product?.rate}
-              </p>
-            </div>
+            
           </div>
         </DialogHeader>
 
@@ -1077,7 +1227,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                           }
                           className={`h-10 ${
                             selectedPeriod === period.value
-                              ? "bg-green-500 hover:bg-green-600"
+                              ? "bg-primary hover:bg-primary"
                               : "border-gray-300"
                           }`}
                           onClick={() => setSelectedPeriod(period.value)}
@@ -1172,7 +1322,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                               key={variant.id}
                               className={`border rounded-lg p-4 transition-all ${
                                 isSelected
-                                  ? "border-green-500 bg-green-50"
+                                  ? "border-red-500  bg-red-50"
                                   : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                               }`}
                             >
@@ -1182,7 +1332,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                   <div
                                     className={`w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 cursor-pointer ${
                                       isSelected
-                                        ? "bg-green-500 border-green-500"
+                                        ? "bg-primary border-primary"
                                         : "border-gray-300"
                                     }`}
                                     onClick={() => {
@@ -1736,156 +1886,185 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
                 {/* Right Column - Address Section */}
                 <div className="space-y-6">
-{/* START: Replace the original address section with this code */}
-<div className="bg-white border border-gray-200 rounded-lg p-4">
-  {/* Conditionally render based on depot type */}
-  {selectedDepot?.isOnline ? (
-    <>
-      {/* ===== UI for ONLINE Depots (Home Delivery) ===== */}
-      <div className="flex justify-between items-center mb-3">
-        <h3 className="text-sm font-medium text-gray-700">
-          Delivery Address
-        </h3>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            setAddressFormState((prev) => ({
-              ...prev,
-              mobile: userMobile,
-            }));
-            setModalView("addressForm");
-          }}
-          className="text-xs h-8"
-        >
-          <Plus className="h-3 w-3 mr-1" /> Add New
-        </Button>
-      </div>
+                  <div className="bg-white border border-gray-200 rounded-lg p-4">
+                    {/* Conditionally render based on depot type */}
+                    {selectedDepot?.isOnline ? (
+                      <>
+                        {/* ===== UI for ONLINE Depots (Home Delivery) ===== */}
+                        <div className="flex justify-between items-center mb-3">
+                          <h3 className="text-sm font-medium text-gray-700">
+                            Delivery Address
+                          </h3>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setAddressFormState((prev) => ({
+                                ...prev,
+                                mobile: userMobile,
+                              }));
+                              setModalView("addressForm");
+                            }}
+                            className="text-xs h-8"
+                          >
+                            <Plus className="h-3 w-3 mr-1" /> Add New
+                          </Button>
+                        </div>
 
-      {isLoadingAddresses ? (
-        <div className="flex items-center justify-center py-6">
-          <span className="text-gray-500 text-sm">
-            Loading your addresses...
-          </span>
-        </div>
-      ) : userAddresses.length > 0 ? (
-        <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
-          <RadioGroup
-            value={selectedAddressId || ""}
-            onValueChange={(id: string) => {
-              setSelectedAddressId(id);
-              if (formErrors.selectedAddressId)
-                setFormErrors((prev) => ({
-                  ...prev,
-                  selectedAddressId: "",
-                }));
-            }}
-            className="space-y-3"
-          >
-            {userAddresses.map((address) => (
-              <div
-                key={address.id}
-                className={`p-3 border rounded-lg cursor-pointer transition-all ${
-                  selectedAddressId === address.id
-                    ? "border-green-500 bg-green-50"
-                    : "border-gray-200 hover:bg-gray-50"
-                }`}
-              >
-                <Label
-                  htmlFor={`address-item-${address.id}`}
-                  className="flex items-start space-x-3 w-full"
-                >
-                  <RadioGroupItem
-                    value={address.id}
-                    id={`address-item-${address.id}`}
-                    className="mt-1"
-                  />
-                  <div className="flex-1">
-                    <div className="flex justify-between">
-                      <span className="font-medium text-gray-900">
-                        {address.recipientName}
-                      </span>
-                      <Badge variant="outline">{address.label}</Badge>
-                    </div>
-                    <p className="text-xs text-gray-600 mt-1">
-                      {address.plotBuilding}, {address.streetArea}
-                    </p>
-                    <p className="text-xs text-gray-600">
-                      {address.city}, {address.state} - {address.pincode}
-                    </p>
-                    {address.isDefault && (
-                      <span className="inline-block mt-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">
-                        Default
-                      </span>
+                        {isLoadingAddresses ? (
+                          <div className="flex items-center justify-center py-6">
+                            <span className="text-gray-500 text-sm">
+                              Loading your addresses...
+                            </span>
+                          </div>
+                        ) : userAddresses.length > 0 ? (
+                          <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
+                            <RadioGroup
+                              value={selectedAddressId || ""}
+                              onValueChange={(id: string) => {
+                                setSelectedAddressId(id);
+                                if (formErrors.selectedAddressId)
+                                  setFormErrors((prev) => ({
+                                    ...prev,
+                                    selectedAddressId: "",
+                                  }));
+                              }}
+                              className="space-y-3"
+                            >
+                              {userAddresses.map((address) => (
+                                <div
+                                  key={address.id}
+                                  className={`p-3 border rounded-lg cursor-pointer transition-all ${
+                                    selectedAddressId === address.id
+                                      ? "border-red-500 bg-red-50"
+                                      : "border-gray-200 hover:bg-gray-50"
+                                  }`}
+                                >
+                                  <Label
+                                    htmlFor={`address-item-${address.id}`}
+                                    className="flex items-start space-x-3 w-full"
+                                  >
+                                    <RadioGroupItem
+                                      value={address.id}
+                                      id={`address-item-${address.id}`}
+                                      className="mt-1"
+                                    />
+                                    <div className="flex-1">
+                                      <div className="flex justify-between">
+                                        <span className="font-medium text-gray-900">
+                                          {address.recipientName}
+                                        </span>
+                                        <Badge variant="outline">{address.label}</Badge>
+                                      </div>
+                                      <p className="text-xs text-gray-600 mt-1">
+                                        {address.plotBuilding}, {address.streetArea}
+                                      </p>
+                                      <p className="text-xs text-gray-600">
+                                        {address.city}, {address.state} - {address.pincode}
+                                      </p>
+                                      {address.isDefault && (
+                                        <span className="inline-block mt-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">
+                                          Default
+                                        </span>
+                                      )}
+                                    </div>
+                                  </Label>
+                                </div>
+                              ))}
+                            </RadioGroup>
+                          </div>
+                        ) : (
+                          <div className="text-center py-6">
+                            <p className="text-gray-500 text-sm mb-3">
+                              No delivery addresses saved.
+                            </p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setAddressFormState((prev) => ({
+                                  ...prev,
+                                  mobile: userMobile,
+                                }));
+                                setModalView("addressForm");
+                              }}
+                            >
+                              <Plus className="h-3 w-3 mr-1" /> Add Delivery Address
+                            </Button>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {/* ===== UI for OFFLINE Depots (Pickup) ===== */}
+                        <div className="flex justify-between items-center mb-3">
+                          <h3 className="text-sm font-medium text-gray-700">
+                            Pickup From
+                          </h3>
+                        </div>
+                        {selectedDepot ? (
+                          <div className="p-3 border rounded-lg bg-gray-100">
+                            <div className="flex-1">
+                              <div className="flex justify-between items-center">
+                                <span className="font-medium text-gray-900">
+                                  {selectedDepot.name}
+                                </span>
+                                <Badge variant="secondary">Pickup Point</Badge>
+                              </div>
+                              <p className="text-xs text-gray-600 mt-2">
+                                {selectedDepot.address}
+                              </p>
+                              <p className="text-xs text-gray-600">
+                                {selectedDepot.city} {selectedDepot.state} {selectedDepot.pincode}
+                              </p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-center py-6">
+                            <p className="text-gray-500 text-sm">
+                              Depot address not available.
+                            </p>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
-                </Label>
-              </div>
-            ))}
-          </RadioGroup>
-        </div>
-      ) : (
-        <div className="text-center py-6">
-          <p className="text-gray-500 text-sm mb-3">
-            No delivery addresses saved.
-          </p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setAddressFormState((prev) => ({
-                ...prev,
-                mobile: userMobile,
-              }));
-              setModalView("addressForm");
-            }}
-          >
-            <Plus className="h-3 w-3 mr-1" /> Add Delivery Address
-          </Button>
-        </div>
-      )}
-    </>
-  ) : (
-    <>
-      {/* ===== UI for OFFLINE Depots (Pickup) ===== */}
-      <div className="flex justify-between items-center mb-3">
-        <h3 className="text-sm font-medium text-gray-700">
-          Pickup From
-        </h3>
-      </div>
-      {selectedDepot ? (
-        <div className="p-3 border rounded-lg bg-gray-100">
-          <div className="flex-1">
-            <div className="flex justify-between items-center">
-              <span className="font-medium text-gray-900">
-                {selectedDepot.name}
-              </span>
-              <Badge variant="secondary">Pickup Point</Badge>
-            </div>
-            <p className="text-xs text-gray-600 mt-2">
-              {selectedDepot.address}
-            </p>
-            <p className="text-xs text-gray-600">
-              {selectedDepot.city} {selectedDepot.state} {selectedDepot.pincode}
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="text-center py-6">
-          <p className="text-gray-500 text-sm">
-            Depot address not available.
-          </p>
-        </div>
-      )}
-    </>
-  )}
-</div>
- 
+
+                  {calculateSavings() > 0 && (
+                    <div className="relative overflow-hidden mb-4">
+                      {/* Animated gradient background */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-red-700 via-red-800 to-red-900 animate-gradient-x"></div>                      
+                      {/* Floating elements */}
+                      <div className="absolute top-1 left-2 animate-pulse">
+                        <Star className="h-4 w-4 text-yellow-300 fill-yellow-300" />
+                      </div>
+                      <div className="absolute top-2 right-3 animate-bounce delay-75">
+                        <Sparkles className="h-3 w-3 text-yellow-200" />
+                      </div>
+                      <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 animate-pulse delay-150">
+                        <Gift className="h-3 w-3 text-yellow-300" />
+                      </div>
+                      
+                      {/* Main content */}
+                      <div className="relative p-4 text-center">
+                        <div className="text-white font-bold text-lg mb-1 tracking-wide">
+                          🎊 YOU'RE SAVING BIG! 🎊
+                        </div>
+                        <div className="text-white text-2xl font-black mb-2">
+                          ₹{calculateSavings().toFixed(2)}
+                        </div>
+                        <div className="text-white/90 text-sm">
+                          vs regular pricing • Instant discount applied!
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Enhanced Summary Section with Per-Variant Details */}
                   {subscriptionSummary && (
                     <div className="bg-white border border-gray-200 rounded-lg p-4">
-                      <h3 className="text-sm font-medium text-gray-700 mb-3">
+                      <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                        <Package className="h-4 w-4" />
                         Order Summary
                       </h3>
                       <div className="space-y-2 text-sm">
@@ -1893,113 +2072,177 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                           <span className="text-gray-600">Period:</span>
                           <span>{subscriptionSummary.period}</span>
                         </div>
-                        <div className="flex justify-between">
+                        {/* <div className="flex justify-between">
                           <span className="text-gray-600">Schedule:</span>
                           <span className="text-right">
                             {subscriptionSummary.deliveryDescription}
                           </span>
-                        </div>
+                        </div> */}
                         <div className="flex justify-between">
                           <span className="text-gray-600">Start Date:</span>
                           <span>{subscriptionSummary.startDate}</span>
                         </div>
 
-                        {/* Per-Variant Summary */}
+                        {/* Per-Variant Summary - Enhanced */}
                         {hasVariants && selectedVariants.length > 0 && (
-                          <div className="border-t border-gray-200 pt-2 mt-2">
-                            <span className="text-xs font-medium text-gray-600 block mb-2">
-                              Variant Details:
-                            </span>
-                            {selectedVariants.map((selectedVariant, index) => {
-                              const variant = productVariants.find(
-                                (v) => v.id === selectedVariant.variantId
-                              );
-                              if (!variant) return null;
+                          <div className="border-t border-gray-200 pt-4 mt-4">
+                            <div className="flex items-center gap-2 mb-3">
+                              <Package className="h-4 w-4 text-blue-600" />
+                              <h4 className="text-sm font-semibold text-gray-800">
+                                Variant Details
+                              </h4>
+                            </div>
+                            <div className="space-y-3">
+                              {selectedVariants.map((selectedVariant, index) => {
+                                const variant = productVariants.find(
+                                  (v) => v.id === selectedVariant.variantId
+                                );
+                                if (!variant) return null;
 
-                              const deliveryCount =
-                                calculateVariantDeliveryCount(selectedVariant);
-                              let variantTotalQty = 0;
+                                const deliveryCount =
+                                  calculateVariantDeliveryCount(selectedVariant);
+                                let variantTotalQty = 0;
 
-                              switch (selectedVariant.deliveryOption) {
-                                case "daily":
-                                case "select-days":
-                                  variantTotalQty =
-                                    selectedVariant.quantity * deliveryCount;
-                                  break;
-                                case "day1-day2":
-                                  const days1 = Math.ceil(selectedPeriod / 2);
-                                  const days2 = Math.floor(selectedPeriod / 2);
-                                  variantTotalQty =
-                                    selectedVariant.quantity * days1 +
-                                    (selectedVariant.quantityVarying2 || 1) *
-                                      days2;
-                                  break;
-                                case "alternate-days":
-                                  variantTotalQty =
-                                    selectedVariant.quantity *
-                                    Math.ceil(selectedPeriod / 2);
-                                  break;
-                              }
+                                switch (selectedVariant.deliveryOption) {
+                                  case "daily":
+                                  case "select-days":
+                                    variantTotalQty =
+                                      selectedVariant.quantity * deliveryCount;
+                                    break;
+                                  case "day1-day2":
+                                    const days1 = Math.ceil(selectedPeriod / 2);
+                                    const days2 = Math.floor(selectedPeriod / 2);
+                                    variantTotalQty =
+                                      selectedVariant.quantity * days1 +
+                                      (selectedVariant.quantityVarying2 || 1) *
+                                        days2;
+                                    break;
+                                  case "alternate-days":
+                                    variantTotalQty =
+                                      selectedVariant.quantity *
+                                      Math.ceil(selectedPeriod / 2);
+                                    break;
+                                }
 
-                              const scheduleText =
-                                selectedVariant.deliveryOption === "daily"
-                                  ? "Daily"
-                                  : selectedVariant.deliveryOption ===
-                                    "select-days"
-                                  ? `${selectedVariant.selectedDays.length} days/week`
-                                  : selectedVariant.deliveryOption ===
-                                    "alternate-days"
-                                  ? "Alternate Day"
-                                  : "Day1-Day2";
+                                const scheduleText =
+                                  selectedVariant.deliveryOption === "daily"
+                                    ? "Daily"
+                                    : selectedVariant.deliveryOption ===
+                                      "select-days"
+                                    ? `${selectedVariant.selectedDays.length} days/week`
+                                    : selectedVariant.deliveryOption ===
+                                      "alternate-days"
+                                    ? "Alternate Days"
+                                    : "Day1-Day2";
 
-                              return (
-                                <div
-                                  key={index}
-                                  className="bg-gray-50 rounded p-2 mb-2 text-xs"
-                                >
-                                  <div className="flex justify-between items-center">
-                                    <span className="font-medium text-gray-800">
-                                      {variant.name}
-                                    </span>
-                                    <div>
+                                const getScheduleIcon = () => {
+                                  switch (selectedVariant.deliveryOption) {
+                                    case "daily":
+                                      return "🌅"; // Daily sunrise
+                                    case "select-days":
+                                      return "📅"; // Selected days
+                                    case "alternate-days":
+                                      return "🔄"; // Alternating
+                                    case "day1-day2":
+                                      return "⚖️"; // Varying quantities
+                                    default:
+                                      return "📦";
+                                  }
+                                };
+
+                                return (
+                                  <div
+                                    key={index}
+                                    className="border border-gray-200 rounded-lg p-3 bg-gradient-to-r from-gray-50 to-blue-50 hover:shadow-sm transition-shadow"
+                                  >
+                                    {/* Header with variant name and schedule */}
+                                    <div className="flex items-center justify-between mb-2">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-lg">{getScheduleIcon()}</span>
+                                        <span className="font-semibold text-gray-800 text-sm">
+                                          {variant.name}
+                                        </span>
+                                      </div>
                                       <Badge
-                                        variant="outline"
-                                        className="mr-2 text-xs"
+                                        variant="secondary"
+                                        className="text-xs bg-blue-100 text-blue-700 border-blue-200"
                                       >
                                         {scheduleText}
                                       </Badge>
-                                      <Badge variant="outline">
-                                        ₹
-                                        {getVariantPriceForPeriod(
-                                          variant,
-                                          selectedPeriod
-                                        )}{" "}
-                                        {variant.unit && `per ${variant.unit}`}
-                                      </Badge>
                                     </div>
+
+                                    {/* Quantity and pricing details */}
+                                    <div className="grid grid-cols-2 gap-3 text-xs">
+                                      <div className="space-y-1">
+                                        <div className="text-gray-500 font-medium">Quantity Details</div>
+                                        <div className="flex items-center gap-1">
+                                          <span className="text-gray-700">
+                                            {selectedVariant.deliveryOption === "day1-day2" ? (
+                                              <>
+                                                {selectedVariant.quantity} + {selectedVariant.quantityVarying2 || 1} {variant.unit}
+                                              </>
+                                            ) : (
+                                              <>
+                                                {selectedVariant.quantity} {variant.unit}/delivery
+                                              </>
+                                            )}
+                                          </span>
+                                        </div>
+                                        <div className="text-gray-600">
+                                          Total: <span className="font-medium">{variantTotalQty} {variant.unit}</span>
+                                        </div>
+                                      </div>
+
+                                      <div className="space-y-1">
+                                        <div className="text-gray-500 font-medium">Pricing</div>
+                                        <div className="text-gray-700">
+                                          ₹{getVariantPriceForPeriod(variant, selectedPeriod)} per {variant.unit}
+                                        </div>
+                                        <div className="text-green-600 font-semibold">
+                                          ₹{(
+                                            variantTotalQty *
+                                            getVariantPriceForPeriod(
+                                              variant,
+                                              selectedPeriod
+                                            )
+                                          ).toFixed(2)}
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Additional delivery info for special schedules */}
+                                    {selectedVariant.deliveryOption === "select-days" && selectedVariant.selectedDays && (
+                                      <div className="mt-2 pt-2 border-t border-gray-200">
+                                        <div className="text-xs text-gray-500 mb-1">Delivery Days:</div>
+                                        <div className="flex flex-wrap gap-1">
+                                          {selectedVariant.selectedDays.map((day, dayIndex) => (
+                                            <span
+                                              key={dayIndex}
+                                              className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded"
+                                            >
+                                              {day}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {selectedVariant.deliveryOption === "day1-day2" && (
+                                      <div className="mt-2 pt-2 border-t border-gray-200">
+                                        <div className="text-xs text-gray-500 grid grid-cols-2 gap-2">
+                                          <div>
+                                            First half: {Math.ceil(selectedPeriod / 2)} days × {selectedVariant.quantity} {variant.unit}
+                                          </div>
+                                          <div>
+                                            Second half: {Math.floor(selectedPeriod / 2)} days × {selectedVariant.quantityVarying2 || 1} {variant.unit}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
-                                  <div className="flex justify-between">
-                                    <span className="text-gray-600">
-                                      {variantTotalQty} {variant.unit || ""} × ₹
-                                      {getVariantPriceForPeriod(
-                                        variant,
-                                        selectedPeriod
-                                      )}
-                                    </span>
-                                    <span className="font-medium">
-                                      ₹
-                                      {(
-                                        variantTotalQty *
-                                        getVariantPriceForPeriod(
-                                          variant,
-                                          selectedPeriod
-                                        )
-                                      ).toFixed(2)}
-                                    </span>
-                                  </div>
-                                </div>
-                              );
-                            })}
+                                );
+                              })}
+                            </div>
                           </div>
                         )}
 
@@ -2010,6 +2253,29 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                             {!hasVariants ? product?.unit || "" : "items"}
                           </span>
                         </div>
+
+                        {/* Enhanced Savings Display */}
+                        {calculateSavings() > 0 && (
+                          <div className="relative overflow-hidden">
+                            {/* Animated Background */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 animate-pulse"></div>
+                            <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/90 via-green-400/90 to-teal-400/90"></div>
+                            
+                            {/* Sparkle Animation Elements */}
+                            <div className="absolute top-2 left-4 animate-bounce delay-75">
+                              <Star className="h-3 w-3 text-yellow-300 fill-yellow-300" />
+                            </div>
+                            <div className="absolute top-3 right-6 animate-bounce delay-150">
+                              <Sparkles className="h-2 w-2 text-yellow-200 fill-yellow-200" />
+                            </div>
+                            <div className="absolute bottom-2 right-4 animate-bounce delay-300">
+                              <Zap className="h-3 w-3 text-yellow-300 fill-yellow-300" />
+                            </div>
+                            
+                            {/* Main Content */}
+                           
+                          </div>
+                        )}
 
                         <div className="border-t border-gray-200 pt-2 mt-2">
                           <div className="flex justify-between font-medium">
@@ -2121,6 +2387,9 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   </span>
                 </div>
 
+                {/* Enhanced Savings Display in Confirmation */}
+          
+                
                 <div className="pt-2 border-t border-gray-200 space-y-2">
                   <div className="flex justify-between">
                     <span className="text-sm font-medium">Subtotal:</span>
@@ -2144,6 +2413,13 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       ₹{remainingPayable.toFixed(2)}
                     </span>
                   </div>
+
+                  {/* <div className="flex items-center justify-between mt-4">
+                    <Label htmlFor="useWallet" className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
+                      <Checkbox id="useWallet" checked={useWallet} onCheckedChange={(checked) => setUseWallet(Boolean(checked))} className="w-5 h-5 rounded border-gray-300" />
+                      <span>Apply Wallet Balance</span>
+                    </Label>
+                  </div> */}
                 </div>
               </div>
 
@@ -2203,6 +2479,53 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 </>
               )}
 
+{calculateSavings() > 0 && (
+                  <div className="relative overflow-hidden mb-4">
+                    {/* Animated gradient background */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-red-700 via-red-800 to-red-900 animate-gradient-x"></div>                    {/* Floating elements */}
+                    <div className="absolute top-1 left-2 animate-pulse">
+                      <Star className="h-4 w-4 text-yellow-300 fill-yellow-300" />
+                    </div>
+                    <div className="absolute top-2 right-3 animate-bounce delay-75">
+                      <Sparkles className="h-3 w-3 text-yellow-200" />
+                    </div>
+                    <div className="absolute bottom-1 right-1/4 animate-pulse delay-150">
+                      <Zap className="h-3 w-3 text-yellow-300 fill-yellow-300" />
+                    </div>
+                    <div className="absolute bottom-1 left-1/3 animate-bounce delay-300">
+                      <Gift className="h-3 w-3 text-yellow-300" />
+                    </div>
+                    
+                    {/* Main content */}
+                    <div className="relative p-4 text-center">
+                      <div className="text-white font-bold text-lg mb-1 tracking-wide">
+                        🎉 CONGRATULATIONS! YOU'RE SAVING 🎉
+                      </div>
+                      <div className="text-white text-3xl font-black mb-2">
+                        ₹{calculateSavings().toFixed(2)}
+                      </div>
+                      <div className="text-white/90 text-sm">
+                        vs regular pricing • This discount is already applied!
+                      </div>
+                      
+                      {/* Benefit indicators */}
+                      <div className="mt-3 flex justify-center gap-4 text-white/90 text-xs">
+                        <div className="flex items-center">
+                          <TrendingDown className="h-3 w-3 mr-1" />
+                          <span>Better Price</span>
+                        </div>
+                        <div className="flex items-center">
+                          <Package className="h-3 w-3 mr-1" />
+                          <span>Guaranteed Supply</span>
+                        </div>
+                        <div className="flex items-center">
+                          <Clock className="h-3 w-3 mr-1" />
+                          <span>Time Saver</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               {selectedDepot?.isOnline ? (
                 <div className="bg-white p-4 rounded-md border">
                   <h4 className="text-sm font-medium mb-2">
@@ -2527,7 +2850,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
             <Button
               onClick={handleProceedToConfirmation}
               disabled={isLoadingAddresses}
-              className="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-md font-medium"
+              className="w-full bg-primary hover:bg-primary text-white py-2 rounded-md font-medium"
             >
               Review Subscription
             </Button>
@@ -2570,7 +2893,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               </Button>
 
               <Button
-                className="bg-green-500 hover:bg-green-600 text-white rounded-lg h-11"
+                className="bg-primary hover:bg-primary text-white rounded-lg h-11"
                 onClick={handleConfirmSubscription}
                 disabled={
                   isLoading ||

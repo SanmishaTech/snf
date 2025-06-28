@@ -243,7 +243,7 @@ const AppFooter = () => {
       <div className="bg-gray-200 dark:bg-gray-800 py-4 border-t border-gray-300 dark:border-gray-700">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-xs text-gray-600 dark:text-gray-400">
           <p className="mb-2 md:mb-0 text-center md:text-left">&copy; {new Date().getFullYear()} Sarkhot Natural Farms. All Rights Reserved.</p>
-          <p className="text-center md:text-right">Powered by <a href="#" className="font-semibold text-green-700 dark:text-green-500 hover:underline">Brospro</a></p>
+          <p className="text-center md:text-right">Powered by <a href="https://sanmisha.com/" className="font-semibold text-green-700 dark:text-green-500 hover:underline">Sanmisha Technologies</a></p>
         </div>
       </div>
     </footer>

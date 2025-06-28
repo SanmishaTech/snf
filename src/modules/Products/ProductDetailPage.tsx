@@ -58,7 +58,8 @@ const ProductDetailPage: React.FC = () => {
   // depot state
   const [selectedDepotId, setSelectedDepotId] = useState<number | null>(null);
 
-  const { id: productId } = useParams<{ id: string }>();
+  // const { id: productId } = useParams<{ id: string }>();
+  const productId = 1
   // const showSubscribeButton logic related to location.state?.fromLanding was removed.
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
   const [isBuyOnceModalOpen, setIsBuyOnceModalOpen] = useState(false);
@@ -289,7 +290,7 @@ const ProductDetailPage: React.FC = () => {
   ];
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container min-w-full px-4 py-8 bg-white">
       {/* Depot Selector */}
      
       
@@ -300,12 +301,7 @@ const ProductDetailPage: React.FC = () => {
         transition={{ duration: 0.5 }}
         className="max-w-6xl mx-auto"
       >
-        {/* Breadcrumb */}
-        <div className="text-sm text-muted-foreground mb-6">
-          <span className="hover:text-primary cursor-pointer">Products</span> 
-          <span className="mx-2">/</span>
-          <span className="text-primary font-medium">{product.name}</span>
-        </div>
+     
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
           {/* Product Image */}
@@ -426,7 +422,7 @@ const ProductDetailPage: React.FC = () => {
               {!isLoggedIn ? (
                 <Button
                   asChild
-                  className="w-full bg-green-500 hover:bg-green-600 text-white py-6 rounded-lg text-lg font-semibold transition-transform duration-200 hover:scale-105"
+                  className="w-full bg-primary hover:bg-primary/80 text-white py-6 rounded-lg text-lg font-semibold transition-transform duration-200 hover:scale-105"
                 >
                   <Link to="/login">Subscribe</Link>
                 </Button>

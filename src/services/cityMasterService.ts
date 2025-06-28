@@ -37,6 +37,7 @@ export const getAllCities = async (
 export const getCitiesList = async (): Promise<City[]> => {
   try {
     const response = await get<PaginatedCitiesResponse>(API_BASE_URL, { limit: 1000 }); // Fetch a large number to get all cities
+    console.log("Response returned ", response)
     return response.cities;
   } catch (error) {
     console.error('Failed to fetch cities list:', error);

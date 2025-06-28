@@ -44,12 +44,12 @@ const LocationMasterForm: React.FC<LocationMasterFormProps> = ({ initialData, on
   useEffect(() => {
     const fetchDependencies = async () => {
       try {
-        const [citiesList, agenciesList] = await Promise.all([
+        const [citydata, Agencydata] = await Promise.all([
           getCitiesList(),
           getAgenciesList(),
         ]);
-        setCities(citiesList);
-        setAgencies(agenciesList);
+        setCities(citydata);
+        setAgencies(Agencydata);
       } catch (error) {
         toast.error('Failed to fetch cities or agencies');
       }
@@ -99,7 +99,7 @@ const LocationMasterForm: React.FC<LocationMasterFormProps> = ({ initialData, on
           <SelectTrigger>
             <SelectValue placeholder="Select a city" />
           </SelectTrigger>
-          <SelectContent>
+           <SelectContent>
             {cities.map(city => (
               <SelectItem key={city.id} value={city.id.toString()}>{city.name}</SelectItem>
             ))}

@@ -25,7 +25,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { appName } from "@/config";
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import {
   Collapsible,
   CollapsibleTrigger,
@@ -432,52 +432,52 @@ export function AppSidebar(props: AppSidebarProps) {
   }, {} as Record<string, typeof data.projects>);
 
   return (
-    <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>
+    <Sidebar collapsible="icon" {...props} className="bg-[#1d398d] border-r border-[#1d398d]/80">
+      <SidebarHeader className="border-b border-[#1d398d]/30 bg-[#1d398d]">
         <SidebarMenu className="flex">
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              className="data-[slot=sidebar-menu-button]:!p-1.5 hover:bg-gray-500"
+              className="data-[slot=sidebar-menu-button]:!p-2 hover:bg-white/10 transition-colors rounded-lg"
             >
               <div className="flex items-center gap-2 justify-between">
-                <a href="/" className="flex items-center gap-2">
-                  <ArrowUpCircleIcon className="h-5 w-5 hover:text-gray-200" />
-                  <span className="text-base font-semibold text-gray-200">
+                <Link to="/" className="flex items-center gap-2">
+                  <ArrowUpCircleIcon className="h-5 w-5 text-white" />
+                  <span className="text-sm font-medium text-white">
                     {appName}
                   </span>
-                </a>
+                </Link>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent className="space-y-1 overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <SidebarContent className="space-y-1 overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden bg-[#1d398d]">
         {data.isOB && (
           <div className="mb-4">
-            <div className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+            <div className="px-3 py-2 text-xs font-medium text-blue-200 border-b border-[#1d398d]/30 mb-2">
               Office Bearer Menu
             </div>
             {data.obNav.map((navGroup) => (
-              <div key={navGroup.title} className="mb-2">
-                <div className="px-4 py-2 text-sm font-medium  flex items-center gap-2">
-                  <navGroup.icon className="h-4 w-4 " />
+              <div key={navGroup.title} className="mb-3">
+                <div className="px-3 py-2 text-sm font-medium text-blue-200 flex items-center gap-2">
+                  <navGroup.icon className="h-4 w-4 text-blue-300" />
                   {navGroup.title}
                 </div>
-                <div className="ml-2 border-l border-gray-200 pl-3">
+                <div className="ml-6">
                   {navGroup.items?.map((item) => (
-                    <a
+                    <Link
                       key={item.url}
-                      href={item.url}
+                      to={item.url}
                       className={cn(
-                        "block w-full px-3 py-2 text-sm rounded transition-colors",
+                        "block w-full px-3 py-2 text-sm transition-colors",
                         pathname === item.url
-                          ? "bg-primary text-primary-foreground"
-                          : "text-gray-700 hover:bg-gray-600"
+                          ? "bg-white text-[#1d398d] rounded-md font-medium shadow-sm"
+                          : "text-blue-100 hover:bg-white/15 hover:text-white rounded-md"
                       )}
                     >
                       {item.title}
-                    </a>
+                    </Link>
                   ))}
                 </div>
               </div>
@@ -486,7 +486,7 @@ export function AppSidebar(props: AppSidebarProps) {
         )}
 
         {/* Grouped navigation items */}
-        <div className="space-y-4">
+        <div className="space-y-2">
           {Object.entries(groupedItems).map(([groupLabel, items]) => (
             <div key={groupLabel} className="mb-2">
               <Collapsible
@@ -494,45 +494,45 @@ export function AppSidebar(props: AppSidebarProps) {
                 onOpenChange={() => toggleGroup(groupLabel)}
               >
                 <CollapsibleTrigger className="w-full">
-                  <div className="px-4 py-2 flex items-center justify-between text-sm font-medium  hover:bg-gray-600 rounded cursor-pointer transition-colors">
+                  <div className="px-3 py-2 flex items-center justify-between text-sm font-medium text-blue-200 hover:bg-white/10 cursor-pointer transition-colors rounded-md">
                     <div className="flex items-center gap-2">
                       <ChevronDown
-                        className={`h-4 w-4 transition-transform ${
+                        className={`h-4 w-4 transition-transform text-blue-300 ${
                           openGroups[groupLabel] ? "rotate-0" : "-rotate-90"
                         }`}
                       />
                       <span>{groupLabel}</span>
                     </div>
-                    {/* <span className="text-xs  text-gray-700 bg-white px-2 py-1 rounded-full">
+                    <span className="text-xs text-blue-100 bg-white/20 px-2 py-1 rounded-full font-medium">
                       {items.length}
-                    </span> */}
+                    </span>
                   </div>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                  <div className="ml-2 border-l border-gray-200 pl-3 mt-1">
+                  <div className="ml-6 mt-1">
                     {items.map((item) => (
-                      <a
+                      <Link
                         key={item.url}
-                        href={item.url}
+                        to={item.url}
                         className={cn(
-                          "flex items-center gap-3 px-3 py-2 text-sm rounded transition-colors",
+                          "flex items-center gap-2 px-3 py-2 text-sm transition-colors",
                           pathname === item.url
-                            ? "bg-primary text-primary-foreground"
-                            : "text-gray-500 hover:bg-[#3F5BA9] hover:text-white"
+                            ? "bg-white text-[#1d398d] rounded-md font-medium shadow-sm"
+                            : "text-blue-100 hover:bg-white/15 hover:text-white rounded-md"
                         )}
                       >
                         {item.icon && (
                           <item.icon
                             className={cn(
-                              "h-4 w-4 flex-shrink-0 hover:text-white",
+                              "h-4 w-4 flex-shrink-0",
                               pathname === item.url
-                                ? "text-primary-foreground hover:text-white"
-                                : "text-gray-500 hover:text-white"
+                                ? "text-[#1d398d]"
+                                : "text-blue-200"
                             )}
                           />
                         )}
                         <span>{item.title}</span>
-                      </a>
+                      </Link>
                     ))}
                   </div>
                 </CollapsibleContent>
@@ -544,37 +544,37 @@ export function AppSidebar(props: AppSidebarProps) {
         {/* Additional navigation groups */}
         {data.navMain.length > 0 && (
           <>
-            <div className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 mt-6">
+            <div className="px-3 py-2 text-xs font-medium text-blue-200 border-b border-[#1d398d]/30 mt-4 mb-2">
               Management
             </div>
             {data.navMain.map((item) => (
-              <a
+              <Link
                 key={item.url}
-                href={item.url}
+                to={item.url}
                 className={cn(
-                  "flex items-center gap-3 w-full px-4 py-2 text-sm rounded transition-colors",
+                  "flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors",
                   pathname === item.url
-                    ? "bg-primary text-primary-foreground hover:text-white"
-                    : "text-gray-700 hover:bg-[#3F5BA9] hover:text-white"
+                    ? "bg-white text-[#1d398d] rounded-md font-medium shadow-sm"
+                    : "text-blue-100 hover:bg-white/15 hover:text-white rounded-md"
                 )}
               >
                 {item.icon && (
                   <item.icon
                     className={cn(
-                      "h-4 w-4 hover:text-white",
+                      "h-4 w-4",
                       pathname === item.url
-                        ? "text-primary-foreground hover:text-white"
-                        : "text-gray-500 hover:text-white"
+                        ? "text-[#1d398d]"
+                        : "text-blue-200"
                     )}
                   />
                 )}
                 <span>{item.title}</span>
-              </a>
+              </Link>
             ))}
           </>
         )}
       </SidebarContent>
-      <SidebarFooter className="border-t border-gray-200">
+      <SidebarFooter className="border-t border-[#1d398d]/30 bg-[#1d398d]">
         <NavUser user={data.user} />
       </SidebarFooter>
       <SidebarRail />

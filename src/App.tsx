@@ -95,7 +95,9 @@ const App = () => {
       <Router>
         <Routes>
           {/* Landing page */}
-           <Route path="/products/:id" element={<ProductDetailWrapper />} />
+          <Route path="/" element={<LandingPage />}>
+            <Route path="products/:id" element={<ProductDetailWrapper />} />
+          </Route>
           
           {/* Auth routes with minimal layout */}
           <Route element={<AuthLayout />}>

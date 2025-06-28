@@ -3,12 +3,12 @@ import { Leaf, Heart, Users, MapPin, Phone, MessageCircle } from "lucide-react"
 
 const AboutUsPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50">
+    <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-red-50">
       {/* Hero Section */}
       <div className="container mx-auto px-4 py-8 md:py-12 lg:py-16">
         <div className="max-w-6xl mx-auto">
           {/* Main Card */}
-          <div className="bg-white/80 backdrop-blur-sm p-8 md:p-12 shadow-2xl rounded-3xl border border-green-100 relative overflow-hidden">
+          <div className="bg-white/80 backdrop-blur-sm p-8 md:p-12 shadow-2xl rounded-3xl border border-red-100 relative overflow-hidden">
             {/* Decorative Elements */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-200 to-green-300 rounded-full -translate-y-16 translate-x-16 opacity-20"></div>
             <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-green-300 to-green-400 rounded-full translate-y-12 -translate-x-12 opacity-20"></div>
@@ -16,14 +16,14 @@ const AboutUsPage: React.FC = () => {
             {/* Header */}
             <div className="text-center mb-12 relative z-10">
               <div className="flex justify-center mb-4">
-                <div className="p-3 bg-gradient-to-r from-green-600 to-green-700 rounded-full shadow-lg">
+                <div className="p-3 bg-gradient-to-r from-red-600 to-red-700 rounded-full shadow-lg">
                   <Leaf className="w-8 h-8 text-white" />
                 </div>
               </div>
-              <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-green-700 via-green-600 to-green-800 bg-clip-text text-transparent mb-4 tracking-wide">
+                            <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-red-700 via-red-600 to-red-800 bg-clip-text text-transparent mb-4 tracking-wide">
                 ABOUT US
               </h1>
-              <div className="w-24 h-1 bg-gradient-to-r from-green-600 to-green-700 mx-auto mb-6 rounded-full"></div>
+              <div className="w-24 h-1 bg-gradient-to-r from-red-600 to-red-700 mx-auto mb-6 rounded-full"></div>
               <h2 className="text-lg md:text-xl font-medium text-gray-600 tracking-wider">
                 🙏 NAMASTE, WELCOME TO SARKHOT NATURAL FARMS FAMILY
               </h2>
@@ -32,19 +32,20 @@ const AboutUsPage: React.FC = () => {
             {/* Content Sections */}
             <div className="space-y-8 relative z-10">
               {/* Mission Section */}
-              <div className="bg-gradient-to-r from-green-50 to-green-100 p-6 md:p-8 rounded-2xl border-l-4 border-green-600">
+              <div className="bg-gradient-to-r from-red-50 to-red-100 p-6 md:p-8 rounded-2xl border-l-4 border-red-600">
                 <div className="flex items-start gap-4">
-                  <div className="p-2 bg-green-600 rounded-lg flex-shrink-0 mt-1">
+                  <div className="p-2 bg-red-600 rounded-lg flex-shrink-0 mt-1">
                     <Heart className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold text-green-800 mb-3">Our Mission</h3>
+                    <h3 className="text-xl font-semibold text-black mb-3">Our Mission</h3>
                     <p className="text-gray-700 text-base md:text-lg leading-relaxed">
-                      Sarkhot Natural farms denote the community of natural farmers. Natural means{" "}
-                      <span className="font-bold text-red-600 bg-red-50 px-2 py-1 rounded-md">100%</span> chemical free,
-                      preservative free and poison free. Only cow dung and cow urine based homemade preparations are
-                      used by farmers in cultivation. This means you get the same produce / products that your
-                      grandparents once ate.
+                      Sarkhot Natural farms is an exclusive one-stop store of only Naturally grown farm produce.
+                      Natural means 100% chemical free, preservative free and poison free. Only Desi cow dung and cow urine based homemade preparations are used by us and our community of farmers in cultivation. This means you get the same produce / products that your grandparents once ate.
+
+                      Our farm, Sarkhot Farm is located at Kambe village, Shahpur district, Maharashtra, where we practice Natural Farming. Thus, along with our 'Kambe Farm produce', we also procure from Natural farmers across India.
+
+                      Our farmers come from different background and are followers of different farming and spiritual gurus. While most of them follow Dr Subhash Palekar Natural Farming method, they are also influenced by teachings of Shri Rajiv Dixit, Varkari community, Tribal teachings and this in a whole inspires the Natural farming movement in its cause of providing Nutritional food devoid of any harmful chemicals.
                     </p>
                   </div>
                 </div>
