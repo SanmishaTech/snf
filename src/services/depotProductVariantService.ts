@@ -18,6 +18,7 @@ export interface DepotProductVariant {
   depot?: { id: number; name: string };
   notInStock: boolean;
   isHidden: boolean;
+  buyOncePrice?: number;
   createdAt?: string;
   updatedAt?: string;
 }

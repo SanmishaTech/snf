@@ -8,7 +8,10 @@ import {
   updateDepotProductVariant,
 } from '../../services/depotProductVariantService';
 import { getProductOptions } from '../../services/productService';
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
+
+import {
+  Select, SelectTrigger, SelectContent, SelectItem, SelectValue
+} from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,6 +32,7 @@ const formSchema = z.object({
   price1Month: z.coerce.number({ invalid_type_error: '1-month price must be a number' }).nonnegative().optional(),
   notInStock: z.boolean().default(false),
   isHidden: z.boolean().default(false),
+  buyOncePrice: z.coerce.number().nonnegative().optional(),
 });
 
 export type DepotVariantFormData = z.infer<typeof formSchema>;
@@ -63,6 +67,7 @@ const DepotProductVariantForm: React.FC<Props> = ({ initialData, onClose, onSucc
       price15Day: initialData?.price15Day ?? 0,
       price1Month: initialData?.price1Month ?? 0,
       isHidden: initialData?.isHidden || false,
+      buyOncePrice: initialData?.buyOncePrice ?? 0,
     },
   });
 
@@ -93,6 +98,7 @@ const DepotProductVariantForm: React.FC<Props> = ({ initialData, onClose, onSucc
         price7Day: initialData.price7Day ?? 0,
         price15Day: initialData.price15Day ?? 0,
         price1Month: initialData.price1Month ?? 0,
+        buyOncePrice: initialData.buyOncePrice ?? 0,
       });
     }
   }, [initialData, reset]);
@@ -181,6 +187,18 @@ const DepotProductVariantForm: React.FC<Props> = ({ initialData, onClose, onSucc
           <Label htmlFor="price1Month">Price – 1 Month</Label>
           <Input type="number" step="0.01" id="price1Month" {...register('price1Month')} />
         </div>
+      </div>
+
+      <div className="grid gap-2">
+        <Label htmlFor="buyOncePrice">Buy Once Price</Label>
+        <Input
+          id="buyOncePrice"
+          type="number"
+          {...register('buyOncePrice')}
+        />
+        {errors.buyOncePrice && (
+          <p className="text-sm text-red-500">{errors.buyOncePrice.message}</p>
+        )}
       </div>
 
       <div className="flex items-center space-x-2">

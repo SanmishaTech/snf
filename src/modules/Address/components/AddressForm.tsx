@@ -19,6 +19,13 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export interface DeliveryAddress {
   id: string;
@@ -49,9 +56,15 @@ const addressSchema = z.object({
   state: z.string().min(1, 'State is required'),
   isDefault: z.boolean().default(false),
   label: z.enum(['Home', 'Work', 'Other']).optional().default('Home'),
+  locationId: z.string().optional(),
 });
 
 type AddressFormData = z.infer<typeof addressSchema>;
+
+interface Location {
+  id: number;
+  name: string;
+}
 
 interface AddressFormProps {
   mode: 'create' | 'edit';
@@ -59,6 +72,8 @@ interface AddressFormProps {
   initialData?: DeliveryAddress;
   onSuccess?: (data: DeliveryAddress) => void;
   onCancel?: () => void; // Added for modal integration
+  depotId?: number;
+  locations?: Location[];
 }
 
 const AddressForm: React.FC<AddressFormProps> = ({
@@ -67,6 +82,8 @@ const AddressForm: React.FC<AddressFormProps> = ({
   initialData,
   onSuccess,
   onCancel, // Added for modal integration
+  depotId,
+  locations,
 }) => {
   const navigate = useNavigate();
   const isEditMode = mode === 'edit';
@@ -108,7 +125,8 @@ const AddressForm: React.FC<AddressFormProps> = ({
         response = await apiService.put(`/delivery-addresses/${addressId}`, data);
         toast.success('Address updated successfully');
       } else {
-        response = await apiService.post('/delivery-addresses', data);
+        const payload = { ...data, depotId };
+        response = await apiService.post('/delivery-addresses', payload);
         toast.success('Address created successfully');
       }
       
@@ -238,6 +256,33 @@ const AddressForm: React.FC<AddressFormProps> = ({
                 </FormItem>
               )}
             />
+
+            {locations && locations.length > 0 && (
+              <FormField
+                control={form.control}
+                name="locationId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Location*</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a location" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {locations.map(location => (
+                          <SelectItem key={location.id} value={String(location.id)}>
+                            {location.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <FormField

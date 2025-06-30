@@ -3,20 +3,24 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Plus, Minus, MapPin, X } from "lucide-react";
-import { format, addDays } from 'date-fns'; // For date formatting in summary
-import { DialogClose } from "@/components/ui/dialog"; // For explicit close button
+import { format, addDays } from 'date-fns';
+import { DialogClose } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { get } from "@/services/apiService";
+import { get, post } from "@/services/apiService";
 import { toast } from "sonner";
-import AddressForm  from "@/modules/Address/components/AddressForm"; 
-import { formatDate }from "@/lib/formatter"
+import AddressForm from "@/modules/Address/components/AddressForm";
+import { formatDate } from "@/lib/formatter";
 
 interface ProductData {
   id: number;
   name: string;
   price: number;
   rate: number;
-  unit?: string; // Added to display unit with quantity
+  unit?: string;
+  depotVariantPricing?: {
+    buyOncePrice: number;
+    subscriptionPrice: number;
+  };
 }
 
 interface AddressData {
@@ -30,7 +34,7 @@ interface AddressData {
   city: string;
   state: string;
   isDefault?: boolean;
-  label: string;         // Address label (Home, Work, Other)
+  label?: string;
 }
 
 interface BuyOnceModalProps {
@@ -38,14 +42,7 @@ interface BuyOnceModalProps {
   onOpenChange: (isOpen: boolean) => void;
   product: ProductData | null | undefined;
   productId: string | undefined;
-  onBuyOnceConfirm: (details: { 
-    productId: string | undefined;
-    quantity: number;
-    selectedDate: Date | undefined;
-    selectedAddress: string; // Address ID for delivery
-    walletDeduction: number; // Amount to deduct from wallet
-    payableAmount: number;   // Amount to be paid in cash/upi
-  }) => void;
+
 }
 
 const getAddressLabelText = (label: string) => {
@@ -62,68 +59,58 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
   onOpenChange,
   product,
   productId,
-  onBuyOnceConfirm,
 }) => {
   const [quantity, setQuantity] = useState(1);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(addDays(new Date(), 1));
-  
-  // Address selection states
+
   const [userAddresses, setUserAddresses] = useState<AddressData[]>([]);
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [showAddressFormView, setShowAddressFormView] = useState(false);
 
-  // Wallet balance state
   const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [buyOncePrice, setBuyOncePrice] = useState<number>(0);
+  const [isLoadingPrice, setIsLoadingPrice] = useState(false);
 
-  // Fetch wallet balance when modal opens
+  const getBuyOncePrice = () => {
+    return product?.depotVariantPricing?.buyOncePrice || product?.price || product?.rate || 0;
+  };
+
+  useEffect(() => {
+    const fetchBuyOncePrice = async () => {
+      if (!isOpen || !productId) return;
+      setIsLoadingPrice(true);
+      try {
+        const response = await get(`/api/products/${productId}/depot-variant-pricing`);
+        setBuyOncePrice(response?.buyOncePrice || getBuyOncePrice());
+      } catch (err) {
+        console.error('Failed to fetch depot variant pricing, using default:', err);
+        setBuyOncePrice(getBuyOncePrice());
+      } finally {
+        setIsLoadingPrice(false);
+      }
+    };
+    fetchBuyOncePrice();
+  }, [isOpen, productId, product]);
+
   useEffect(() => {
     const fetchWalletBalance = async () => {
+      if (!isOpen) return;
       try {
         const resp = await get('/api/wallet/balance');
-        let balance = 0;
-        if (typeof resp === 'number') {
-          balance = resp;
-        } else if (resp && typeof resp.balance === 'number') {
-          balance = resp.balance;
-        } else if (resp && resp.data && typeof resp.data.balance === 'number') {
-          balance = resp.data.balance;
-        }
-        setWalletBalance(balance);
+        setWalletBalance(resp?.balance || 0);
       } catch (err) {
         console.error('Failed to fetch wallet balance', err);
       }
     };
-
-    if (isOpen) {
-      fetchWalletBalance();
-    }
+    fetchWalletBalance();
   }, [isOpen]);
 
-  // Fetch user addresses when modal opens (restored)
-  useEffect(() => {
-    if (isOpen) {
-      fetchUserAddresses();
-    }
-  }, [isOpen]);
-
-  // Helper to format date to YYYY-MM-DD for input[type="date"]
-  const formatDateForInput = (date: Date | undefined): string => {
-    if (!date) return '';
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  // Function to fetch user addresses
   const fetchUserAddresses = async () => {
     setIsLoadingAddresses(true);
     try {
       const response = await get('/delivery-addresses');
       setUserAddresses(response || []);
-      
-      // Auto-select default address if available
       const defaultAddress = response?.find((addr: AddressData) => addr.isDefault);
       if (defaultAddress) {
         setSelectedAddressId(defaultAddress.id);
@@ -138,40 +125,55 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
     }
   };
 
-  // Derived pricing calculations
-  const productTotal = useMemo(() => quantity * (product?.rate || 0), [quantity, product]);
+  useEffect(() => {
+    if (isOpen) {
+      fetchUserAddresses();
+    }
+  }, [isOpen]);
+
+  const formatDateForInput = (date: Date | undefined): string => {
+    if (!date) return '';
+    return format(date, 'yyyy-MM-dd');
+  };
+
+  const productTotal = useMemo(() => quantity * buyOncePrice, [quantity, buyOncePrice]);
   const walletDeduction = useMemo(() => Math.min(walletBalance || 0, productTotal), [walletBalance, productTotal]);
   const payableAmount = useMemo(() => productTotal - walletDeduction, [productTotal, walletDeduction]);
 
-  const handleConfirm = () => {
-    if (!selectedDate) {
-      toast.error("Please select a delivery date.");
+  const handleConfirm = async () => {
+    if (!selectedDate || !selectedAddressId || !productId) {
+      toast.error("Please select a delivery date and address.");
       return;
     }
 
-    if (!selectedAddressId) {
-      toast.error("Please select a delivery address.");
-      return;
+    const payload = {
+      subscriptions: [
+        {
+          productId: productId,
+          period: 1, // This signifies a "buy once" order
+          startDate: selectedDate.toISOString(),
+          deliverySchedule: 'DAILY', // Single delivery
+          qty: quantity,
+        },
+      ],
+      deliveryAddressId: selectedAddressId,
+      walletamt: walletDeduction,
+    };
+
+    try {
+      await post('/api/product-orders/with-subscriptions', payload);
+      toast.success("Order placed successfully!");
+      onOpenChange(false);
+    } catch (error: any) {
+      console.error("Failed to place order:", error);
+      toast.error(error?.response?.data?.message || "Failed to place order. Please try again.");
     }
-    
-    onBuyOnceConfirm({
-      productId,
-      quantity,
-      selectedDate,
-      selectedAddress: selectedAddressId,
-      walletDeduction,
-      payableAmount,
-    });
-    
-    onOpenChange(false);
-    setSelectedDate(new Date()); 
-    setQuantity(1);
   };
 
   const handleAddressSaveSuccess = (newAddress: AddressData) => {
-    fetchUserAddresses(); // Refresh the list
-    setSelectedAddressId(newAddress.id); // Optionally auto-select the new address
-    setShowAddressFormView(false); // Switch back to the main view
+    fetchUserAddresses();
+    setSelectedAddressId(newAddress.id);
+    setShowAddressFormView(false);
     toast.success("Address added successfully!");
   };
 
@@ -189,17 +191,22 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
           </DialogTitle>
           {!showAddressFormView && product && (
             <div className="mt-1 text-right">
-              <p className="text-xs text-gray-500">MRP:</p>
-              <p className="text-md font-semibold">₹{product.rate}</p>
+              <p className="text-xs text-gray-500">Buy Once Price:</p>
+              {isLoadingPrice ? (
+                <p className="text-md font-semibold">Loading...</p>
+              ) : (
+                <p className="text-md font-semibold">₹{buyOncePrice.toFixed(2)}</p>
+              )}
             </div>
           )}
         </DialogHeader>
 
         <div className="p-6 grid gap-6 overflow-y-auto flex-grow pb-8">
           {showAddressFormView ? (
-            <AddressForm 
-              onSuccess={handleAddressSaveSuccess} 
-              onCancel={() => setShowAddressFormView(false)} 
+            <AddressForm
+              mode="create"
+              onSuccess={handleAddressSaveSuccess}
+              onCancel={() => setShowAddressFormView(false)}
             />
           ) : (
             <>
@@ -304,18 +311,18 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
               </div>
 
             {/* Integrated Order Summary Section */}
-            <div className="mt-6 pt-4 border-t border-gray-200 space-y-2">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Product:</span>
-                <span className="text-sm font-medium text-gray-800">{product?.name}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Quantity:</span>
-                <span className="text-sm font-medium text-gray-800">{quantity} {product?.unit || ''}</span>
-              </div>
-              <div className="flex justify-between">
+          <div className="mt-6 pt-4 border-t border-gray-200 space-y-2">
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">Product:</span>
+              <span className="text-sm font-medium text-gray-800">{product?.name}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">Quantity:</span>
+              <span className="text-sm font-medium text-gray-800">{quantity} {product?.unit || ''}</span>
+            </div>
+            <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Price per unit:</span>
-                <span className="text-sm font-medium text-gray-800">₹{product?.rate?.toFixed(2)}</span>
+                <span className="text-sm font-medium text-gray-800">₹{productTotal.toFixed(2)}</span>
               </div>
              
               <div className="flex justify-between">
@@ -331,7 +338,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                     const addr = userAddresses.find(ad => ad.id === selectedAddressId)!;
                     return (
                       <span className="text-sm font-medium text-gray-800 text-right max-w-[65%]">
-                        {getAddressLabelText(addr.label)}: {addr.plotBuilding}, {addr.streetArea}, {addr.city} - {addr.pincode}
+                        {addr.label ? `${getAddressLabelText(addr.label)}: ` : ''}{addr.plotBuilding}, {addr.streetArea}, {addr.city} - {addr.pincode}
                       </span>
                     );
                   })()

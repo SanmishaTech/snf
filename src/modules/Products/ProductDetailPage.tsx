@@ -478,6 +478,7 @@ const ProductDetailPage: React.FC = () => {
         <BuyOnceModal
           isOpen={isBuyOnceModalOpen}
           onOpenChange={setIsBuyOnceModalOpen}
+          selectedDepot={selectedDepot}
           product={product}
           productId={productId}
           onBuyOnceConfirm={handleBuyOnceConfirm}

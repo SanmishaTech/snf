@@ -116,7 +116,7 @@ const daysOfWeek = [
 
 const subscriptionPeriods = [
   { value: 3, label: "3 Days (Trial Pack)" },
-  { value: 7, label: "7 Days (Regular Pack)" },
+  // { value: 7, label: "7 Days (Regular Pack)" },
   { value: 15, label: "15 Days (Mid Saver Pack)" },
   { value: 30, label: "30 Days (Super Saver Pack)" },
 ] as const;
