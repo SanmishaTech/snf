@@ -12,7 +12,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { get, post, put } from "@/services/apiService";
 import { toast } from "sonner";
 import { format, addDays } from "date-fns";
-import { LoaderCircle, CalendarIcon, Plus, Trash2, Package, Truck, ShoppingCart, Save, PackageSearch, ListOrdered } from "lucide-react";
+import { LoaderCircle, CalendarIcon, Plus, Trash2, Package, Truck, ShoppingCart, Save, PackageSearch, ListOrdered, ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {Textarea } from "@/components/ui/textarea"
 import {Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -28,9 +28,12 @@ const orderSchema = z.object({
   vendorId: z.string().min(1, "Vendor is required"),
   notes: z.string().optional(),
   orderItems: z.array(z.object({
+    depotId: z.string().min(1, "Depot is required"),
+    agencyId: z.string().min(1, "Agency is required"),
     productId: z.string().min(1, "Product is required"),
+    depotVariantId: z.string().min(1, "Depot variant is required"),
     quantity: z.number().min(1, "Quantity must be at least 1"),
-    agencyId: z.string().min(1, "Agency is required for each product"), // Simplified: 1 agency per product item
+    variantUnit: z.string().optional(),
   })).min(1, "At least one product item is required"),
 });
 
@@ -60,6 +63,16 @@ interface Vendor {
 }
 
 interface Agency {
+  id: string;
+  name: string;
+}
+
+interface Depot {
+  id: string;
+  name: string;
+}
+
+interface DepotVariant {
   id: string;
   name: string;
 }
@@ -176,10 +189,26 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [agencies, setAgencies] = useState<Agency[]>([]);
+  const [depots, setDepots] = useState<Depot[]>([]);
+  const [depotVariants, setDepotVariants] = useState<DepotVariant[]>([]);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [orderTotal, setordertotal] = useState()
   const [isFetchingPrefill, setIsFetchingPrefill] = useState<boolean>(false);
+  const [isOrderSummaryExpanded, setIsOrderSummaryExpanded] = useState<boolean>(true);
+  const [expandedProducts, setExpandedProducts] = useState<Record<string, boolean>>({});
   const navigate = useNavigate()
+
+  // Basic toggle functions for collapsible sections
+  const toggleOrderSummary = () => {
+    setIsOrderSummaryExpanded(!isOrderSummaryExpanded);
+  };
+
+  const toggleProductExpansion = (productId: string) => {
+    setExpandedProducts(prev => ({
+      ...prev,
+      [productId]: !prev[productId]
+    }));
+  };
 
   const { 
     register, 
@@ -197,6 +226,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
       // Initialize other fields based on mode and initialData
       orderDate: (mode === 'edit' && initialData?.orderDate) ? new Date(initialData.orderDate) : new Date(),
       deliveryDate: (mode === 'edit' && initialData?.deliveryDate) ? new Date(initialData.deliveryDate) : addDays(new Date(), 1),
+      receivedById: (mode === 'edit' && initialData?.receivedById) ? initialData.receivedById : '',
       contactPersonName: (mode === 'edit' && initialData?.contactPersonName) ? initialData.contactPersonName : '',
       vendorId: (mode === 'edit' && initialData?.vendorId) ? initialData.vendorId : '',
       notes: (mode === 'edit' && initialData?.notes) ? initialData.notes : '',
@@ -204,9 +234,11 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
         ? initialData.orderItems.map(item => ({
             productId: String(item?.productId || ''),
             quantity: Number(item?.quantity || 1),
-            agencyId: String(item?.agencyId || '')
+            agencyId: String(item?.agencyId || ''),
+            depotId: String(item?.depotId || ''),
+            depotVariantId: String(item?.depotVariantId || '')
           }))
-        : [{ productId: "", quantity: 1, agencyId: "" }],
+        : [{ productId: "", quantity: 1, agencyId: "", depotId: "", depotVariantId: "" }],
     },
     mode: "onChange", // Changed to onChange for more responsive validation feedback
   });
@@ -215,9 +247,27 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
   const watchedOrderItemsString = JSON.stringify(watchedOrderItems); // Stringify for dependency
   const watchedDeliveryDate = watch('deliveryDate');
 
+  // Enhanced grouped product summary with variant details
   const groupedProductSummary = React.useMemo(() => {
     console.log("[OrderForm] Recalculating groupedProductSummary. Watched items (stringified for dep):", watchedOrderItemsString, "Product count:", products.length);
-    const summary: { [productId: string]: { name: string; totalQuantity: number; unit?: string } } = {};
+    const summary: { 
+      [productId: string]: { 
+        name: string; 
+        totalQuantity: number; 
+        unit?: string;
+        price?: number;
+        totalPrice?: number;
+        variants: {
+          [variantId: string]: {
+            name: string;
+            quantity: number;
+            agencies: string[];
+            depots: string[];
+          }
+        }
+      } 
+    } = {};
+    
     if (!watchedOrderItems || watchedOrderItems.length === 0 || !products || products.length === 0) {
       return summary;
     }
@@ -228,21 +278,78 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
       }
 
       const product = products.find(p => String(p.id) === item.productId);
+      const variant = depotVariants.find(v => String(v.id) === item.depotVariantId);
+      const agency = agencies.find(a => String(a.id) === item.agencyId);
+      const depot = depots.find(d => String(d.id) === item.depotId);
+      
       if (product) {
-        if (summary[item.productId]) {
-          summary[item.productId].totalQuantity += Number(item.quantity);
-        } else {
+        const productPrice = Number(product.price) || 0;
+        const itemQuantity = Number(item.quantity);
+        
+        if (!summary[item.productId]) {
           summary[item.productId] = {
             name: product.name,
-            totalQuantity: Number(item.quantity),
+            totalQuantity: 0,
             unit: product.unit,
+            price: productPrice,
+            totalPrice: 0,
+            variants: {}
           };
+        }
+        
+        summary[item.productId].totalQuantity += itemQuantity;
+        summary[item.productId].totalPrice = (summary[item.productId].totalPrice || 0) + (productPrice * itemQuantity);
+        
+        // Handle variants
+        if (variant && item.depotVariantId) {
+          if (!summary[item.productId].variants[item.depotVariantId]) {
+            summary[item.productId].variants[item.depotVariantId] = {
+              name: variant.name,
+              quantity: 0,
+              agencies: [],
+              depots: []
+            };
+          }
+          
+          summary[item.productId].variants[item.depotVariantId].quantity += itemQuantity;
+          
+          // Add unique agencies and depots
+          if (agency && !summary[item.productId].variants[item.depotVariantId].agencies.includes(agency.name)) {
+            summary[item.productId].variants[item.depotVariantId].agencies.push(agency.name);
+          }
+          if (depot && !summary[item.productId].variants[item.depotVariantId].depots.includes(depot.name)) {
+            summary[item.productId].variants[item.depotVariantId].depots.push(depot.name);
+          }
         }
       }
     });
-    console.log("[OrderForm] groupedProductSummary result:", JSON.parse(JSON.stringify(summary)));
+    
+    console.log("[OrderForm] Enhanced groupedProductSummary result:", JSON.parse(JSON.stringify(summary)));
     return summary;
-  }, [watchedOrderItemsString, products]); // Use stringified version in dependency
+  }, [watchedOrderItemsString, products, depotVariants, agencies, depots]); // Use stringified version in dependency
+
+  // Expand/Collapse all products functions - defined after groupedProductSummary
+  const expandAllProducts = () => {
+    const newExpandedState: Record<string, boolean> = {};
+    Object.keys(groupedProductSummary).forEach(productId => {
+      newExpandedState[productId] = true;
+    });
+    setExpandedProducts(newExpandedState);
+  };
+
+  const collapseAllProducts = () => {
+    const newExpandedState: Record<string, boolean> = {};
+    Object.keys(groupedProductSummary).forEach(productId => {
+      newExpandedState[productId] = false;
+    });
+    setExpandedProducts(newExpandedState);
+  };
+
+  // Check if all products are expanded or collapsed
+  const allProductsExpanded = Object.keys(groupedProductSummary).length > 0 && 
+    Object.keys(groupedProductSummary).every(productId => expandedProducts[productId] !== false);
+  const allProductsCollapsed = Object.keys(groupedProductSummary).length > 0 && 
+    Object.keys(groupedProductSummary).every(productId => expandedProducts[productId] === false);
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -296,7 +403,9 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
             ...item,
             productId: String(item?.productId || ''),
             quantity: Number(item?.quantity || 1),
-            agencyId: String(item?.agencyId || '')
+            agencyId: String(item?.agencyId || ''),
+            depotId: String(item?.depotId || ''),
+            depotVariantId: String(item?.depotVariantId || '')
           }));
 
           // Optional: Check if products for these items actually exist in the fetched list
@@ -309,7 +418,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
             // Consider filtering itemsToSet here if products must exist, or provide feedback
           }
           
-          setValue("orderItems", itemsToSet as { productId: string; quantity: number; agencyId: string; }[]);
+          setValue("orderItems", itemsToSet as { productId: string; quantity: number; agencyId: string; depotId: string; depotVariantId: string; }[]);
           console.log("Order items set in form with:", itemsToSet);
         }
       } catch (error) {
@@ -347,6 +456,56 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
     fetchAgencies();
   }, []);
 
+  useEffect(() => {
+    const fetchDepots = async () => {
+      try {
+        const response = await get("/depots");
+        let depotsData: Depot[] = [];
+        if (response && Array.isArray(response.data)) {
+          depotsData = response.data.map((depot: any) => ({ ...depot, id: String(depot.id) }));
+        } else if (response && Array.isArray(response)) {
+          depotsData = response.map((depot: any) => ({ ...depot, id: String(depot.id) }));
+        }
+        setDepots(depotsData);
+        if (!(depotsData.length > 0)) {
+          setDepots([]);
+          console.warn("Fetched depots data is not an array or is missing:", response);
+          toast.error("Could not load depots.")
+        }
+      } catch (error) {
+        console.error("Error fetching depots:", error);
+        toast.error("Failed to fetch depots.");
+        setDepots([]);
+      }
+    };
+    fetchDepots();
+  }, []);
+
+  useEffect(() => {
+    const fetchDepotVariants = async () => {
+      try {
+        const response = await get("/depot-product-variants");
+        let depotVariantsData: DepotVariant[] = [];
+        if (response && Array.isArray(response.data)) {
+          depotVariantsData = response.data.map((variant: any) => ({ ...variant, id: String(variant.id) }));
+        } else if (response && Array.isArray(response)) {
+          depotVariantsData = response.map((variant: any) => ({ ...variant, id: String(variant.id) }));
+        }
+        setDepotVariants(depotVariantsData);
+        if (!(depotVariantsData.length > 0)) {
+          setDepotVariants([]);
+          console.warn("Fetched depot variants data is not an array or is missing:", response);
+          toast.error("Could not load depot variants.")
+        }
+      } catch (error) {
+        console.error("Error fetching depot variants:", error);
+        toast.error("Failed to fetch depot variants.");
+        setDepotVariants([]);
+      }
+    };
+    fetchDepotVariants();
+  }, []);
+
   // Effect to fetch and prefill order items based on selected deliveryDate
   useEffect(() => {
     if (mode === "create" && watchedDeliveryDate) {
@@ -354,22 +513,25 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
         setIsFetchingPrefill(true);
         try {
           const formattedDate = format(watchedDeliveryDate, "yyyy-MM-dd");
-          // Ensure 'get' is correctly typed or cast the response if necessary
-          const response = await get(`/api/vendor-orders/get-order-details?date=${formattedDate}`);
+          const response = await get(`/vendor-orders/get-order-details?date=${formattedDate}`);
           
-          // Assuming response is the array of items or an object with a data property
           const data = response && response.data && Array.isArray(response.data) ? response.data : response;
 
           if (data && Array.isArray(data) && data.length > 0) {
-            const newOrderItems = data.map((item: any) => ({
-              productId: String(item.productId), // Ensure string ID
-              quantity: Number(item.totalQty),
-              agencyId: String(item.agencyId),   // Ensure string ID
-            }));            
+            const newOrderItems = data.map((item: any) => {
+              const product = products.find(p => p.name === item.productName);
+              return {
+                depotId: String(item.depotId),
+                agencyId: String(item.agencyId),
+                productId: product ? String(product.id) : "",
+                depotVariantId: String(item.depotVariantId),
+                quantity: Number(item.totalQuantity),
+              };
+            });
             setValue("orderItems", newOrderItems, { shouldValidate: true });
             toast.success(`${newOrderItems.length} order items prefilled for ${format(watchedDeliveryDate, "dd/MM/yyyy")}.`);
           } else {
-            setValue("orderItems", [], { shouldValidate: true }); // Clear items if no data found
+            setValue("orderItems", [{ depotId: "", agencyId: "", productId: "", depotVariantId: "", quantity: 1 }], { shouldValidate: true });
             toast.info(`No scheduled order items found for ${format(watchedDeliveryDate, "dd/MM/yyyy")}.`);
           }
         } catch (error: any) {
@@ -449,7 +611,26 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
   });
 
   const onSubmit: SubmitHandler<OrderFormData> = (data) => {
-    mutation.mutate(data);
+    // Prepare the complete order data with all required fields
+    const completeOrderData = {
+      ...data,
+      // Ensure all order items include the collected depot and variant information
+      orderItems: data.orderItems.map((item, index) => {
+        const originalItem = watchedOrderItems[index];
+        return {
+          productId: item.productId,
+          quantity: item.quantity,
+          agencyId: item.agencyId,
+          depotId: originalItem?.depotId || item.depotId || "",
+          depotVariantId: originalItem?.depotVariantId || item.depotVariantId || ""
+        };
+      }),
+      // Include additional order-level data
+      totalAmount: orderTotal || 0
+    };
+    
+    console.log("[OrderForm] Submitting complete order data:", completeOrderData);
+    mutation.mutate(completeOrderData);
   };
 
  
@@ -517,7 +698,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                       />
                     )}
                   />
-                  {errors.orderDate && <span className="text-gray-500 text-xs absolute -bottom-5">{errors.orderDate.message}</span>}
+                  {errors.orderDate && <span className="text-red-500 text-xs absolute -bottom-5">{errors.orderDate.message}</span>}
                 </div>
                 
                 <div className="relative">
@@ -534,7 +715,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                       />
                     )}
                   />
-                  {errors.deliveryDate && <span className="text-gray-500 text-xs absolute -bottom-5">{errors.deliveryDate.message}</span>}
+                  {errors.deliveryDate && <span className="text-red-500 text-xs absolute -bottom-5">{errors.deliveryDate.message}</span>}
                   {/* Prefill loading indicator and info text */}
                   {mode === "create" && (
                     <>
@@ -559,7 +740,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                   rows={3} 
                   className="bg-white/80 dark:bg-gray-900/80 border-gray-300 dark:border-gray-700"
                 />
-                {errors.notes && <span className="text-gray-500 text-xs mt-1">{errors.notes.message}</span>}
+                {errors.notes && <span className="text-red-500 text-xs mt-1">{errors.notes.message}</span>}
               </div>
 
             </div>
@@ -585,7 +766,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                       defaultValue={field.value || ""}
                     >
                       <SelectTrigger className="bg-white dark:bg-gray-700 w-full">
-                        <SelectValue  />
+                        <SelectValue placeholder="Select a vendor" />
                       </SelectTrigger>
                       <SelectContent>
                         {vendors.map((vendor) => (
@@ -595,7 +776,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                     </Select>
                   )}
                 />
-                {errors.vendorId && <span className="text-gray-500 text-xs absolute -bottom-5">{errors.vendorId.message}</span>}
+                {errors.vendorId && <span className="text-red-500 text-xs absolute -bottom-5">{errors.vendorId.message}</span>}
               </div>
               
               <div className="relative">
@@ -606,7 +787,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                   className="bg-white/80 dark:bg-gray-900/80 border-emerald-200 dark:border-emerald-800"
                   {...register("contactPersonName")} 
                 />
-                {errors.contactPersonName && <span className="text-gray-500 text-xs absolute -bottom-5">{errors.contactPersonName.message}</span>}
+                {errors.contactPersonName && <span className="text-red-500 text-xs absolute -bottom-5">{errors.contactPersonName.message}</span>}
               </div>
             </div>
 
@@ -645,6 +826,8 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                     productId: "",
                     quantity: 1,
                     agencyId: "",
+                    depotId: "",
+                    depotVariantId: ""
                   })
                 }
                 className="border-gray-300 mt-4 mb-4 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -669,14 +852,12 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                   <thead className="bg-gray-50 dark:bg-gray-800">
                     <tr>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">#</th>
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Depot</th>
                       <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[150px]">Agency</th>
                       <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[200px]">Product</th>
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Depot Variant</th>
                       <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[80px]">QTY</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[80px]">Unit</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[100px]">Unit Price</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[100px]">Total</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[80px]">Actions</th>
+                       <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[80px]">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
@@ -687,7 +868,24 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
 
                       return (
                         <tr key={itemField.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{index + 1}</td>
+                          <td className="px-4 py-3 whitespace-nowrap min-w-[200px]">
+                            <Controller
+                              control={control}
+                              name={`orderItems.${index}.depotId`}
+                              render={({ field }) => (
+                                <Select onValueChange={field.onChange} value={field.value || ""}>
+                                  <SelectTrigger className="h-9 text-sm bg-white dark:bg-gray-700 min-w-full">
+                                    <SelectValue placeholder="Select Depot" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {depots.map(depot => (
+                                      <SelectItem key={depot.id} value={depot.id}>{depot.name}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            />
+                          </td>
                           <td className="px-4 py-3 whitespace-nowrap min-w-[200px]">
                             <Controller
                               control={control}
@@ -695,7 +893,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                               render={({ field: agencyField }) => (
                                 <Select onValueChange={agencyField.onChange} value={agencyField.value || ""}>
                                   <SelectTrigger className="h-9 text-sm bg-white dark:bg-gray-700 min-w-full">
-                                    <SelectValue  />
+                                    <SelectValue placeholder="Select Agency" />
                                   </SelectTrigger>
                                   <SelectContent>
                                     {agencies.map(agency => (
@@ -705,9 +903,6 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                                 </Select>
                               )}
                             />
-                            {errors.orderItems?.[index]?.agencyId && (
-                              <span className="text-gray-500 text-xs mt-1 block">{errors.orderItems[index]?.agencyId?.message}</span>
-                            )}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap min-w-[200px]">
                             <Controller
@@ -716,21 +911,36 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                               render={({ field: controllerField }) => (
                                 <Select onValueChange={controllerField.onChange} value={controllerField.value || ""}>
                                   <SelectTrigger className="h-9 text-sm bg-white dark:bg-gray-700/50 border-gray-300 dark:border-gray-600 w-full">
-                                    <SelectValue  />
+                                    <SelectValue placeholder="Select Product" />
                                   </SelectTrigger>
                                   <SelectContent>
                                     {products.map((product) => (
                                       <SelectItem key={product.id} value={String(product.id)}>
-                                        {product.name} {product.unit ? `(${product.unit})` : ''}
+                                        {product.name} 
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
                                 </Select>
                               )}
                             />
-                            {errors.orderItems?.[index]?.productId && (
-                              <span className="text-gray-500 text-xs mt-1 block">{errors.orderItems[index]?.productId?.message}</span>
-                            )}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap min-w-[200px]">
+                            <Controller
+                              control={control}
+                              name={`orderItems.${index}.depotVariantId`}
+                              render={({ field }) => (
+                                <Select onValueChange={field.onChange} value={field.value || ""}>
+                                  <SelectTrigger className="h-9 text-sm bg-white dark:bg-gray-700 min-w-full">
+                                    <SelectValue placeholder="Select Depot Variant" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {depotVariants.map(variant => (
+                                      <SelectItem key={variant.id} value={variant.id}>{variant.name}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            />
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap min-w-[100px]">
                             <Input
@@ -740,25 +950,8 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                               {...register(`orderItems.${index}.quantity`, { valueAsNumber: true })}
                               className="h-9 text-sm bg-white dark:bg-gray-700/50 border-gray-300 dark:border-gray-600 w-full"
                             />
-                            {errors.orderItems?.[index]?.quantity && (
-                              <span className="text-gray-500 text-xs mt-1 block">{errors.orderItems[index]?.quantity?.message}</span>
-                            )}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 min-w-[80px]">
-                            {(() => {
-                              const currentProductId = watch(`orderItems.${index}.productId`);
-                              const selectedProduct = products.find(p => String(p.id) === currentProductId);
-                              return (
-                                selectedProduct?.unit || 'N/A'
-                              );
-                            })()}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 min-w-[100px]">
-                            {formatCurrency(unitPrice.toFixed(2))}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">
-                            {formatCurrency(itemTotal.toFixed(2))}
-                          </td>
+                         
                           <td className="px-4 py-3 whitespace-nowrap text-center">
                             <Button
                               type="button"
@@ -780,7 +973,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
             )}
             
             {errors.orderItems && typeof errors.orderItems === 'object' && 'message' in errors.orderItems && (
-              <p className="text-gray-500 text-sm mt-2">{(errors.orderItems as any).message}</p>
+              <p className="text-red-500 text-sm mt-2">{(errors.orderItems as any).message}</p>
             )}
 
              {fields.length > 0 && (
@@ -795,58 +988,282 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
           </CardContent>
         </Card>
 
-        {/* Order Summary Section - Disabled */}
+        {/* Enhanced Collapsible Order Summary Section */}
         {fields.length > 0 && (
-          <Card className="shadow-lg mt-6">
-            <CardHeader className="bg-gray-50 dark:bg-gray-900">
-              <div className="flex items-center gap-2">
-                <ListOrdered className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-                <CardTitle className="text-gray-700 dark:text-gray-300">Order Summary</CardTitle>
+          <Card className="shadow-lg mt-6 border-2 border-blue-100 dark:border-blue-900">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
+              <div 
+                className="flex items-center justify-between cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/50 transition-colors rounded p-2 -m-2"
+                onClick={toggleOrderSummary}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggleOrderSummary();
+                  }
+                }}
+                tabIndex={0}
+                role="button"
+                aria-expanded={isOrderSummaryExpanded}
+                aria-label={`${isOrderSummaryExpanded ? 'Collapse' : 'Expand'} order summary`}
+              >
+                <div className="flex items-center gap-2">
+                  <ListOrdered className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  <CardTitle className="text-blue-800 dark:text-blue-200">Order Summary</CardTitle>
+                  <span className="text-sm text-blue-600 dark:text-blue-400 ml-2">
+                    ({Object.keys(groupedProductSummary).length} product{Object.keys(groupedProductSummary).length !== 1 ? 's' : ''})
+                  </span>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900"
+                >
+                  {isOrderSummaryExpanded ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                </Button>
               </div>
-              <CardDescription className="text-gray-600 dark:text-gray-400">Review your ordered items and quantities before submission.</CardDescription>
+              
+              {/* Expand/Collapse All Controls - Only show when summary is expanded */}
+              {isOrderSummaryExpanded && Object.keys(groupedProductSummary).length > 1 && (
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-blue-200 dark:border-blue-800">
+                  <CardDescription className="text-blue-600 dark:text-blue-300">
+                    Detailed breakdown of products, variants, and distribution.
+                  </CardDescription>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        expandAllProducts();
+                      }}
+                      disabled={allProductsExpanded}
+                      className="h-7 text-xs border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/50"
+                    >
+                      Expand All
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        collapseAllProducts();
+                      }}
+                      disabled={allProductsCollapsed}
+                      className="h-7 text-xs border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/50"
+                    >
+                      Collapse All
+                    </Button>
+                  </div>
+                </div>
+              )}
+              
+              {/* Simple description when collapsed or no expand/collapse controls needed */}
+              {(!isOrderSummaryExpanded || Object.keys(groupedProductSummary).length <= 1) && (
+                <CardDescription className="text-blue-600 dark:text-blue-300">
+                  {isOrderSummaryExpanded 
+                    ? "Detailed breakdown of products, variants, and distribution."
+                    : `${Object.values(groupedProductSummary).reduce((sum, item) => sum + item.totalQuantity, 0)} total items • ${formatCurrency(orderTotal || 0)}`
+                  }
+                </CardDescription>
+              )}
             </CardHeader>
-            <CardContent className="p-6 space-y-4">
+            <div className={cn(
+              "transition-all duration-300 ease-in-out overflow-hidden",
+              isOrderSummaryExpanded ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
+            )}>
+              <CardContent className="p-6">
               {(() => {
                 const summaryEntries = Object.entries(groupedProductSummary);
-                // Defensive: If groupedProductSummary is empty but there are valid order items, show those directly
+                
                 if (summaryEntries.length === 0) {
                   const validItems = watchedOrderItems?.filter(item => item.productId && Number(item.quantity) > 0) || [];
                   if (products.length === 0 && validItems.length > 0) {
-                    return Array.from({ length: Math.min(validItems.length, 3) }).map((_, index) => (
-                      <div key={`summary-loading-${index}`} className="flex justify-between items-center border-b pb-2 mb-2 animate-pulse">
-                        <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mb-1"></div>
-                        <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/6"></div>
+                    return (
+                      <div className="space-y-3">
+                        {Array.from({ length: Math.min(validItems.length, 3) }).map((_, index) => (
+                          <div key={`summary-loading-${index}`} className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg animate-pulse">
+                            <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+                            <div className="h-3 bg-gray-200 dark:bg-gray-600 rounded w-1/2"></div>
+                          </div>
+                        ))}
                       </div>
-                    ));
+                    );
                   }
-                  if (validItems.length > 0) {
-                    // Show a fallback summary for each valid item
-                    return validItems.map((item, idx) => (
-                      <div key={`summary-fallback-${item.productId}-${idx}`} className="flex justify-between items-center border-b pb-2 mb-2 last:border-b-0 last:pb-0 last:mb-0">
-                        {/* <p className="font-medium text-gray-700 dark:text-gray-300">Product ID: {item.productId}</p> */}
-                        <p className="font-medium text-gray-700 dark:text-gray-300">Qty: {item.quantity}</p>
-                      </div>
-                    ));
-                  }
-                  // Products loaded, or no items with positive quantity/valid product ID.
-                  return <p className="text-sm text-gray-500 dark:text-gray-400">Review your selections. No products with positive quantities to summarize.</p>;
+                  return (
+                    <div className="text-center py-8">
+                      <PackageSearch className="h-12 w-12 mx-auto mb-3 text-gray-400 dark:text-gray-500" />
+                      <p className="text-gray-500 dark:text-gray-400">No products selected yet</p>
+                    </div>
+                  );
                 }
-                return summaryEntries.map(([productId, summaryItem]) => (
-                  <div key={`summary-group-${productId}`} className="flex justify-between items-center border-b pb-2 mb-2 last:border-b-0 last:pb-0 last:mb-0">
-                    <p className="font-medium text-gray-700 dark:text-gray-300">{summaryItem.name}</p>
-                    <p className="font-medium text-gray-700 dark:text-gray-300">Qty: {summaryItem.totalQuantity} {summaryItem.unit ? `(${summaryItem.unit})` : ''}</p>
+                
+                return (
+                  <div className="space-y-6">
+                    {summaryEntries.map(([productId, summaryItem]) => {
+                      const hasVariants = Object.keys(summaryItem.variants).length > 0;
+                      const totalOrderValue = (summaryItem.totalPrice || 0);
+                      
+                      const isProductExpanded = expandedProducts[productId] ?? true; // Default to expanded
+                      
+                      return (
+                        <div key={`summary-group-${productId}`} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
+                          {/* Collapsible Product Header */}
+                          <div 
+                            className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                            onClick={() => toggleProductExpansion(productId)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                toggleProductExpansion(productId);
+                              }
+                            }}
+                            tabIndex={0}
+                            role="button"
+                            aria-expanded={isProductExpanded}
+                            aria-label={`${isProductExpanded ? 'Collapse' : 'Expand'} ${summaryItem.name} details`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-8 bg-blue-500 rounded-full"></div>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0 text-gray-500 dark:text-gray-400"
+                                >
+                                  {isProductExpanded ? (
+                                    <ChevronDown className="h-4 w-4" />
+                                  ) : (
+                                    <ChevronRight className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </div>
+                              <div>
+                                <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-200">
+                                  {summaryItem.name}
+                                </h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                  Unit Price: {formatCurrency(summaryItem.price || 0)}
+                                  {summaryItem.unit && ` per ${summaryItem.unit}`}
+                                  {!isProductExpanded && hasVariants && (
+                                    <span className="ml-2 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">
+                                      {Object.keys(summaryItem.variants).length} variant{Object.keys(summaryItem.variants).length !== 1 ? 's' : ''}
+                                    </span>
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-lg font-bold text-gray-800 dark:text-gray-200">
+                                {summaryItem.totalQuantity} {summaryItem.unit || 'units'}
+                              </p>
+                              <p className="text-sm font-semibold text-green-600 dark:text-green-400">
+                                {formatCurrency(totalOrderValue)}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {/* Collapsible Variants Breakdown */}
+                          {isProductExpanded && hasVariants && (
+                            <div className="p-4 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50">
+                              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-600 pb-2 mb-3">
+                                Variant Distribution
+                              </h4>
+                              <div className="grid gap-3">
+                                {Object.entries(summaryItem.variants).map(([variantId, variantInfo]) => (
+                                  <div key={`variant-${variantId}`} className="bg-white dark:bg-gray-800 rounded-md p-3 border border-gray-200 dark:border-gray-700">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <span className="font-medium text-gray-700 dark:text-gray-300">
+                                        {variantInfo.name}
+                                      </span>
+                                      <span className="font-semibold text-blue-600 dark:text-blue-400">
+                                        {variantInfo.quantity} {summaryItem.unit || 'units'}
+                                      </span>
+                                    </div>
+                                    
+                                    {/* Agencies and Depots */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                                      {variantInfo.agencies.length > 0 && (
+                                        <div>
+                                          <span className="text-gray-500 dark:text-gray-400">Agencies:</span>
+                                          <div className="flex flex-wrap gap-1 mt-1">
+                                            {variantInfo.agencies.map((agency, idx) => (
+                                              <span key={`agency-${idx}`} className="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full text-xs">
+                                                {agency}
+                                              </span>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+                                      
+                                      {variantInfo.depots.length > 0 && (
+                                        <div>
+                                          <span className="text-gray-500 dark:text-gray-400">Depots:</span>
+                                          <div className="flex flex-wrap gap-1 mt-1">
+                                            {variantInfo.depots.map((depot, idx) => (
+                                              <span key={`depot-${idx}`} className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-1 rounded-full text-xs">
+                                                {depot}
+                                              </span>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* No variants fallback - only show when expanded */}
+                          {isProductExpanded && !hasVariants && (
+                            <div className="p-4 border-t border-gray-200 dark:border-gray-600 bg-yellow-50 dark:bg-yellow-900/20">
+                              <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                                No variant details available for this product
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                    
+                    {/* Order Totals */}
+                    <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-lg p-4 border-2 border-gray-200 dark:border-gray-600">
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-600 dark:text-gray-400">Total Items:</span>
+                          <span className="font-medium text-gray-800 dark:text-gray-200">
+                            {Object.values(groupedProductSummary).reduce((sum, item) => sum + item.totalQuantity, 0)} units
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-600 dark:text-gray-400">Product Types:</span>
+                          <span className="font-medium text-gray-800 dark:text-gray-200">
+                            {Object.keys(groupedProductSummary).length}
+                          </span>
+                        </div>
+                        <div className="border-t border-gray-300 dark:border-gray-500 pt-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-lg font-semibold text-gray-800 dark:text-gray-200">Total Order Value:</span>
+                            <span className="text-xl font-bold text-green-600 dark:text-green-400">
+                              {formatCurrency(orderTotal || 0)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                ));
+                );
               })()}
-              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
-                <div className="flex justify-between text-md">
-                  {/* <span className="font-semibold text-gray-700 dark:text-gray-300">Total Units:</span> */}
-                  {/* <span className="font-bold text-lg text-gray-800 dark:text-gray-200">
-                    {watch("orderItems").reduce((sum, currentItem) => sum + (Number(currentItem.quantity) || 0), 0)}
-                  </span> */}
-                </div>
-              </div>
-            </CardContent>
+              </CardContent>
+            </div>
           </Card>
         )}
       </React.Fragment>

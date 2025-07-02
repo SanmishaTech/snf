@@ -24,6 +24,10 @@ interface OrderItem {
   productUnit?: string; // Added product unit
   agencyId?: string;
   agencyName?: string;
+  depotId?: string;
+  depotName?: string;
+  depotVariantId?: string;
+  depotVariantName?: string;
 }
 
 interface Order {
@@ -89,6 +93,10 @@ const OrderDeliveryPage = () => {
         quantity: Number(item.quantity || 0),
         agencyId: item.agency?.id ? String(item.agency.id) : undefined,
         agencyName: item.agency?.name || undefined,
+        depotId: item.depot?.id ? String(item.depot.id) : undefined,
+        depotName: item.depot?.name || undefined,
+        depotVariantId: item.depotVariant?.id ? String(item.depotVariant.id) : undefined,
+        depotVariantName: item.depotVariant?.name || undefined,
       }));
       // Standardize status to uppercase to match interface
       const statusUpper = response.status?.toUpperCase() as Order['status'] || "PENDING";
@@ -217,6 +225,10 @@ const OrderDeliveryPage = () => {
                       <tr key={item.id}>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{item.productName}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            {item.depotName && <span>Depot: {item.depotName}</span>}
+                            {item.depotVariantName && <span> ({item.depotVariantName})</span>}
+                          </div>
                           {/* <div className="text-xs text-gray-500 dark:text-gray-400">ID: {item.productId}</div> */}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{item.agencyName || 'N/A'}</td>

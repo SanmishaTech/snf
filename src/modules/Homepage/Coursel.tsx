@@ -17,8 +17,8 @@ interface HeroSectionProps {
 
 const HeroSection: React.FC<HeroSectionProps> = ({
   images,
-  subtitle = "Fresh Milk Delivered Daily",
-  description = "Subscribe to our premium milk delivery service and enjoy farm-fresh dairy products delivered straight to your doorstep.",
+  subtitle = "",
+  description = "",
   className
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -118,8 +118,8 @@ const HeroSection: React.FC<HeroSectionProps> = ({
               transition={{ duration: 0.6, delay: 1.0 }}
               className="flex justify-center items-center pt-8"
             >
-              <button className="px-8 py-3 bg-white text-black font-semibold rounded-full hover:bg-white/90 transition-colors duration-300 min-w-[240px]">
-                Start Your Subscription
+              <button className="px-8 py-3 bg-red-500 text-white font-semibold rounded-full hover:bg-red-400/90 transition-colors duration-300 min-w-[240px]">
+                Join Our Milk Club
               </button>
             </motion.div>
           </motion.div>

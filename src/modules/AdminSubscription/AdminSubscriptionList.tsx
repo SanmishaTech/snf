@@ -960,7 +960,7 @@ const AdminSubscriptionList: React.FC = () => {
                       </div>
                       <div className="flex items-center gap-1.5">
                         <MailIcon className="h-3.5 w-3.5" />
-                        <span className="truncate max-w-[120px]">{order.member.user.email}</span>
+                        <span className="truncate max-w-[120px]">{order.member?.user?.email || 'N/A'}</span>
                       </div>
                     </div>
                   </div>
@@ -971,7 +971,7 @@ const AdminSubscriptionList: React.FC = () => {
               <TableCell className="px-4 py-3">
                 <div className="flex flex-col gap-2">
                   <div className="flex flex-wrap gap-1.5">
-                                        {order.subscriptions.map((sub: Subscription) => (
+                    {order.subscriptions.map((sub: Subscription) => (
                       <div key={sub.id} className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full flex items-center gap-1.5 text-xs">
                         <PackageIcon className="h-3.5 w-3.5" />
                         <span className="font-medium">{sub.product?.name}</span>
@@ -1097,22 +1097,26 @@ const AdminSubscriptionList: React.FC = () => {
 
               {/* Dates */}
               <TableCell className="px-4 py-3">
-                <div className="flex flex-col gap-1 text-sm">
-                  <div className="flex items-center gap-2">
-                    <CalendarIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                    <div className="flex flex-col">
-                      <span className="text-xs text-gray-500">Start</span>
-                      <span>{format(new Date(firstSub.startDate), 'dd MMM')}</span>
+                                {firstSub ? (
+                  <div className="flex flex-col gap-1 text-sm">
+                    <div className="flex items-center gap-2">
+                      <CalendarIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                      <div className="flex flex-col">
+                        <span className="text-xs text-gray-500">Start</span>
+                        <span>{format(new Date(firstSub.startDate), 'dd MMM')}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <CalendarCheckIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                      <div className="flex flex-col">
+                        <span className="text-xs text-gray-500">Expiry</span>
+                        <span>{firstSub.expiryDate ? format(new Date(firstSub.expiryDate), 'dd MMM yyyy') : 'N/A'}</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <CalendarCheckIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                    <div className="flex flex-col">
-                      <span className="text-xs text-gray-500">Expiry</span>
-                      <span>{firstSub.expiryDate ? format(new Date(firstSub.expiryDate), 'dd MMM yyyy') : 'N/A'}</span>
-                    </div>
-                  </div>
-                </div>
+                ) : (
+                  <span className="text-sm text-gray-500">No subscription</span>
+                )}
               </TableCell>
 
               {/* Assigned Agent */}
@@ -1122,8 +1126,8 @@ const AdminSubscriptionList: React.FC = () => {
                     <UserCheckIcon className="h-4 w-4 text-gray-500" />
                   </div>
                   <span className="text-sm">
-                    {firstSub.agency?.user?.name || 
-                     firstSub.agency?.name || 
+                    {firstSub?.agency?.user?.name || 
+                     firstSub?.agency?.name || 
                      <span className="text-gray-400">Unassigned</span>}
                   </span>
                 </div>
@@ -1157,13 +1161,13 @@ const AdminSubscriptionList: React.FC = () => {
                           size="icon"
                           className="h-8 w-8 rounded-full bg-white hover:bg-gray-50"
                           onClick={() => handleOpenAssignAgentModal(firstSub)}
-                          disabled={firstSub.paymentStatus !== 'PAID' || !!firstSub.agencyId}
+                          disabled={firstSub?.paymentStatus !== 'PAID' || !!firstSub?.agencyId}
                         >
                           <UserPlus className="h-4 w-4" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent side="top">
-                        <p>{!!firstSub.agencyId ? "Agent assigned" : firstSub.paymentStatus !== 'PAID' ? "Complete payment first" : "Assign Agent"}</p>
+                        <p>{!!firstSub?.agencyId ? "Agent assigned" : firstSub?.paymentStatus !== 'PAID' ? "Complete payment first" : "Assign Agent"}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>

@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Minus, MapPin, X } from "lucide-react";
 import { format, addDays } from 'date-fns';
 import { DialogClose } from "@/components/ui/dialog";
@@ -23,6 +25,34 @@ interface ProductData {
   };
 }
 
+interface DepotVariant {
+  id: number;
+  name: string;
+  depot: {
+    id: number;
+    name: string;
+    isOnline: boolean;
+  };
+  buyOncePrice: number;
+  sellingPrice: number;
+  price3Day?: number;
+  price7Day?: number;
+  price15Day?: number;
+  price1Month?: number;
+  minimumQty: number;
+}
+
+interface DepotVariantPricingResponse {
+  productId: number;
+  variants: DepotVariant[];
+  buyOncePrice: number;
+}
+
+interface LocationData {
+  id: number;
+  name: string;
+}
+
 interface AddressData {
   id: string;
   recipientName: string;
@@ -35,6 +65,8 @@ interface AddressData {
   state: string;
   isDefault?: boolean;
   label?: string;
+  locationId?: number;
+  location?: LocationData;
 }
 
 interface BuyOnceModalProps {
@@ -42,7 +74,16 @@ interface BuyOnceModalProps {
   onOpenChange: (isOpen: boolean) => void;
   product: ProductData | null | undefined;
   productId: string | undefined;
-
+  selectedDepot?: {
+    id: number;
+    name: string;
+    isOnline: boolean;
+    address: string;
+    addressId: string;
+    city: string;
+    state: string;
+    pincode: string;
+  } | null;
 }
 
 const getAddressLabelText = (label: string) => {
@@ -59,9 +100,10 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
   onOpenChange,
   product,
   productId,
+  selectedDepot,
 }) => {
   const [quantity, setQuantity] = useState(1);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(addDays(new Date(), 1));
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(addDays(new Date(), 2));
 
   const [userAddresses, setUserAddresses] = useState<AddressData[]>([]);
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
@@ -71,27 +113,68 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
   const [walletBalance, setWalletBalance] = useState<number>(0);
   const [buyOncePrice, setBuyOncePrice] = useState<number>(0);
   const [isLoadingPrice, setIsLoadingPrice] = useState(false);
+  const [depotVariants, setDepotVariants] = useState<DepotVariant[]>([]);
+  const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
+  const [locations, setLocations] = useState<LocationData[]>([]);
+
+  // Fetch locations list when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      fetchLocations();
+    }
+  }, [isOpen]);
+
+  // Fetch list of serviceable locations (used in AddressForm)
+  const fetchLocations = async () => {
+    try {
+      const response = await get("/admin/locations");
+      if (response && Array.isArray(response.locations)) {
+        setLocations(response.locations);
+      }
+    } catch (error) {
+      console.error("Failed to fetch locations:", error);
+      toast.error("Could not load locations.");
+    }
+  }
 
   const getBuyOncePrice = () => {
     return product?.depotVariantPricing?.buyOncePrice || product?.price || product?.rate || 0;
   };
 
   useEffect(() => {
-    const fetchBuyOncePrice = async () => {
+    const fetchDepotVariantPricing = async () => {
       if (!isOpen || !productId) return;
       setIsLoadingPrice(true);
       try {
-        const response = await get(`/api/products/${productId}/depot-variant-pricing`);
-        setBuyOncePrice(response?.buyOncePrice || getBuyOncePrice());
+        const response: DepotVariantPricingResponse = await get(`/api/products/${productId}/depot-variant-pricing`);
+        let filteredVariants = response?.variants || [];
+        
+        // Filter variants based on selected depot if one is selected
+        if (selectedDepot) {
+          filteredVariants = filteredVariants.filter(variant => variant.depot.id === selectedDepot.id);
+        }
+        
+        setDepotVariants(filteredVariants);
+        
+        // Set buyOncePrice from first filtered variant or fallback
+        if (filteredVariants.length > 0) {
+          setBuyOncePrice(filteredVariants[0].buyOncePrice);
+          setSelectedVariantId(filteredVariants[0].id);
+        } else {
+          setBuyOncePrice(response?.buyOncePrice || getBuyOncePrice());
+          setSelectedVariantId(null);
+        }
       } catch (err) {
         console.error('Failed to fetch depot variant pricing, using default:', err);
         setBuyOncePrice(getBuyOncePrice());
+        setDepotVariants([]);
+        setSelectedVariantId(null);
       } finally {
         setIsLoadingPrice(false);
       }
     };
-    fetchBuyOncePrice();
-  }, [isOpen, productId, product]);
+    fetchDepotVariantPricing();
+  }, [isOpen, productId, product, selectedDepot]);
 
   useEffect(() => {
     const fetchWalletBalance = async () => {
@@ -141,15 +224,15 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
   const payableAmount = useMemo(() => productTotal - walletDeduction, [productTotal, walletDeduction]);
 
   const handleConfirm = async () => {
-    if (!selectedDate || !selectedAddressId || !productId) {
-      toast.error("Please select a delivery date and address.");
+    if (!selectedDate || !selectedAddressId || !selectedVariantId) {
+      toast.error("Please select a delivery date, address, and depot variant.");
       return;
     }
 
     const payload = {
       subscriptions: [
         {
-          productId: productId,
+          productId: selectedVariantId, // Use selected depot variant ID
           period: 1, // This signifies a "buy once" order
           startDate: selectedDate.toISOString(),
           deliverySchedule: 'DAILY', // Single delivery
@@ -181,33 +264,38 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md min-w-[800px] p-0 flex flex-col max-h-[90vh]">
-        <DialogHeader className="p-6 pb-2 text-center border-b">
-          <DialogClose className="absolute right-4 top-4 z-10 p-2 rounded-full hover:bg-gray-100" onClick={() => onOpenChange(false)}>
-            <X className="h-5 w-5 text-gray-600" />
-          </DialogClose>
-          <DialogTitle className="text-xl font-bold text-center">
+      <DialogContent className="w-full max-w-4xl mx-auto p-0 flex flex-col max-h-[95vh] overflow-hidden">
+        <DialogHeader className="px-4 py-4 sm:px-6 sm:py-6 pb-2 border-b bg-gradient-to-r from-green-50 to-blue-50">
+          <DialogClose className="absolute right-3 top-3 sm:right-4 sm:top-4 z-10 p-2 rounded-full hover:bg-white/80 transition-colors" onClick={() => onOpenChange(false)}>
+           </DialogClose>
+          <DialogTitle className="text-lg sm:text-xl font-bold text-center pr-8">
             {showAddressFormView ? 'Add New Delivery Address' : `${product?.name} - Buy Once`}
           </DialogTitle>
           {!showAddressFormView && product && (
-            <div className="mt-1 text-right">
-              <p className="text-xs text-gray-500">Buy Once Price:</p>
-              {isLoadingPrice ? (
-                <p className="text-md font-semibold">Loading...</p>
-              ) : (
-                <p className="text-md font-semibold">₹{buyOncePrice.toFixed(2)}</p>
-              )}
+            <div className="mt-2 flex justify-center">
+              <div className="bg-white/80 backdrop-blur-sm rounded-lg px-4 py-2 border border-green-200">
+                <p className="text-xs text-gray-600 text-center">Buy Once Price</p>
+                {isLoadingPrice ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="animate-spin h-4 w-4 border-2 border-green-500 border-t-transparent rounded-full"></div>
+                    <p className="text-sm font-semibold">Loading...</p>
+                  </div>
+                ) : (
+                  <p className="text-lg font-bold text-green-600 text-center">₹{Number(buyOncePrice || 0).toFixed(2)}</p>
+                )}
+              </div>
             </div>
           )}
         </DialogHeader>
 
-        <div className="p-6 grid gap-6 overflow-y-auto flex-grow pb-8">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto flex-grow pb-8">
           {showAddressFormView ? (
             <AddressForm
-              mode="create"
-              onSuccess={handleAddressSaveSuccess}
-              onCancel={() => setShowAddressFormView(false)}
-            />
+               mode="create"
+               onSuccess={handleAddressSaveSuccess}
+               onCancel={() => setShowAddressFormView(false)}
+               locations={locations}
+             />
           ) : (
             <>
               {/* Date and Address Selection Inputs - These remain as they are */}
@@ -247,6 +335,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                       <div 
                         key={address.id}
                         className={`border rounded-lg p-3 cursor-pointer ${selectedAddressId === address.id ? 'border-green-500 bg-green-50' : 'border-gray-200'}`}
+                        onClick={() => setSelectedAddressId(address.id)}
                       >
                         <div className="flex items-start gap-3">
                           <RadioGroupItem value={address.id} id={`address-${address.id}`} className="mt-1" />
@@ -287,26 +376,93 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                 </Button>
               </div>
 
-              <div className="flex justify-between items-center">
-                <Label htmlFor="quantityBuyOnce" className="text-sm font-medium">Quantity:</Label>
-                <div className="flex items-center border rounded-full overflow-hidden">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="h-10 w-10 p-0 flex items-center justify-center rounded-none hover:bg-gray-100 border-r"
+              {/* Depot Variant Selection */}
+              <div>
+                <Label className="text-sm font-medium mb-2 block">
+                  {selectedDepot ? `Available variants for ${selectedDepot.name}:` : 'Available depot variants:'}
+                </Label>
+                {depotVariants.length > 0 ? (
+                  <RadioGroup 
+                    value={selectedVariantId?.toString() || ''} 
+                    onValueChange={(value) => {
+                      const variantId = parseInt(value, 10);
+                      setSelectedVariantId(variantId);
+                      const selectedVariant = depotVariants.find(v => v.id === variantId);
+                      if (selectedVariant) {
+                        setBuyOncePrice(selectedVariant.buyOncePrice);
+                      }
+                    }}
+                    className="gap-3 mt-2"
                   >
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  <span className="px-6 text-lg font-medium">{quantity}</span>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="h-10 w-10 p-0 flex items-center justify-center rounded-none hover:bg-gray-100 border-l"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
+                    {depotVariants.map((variant) => (
+                      <div 
+                        key={variant.id}
+                        className={`border rounded-lg p-3 cursor-pointer ${
+                          selectedVariantId === variant.id ? 'border-green-500 bg-green-50' : 'border-gray-200'
+                        }`}
+                        onClick={() => {
+                          setSelectedVariantId(variant.id);
+                          setBuyOncePrice(variant.buyOncePrice);
+                        }}
+                      >
+                        <div className="flex items-start gap-3">
+                          <RadioGroupItem value={variant.id.toString()} id={`variant-${variant.id}`} className="mt-1" />
+                          <div className="flex-1">
+                            <div className="flex justify-between items-start">
+                              <Label 
+                                htmlFor={`variant-${variant.id}`} 
+                                className="font-medium cursor-pointer flex items-center gap-1"
+                              >
+                                {variant.name}
+                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                                  {variant.depot.isOnline ? 'Online' : 'Offline'}
+                                </span>
+                              </Label>
+                              <span className="text-sm font-semibold text-green-600">
+                                ₹{Number(variant.buyOncePrice || 0).toFixed(2)}
+                              </span>
+                            </div>
+                        
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                ) : (
+                  <div className="text-center py-4 border border-dashed border-gray-300 rounded-lg">
+                    <p className="text-gray-500">
+                      {selectedDepot 
+                        ? `No variants available for ${selectedDepot.name}`
+                        : 'No depot variants available for this product'
+                      }
+                    </p>
+                    <p className="text-gray-500 text-sm mt-1">Please try selecting a different depot.</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="quantityBuyOnce" className="text-sm font-medium block">Quantity:</Label>
+                <div className="flex items-center justify-center">
+                  <div className="flex items-center border-2 border-green-200 rounded-xl overflow-hidden bg-white shadow-sm">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className="h-12 w-12 p-0 flex items-center justify-center rounded-none hover:bg-green-50 border-r border-green-200 transition-colors"
+                    >
+                      <Minus className="h-5 w-5 text-green-600" />
+                    </Button>
+                    <span className="px-6 py-3 text-xl font-bold text-green-700 min-w-[80px] text-center">{quantity}</span>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setQuantity(quantity + 1)}
+                      className="h-12 w-12 p-0 flex items-center justify-center rounded-none hover:bg-green-50 border-l border-green-200 transition-colors"
+                    >
+                      <Plus className="h-5 w-5 text-green-600" />
+                    </Button>
+                  </div>
                 </div>
               </div>
 
@@ -371,24 +527,27 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
 
         {/* Footer with Confirm Button */}
         {!showAddressFormView && (
-          <DialogFooter className="p-6 border-t">
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                onOpenChange(false);
-                setShowAddressFormView(false); // Reset view on modal close
-              }} 
-              className="mr-2"
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleConfirm} 
-              disabled={!selectedDate || !selectedAddressId || quantity < 1}
-              className="w-full max-w-[20rem] bg-green-600 hover:bg-green-700 text-white py-3 text-base rounded-md disabled:bg-gray-300"
-            >
-              Confirm Order & Pay ₹{payableAmount.toFixed(2)}
-            </Button>
+          <DialogFooter className="p-4 sm:p-6 border-t bg-gray-50">
+            <div className="flex flex-col sm:flex-row gap-3 w-full">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  onOpenChange(false);
+                  setShowAddressFormView(false); // Reset view on modal close
+                }} 
+                className="flex-1 sm:flex-none sm:min-w-[120px] py-3 text-base border-gray-300 hover:bg-gray-100 transition-colors"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleConfirm} 
+                disabled={!selectedDate || !selectedAddressId || !selectedVariantId || quantity < 1}
+                className="flex-1 sm:flex-auto bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-3 text-base font-semibold rounded-lg shadow-md disabled:from-gray-300 disabled:to-gray-400 disabled:shadow-none transition-all duration-200"
+              >
+                <span className="hidden sm:inline">Confirm Order & Pay ₹{payableAmount.toFixed(2)}</span>
+                <span className="sm:hidden">Pay ₹{payableAmount.toFixed(2)}</span>
+              </Button>
+            </div>
           </DialogFooter>
         )}
       </DialogContent>

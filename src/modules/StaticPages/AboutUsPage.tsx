@@ -61,7 +61,7 @@ const AboutUsPage: React.FC = () => {
                     <h3 className="text-xl font-semibold text-blue-800 mb-3">Quality Promise</h3>
                     <p className="text-gray-700 text-base md:text-lg leading-relaxed">
                       This produce is thoroughly checked, cleaned, sorted, and made available to our Natural Family
-                      Members (consumers). We also have our own farm (Sarkhot Farm) at Kambe, Shahpur, Maharashtra,
+                      Customers (consumers). We also have our own farm (Sarkhot Farm) at Kambe, Shahpur, Maharashtra,
                       where we practice Natural farming.
                     </p>
                   </div>

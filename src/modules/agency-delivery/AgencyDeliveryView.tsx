@@ -204,7 +204,7 @@ const AgencyDeliveryView: React.FC = () => {
     }
 
     const formattedData = deliveries.map(delivery => ({
-      'Member Name': delivery.member.name,
+      'Customer Name': delivery.member.name,
       'Product Name': delivery.product.name,
       'Quantity': delivery.quantity,
       'Delivery Address': `${delivery.deliveryAddress.plotBuilding || ''}${delivery.deliveryAddress.plotBuilding && delivery.deliveryAddress.streetArea ? ', ' : ''}${delivery.deliveryAddress.streetArea || ''}, ${delivery.deliveryAddress.city}, ${delivery.deliveryAddress.pincode}${delivery.member.phoneNumber ? ` (Phone: ${delivery.member.phoneNumber})` : ''}`,

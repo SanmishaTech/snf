@@ -44,7 +44,7 @@ const initialData = {
       isActive: false,
       items: [
         { title: "Chapter Performance", url: "/chapter-performance" },
-        { title: "Members", url: "/members" },
+        { title: "Customer", url: "/members" },
         { title: "Visitors", url: "/chapter-visitors" },
         { title: "Meetings", url: "/chaptermeetings" },
       ],
@@ -165,9 +165,15 @@ const initialData = {
           icon: FileText,
           groupLabel: "Indraai",
         },
+        {
+          title: "Depot Order Details",
+          url: "/depot-order-details",
+          icon: FileText,
+          groupLabel: "Indraai",
+        },
 
         {
-          title: "Members",
+          title: "Customer",
           url: "/admin/members",
           icon: Briefcase,
           groupLabel: "Member",

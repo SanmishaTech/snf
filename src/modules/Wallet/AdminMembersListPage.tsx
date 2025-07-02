@@ -155,11 +155,11 @@ const AdminMembersListPage: React.FC = () => {
          </CardHeader>
         <CardContent>
           <div className="flex justify-between items-center mb-4">
-            <h1 className="text-2xl font-bold mb-4">Admin - Members Wallets</h1>
+            <h1 className="text-2xl font-bold mb-4">Admin - Customer Wallets</h1>
           <div className="flex  justify-end items-center gap-4 mb-4">
             <Input
               type="text"
-              placeholder="Search members by name or email..."
+              placeholder="Search customer by name or email..."
               value={searchTerm}
               onChange={handleSearchChange}
               className="max-w-sm flex-grow"
@@ -183,7 +183,7 @@ const AdminMembersListPage: React.FC = () => {
           
 
           {members.length === 0 && !loading ? (
-            <p className="text-center text-gray-500 py-4">No members found.</p>
+            <p className="text-center text-gray-500 py-4">No Customer found.</p>
           ) : (
             <Table>
               <TableHeader>
@@ -226,7 +226,7 @@ const AdminMembersListPage: React.FC = () => {
                         </Link>
                       </Button>
                       {/* Edit Member Button */}
-                      <Button asChild variant="outline" size="sm" className="ml-2" title="Edit Member Details">
+                      <Button asChild variant="outline" size="sm" className="ml-2" title="Edit Customer Details">
                         <Link to={`/admin/members/${member._id}/edit`}> {/* Ensure this route exists or will be created */}
 
                           <Edit className="h-4 w-4" />
@@ -240,7 +240,7 @@ const AdminMembersListPage: React.FC = () => {
                           size="sm" 
                           className="ml-2" 
                           onClick={() => handleToggleMemberStatus(member._id, member.active!)}
-                          title={member.active ? "Deactivate Member" : "Activate Member"}
+                          title={member.active ? "Deactivate Customer" : "Activate Customer"}
                         >
                           {member.active ? (
                             <XCircle className="h-4 w-4 text-red-500" />

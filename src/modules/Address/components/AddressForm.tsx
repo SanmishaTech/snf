@@ -19,6 +19,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { INDIAN_STATES } from '@/config/states';
 import {
   Select,
   SelectContent,
@@ -263,7 +264,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
                 name="locationId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Location*</FormLabel>
+                    <FormLabel>Your Nearest Location*</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
@@ -321,9 +322,20 @@ const AddressForm: React.FC<AddressFormProps> = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>State*</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter state" {...field} />
-                    </FormControl>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a state" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {INDIAN_STATES.map((st) => (
+                          <SelectItem key={st.value} value={st.label}>
+                            {st.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { get, post } from "@/services/apiService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { INDIAN_STATES } from "@/config/states";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -104,15 +105,15 @@ interface SubscriptionModalProps {
   selectedDepot: DepotData | null; // Add this new prop
 }
 
-const daysOfWeek = [
-  { id: "mon", label: "Mon" },
-  { id: "tue", label: "Tue" },
-  { id: "wed", label: "Wed" },
-  { id: "thu", label: "Thu" },
-  { id: "fri", label: "Fri" },
-  { id: "sat", label: "Sat" },
-  { id: "sun", label: "Sun" },
-];
+  const daysOfWeek = [
+    { id: "mon", label: "Mon", fullName: "Monday" },
+    { id: "tue", label: "Tue", fullName: "Tuesday" },
+    { id: "wed", label: "Wed", fullName: "Wednesday" },
+    { id: "thu", label: "Thu", fullName: "Thursday" },
+    { id: "fri", label: "Fri", fullName: "Friday" },
+    { id: "sat", label: "Sat", fullName: "Saturday" },
+    { id: "sun", label: "Sun", fullName: "Sunday" },
+  ];
 
 const subscriptionPeriods = [
   { value: 3, label: "3 Days (Trial Pack)" },
@@ -141,7 +142,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   });
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [selectedPeriod, setSelectedPeriod] =
-    useState<SubscriptionPeriodValue>(7);
+    useState<SubscriptionPeriodValue>(3);
 
   // Enhanced state for variant selection with individual delivery schedules
   const [selectedVariants, setSelectedVariants] = useState<SelectedVariant[]>(
@@ -246,7 +247,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     price: toNumber(variant.sellingPrice ?? variant.price) ?? 0,
     rate: toNumber(variant.sellingPrice ?? variant.rate) ?? 0,
     price3Day: toNumber(variant.price3Day),
-    price7Day: toNumber(variant.price7Day),
+    // price7Day: toNumber(variant.price7Day),
     price15Day: toNumber(variant.price15Day),
     price1Month: toNumber(variant.price1Month),
   });
@@ -263,9 +264,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       case 3:
         candidate = pick(variant.price3Day);
         break;
-      case 7:
-        candidate = pick(variant.price7Day);
-        break;
+      
       case 15:
         candidate = pick(variant.price15Day);
         break;
@@ -727,6 +726,16 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   };
 
   const handleProceedToConfirmation = () => {
+    // Enforce minimum 3 selected days for weekday schedule
+    if (!hasVariants && deliveryOption === "select-days" && selectedDays.length < 3) {
+      toast.error("Please select at least 3 delivery days.");
+      return;
+    }
+    if (hasVariants && selectedVariants.some(v => v.deliveryOption === "select-days" && v.selectedDays.length < 3)) {
+      toast.error("Please select at least 3 delivery days for all selected variants.");
+      return;
+    }
+
     // Only require address selection for online depots (home delivery)
     if (selectedDepot?.isOnline && selectedAddressId == null) {
       console.error("No address selected. Please select or add an address.");
@@ -755,9 +764,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     switch (period) {
       case 3:
         candidate = pick(product.price3Day);
-        break;
-      case 7:
-        candidate = pick(product.price7Day);
         break;
       case 15:
         candidate = pick(product.price15Day);
@@ -800,14 +806,15 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     }
   };
 
-  // Calculate savings by comparing regular prices with subscription prices
+  // Calculate savings by comparing buyOncePrice with subscription prices
   const calculateSavings = () => {
     if (!hasVariants || selectedVariants.length === 0) {
       // For single product without variants
       if (!product) return 0;
 
       const deliveryCount = calculateDeliveryCount();
-      const regularRate = product.rate;
+      // Use buyOncePrice as the main price reference
+      const buyOncePrice = product.buyOncePrice || product.rate;
       const subscriptionRate = getProductPriceForPeriod(product, selectedPeriod);
 
       // --- DEBUG LOGS ---
@@ -815,12 +822,12 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       console.log('Product:', product);
       console.log('Selected Period:', selectedPeriod);
       console.log('Delivery Count:', deliveryCount);
-      console.log('Regular Rate:', regularRate);
+      console.log('Buy Once Price:', buyOncePrice);
       console.log('Subscription Rate:', subscriptionRate);
       // --- END DEBUG LOGS ---
 
-      // Only calculate savings if subscription rate is lower
-      if (subscriptionRate >= regularRate) return 0; // Hide savings if no discount
+      // Only calculate savings if subscription rate is lower than buyOnce price
+      if (subscriptionRate >= buyOncePrice) return 0;
 
       let totalQty = 0;
       if (deliveryOption === 'day1-day2') {
@@ -831,23 +838,24 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         totalQty = quantity * deliveryCount;
       }
       
-      const totalRegularPrice = regularRate * totalQty;
+      const totalBuyOncePrice = buyOncePrice * totalQty;
       const totalSubscriptionPrice = subscriptionRate * totalQty;
 
-      const savings = Math.max(0, totalRegularPrice - totalSubscriptionPrice);
+      const savings = Math.max(0, totalBuyOncePrice - totalSubscriptionPrice);
       console.log('Calculated Savings:', savings);
       return savings;
     }
 
     // For products with variants
-    let totalRegularPrice = 0;
+    let totalBuyOncePrice = 0;
     let totalSubscriptionPrice = 0;
 
     selectedVariants.forEach(selectedVariant => {
       const variant = productVariants.find(v => v.id === selectedVariant.variantId);
       if (!variant) return;
 
-      const regularPrice = variant.rate; // Use .rate as it's more reliable for regular price
+      // Use buyOncePrice as the main price reference, fallback to rate
+      const buyOncePrice = variant.buyOncePrice || variant.rate;
       const subscriptionPrice = getVariantPriceForPeriod(variant, selectedPeriod);
       const deliveryCount = calculateVariantDeliveryCount(selectedVariant);
 
@@ -865,13 +873,13 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
           break;
       }
 
-      totalRegularPrice += regularPrice * totalQty;
+      totalBuyOncePrice += buyOncePrice * totalQty;
       totalSubscriptionPrice += subscriptionPrice * totalQty;
     });
 
-    const savings = Math.max(0, totalRegularPrice - totalSubscriptionPrice);
+    const savings = Math.max(0, totalBuyOncePrice - totalSubscriptionPrice);
     console.log('--- Savings Calculation (Variants) ---');
-    console.log('Total Regular Price:', totalRegularPrice);
+    console.log('Total Buy Once Price:', totalBuyOncePrice);
     console.log('Total Subscription Price:', totalSubscriptionPrice);
     console.log('Calculated Savings:', savings);
     return savings;
@@ -1196,13 +1204,13 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
           }
         }}
       >
-        <DialogHeader className="p-5 border-b">
-          <div className="flex justify-between items-center">
+        <DialogHeader className="p-5 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
+          <div className="flex justify-between items-center mb-3">
             <DialogTitle className="text-xl font-semibold text-gray-800">
               Create Subscription for {product?.name}
             </DialogTitle>
-            
           </div>
+          
         </DialogHeader>
 
         <div className="flex-grow overflow-y-auto px-5 py-4 space-y-6 bg-gray-50">
@@ -1239,60 +1247,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   </div>
 
                   {/* Start Date */}
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-2">
-                      Start Date
-                    </h3>
-                    <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full justify-start text-left font-normal border-gray-300 rounded-md",
-                            !startDate && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {startDate ? (
-                            format(startDate, "dd/MM/yyyy")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent
-                        className="w-auto p-0 pointer-events-auto"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Calendar
-                          mode="single"
-                          selected={startDate}
-                          onSelect={(date) => {
-                            setStartDate(date);
-                            setCalendarOpen(false);
-                            if (formErrors.startDate)
-                              setFormErrors((prev) => ({
-                                ...prev,
-                                startDate: "",
-                              }));
-                          }}
-                          initialFocus
-                          disabled={(date) =>
-                            date <
-                            new Date(
-                              new Date().setDate(new Date().getDate() - 1)
-                            )
-                          }
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    {formErrors.startDate && (
-                      <p className="text-red-500 text-xs mt-1">
-                        {formErrors.startDate}
-                      </p>
-                    )}
-                  </div>
-
+              
                   {/* Variant Selection Section */}
                   {hasVariants && productVariants.length > 0 && (
                     <div className="bg-white border border-gray-200 rounded-lg p-4">
@@ -1429,25 +1384,36 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                                 variant={selectedVariant.deliveryOption === 'day1-day2' ? 'default' : 'outline'}
                                                 size="sm"
                                                 className={`h-7 text-xs ${selectedVariant.deliveryOption === 'day1-day2' ? 'bg-blue-500 hover:bg-blue-600' : 'border-gray-300'} truncate`}
-                                                title="Customize quantities for Day 1 and Day 2"
+                                                title="Daily Delivery with Varying Quantities"
                                                 onClick={() => updateVariantDeliveryOption(variant.id, 'day1-day2')}
-                                              >
-                                                Day 1 - Day 2
-                                              </Button>
-                                            )}
-                                            {selectedPeriod >= 30 && (
-                                              <Button
-                                                variant={selectedVariant.deliveryOption === 'select-days' ? 'default' : 'outline'}
-                                                size="sm"
-                                                className={`h-7 text-xs ${selectedVariant.deliveryOption === 'select-days' ? 'bg-blue-500 hover:bg-blue-600' : 'border-gray-300'}`}
-                                                title="Choose specific days for delivery"
-                                                onClick={() => updateVariantDeliveryOption(variant.id, 'select-days')}
-                                              >
-                                                Weekdays
-                                              </Button>
-                                            )}
-                                          </div>
-                                        </div>
+                                      >
+                                        Day 1 - Day 2
+                                      </Button>
+                                    )}
+                                    {selectedPeriod >= 30 && (
+                                      <Button
+                                        variant={selectedVariant.deliveryOption === 'select-days' ? 'default' : 'outline'}
+                                        size="sm"
+                                        className={`h-7 text-xs ${selectedVariant.deliveryOption === 'select-days' ? 'bg-blue-500 hover:bg-blue-600' : 'border-gray-300'}`}
+                                        title="Choose specific days for delivery"
+                                        onClick={() => updateVariantDeliveryOption(variant.id, 'select-days')}
+                                      >
+                                        Weekdays
+                                      </Button>
+                                    )}
+                                  </div>
+                                  
+                                  {/* Schedule Description */}
+                                  <div className="mt-2 text-xs text-blue-700 bg-blue-50 px-2 py-1 rounded-md border border-blue-200">
+                                    <span className="font-medium">
+                                      {selectedVariant.deliveryOption === 'daily' && 'Daily delivery - Fresh every day'}
+                                      {selectedVariant.deliveryOption === 'select-days' && selectedVariant.selectedDays.length > 0 && `Selected days: ${selectedVariant.selectedDays.map(day => daysOfWeek.find(d => d.id === day)?.label).join(', ')}`}
+                                      {selectedVariant.deliveryOption === 'select-days' && selectedVariant.selectedDays.length === 0 && 'Choose specific weekdays for delivery'}
+                                      {selectedVariant.deliveryOption === 'alternate-days' && 'Every other day delivery'}
+                                      {selectedVariant.deliveryOption === 'day1-day2' && 'Daily Delivery with Varying Quantities'}
+                                    </span>
+                                  </div>
+                                </div>
 
                                         {/* Day Selection for Select Days Option */}
                                         {selectedVariant.deliveryOption ===
@@ -1542,7 +1508,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                           <div className="space-y-2">
                                             <div className="flex items-center justify-between">
                                               <span className="text-xs font-medium text-gray-700">
-                                                Day A:
+                                                Day 1:
                                               </span>
                                               <div className="flex items-center border rounded overflow-hidden bg-white">
                                                 <Button
@@ -1582,7 +1548,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                             </div>
                                             <div className="flex items-center justify-between">
                                               <span className="text-xs font-medium text-gray-700">
-                                                Day B:
+                                                Day 2:
                                               </span>
                                               <div className="flex items-center border rounded overflow-hidden bg-white">
                                                 <Button
@@ -1882,6 +1848,63 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       </div>
                     </div>
                   )}
+
+              
+
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">
+                      Start Date
+                    </h3>
+                    <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full justify-start text-left font-normal border-gray-300 rounded-md",
+                            !startDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {startDate ? (
+                            format(startDate, "dd/MM/yyyy")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        className="w-auto p-0 pointer-events-auto"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Calendar
+                          mode="single"
+                          selected={startDate}
+                          onSelect={(date) => {
+                            setStartDate(date);
+                            setCalendarOpen(false);
+                            if (formErrors.startDate)
+                              setFormErrors((prev) => ({
+                                ...prev,
+                                startDate: "",
+                              }));
+                          }}
+                          initialFocus
+                          disabled={(date) =>
+                            date <
+                            new Date(
+                              new Date().setDate(new Date().getDate() - 1)
+                            )
+                          }
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    {formErrors.startDate && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {formErrors.startDate}
+                      </p>
+                    )}
+                  </div>
+
                 </div>
 
                 {/* Right Column - Address Section */}
@@ -2030,35 +2053,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     )}
                   </div>
 
-                  {calculateSavings() > 0 && (
-                    <div className="relative overflow-hidden mb-4">
-                      {/* Animated gradient background */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-red-700 via-red-800 to-red-900 animate-gradient-x"></div>                      
-                      {/* Floating elements */}
-                      <div className="absolute top-1 left-2 animate-pulse">
-                        <Star className="h-4 w-4 text-yellow-300 fill-yellow-300" />
-                      </div>
-                      <div className="absolute top-2 right-3 animate-bounce delay-75">
-                        <Sparkles className="h-3 w-3 text-yellow-200" />
-                      </div>
-                      <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 animate-pulse delay-150">
-                        <Gift className="h-3 w-3 text-yellow-300" />
-                      </div>
-                      
-                      {/* Main content */}
-                      <div className="relative p-4 text-center">
-                        <div className="text-white font-bold text-lg mb-1 tracking-wide">
-                          🎊 YOU'RE SAVING BIG! 🎊
-                        </div>
-                        <div className="text-white text-2xl font-black mb-2">
-                          ₹{calculateSavings().toFixed(2)}
-                        </div>
-                        <div className="text-white/90 text-sm">
-                          vs regular pricing • Instant discount applied!
-                        </div>
-                      </div>
-                    </div>
-                  )}
 
                   {/* Enhanced Summary Section with Per-Variant Details */}
                   {subscriptionSummary && (
@@ -2413,6 +2407,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       ₹{remainingPayable.toFixed(2)}
                     </span>
                   </div>
+                 
 
                   {/* <div className="flex items-center justify-between mt-4">
                     <Label htmlFor="useWallet" className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
@@ -2478,54 +2473,26 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   )}
                 </>
               )}
+              <div className="bg-green-50 p-3 rounded-md border border-green-100">
+                      <p className="text-xs text-gray-500 flex items-start">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4 mr-1.5 mt-0.5 flex-shrink-0"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        This is not a cash on delivery. But Amount will be collected, Our team will contact you for futher instructions
+                      </p>
+                    </div>
 
-{calculateSavings() > 0 && (
-                  <div className="relative overflow-hidden mb-4">
-                    {/* Animated gradient background */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-red-700 via-red-800 to-red-900 animate-gradient-x"></div>                    {/* Floating elements */}
-                    <div className="absolute top-1 left-2 animate-pulse">
-                      <Star className="h-4 w-4 text-yellow-300 fill-yellow-300" />
-                    </div>
-                    <div className="absolute top-2 right-3 animate-bounce delay-75">
-                      <Sparkles className="h-3 w-3 text-yellow-200" />
-                    </div>
-                    <div className="absolute bottom-1 right-1/4 animate-pulse delay-150">
-                      <Zap className="h-3 w-3 text-yellow-300 fill-yellow-300" />
-                    </div>
-                    <div className="absolute bottom-1 left-1/3 animate-bounce delay-300">
-                      <Gift className="h-3 w-3 text-yellow-300" />
-                    </div>
-                    
-                    {/* Main content */}
-                    <div className="relative p-4 text-center">
-                      <div className="text-white font-bold text-lg mb-1 tracking-wide">
-                        🎉 CONGRATULATIONS! YOU'RE SAVING 🎉
-                      </div>
-                      <div className="text-white text-3xl font-black mb-2">
-                        ₹{calculateSavings().toFixed(2)}
-                      </div>
-                      <div className="text-white/90 text-sm">
-                        vs regular pricing • This discount is already applied!
-                      </div>
-                      
-                      {/* Benefit indicators */}
-                      <div className="mt-3 flex justify-center gap-4 text-white/90 text-xs">
-                        <div className="flex items-center">
-                          <TrendingDown className="h-3 w-3 mr-1" />
-                          <span>Better Price</span>
-                        </div>
-                        <div className="flex items-center">
-                          <Package className="h-3 w-3 mr-1" />
-                          <span>Guaranteed Supply</span>
-                        </div>
-                        <div className="flex items-center">
-                          <Clock className="h-3 w-3 mr-1" />
-                          <span>Time Saver</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
               {selectedDepot?.isOnline ? (
                 <div className="bg-white p-4 rounded-md border">
                   <h4 className="text-sm font-medium mb-2">
@@ -2747,15 +2714,21 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     >
                       State*
                     </Label>
-                    <Input
-                      id="state"
-                      value={addressFormState.state}
-                      onChange={(e) =>
-                        handleAddressChange("state", e.target.value)
-                      }
-                      placeholder="e.g., State of Mind"
-                      className={formErrors.state ? "border-red-500" : ""}
-                    />
+                    <Select
+                      onValueChange={(val) => handleAddressChange("state", val)}
+                      defaultValue={addressFormState.state}
+                    >
+                      <SelectTrigger className={formErrors.state ? "border-red-500" : ""}>
+                        <SelectValue placeholder="Select a state" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {INDIAN_STATES.map((st) => (
+                          <SelectItem key={st.value} value={st.label}>
+                            {st.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     {formErrors.state && (
                       <p className="text-red-500 text-sm mt-1">
                         {formErrors.state}
@@ -2768,7 +2741,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     htmlFor="location"
                     className="text-sm font-medium mb-1.5 block"
                   >
-                    Location*
+                    Your Nearest Location*
                   </Label>
                   <Select
                     onValueChange={(value) =>
@@ -2847,13 +2820,35 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
         <div className="p-4 border-t bg-white">
           {modalView === "subscriptionDetails" ? (
-            <Button
-              onClick={handleProceedToConfirmation}
-              disabled={isLoadingAddresses}
-              className="w-full bg-primary hover:bg-primary text-white py-2 rounded-md font-medium"
-            >
-              Review Subscription
-            </Button>
+            <div className="space-y-3">
+              {/* Savings indicator */}
+              {calculateSavings() > 0 && (
+                <div className="flex items-center justify-center gap-2 text-sm">
+                  <div className="flex items-center gap-1 text-green-600">
+                    <TrendingDown className="h-4 w-4" />
+                    <span className="font-medium">You Save: ₹{calculateSavings().toFixed(2)}</span>
+                  </div>
+                  <span className="text-gray-500 text-xs">vs buy-once pricing</span>
+                </div>
+              )}
+              <Button
+                onClick={handleProceedToConfirmation}
+                disabled={
+                  isLoadingAddresses ||
+                  (
+                    !hasVariants && deliveryOption === "select-days" && selectedDays.length < 3
+                  ) ||
+                  (
+                    hasVariants && selectedVariants.some(
+                      (v) => v.deliveryOption === "select-days" && v.selectedDays.length < 3
+                    )
+                  )
+                }
+                className="w-full bg-primary hover:bg-primary text-white py-2 rounded-md font-medium"
+              >
+                Review Subscription
+              </Button>
+            </div>
           ) : modalView === "addressForm" ? (
             <div className="flex justify-end gap-3 w-full">
               <Button
@@ -2883,30 +2878,42 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               </Button>
             </div>
           ) : (
-            <div className="flex justify-end items-center gap-3 w-full">
-              <Button
-                variant="outline"
-                className="rounded-lg h-11 border-gray-300"
-                onClick={() => setModalView("subscriptionDetails")}
-              >
-                Back
-              </Button>
+            <div className="space-y-3">
+              {/* Savings indicator for confirmation */}
+              {calculateSavings() > 0 && (
+                <div className="flex items-center justify-center gap-2 text-sm">
+                  <div className="flex items-center gap-1 text-green-600">
+                    <TrendingDown className="h-4 w-4" />
+                    <span className="font-medium">Total Savings: ₹{calculateSavings().toFixed(2)}</span>
+                  </div>
+                  <span className="text-gray-500 text-xs">vs buy-once pricing</span>
+                </div>
+              )}
+              <div className="flex justify-end items-center gap-3 w-full">
+                <Button
+                  variant="outline"
+                  className="rounded-lg h-11 border-gray-300"
+                  onClick={() => setModalView("subscriptionDetails")}
+                >
+                  Back
+                </Button>
 
-              <Button
-                className="bg-primary hover:bg-primary text-white rounded-lg h-11"
-                onClick={handleConfirmSubscription}
-                disabled={
-                  isLoading ||
-                  !!(
-                    formErrors.startDate ||
-                    formErrors.selectedDays ||
-                    formErrors.selectedAddressId ||
-                    formErrors.variantSchedules
-                  )
-                }
-              >
-                {isLoading ? "Confirming..." : "Confirm Subscription"}
-              </Button>
+                <Button
+                  className="bg-primary hover:bg-primary text-white rounded-lg h-11"
+                  onClick={handleConfirmSubscription}
+                  disabled={
+                    isLoading ||
+                    !!(
+                      formErrors.startDate ||
+                      formErrors.selectedDays ||
+                      formErrors.selectedAddressId ||
+                      formErrors.variantSchedules
+                    )
+                  }
+                >
+                  {isLoading ? "Confirming..." : "Confirm Subscription"}
+                </Button>
+              </div>
             </div>
           )}
         </div>

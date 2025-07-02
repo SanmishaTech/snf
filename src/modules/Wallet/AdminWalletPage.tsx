@@ -200,7 +200,7 @@ const AdminWalletPage: React.FC = () => {
 
   const handleBalanceModification = (type: "CREDIT" | "DEBIT") => {
     if (!selectedMemberId || !selectedMemberData) {
-      setError("Please select a member first to modify their balance.");
+      setError("Please select a customer first to modify their balance.");
       return;
     }
     // Reset form for new transaction
@@ -367,7 +367,7 @@ const AdminWalletPage: React.FC = () => {
     <div className="container mx-auto p-4 max-w-7xl space-y-4">
       <div className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight">Wallet Management</h1>
-        <p className="text-muted-foreground text-sm">Manage member wallet balances and view transaction history</p>
+        <p className="text-muted-foreground text-sm">Manage customer wallet balances and view transaction history</p>
       </div>
 
       {/* Compact Member Selection */}
@@ -528,7 +528,7 @@ const AdminWalletPage: React.FC = () => {
                 </div>
               ) : (
                 <div className="text-center py-10 text-sm text-muted-foreground">
-                  No transactions found for this member.
+                  No transactions found for this customer.
                 </div>
               )}
             </CardContent>

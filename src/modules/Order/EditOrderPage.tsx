@@ -37,6 +37,8 @@ const EditOrderPage = () => {
           productId: item.productId,
           quantity: item.quantity,
           agencyId: item.agencyId || "",
+          depotId: String(item.depotId || ""),
+          depotVariantId: String(item.depotVariantId || ""),
         })),
       };
       

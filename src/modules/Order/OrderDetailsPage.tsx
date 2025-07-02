@@ -42,6 +42,10 @@ interface OrderItem {
   agencyId?: string; 
   agencyName?: string; 
   unit?: string; 
+  depotId?: string;
+  depotName?: string;
+  depotVariantId?: string;
+  depotVariantName?: string;
 }
 
 interface Order {
@@ -89,6 +93,10 @@ const OrderDetailsPage = () => {
         agencyId: item.agency?.id ? String(item.agency.id) : undefined,
         agencyName: item.agency?.name || undefined,
         unit: item.product?.unit || undefined,
+        depotId: item.depot?.id ? String(item.depot.id) : undefined,
+        depotName: item.depot?.name || undefined,
+        depotVariantId: item.depotVariant?.id ? String(item.depotVariant.id) : undefined,
+        depotVariantName: item.depotVariant?.name || undefined,
       }));
       return { ...response, items: transformedItems } as Order;
     },
@@ -283,7 +291,10 @@ const OrderDetailsPage = () => {
                               <Package className="h-5 w-5 text-gray-500" />
                             </div>
                             <div className="ml-4">
-                              <p className="font-medium text-gray-900 dark:text-gray-100">{item.productName}</p>
+                              <p className="font-medium text-gray-900 dark:text-gray-100">{item.productName } {`(${item.depotVariantName})`}</p>
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                                {item.depotName && <span>Depot: {item.depotName}</span>}
+                              </div>
                               {item.agencyName && <p className="text-xs text-blue-500 dark:text-blue-400">Agency: {item.agencyName}</p>}
                             </div>
                           </div>

@@ -15,6 +15,7 @@ import { SubscriptionModal } from "./components/SubscriptionModal";
 import { BuyOnceModal } from "./components/BuyOnceModal";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
+import PriceChart from "@/components/PriceChart";
 
 // Enhanced Star rating component
 const StarRating: React.FC<{ rating: number }> = ({ rating }) => {
@@ -57,6 +58,7 @@ interface ProductData {
 const ProductDetailPage: React.FC = () => {
   // depot state
   const [selectedDepotId, setSelectedDepotId] = useState<number | null>(null);
+  const [deliveryPreference, setDeliveryPreference] = useState<'home' | 'pickup'>('home');
 
   // const { id: productId } = useParams<{ id: string }>();
   const productId = 1
@@ -64,6 +66,7 @@ const ProductDetailPage: React.FC = () => {
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
   const [isBuyOnceModalOpen, setIsBuyOnceModalOpen] = useState(false);
   const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false);
+  const [isDeliveryLocationsModalOpen, setIsDeliveryLocationsModalOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const [isAdmin, setIsAdmin] = useState(false);
@@ -97,11 +100,38 @@ const ProductDetailPage: React.FC = () => {
     queryFn: fetchDepots,
   });
 
+  // Auto-select depot based on delivery preference
   useEffect(() => {
-    if (!selectedDepotId && depots && depots.length > 0) {
+    if (isLoggedIn && depots && depots.length > 0) {
+      let filteredDepots = depots;
+      
+      if (deliveryPreference === 'home') {
+        // For home delivery, find online depots (isOnline = true)
+        filteredDepots = depots.filter(depot => depot.isOnline);
+      } else if (deliveryPreference === 'pickup') {
+        // For store pickup, find offline depots (isOnline = false)
+        filteredDepots = depots.filter(depot => !depot.isOnline);
+      }
+      
+      // Auto-select first depot from filtered list if no depot is selected or current selection doesn't match preference
+      if (filteredDepots.length > 0) {
+        const currentDepot = depots.find(d => d.id === selectedDepotId);
+        const isCurrentDepotValid = currentDepot && (
+          (deliveryPreference === 'home' && currentDepot.isOnline) ||
+          (deliveryPreference === 'pickup' && !currentDepot.isOnline)
+        );
+        
+        if (!isCurrentDepotValid) {
+          setSelectedDepotId(filteredDepots[0].id);
+        }
+      } else {
+        setSelectedDepotId(null);
+      }
+    } else if (!isLoggedIn && depots && depots.length > 0 && !selectedDepotId) {
+      // For non-logged-in users, select first depot
       setSelectedDepotId(depots[0].id);
     }
-  }, [depots, selectedDepotId]);
+  }, [depots, deliveryPreference, isLoggedIn, selectedDepotId]);
 
   const fetchProductById = async (id: string): Promise<ProductData> => {
     const response = await get(`/products/${id}`);
@@ -333,13 +363,13 @@ const ProductDetailPage: React.FC = () => {
             
             <div className="mt-6">
               <div className="flex items-baseline gap-3">
-                <p className="text-4xl font-bold text-primary">₹{product?.rate}</p>
-                <p className="text-muted-foreground line-through">₹{product.rate + 5}</p>
-                <span className="bg-green-100 text-green-800 text-sm px-2 py-1 rounded-full ml-2">
+                {/* <p className="text-4xl font-bold text-primary">₹{product?.rate}</p> */}
+                {/* <p className="text-muted-foreground line-through">₹{product.rate + 5}</p> */}
+                {/* <span className="bg-green-100 text-green-800 text-sm px-2 py-1 rounded-full ml-2">
                   5% OFF
-                </span>
+                </span> */}
               </div>
-              <p className="text-sm text-muted-foreground mt-1">per {product.unit || 'unit'}</p>
+              {/* <p className="text-sm text-muted-foreground mt-1">per {product.unit || 'unit'}</p> */}
             </div>
             
             <div className="mt-8">
@@ -370,28 +400,92 @@ const ProductDetailPage: React.FC = () => {
             
             <div className="border-t border-muted/20 my-4"></div>
             
-            <div className="mb-4">
-        <label className="mr-2 mb-2 font-medium">Select Depot:</label>
-        {depotsLoading ? (
-          <Skeleton className="h-10 w-full" />
-        ) : (
-          <Select
-            value={selectedDepotId?.toString() ?? ''}
-            onValueChange={(value) => setSelectedDepotId(parseInt(value, 10))}
-          >
-            <SelectTrigger className="w-full mt-2">
-              <SelectValue placeholder="Select a depot" />
-            </SelectTrigger>
-            <SelectContent>
-              {depots.map((d) => (
-                <SelectItem key={d.id} value={d.id.toString()}>
-                  {d.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-      </div>
+            {/* Delivery Preference and Depot Selection - Only show for logged-in users */}
+            {isLoggedIn && (
+              <div className="mb-4">
+                {/* Delivery Preference */}
+                <div className="mb-4">
+                  <label className="block mb-3 font-medium">Delivery Preference:</label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="deliveryPreference"
+                        value="home"
+                        checked={deliveryPreference === 'home'}
+                        onChange={(e) => setDeliveryPreference(e.target.value as 'home' | 'pickup')}
+                        className="mr-2"
+                      />
+                      Home Delivery
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="deliveryPreference"
+                        value="pickup"
+                        checked={deliveryPreference === 'pickup'}
+                        onChange={(e) => setDeliveryPreference(e.target.value as 'home' | 'pickup')}
+                        className="mr-2"
+                      />
+                      Store Pickup
+                    </label>
+                  </div>
+                </div>
+
+                {/* Depot Selection - Only show for store pickup */}
+                {deliveryPreference === 'pickup' && (
+                  <div className="mb-4">
+                    <label className="mr-2 mb-2 font-medium block">Select Store for Pickup:</label>
+                    {depotsLoading ? (
+                      <Skeleton className="h-10 w-full" />
+                    ) : (
+                      <Select
+                        value={selectedDepotId?.toString() ?? ''}
+                        onValueChange={(value) => setSelectedDepotId(parseInt(value, 10))}
+                      >
+                        <SelectTrigger className="w-full mt-2">
+                          <SelectValue placeholder="Select a store for pickup" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {depots
+                            .filter(depot => !depot.isOnline) // Only show offline depots for pickup
+                            .map((d) => (
+                            <SelectItem key={d.id} value={d.id.toString()}>
+                              {d.name} - {d.address} 
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                )}
+
+                {/* Show selected depot info for home delivery */}
+                {deliveryPreference === 'home' && selectedDepot && (
+                  <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-sm text-green-800">
+                      <strong>Delivery:</strong> {deliveryPreference === 'home' ? 'Home' : 'Store Pickup'}
+                    </p>
+                  </div>
+                )}
+
+                {/* Delivery Locations Button */}
+                <div className="mb-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsDeliveryLocationsModalOpen(true)}
+                    className="w-full py-2 text-sm border-blue-500 text-blue-600 hover:bg-blue-50"
+                  >
+                    <Truck className="h-4 w-4 mr-2" />
+                    View All Delivery Locations
+                  </Button>
+                </div>
+                      {/* Price Chart Section */}
+        <div className="mt-8">
+          <PriceChart product={product} deliveryPreference={deliveryPreference} />
+        </div>
+              </div>
+            )}
 
       
       <div className="border-t border-muted/20 my-4"></div>
@@ -463,6 +557,8 @@ const ProductDetailPage: React.FC = () => {
           </div>
         </div>
 
+   
+
      
 
         <SubscriptionModal
@@ -495,6 +591,124 @@ const ProductDetailPage: React.FC = () => {
             </DialogHeader>
             <div className="mt-4 max-h-[70vh] overflow-y-auto">
               <div className="text-muted-foreground leading-relaxed prose" dangerouslySetInnerHTML={{ __html: product.description || "Our premium milk comes from grass-fed cows raised in natural pastures. Rich in calcium and essential nutrients, it's pasteurized for safety while maintaining its natural goodness. We source our milk from local farms that prioritize animal welfare and sustainable farming practices. Each bottle undergoes rigorous quality checks to ensure you receive the freshest, most nutritious product possible. The cows are fed a natural diet without hormones or antibiotics, resulting in milk that's both delicious and healthier. Perfect for drinking, cooking, or adding to your morning coffee, our milk is a versatile addition to any kitchen. We're proud to support local farmers and bring you a product that's not only good for you but also good for the environment." }} />
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delivery Locations Modal */}
+        <Dialog open={isDeliveryLocationsModalOpen} onOpenChange={setIsDeliveryLocationsModalOpen}>
+          <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-hidden">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                <Truck className="h-5 w-5 text-blue-600" />
+                All Delivery Locations
+              </DialogTitle>
+              <DialogClose className="absolute right-4 top-4">
+                <X className="h-4 w-4" />
+              </DialogClose>
+            </DialogHeader>
+            <div className="mt-4">
+              {depotsLoading ? (
+                <div className="space-y-3">
+                  {[...Array(5)].map((_, i) => (
+                    <Skeleton key={i} className="h-16 w-full" />
+                  ))}
+                </div>
+              ) : (
+                <div className="overflow-y-auto max-h-[60vh]">
+                  <div className="grid gap-4">
+                    {/* Home Delivery Section */}
+                    <div>
+                      <h3 className="text-lg font-semibold mb-3 text-green-600 flex items-center gap-2">
+                        <Truck className="h-4 w-4" />
+                        Home Delivery Services
+                      </h3>
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <div className="mb-3">
+                          <p className="text-sm text-green-700 mb-2">
+                            <strong>Available Home Delivery Services:</strong>
+                          </p>
+                          <p className="text-xs text-green-600 mb-4">
+                            Delivery areas are determined by your address. You can select your delivery address during checkout.
+                          </p>
+                        </div>
+                        
+                        {depots.filter(depot => depot.isOnline).length > 0 ? (
+                          <div className="grid gap-2">
+                            {depots
+                              .filter(depot => depot.isOnline)
+                              .map((depot, index) => (
+                              <div 
+                                key={depot.id} 
+                                className={`px-4 py-3 rounded-lg border ${index % 2 === 0 ? 'bg-white border-green-200' : 'bg-green-25 border-green-200'}`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                  <span className="text-sm font-medium text-gray-900">{depot.name}</span>
+                                  <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full ml-auto">
+                                    Home Delivery
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-6">
+                            <Truck className="mx-auto h-8 w-8 mb-2 text-gray-400" />
+                            <p className="text-gray-500">No home delivery services available</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Store Pickup Section */}
+                    <div>
+                      <h3 className="text-lg font-semibold mb-3 text-orange-600 flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        Store Pickup Locations
+                      </h3>
+                      <div className="bg-orange-50 border border-orange-200 rounded-lg overflow-hidden">
+                        <table className="w-full">
+                          <thead className="bg-orange-100">
+                            <tr>
+                              <th className="px-4 py-3 text-left text-sm font-medium text-orange-800">Store Name</th>
+                              <th className="px-4 py-3 text-left text-sm font-medium text-orange-800">Address</th>
+                              <th className="px-4 py-3 text-left text-sm font-medium text-orange-800">City</th>
+                              <th className="px-4 py-3 text-left text-sm font-medium text-orange-800">Pincode</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {depots
+                              .filter(depot => !depot.isOnline)
+                              .map((depot, index) => (
+                              <tr key={depot.id} className={index % 2 === 0 ? 'bg-white' : 'bg-orange-25'}>
+                                <td className="px-4 py-3 text-sm font-medium text-gray-900">{depot.name}</td>
+                                <td className="px-4 py-3 text-sm text-gray-600">{depot.address}</td>
+                                <td className="px-4 py-3 text-sm text-gray-600">{depot.city}</td>
+                                <td className="px-4 py-3 text-sm text-gray-600">{depot.pincode}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        {depots.filter(depot => !depot.isOnline).length === 0 && (
+                          <div className="p-8 text-center text-gray-500">
+                            <Calendar className="mx-auto h-8 w-8 mb-2 text-gray-400" />
+                            <p>No store pickup locations available</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="mt-6 flex justify-end">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsDeliveryLocationsModalOpen(false)}
+              >
+                Close
+              </Button>
             </div>
           </DialogContent>
         </Dialog>

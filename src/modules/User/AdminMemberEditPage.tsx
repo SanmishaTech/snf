@@ -132,7 +132,7 @@ const AdminMemberEditPage: React.FC = () => {
                   Saving...
                 </>
               ) : (
-                'Update Member'
+                'Update Customer'
               )}
             </Button>
           </CardFooter>

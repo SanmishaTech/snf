@@ -25,6 +25,10 @@ interface OrderItem {
   deliveredQuantity?: number; // Delivered quantity from backend
   agencyId?: string;
   agencyName?: string;
+  depotId?: string;
+  depotName?: string;
+  depotVariantId?: string;
+  depotVariantName?: string;
 }
 
 interface Order {
@@ -96,6 +100,10 @@ const OrderReceivedPage = () => {
         deliveredQuantity: item.deliveredQuantity !== null && item.deliveredQuantity !== undefined ? Number(item.deliveredQuantity) : undefined,
         agencyId: item.agency?.id ? String(item.agency.id) : undefined,
         agencyName: item.agency?.name || undefined,
+        depotId: item.depot?.id ? String(item.depot.id) : undefined,
+        depotName: item.depot?.name || undefined,
+        depotVariantId: item.depotVariant?.id ? String(item.depotVariant.id) : undefined,
+        depotVariantName: item.depotVariant?.name || undefined,
       }));
       const statusUpper = response.status?.toUpperCase() as Order['status'] || "PENDING";
       return { ...response, items: transformedItems, status: statusUpper } as Order;
@@ -253,6 +261,10 @@ const OrderReceivedPage = () => {
                       <tr key={item.id}>
                         <td className="px-4 py-3 text-gray-800 dark:text-gray-200">
                           {item.productName}
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            {item.depotName && <span>Depot: {item.depotName}</span>}
+                            {item.depotVariantName && <span> ({item.depotVariantName})</span>}
+                          </div>
                           {item.agencyName && <span className="block text-xs text-gray-500 dark:text-gray-400">Agency: {item.agencyName}</span>}
                         </td>
                         <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-300">{item.quantity}</td>

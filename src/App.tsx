@@ -78,6 +78,8 @@ import PurchasePaymentViewPage from "./modules/PurchasePayment/PurchasePaymentVi
 import TransferList from "./modules/Transfer/TransferList";
 import CreateTransferPage from "./modules/Transfer/CreateTransferPage";
 import EditTransferPage from "./modules/Transfer/EditTransferPage";
+
+import DepotOrderDetails from "./modules/Order/DepotOrderDetails";
 import "./App.css";
 // MembershipList wrapper component to handle showing all memberships
  
@@ -161,7 +163,8 @@ const App = () => {
             <Route path="/admin/products/create" element={<CreateProductPage />} />
             <Route path="/admin/products/edit/:id" element={<EditProductPage />} />
             <Route path="/admin/products/:id" element={<ProductDetailPage />} /> {/* New route for product detail */}
-            <Route path="/admin/subscriptions" element={<AdminSubscriptionList />} /> {/* Added for admin subscriptions list */}
+            <Route path="/admin/subscriptions" element={<AdminSubscriptionList />} />
+            <Route path="/depot-order-details" element={<DepotOrderDetails />} /> {/* Added for admin subscriptions list */}
             <Route path="/admin/delivery" element={<AgencyDeliveryView />} /> {/* Added for agency delivery management */}
             <Route path="/admin/categories" element={<CategoryMasterListPage />} /> {/* Route for Category Master */}
             <Route path="/admin/cities" element={<CityMasterListPage />} />
