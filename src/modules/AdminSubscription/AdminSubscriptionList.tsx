@@ -882,7 +882,7 @@ const AdminSubscriptionList: React.FC = () => {
             <div className="flex flex-wrap gap-2 mt-4">
               <Button 
                 type="submit"
-                className="bg-blue-500 hover:bg-blue-600 text-white dark:bg-blue-600 dark:hover:bg-blue-700"
+                className="bg-secondary hover:bg-blue-600 text-white dark:bg-blue-600 dark:hover:bg-blue-700"
               >
                 Apply Filters
               </Button>
@@ -1017,7 +1017,7 @@ const AdminSubscriptionList: React.FC = () => {
                         {sub.deliverySchedule === 'ALTERNATE_DAYS' && (sub.qty || sub.altQty) ? (
                           <div className="flex items-center gap-2 text-xs">
                             <div className="flex items-center gap-1">
-                              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                              <div className="w-1.5 h-1.5 bg-secondary rounded-full"></div>
                               <span className="text-blue-700 font-medium">{sub.qty}{sub.product?.unit}</span>
                             </div>
                             <span className="text-gray-400">•</span>
@@ -1031,7 +1031,7 @@ const AdminSubscriptionList: React.FC = () => {
                           /* Day1-Day2 Display - Daily with varying quantities */
                           <div className="flex items-center gap-2 text-xs">
                             <div className="flex items-center gap-1">
-                              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                              <div className="w-1.5 h-1.5 bg-secondary rounded-full"></div>
                               <span className="text-blue-700 font-medium">{sub.qty}{sub.product?.unit}</span>
                             </div>
                             <span className="text-gray-400">•</span>

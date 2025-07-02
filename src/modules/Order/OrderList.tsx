@@ -225,7 +225,7 @@ const OrderList = () => {
       case "PENDING":
         return "bg-yellow-500";
       case "DELIVERED":
-        return "bg-blue-500";
+        return "bg-secondary";
       case "RECEIVED":
         return "bg-green-500";
       default:
@@ -272,7 +272,7 @@ const OrderList = () => {
           <CardTitle className="text-2xl font-bold text-gray-800 dark:text-gray-100">Order Management</CardTitle>
           {currentUserRole === "ADMIN" && (
             <Link to="/admin/orders/create">
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white dark:bg-secondary dark:hover:bg-blue-600">
                 <ShoppingCart className="mr-2 h-5 w-5" /> Create New Order
               </Button>
             </Link>

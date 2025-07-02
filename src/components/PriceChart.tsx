@@ -368,7 +368,7 @@ export const PriceChart: React.FC<PriceChartProps> = ({ product, variants, class
                     className="border rounded-lg p-4 bg-gradient-to-br from-blue-50/30 to-white hover:shadow-md transition-all duration-200 cursor-help group relative"
                    >
                     <div className="flex items-start gap-3">
-                      <div className="w-3 h-3 bg-blue-500 rounded-full mt-1 flex-shrink-0"></div>
+                      <div className="w-3 h-3 bg-secondary rounded-full mt-1 flex-shrink-0"></div>
                       <div className="flex-1">
                         <h5 className="font-medium text-gray-900 mb-1 group-hover:text-blue-700 transition-colors">{schedule.label}</h5>
                         <p className="text-sm text-gray-600 mb-2">{schedule.description}</p>

@@ -223,7 +223,7 @@ const OrderDetailsPage = () => {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-xl flex items-center gap-2">
-                  <ShoppingCart className="h-5 w-5 text-blue-500" />
+                  <ShoppingCart className="h-5 w-5 text-secondary" />
                   Order Information
                 </CardTitle>
               </CardHeader>
@@ -270,7 +270,7 @@ const OrderDetailsPage = () => {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-xl flex items-center gap-2">
-                  <Package className="h-5 w-5 text-blue-500" />
+                  <Package className="h-5 w-5 text-secondary" />
                   Order Items
                 </CardTitle>
               </CardHeader>
@@ -295,7 +295,7 @@ const OrderDetailsPage = () => {
                               <div className="text-xs text-gray-500 dark:text-gray-400">
                                 {item.depotName && <span>Depot: {item.depotName}</span>}
                               </div>
-                              {item.agencyName && <p className="text-xs text-blue-500 dark:text-blue-400">Agency: {item.agencyName}</p>}
+                              {item.agencyName && <p className="text-xs text-secondary dark:text-blue-400">Agency: {item.agencyName}</p>}
                             </div>
                           </div>
                         </div>
@@ -331,7 +331,7 @@ const OrderDetailsPage = () => {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-xl flex items-center gap-2">
-                  <Truck className="h-5 w-5 text-blue-500" />
+                  <Truck className="h-5 w-5 text-secondary" />
                   Vendor Information
                 </CardTitle>
               </CardHeader>
@@ -366,7 +366,7 @@ const OrderDetailsPage = () => {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-xl flex items-center gap-2">
-                  <ClipboardCheck className="h-5 w-5 text-blue-500" />
+                  <ClipboardCheck className="h-5 w-5 text-secondary" />
                   Status Update
                 </CardTitle>
               </CardHeader>
@@ -410,7 +410,7 @@ const OrderDetailsPage = () => {
                   { 
                     title: "Order Created",
                     icon: <ShoppingCart className="h-5 w-5 text-white" />,
-                    iconBg: "bg-blue-500",
+                    iconBg: "bg-secondary",
                     time: format(new Date(order.createdAt), "dd/MM/yyyy"),
                     description: `Order #${order.poNumber} was created with ${order.items.length} product(s).`,
                     stepStatus: "PENDING",

@@ -4,7 +4,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Minus, MapPin, X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Plus, Minus, MapPin, X, Wallet } from "lucide-react";
 import { format, addDays } from 'date-fns';
 import { DialogClose } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -181,9 +182,25 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
       if (!isOpen) return;
       try {
         const resp = await get('/api/wallet/balance');
-        setWalletBalance(resp?.balance || 0);
+        console.log('Wallet balance response:', resp);
+        
+        // Handle different response formats
+        let balance = 0;
+        if (resp?.success && resp?.data?.balance !== undefined) {
+          // Format: {"success":true,"data":{"balance":55,"currency":"INR"}}
+          balance = resp.data.balance;
+        } else if (resp?.balance !== undefined) {
+          // Format: {"balance":55}
+          balance = resp.balance;
+        } else if (typeof resp === 'number') {
+          // Format: 55
+          balance = resp;
+        }
+        
+        setWalletBalance(balance);
       } catch (err) {
         console.error('Failed to fetch wallet balance', err);
+        setWalletBalance(0);
       }
     };
     fetchWalletBalance();
@@ -219,8 +236,9 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
     return format(date, 'yyyy-MM-dd');
   };
 
+const [useWallet, setUseWallet] = useState(true);
   const productTotal = useMemo(() => quantity * buyOncePrice, [quantity, buyOncePrice]);
-  const walletDeduction = useMemo(() => Math.min(walletBalance || 0, productTotal), [walletBalance, productTotal]);
+  const walletDeduction = useMemo(() => (useWallet ? Math.min(walletBalance || 0, productTotal) : 0), [walletBalance, productTotal, useWallet]);
   const payableAmount = useMemo(() => productTotal - walletDeduction, [productTotal, walletDeduction]);
 
   const handleConfirm = async () => {
@@ -239,8 +257,8 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
           qty: quantity,
         },
       ],
-      deliveryAddressId: selectedAddressId,
-      walletamt: walletDeduction,
+      deliveryAddressId: parseInt(selectedAddressId, 10),
+      walletamt: useWallet ? walletDeduction : 0,
     };
 
     try {
@@ -299,26 +317,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
           ) : (
             <>
               {/* Date and Address Selection Inputs - These remain as they are */}
-              <div>
-                <Label htmlFor="deliveryDateBuyOnce" className="text-sm font-medium mb-2 block">Select delivery date:</Label>
-                <input
-                  type="date"
-                  id="deliveryDateBuyOnce"
-                  value={formatDateForInput(selectedDate)}
-                  onChange={(e) => {
-                    if (e.target.value) {
-                      setSelectedDate(new Date(e.target.value + 'T00:00:00')); // Ensure date is parsed in local timezone
-                    } else {
-                      setSelectedDate(undefined);
-                    }
-                  }}
-                  min={formatDateForInput(new Date())} // Disable past dates
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
-                />
-                {!selectedDate && (
-                     <p className="text-xs text-red-500 mt-1">Please select a delivery date.</p>
-                )}
-              </div>
+               
 
               {/* Delivery Address Selection */}
               <div>
@@ -465,6 +464,78 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                   </div>
                 </div>
               </div>
+
+              <div>
+                <Label htmlFor="deliveryDateBuyOnce" className="text-sm font-medium mb-2 block">Select delivery date:</Label>
+                <input
+                  type="date"
+                  id="deliveryDateBuyOnce"
+                  value={formatDateForInput(selectedDate)}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setSelectedDate(new Date(e.target.value + 'T00:00:00')); // Ensure date is parsed in local timezone
+                    } else {
+                      setSelectedDate(undefined);
+                    }
+                  }}
+                  min={formatDateForInput(new Date())} // Disable past dates
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                />
+                {!selectedDate && (
+                     <p className="text-xs text-red-500 mt-1">Please select a delivery date.</p>
+                )}
+              </div>
+              <div className="bg-green-50 p-3 rounded-md border border-green-100">
+                      <p className="text-xs text-primary flex items-start">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4 mr-1.5 mt-0.5 flex-shrink-0"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        This is not a cash on delivery. But Amount will be collected, Our team will contact you for futher instructions
+                      </p>
+                    </div>
+
+{/* Wallet and Order Summary Section */}
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <div className="flex items-center justify-between mb-3">
+                <Label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                
+                  <Wallet className="h-4 w-4" /> Use Wallet Balance
+                </Label>
+                <div className="text-sm font-medium">
+                  Available: ₹{walletBalance.toFixed(2)}
+                </div>
+              </div>
+              
+              {useWallet && walletBalance > 0 && (
+                <div className="bg-white p-3 rounded border border-blue-300">
+                  <div className="text-xs text-blue-700 space-y-1">
+                    <div className="flex justify-between">
+                      <span>Wallet Balance:</span>
+                      <span>₹{walletBalance.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Amount to be deducted:</span>
+                      <span className="font-medium text-green-600">₹{walletDeduction.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between font-medium pt-1 border-t">
+                      <span>Remaining in wallet:</span>
+                      <span>₹{(walletBalance - walletDeduction).toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Integrated Order Summary Section */}
           <div className="mt-6 pt-4 border-t border-gray-200 space-y-2">

@@ -104,7 +104,7 @@ const ProductDetailPage: React.FC = () => {
   useEffect(() => {
     if (isLoggedIn && depots && depots.length > 0) {
       let filteredDepots = depots;
-      
+
       if (deliveryPreference === 'home') {
         // For home delivery, find online depots (isOnline = true)
         filteredDepots = depots.filter(depot => depot.isOnline);
@@ -112,7 +112,7 @@ const ProductDetailPage: React.FC = () => {
         // For store pickup, find offline depots (isOnline = false)
         filteredDepots = depots.filter(depot => !depot.isOnline);
       }
-      
+
       // Auto-select first depot from filtered list if no depot is selected or current selection doesn't match preference
       if (filteredDepots.length > 0) {
         const currentDepot = depots.find(d => d.id === selectedDepotId);
@@ -120,7 +120,7 @@ const ProductDetailPage: React.FC = () => {
           (deliveryPreference === 'home' && currentDepot.isOnline) ||
           (deliveryPreference === 'pickup' && !currentDepot.isOnline)
         );
-        
+
         if (!isCurrentDepotValid) {
           setSelectedDepotId(filteredDepots[0].id);
         }
@@ -169,7 +169,7 @@ const ProductDetailPage: React.FC = () => {
     console.log("Subscription Confirmed, preparing to send to backend:", details);
     try {
       const numericDeliveryAddressId = parseInt(details.selectedAddress, 10);
-      
+
       if (isNaN(numericDeliveryAddressId)) {
         console.error("Invalid deliveryAddressId after parsing:", details.selectedAddress);
         return;
@@ -180,9 +180,9 @@ const ProductDetailPage: React.FC = () => {
         deliveryAddressId: numericDeliveryAddressId,
         period: details.selectedPeriod,
         deliverySchedule: details.deliveryOption.toUpperCase(),
-        weekdays: (details.deliveryOption === "select-days" && details.selectedDays && details.selectedDays.length > 0) 
-                  ? details.selectedDays 
-                  : undefined,
+        weekdays: (details.deliveryOption === "select-days" && details.selectedDays && details.selectedDays.length > 0)
+          ? details.selectedDays
+          : undefined,
         qty: details.quantity,
         altQty: details.deliveryOption === "varying" ? details.quantityVarying2 : undefined,
         startDate: details.startDate,
@@ -208,13 +208,13 @@ const ProductDetailPage: React.FC = () => {
       ...details,
       selectedDate: details.selectedDate ? format(details.selectedDate, "yyyy-MM-dd") : undefined
     });
-    
+
     try {
       // Process "Buy Once" as a single-day subscription
       // Get the selected address from the modal
       const selectedAddressId = details.selectedAddress;
       const numericDeliveryAddressId = parseInt(selectedAddressId, 10);
-      
+
       if (isNaN(numericDeliveryAddressId)) {
         console.error("Invalid deliveryAddressId after parsing:", selectedAddressId);
         toast.error("Invalid delivery address selected");
@@ -287,8 +287,8 @@ const ProductDetailPage: React.FC = () => {
             There was a problem retrieving the product details. Error: {error?.message || 'Product data not found.'}
           </AlertDescription>
           <div className="mt-4">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => window.location.reload()}
               className="text-primary"
             >
@@ -322,22 +322,22 @@ const ProductDetailPage: React.FC = () => {
   return (
     <div className="container min-w-full px-4 py-8 bg-white">
       {/* Depot Selector */}
-     
-      
 
-      <motion.div 
+
+
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
         className="max-w-6xl mx-auto"
       >
-     
+
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
           {/* Product Image */}
           <div className="bg-muted/10 rounded-2xl flex items-center justify-center p-8 border border-muted/20">
             {product.attachmentUrl ? (
-              <motion.img 
+              <motion.img
                 src={`${import.meta.env.VITE_BACKEND_URL}${product.attachmentUrl}`}
                 alt={product.name}
                 className="object-cover max-h-[900px] min-h-[600px] rounded-xl"
@@ -358,9 +358,9 @@ const ProductDetailPage: React.FC = () => {
           {/* Product Details */}
           <div className="py-4">
             <h1 className="text-3xl md:text-4xl font-bold mb-3">{product.name}</h1>
-            
+
             {/* <StarRating rating={5} /> */}
-            
+
             <div className="mt-6">
               <div className="flex items-baseline gap-3">
                 {/* <p className="text-4xl font-bold text-primary">₹{product?.rate}</p> */}
@@ -371,7 +371,7 @@ const ProductDetailPage: React.FC = () => {
               </div>
               {/* <p className="text-sm text-muted-foreground mt-1">per {product.unit || 'unit'}</p> */}
             </div>
-            
+
             <div className="mt-8">
               <h2 className="text-xl font-semibold mb-3">Description</h2>
               <div className="text-muted-foreground leading-relaxed prose">
@@ -383,8 +383,8 @@ const ProductDetailPage: React.FC = () => {
                       dangerouslySetInnerHTML={{ __html: product.description }}
                     />
                     {product.description.length > 200 && (
-                      <span 
-                        onClick={() => setIsDescriptionModalOpen(true)} 
+                      <span
+                        onClick={() => setIsDescriptionModalOpen(true)}
                         className="text-primary font-medium ml-1 cursor-pointer hover:underline"
                       >
                         Read more
@@ -396,10 +396,10 @@ const ProductDetailPage: React.FC = () => {
                 )}
               </div>
             </div>
-            
-            
+
+
             <div className="border-t border-muted/20 my-4"></div>
-            
+
             {/* Delivery Preference and Depot Selection - Only show for logged-in users */}
             {isLoggedIn && (
               <div className="mb-4">
@@ -450,10 +450,10 @@ const ProductDetailPage: React.FC = () => {
                           {depots
                             .filter(depot => !depot.isOnline) // Only show offline depots for pickup
                             .map((d) => (
-                            <SelectItem key={d.id} value={d.id.toString()}>
-                              {d.name} - {d.address} 
-                            </SelectItem>
-                          ))}
+                              <SelectItem key={d.id} value={d.id.toString()}>
+                                {d.name} - {d.address}
+                              </SelectItem>
+                            ))}
                         </SelectContent>
                       </Select>
                     )}
@@ -471,8 +471,8 @@ const ProductDetailPage: React.FC = () => {
 
                 {/* Delivery Locations Button */}
                 <div className="mb-4">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={() => setIsDeliveryLocationsModalOpen(true)}
                     className="w-full py-2 text-sm border-blue-500 text-blue-600 hover:bg-blue-50"
                   >
@@ -480,22 +480,22 @@ const ProductDetailPage: React.FC = () => {
                     View All Delivery Locations
                   </Button>
                 </div>
-                      {/* Price Chart Section */}
-        <div className="mt-8">
-          <PriceChart product={product} deliveryPreference={deliveryPreference} />
-        </div>
+                {/* Price Chart Section */}
+                <div className="mt-8">
+                  <PriceChart product={product} deliveryPreference={deliveryPreference} />
+                </div>
               </div>
             )}
 
-      
-      <div className="border-t border-muted/20 my-4"></div>
+
+            <div className="border-t border-muted/20 my-4"></div>
 
             {/* Benefits */}
             <div className="mb-8">
               <h2 className="text-xl font-semibold mb-4">Benefits</h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {benefits.map((benefit, index) => (
-                  <motion.div 
+                  <motion.div
                     key={index}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -511,7 +511,7 @@ const ProductDetailPage: React.FC = () => {
                 ))}
               </div>
             </div>
-            
+
             <div className="mt-8 space-y-4">
               {!isLoggedIn ? (
                 <Button
@@ -525,24 +525,24 @@ const ProductDetailPage: React.FC = () => {
                   {/* Buttons for logged-in users */}
                   {isLoggedIn && !isAdmin && (
                     <div className="flex flex-col sm:flex-row gap-4">
-                      <motion.div 
+                      <motion.div
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         className="flex-1"
                       >
-                        <Button 
-                          className="w-full py-6 text-md sm:text-lg bg-orange-500 hover:bg-orange-600 text-white shadow-lg transition-all duration-300 rounded-xl"
+                        <Button
+                          className="w-full py-6 text-md sm:text-lg bg-secondary hover:bg-secondary/80 text-white shadow-lg transition-all duration-300 rounded-xl"
                           onClick={handleOpenBuyOnceModal}
                         >
                           Buy Once
                         </Button>
                       </motion.div>
-                      <motion.div 
+                      <motion.div
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         className="flex-1"
                       >
-                        <Button 
+                        <Button
                           className="w-full py-6 text-md sm:text-lg bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary text-white shadow-lg transition-all duration-300 rounded-xl"
                           onClick={handleSubscribe}
                         >
@@ -557,19 +557,19 @@ const ProductDetailPage: React.FC = () => {
           </div>
         </div>
 
-   
 
-     
+
+
 
         <SubscriptionModal
-           depotId={selectedDepotId}
-           isOpen={isSubscriptionModalOpen}
+          depotId={selectedDepotId}
+          isOpen={isSubscriptionModalOpen}
           onOpenChange={setIsSubscriptionModalOpen}
           product={product}
           productId={productId}
           selectedDepot={selectedDepot}
           onSubscribeConfirm={handleSubscriptionConfirm}
-         />
+        />
 
         <BuyOnceModal
           isOpen={isBuyOnceModalOpen}
@@ -579,7 +579,7 @@ const ProductDetailPage: React.FC = () => {
           productId={productId}
           onBuyOnceConfirm={handleBuyOnceConfirm}
         />
-        
+
         {/* Description Modal removed */}
         <Dialog open={isDescriptionModalOpen} onOpenChange={setIsDescriptionModalOpen}>
           <DialogContent className="sm:max-w-2xl">
@@ -632,25 +632,25 @@ const ProductDetailPage: React.FC = () => {
                             Delivery areas are determined by your address. You can select your delivery address during checkout.
                           </p>
                         </div>
-                        
+
                         {depots.filter(depot => depot.isOnline).length > 0 ? (
                           <div className="grid gap-2">
                             {depots
                               .filter(depot => depot.isOnline)
                               .map((depot, index) => (
-                              <div 
-                                key={depot.id} 
-                                className={`px-4 py-3 rounded-lg border ${index % 2 === 0 ? 'bg-white border-green-200' : 'bg-green-25 border-green-200'}`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                  <span className="text-sm font-medium text-gray-900">{depot.name}</span>
-                                  <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full ml-auto">
-                                    Home Delivery
-                                  </span>
+                                <div
+                                  key={depot.id}
+                                  className={`px-4 py-3 rounded-lg border ${index % 2 === 0 ? 'bg-white border-green-200' : 'bg-green-25 border-green-200'}`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    <span className="text-sm font-medium text-gray-900">{depot.name}</span>
+                                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full ml-auto">
+                                      Home Delivery
+                                    </span>
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              ))}
                           </div>
                         ) : (
                           <div className="text-center py-6">
@@ -673,21 +673,21 @@ const ProductDetailPage: React.FC = () => {
                             <tr>
                               <th className="px-4 py-3 text-left text-sm font-medium text-orange-800">Store Name</th>
                               <th className="px-4 py-3 text-left text-sm font-medium text-orange-800">Address</th>
-                              <th className="px-4 py-3 text-left text-sm font-medium text-orange-800">City</th>
-                              <th className="px-4 py-3 text-left text-sm font-medium text-orange-800">Pincode</th>
+                              <th className="px-4 py-3 text-left text-sm font-medium text-orange-800">Contact Person</th>
+                              <th className="px-4 py-3 text-left text-sm font-medium text-orange-800">Contact Number</th>
                             </tr>
                           </thead>
                           <tbody>
                             {depots
                               .filter(depot => !depot.isOnline)
                               .map((depot, index) => (
-                              <tr key={depot.id} className={index % 2 === 0 ? 'bg-white' : 'bg-orange-25'}>
-                                <td className="px-4 py-3 text-sm font-medium text-gray-900">{depot.name}</td>
-                                <td className="px-4 py-3 text-sm text-gray-600">{depot.address}</td>
-                                <td className="px-4 py-3 text-sm text-gray-600">{depot.city}</td>
-                                <td className="px-4 py-3 text-sm text-gray-600">{depot.pincode}</td>
-                              </tr>
-                            ))}
+                                <tr key={depot.id} className={index % 2 === 0 ? 'bg-white' : 'bg-orange-25'}>
+                                  <td className="px-4 py-3 text-sm font-medium text-gray-900">{depot.name}</td>
+                                  <td className="px-4 py-3 text-sm text-gray-600">{depot.address}</td>
+                                  <td className="px-4 py-3 text-sm text-gray-600">{depot.contactPerson}</td>
+                                  <td className="px-4 py-3 text-sm text-gray-600">{depot.contactNumber}</td>
+                                </tr>
+                              ))}
                           </tbody>
                         </table>
                         {depots.filter(depot => !depot.isOnline).length === 0 && (
@@ -703,8 +703,8 @@ const ProductDetailPage: React.FC = () => {
               )}
             </div>
             <div className="mt-6 flex justify-end">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => setIsDeliveryLocationsModalOpen(false)}
               >
                 Close

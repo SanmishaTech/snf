@@ -1362,7 +1362,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                             <Button
                                               variant={selectedVariant.deliveryOption === 'daily' ? 'default' : 'outline'}
                                               size="sm"
-                                              className={`h-7 text-xs ${selectedVariant.deliveryOption === 'daily' ? 'bg-blue-500 hover:bg-blue-600' : 'border-gray-300'} truncate`}
+                                              className={`h-7 text-xs hover:text-white ${selectedVariant.deliveryOption === 'daily' ? 'bg-secondary hover:bg-secondary/80 hover:text-white' : 'border-gray-300'} truncate`}
                                               title="Delivery every day"
                                               onClick={() => updateVariantDeliveryOption(variant.id, 'daily')}
                                             >
@@ -1372,7 +1372,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                               <Button
                                                 variant={selectedVariant.deliveryOption === 'alternate-days' ? 'default' : 'outline'}
                                                 size="sm"
-                                                className={`h-7 text-xs ${selectedVariant.deliveryOption === 'alternate-days' ? 'bg-blue-500 hover:bg-blue-600' : 'border-gray-300'}`}
+                                                className={`h-7 text-xs ${selectedVariant.deliveryOption === 'alternate-days' ? 'bg-secondary hover:bg-secondary/80' : 'border-gray-300'}`}
                                                 title="Delivery every other day"
                                                 onClick={() => updateVariantDeliveryOption(variant.id, 'alternate-days')}
                                               >
@@ -1383,7 +1383,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                               <Button
                                                 variant={selectedVariant.deliveryOption === 'day1-day2' ? 'default' : 'outline'}
                                                 size="sm"
-                                                className={`h-7 text-xs ${selectedVariant.deliveryOption === 'day1-day2' ? 'bg-blue-500 hover:bg-blue-600' : 'border-gray-300'} truncate`}
+                                                className={`h-7 text-xs ${selectedVariant.deliveryOption === 'day1-day2' ? 'bg-secondary hover:bg-blue-600' : 'border-gray-300'} truncate`}
                                                 title="Daily Delivery with Varying Quantities"
                                                 onClick={() => updateVariantDeliveryOption(variant.id, 'day1-day2')}
                                       >
@@ -1394,7 +1394,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                       <Button
                                         variant={selectedVariant.deliveryOption === 'select-days' ? 'default' : 'outline'}
                                         size="sm"
-                                        className={`h-7 text-xs ${selectedVariant.deliveryOption === 'select-days' ? 'bg-blue-500 hover:bg-blue-600' : 'border-gray-300'}`}
+                                        className={`h-7 text-xs ${selectedVariant.deliveryOption === 'select-days' ? 'bg-secondary hover:bg-blue-600' : 'border-gray-300'}`}
                                         title="Choose specific days for delivery"
                                         onClick={() => updateVariantDeliveryOption(variant.id, 'select-days')}
                                       >
@@ -1408,11 +1408,14 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                     <span className="font-medium">
                                       {selectedVariant.deliveryOption === 'daily' && 'Daily delivery - Fresh every day'}
                                       {selectedVariant.deliveryOption === 'select-days' && selectedVariant.selectedDays.length > 0 && `Selected days: ${selectedVariant.selectedDays.map(day => daysOfWeek.find(d => d.id === day)?.label).join(', ')}`}
+                          
                                       {selectedVariant.deliveryOption === 'select-days' && selectedVariant.selectedDays.length === 0 && 'Choose specific weekdays for delivery'}
                                       {selectedVariant.deliveryOption === 'alternate-days' && 'Every other day delivery'}
                                       {selectedVariant.deliveryOption === 'day1-day2' && 'Daily Delivery with Varying Quantities'}
                                     </span>
+                                    
                                   </div>
+                           
                                 </div>
 
                                         {/* Day Selection for Select Days Option */}
@@ -1420,7 +1423,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                           "select-days" && (
                                           <div>
                                             <Label className="text-xs font-medium text-gray-700 mb-2 block">
-                                              Select delivery days:
+                                              Select min 3 delivery days:
                                             </Label>
                                             <div className="flex flex-wrap gap-1">
                                               {daysOfWeek.map((day) => (
@@ -1666,7 +1669,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       <div className="grid grid-cols-3 gap-2">
                         <Button
                           variant={deliveryOption === 'daily' ? 'default' : 'outline'}
-                          className={`h-9 text-xs ${deliveryOption === 'daily' ? 'bg-blue-500 hover:bg-blue-600' : 'border-gray-300'}`}
+                          className={`h-9 text-xs ${deliveryOption === 'daily' ? 'bg-secondary hover:bg-blue-600' : 'border-gray-300'}`}
                           title="Delivery every day"
                           onClick={() => setDeliveryOption('daily')}
                         >
@@ -1675,7 +1678,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                         {selectedPeriod >= 15 && (
                           <Button
                             variant={deliveryOption === 'alternate-days' ? 'default' : 'outline'}
-                            className={`h-9 text-xs ${deliveryOption === 'alternate-days' ? 'bg-blue-500 hover:bg-blue-600' : 'border-gray-300'}`}
+                            className={`h-9 text-xs ${deliveryOption === 'alternate-days' ? 'bg-secondary hover:bg-blue-600' : 'border-gray-300'}`}
                             title="Delivery every other day"
                             onClick={() => setDeliveryOption('alternate-days')}
                           >
@@ -1685,7 +1688,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                         {selectedPeriod >= 7 && (
                           <Button
                             variant={deliveryOption === 'day1-day2' ? 'default' : 'outline'}
-                            className={`h-9 text-xs ${deliveryOption === 'day1-day2' ? 'bg-blue-500 hover:bg-blue-600' : 'border-gray-300'}`}
+                            className={`h-9 text-xs ${deliveryOption === 'day1-day2' ? 'bg-secondary hover:bg-blue-600' : 'border-gray-300'}`}
                             title="Customize quantities for Day 1 and Day 2"
                             onClick={() => setDeliveryOption('day1-day2')}
                           >
@@ -1695,7 +1698,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                         {selectedPeriod >= 30 && (
                           <Button
                             variant={deliveryOption === 'select-days' ? 'default' : 'outline'}
-                            className={`h-9 text-xs ${deliveryOption === 'select-days' ? 'bg-blue-500 hover:bg-blue-600' : 'border-gray-300'}`}
+                            className={`h-9 text-xs ${deliveryOption === 'select-days' ? 'bg-secondary hover:bg-blue-600' : 'border-gray-300'}`}
                             title="Choose specific days for delivery"
                             onClick={() => setDeliveryOption('select-days')}
                           >
@@ -2442,10 +2445,10 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                               2
                             )} will be deducted from your wallet. The remaining ₹${remainingPayable.toFixed(
                               2
-                            )} will be collected via Cash/UPI on delivery.`
+                            )} will be collected via Cash/UPI before delivery.`
                           : `Full amount of ₹${remainingPayable.toFixed(
                               2
-                            )} will be collected via Cash/UPI on delivery.`}
+                            )} will be collected via Cash/UPI before delivery.`}
                       </p>
                     </div>
                   ) : (
@@ -2474,7 +2477,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 </>
               )}
               <div className="bg-green-50 p-3 rounded-md border border-green-100">
-                      <p className="text-xs text-gray-500 flex items-start">
+                      <p className="text-xs text-primary flex items-start">
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           className="h-4 w-4 mr-1.5 mt-0.5 flex-shrink-0"

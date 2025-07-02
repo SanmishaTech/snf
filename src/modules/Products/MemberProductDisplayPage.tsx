@@ -58,7 +58,7 @@ const EnhancedProductCard: React.FC<EnhancedProductCardProps> = ({ product, onVi
 
   const getProductIcon = (category?: string, name?: string) => {
     if (category === 'dairy' || name?.toLowerCase().includes('milk') || name?.toLowerCase().includes('yogurt')) {
-      return <Milk className="w-6 h-6 text-blue-500" />;
+      return <Milk className="w-6 h-6 text-secondary" />;
     }
     if (category === 'bakery' || name?.toLowerCase().includes('bread')) {
       return <Package className="w-6 h-6 text-yellow-600" />;

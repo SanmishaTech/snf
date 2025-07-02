@@ -51,7 +51,7 @@ const LandingPage = () => {
   const [userName, setUserName] = useState<string | null>(null);
 
   const BACKEND_URL =
-    import.meta.env.VITE_BACKEND_URL || "http://13.126.180.52";
+    import.meta.env.VITE_BACKEND_URL || "http://www.indraai.in";
   useEffect(() => {
     const fetchProducts = async () => {
       setIsLoading(true);
@@ -158,7 +158,7 @@ const LandingPage = () => {
       />
 
       {/*  Hero Section */}
-                  <section className="relative mt-25 h-[600px] max-md:h-[800px] max-lg:h-[800px] py-24 md:py-32">
+      <section className="relative mt-25 h-[600px] max-md:h-[800px] max-lg:h-[800px] py-24 md:py-32">
          
         {/* Hero Section - Check if text is legible after removing gradient overlay */}
         <div className="absolute inset-0 z-0 overflow-hidden">
@@ -182,8 +182,7 @@ const LandingPage = () => {
               <p>No banner images available.</p>
             </div>
           )} */}
-          <div className="absolute inset-0 bg-black/30"></div>{" "}
-          {/* Dark overlay for text contrast */}
+           {/* Dark overlay for text contrast */}
           {/* <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-background/0"></div> */}
           {/* The above gradient was removed to reduce 'white aura'. If text legibility on carousel is an issue, consider a darker, simpler overlay e.g., bg-black/30 */}
         </div>

@@ -25,7 +25,7 @@ const orderSchema = z.object({
   orderDate: z.date(),
   deliveryDate: z.date(),
   contactPersonName: z.string().min(1, "Contact person name is required"),
-  vendorId: z.string().min(1, "Vendor is required"),
+  vendorId: z.string().min(1, "Farmer is required"),
   notes: z.string().optional(),
   orderItems: z.array(z.object({
     depotId: z.string().min(1, "Depot is required"),
@@ -750,7 +750,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
           <div className="bg-gray-50 dark:bg-gray-900 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800">
             <div className="flex items-center gap-2 mb-4">
               <Truck className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Vendor Information</h3>
+              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Farmer Information</h3>
             </div>
             
             <div className="grid gap-4">
@@ -766,7 +766,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                       defaultValue={field.value || ""}
                     >
                       <SelectTrigger className="bg-white dark:bg-gray-700 w-full">
-                        <SelectValue placeholder="Select a vendor" />
+                        <SelectValue placeholder="Select a Farmer" />
                       </SelectTrigger>
                       <SelectContent>
                         {vendors.map((vendor) => (
@@ -793,7 +793,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
 
             {selectedVendor && (
               <div className="mt-4 p-3 bg-white/90 dark:bg-gray-900/90 rounded-md border border-emerald-200 dark:border-emerald-800">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Vendor Details</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Farmer Details</p>
                 <div className="grid grid-cols-2 gap-2 mt-2 text-sm">
                   <div>
                     <span className="text-gray-500 dark:text-gray-400">Email:</span>
@@ -1131,7 +1131,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                           >
                             <div className="flex items-center gap-3">
                               <div className="flex items-center gap-2">
-                                <div className="w-2 h-8 bg-blue-500 rounded-full"></div>
+                                <div className="w-2 h-8 bg-secondary rounded-full"></div>
                                 <Button
                                   type="button"
                                   variant="ghost"

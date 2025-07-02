@@ -20,7 +20,7 @@ const BottomNavBar = () => {
           to={isLoggedIn ? "/" : "/"} 
           end 
           className={({ isActive }) =>
-            `flex flex-col items-center hover:text-blue-500 ${isActive ? 'text-blue-500' : 'text-gray-600 dark:text-gray-300'}`
+            `flex flex-col items-center hover:text-secondary ${isActive ? 'text-secondary' : 'text-gray-600 dark:text-gray-300'}`
           }
         >
           <Home size={24} />
@@ -32,7 +32,7 @@ const BottomNavBar = () => {
           <NavLink 
             to="/member/products" 
             className={({ isActive }) =>
-              `flex flex-col items-center hover:text-blue-500 ${isActive ? 'text-blue-500' : 'text-gray-600 dark:text-gray-300'}`
+              `flex flex-col items-center hover:text-secondary ${isActive ? 'text-secondary' : 'text-gray-600 dark:text-gray-300'}`
             }
           >
             <ShoppingCart size={24} />
@@ -44,7 +44,7 @@ const BottomNavBar = () => {
         <NavLink 
           to={isLoggedIn ? "/member/subscriptions" : "/login"} 
           className={({ isActive }) =>
-            `flex flex-col items-center hover:text-blue-500 ${isActive ? 'text-blue-500' : 'text-gray-600 dark:text-gray-300'}`
+            `flex flex-col items-center hover:text-secondary ${isActive ? 'text-secondary' : 'text-gray-600 dark:text-gray-300'}`
           }
         >
           <User size={24} />
@@ -55,7 +55,7 @@ const BottomNavBar = () => {
         <NavLink 
           to="/about" // Example: links to About Us page
           className={({ isActive }) =>
-            `flex flex-col items-center hover:text-blue-500 ${isActive ? 'text-blue-500' : 'text-gray-600 dark:text-gray-300'}`
+            `flex flex-col items-center hover:text-secondary ${isActive ? 'text-secondary' : 'text-gray-600 dark:text-gray-300'}`
           }
         >
           <Menu size={24} />
