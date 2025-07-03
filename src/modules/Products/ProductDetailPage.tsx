@@ -67,6 +67,7 @@ const ProductDetailPage: React.FC = () => {
   const [isBuyOnceModalOpen, setIsBuyOnceModalOpen] = useState(false);
   const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false);
   const [isDeliveryLocationsModalOpen, setIsDeliveryLocationsModalOpen] = useState(false);
+  const [isHomeDeliveryLocationsModalOpen, setIsHomeDeliveryLocationsModalOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const [isAdmin, setIsAdmin] = useState(false);
@@ -401,7 +402,7 @@ const ProductDetailPage: React.FC = () => {
             <div className="border-t border-muted/20 my-4"></div>
 
             {/* Delivery Preference and Depot Selection - Only show for logged-in users */}
-            {isLoggedIn && (
+            {true&& (
               <div className="mb-4">
                 {/* Delivery Preference */}
                 <div className="mb-4">
@@ -460,17 +461,22 @@ const ProductDetailPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* Show selected depot info for home delivery */}
-                {deliveryPreference === 'home' && selectedDepot && (
-                  <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <p className="text-sm text-green-800">
-                      <strong>Delivery:</strong> {deliveryPreference === 'home' ? 'Home' : 'Store Pickup'}
-                    </p>
+                {/* Show home delivery locations button when home delivery is selected */}
+                {deliveryPreference === 'home' && (
+                  <div className="mb-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsHomeDeliveryLocationsModalOpen(true)}
+                      className="w-full py-2 text-sm border-green-500 text-green-600 hover:bg-green-50"
+                    >
+                      <Truck className="h-4 w-4 mr-2" />
+                      View Home Delivery Areas
+                    </Button>
                   </div>
                 )}
 
                 {/* Delivery Locations Button */}
-                <div className="mb-4">
+               {deliveryPreference === 'pickup' &&  <div className="mb-4">
                   <Button
                     variant="outline"
                     onClick={() => setIsDeliveryLocationsModalOpen(true)}
@@ -479,7 +485,7 @@ const ProductDetailPage: React.FC = () => {
                     <Truck className="h-4 w-4 mr-2" />
                     View All Delivery Locations
                   </Button>
-                </div>
+                </div>}
                 {/* Price Chart Section */}
                 <div className="mt-8">
                   <PriceChart product={product} deliveryPreference={deliveryPreference} />
@@ -706,6 +712,136 @@ const ProductDetailPage: React.FC = () => {
               <Button
                 variant="outline"
                 onClick={() => setIsDeliveryLocationsModalOpen(false)}
+              >
+                Close
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Home Delivery Locations Modal */}
+        <Dialog open={isHomeDeliveryLocationsModalOpen} onOpenChange={setIsHomeDeliveryLocationsModalOpen}>
+          <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-hidden">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                <Truck className="h-5 w-5 text-green-600" />
+                Home Delivery Areas - Dombivli
+              </DialogTitle>
+              <DialogClose className="absolute right-4 top-4">
+                <X className="h-4 w-4" />
+              </DialogClose>
+            </DialogHeader>
+            <div className="mt-4">
+              <div className="overflow-y-auto max-h-[60vh]">
+                <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm text-green-700 mb-2">
+                    <strong>We deliver to the following areas in Dombivli:</strong>
+                  </p>
+                  <p className="text-xs text-green-600">
+                    Fresh milk delivered daily to your doorstep. Select your area during checkout to confirm delivery availability.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Dombivli East */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold mb-3 text-blue-800 flex items-center gap-2">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                      Dombivli (East)
+                    </h3>
+                    <div className="space-y-2 max-h-80 overflow-y-auto">
+                      {[
+                        "Runwal Garden City",
+                        "Runwal MyCity",
+                        "Palava Phase - 2",
+                        "Casa Bella",
+                        "Casa Rio",
+                        "Lodha Premier",
+                        "Lodha Elite",
+                        "Nilje Gaon",
+                        "Regency, Davdi Village",
+                        "Regency Anantam",
+                        "MIDC area",
+                        "Gograswadi",
+                        "Ajdegaon",
+                        "Gharda Circle",
+                        "Shankeshwar Nagar",
+                        "Sanghvi Garden",
+                        "Lodha Heaven",
+                        "Navneet Nagar",
+                        "Sagaon",
+                        "Gandhi Nagar",
+                        "P & T Colony",
+                        "Nandivli Area",
+                        "Rajaji Path",
+                        "Ayre Village",
+                        "Dattanagar",
+                        "Shrikhandewadi",
+                        "Dombivli East Station Area",
+                        "Sunil Nagar",
+                        "DNC School Area",
+                        "Phadke Road",
+                        "Saraswat Colony",
+                        "Thakurli Station area",
+                        "Tilak Nagar",
+                        "90 Feet"
+                      ].map((area, index) => (
+                        <div key={index} className="flex items-center gap-2 p-2 bg-white rounded border border-blue-100 hover:bg-blue-25 transition-colors">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span className="text-sm text-gray-800">{area}</span>
+                          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full ml-auto">
+                            Available
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Dombivli West */}
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold mb-3 text-orange-800 flex items-center gap-2">
+                      <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                      Dombivli (West)
+                    </h3>
+                    <div className="space-y-2">
+                      {[
+                        "Koper",
+                        "Station Area",
+                        "Shastri Nagar",
+                        "Vishnu Nagar",
+                        "Kumbarghan Pada",
+                        "Umesh Nagar",
+                        "Motha Gaon",
+                        "Swaminarayn City"
+                      ].map((area, index) => (
+                        <div key={index} className="flex items-center gap-2 p-2 bg-white rounded border border-orange-100 hover:bg-orange-25 transition-colors">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span className="text-sm text-gray-800">{area}</span>
+                          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full ml-auto">
+                            Available
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Additional Information */}
+                <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                  <h4 className="font-semibold text-gray-900 mb-2">Delivery Information:</h4>
+                  <ul className="text-sm text-gray-600 space-y-1">
+                    <li>• Delivery timing: 6:00 AM - 8:00 AM</li>
+                    <li>• Fresh milk delivered daily to your doorstep</li>
+                    <li>• Glass bottle packaging for freshness and sustainability</li>
+                    <li>• Contact us if your area is not listed above</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setIsHomeDeliveryLocationsModalOpen(false)}
               >
                 Close
               </Button>
