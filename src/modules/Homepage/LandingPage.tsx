@@ -51,7 +51,7 @@ const LandingPage = () => {
   const [userName, setUserName] = useState<string | null>(null);
 
   const BACKEND_URL =
-    import.meta.env.VITE_BACKEND_URL || "https://www.indraai.in";
+    import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
   useEffect(() => {
     const fetchProducts = async () => {
       setIsLoading(true);
