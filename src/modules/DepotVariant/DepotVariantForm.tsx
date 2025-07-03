@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import {
-  DepotVariant,
-  DepotVariantFormData,
-  createDepotVariant,
-  updateDepotVariant,
-  getAllProductsLite,
-  ProductLite,
-} from '../../services/depotVariantService';
+  DepotProductVariant as DepotVariant,
+  createDepotProductVariant as createDepotVariant,
+  updateDepotProductVariant as updateDepotVariant,
+} from '../../services/depotProductVariantService';
+import { getProductOptions, ProductOption } from '../../services/productService';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -20,6 +18,20 @@ import {
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 
+interface DepotVariantFormData {
+  productId: string;
+  name: string;
+  hsnCode: string;
+  mrp: string;
+  minimumQty: string;
+  notInStock: boolean;
+  isHidden: boolean;
+  price3Day: string;
+  price7Day: string;
+  price15Day: string;
+  price1Month: string;
+}
+
 interface Props {
   initialData?: DepotVariant;
   onClose: () => void;
@@ -27,15 +39,14 @@ interface Props {
 }
 
 const DepotVariantForm: React.FC<Props> = ({ initialData, onClose, onSuccess }) => {
-  const [products, setProducts] = useState<ProductLite[]>([]);
+  const [products, setProducts] = useState<ProductOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState<DepotVariantFormData>({
     productId: '',
     name: '',
     hsnCode: '',
-    sellingPrice: '',
-    purchasePrice: '',
+    mrp: '',
     minimumQty: '',
     notInStock: false,
     isHidden: false,
@@ -49,7 +60,7 @@ const DepotVariantForm: React.FC<Props> = ({ initialData, onClose, onSuccess }) 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await getAllProductsLite();
+        const res = await getProductOptions();
         setProducts(res);
       } catch (err: any) {
         toast.error(err.message || 'Failed to load products');
@@ -65,8 +76,7 @@ const DepotVariantForm: React.FC<Props> = ({ initialData, onClose, onSuccess }) 
         productId: String(initialData.productId),
         name: initialData.name,
         hsnCode: initialData.hsnCode ?? '',
-        sellingPrice: String(initialData.sellingPrice),
-        purchasePrice: String(initialData.purchasePrice),
+        mrp: initialData.mrp !== undefined ? String(initialData.mrp) : '',
         minimumQty: initialData.minimumQty !== undefined ? String(initialData.minimumQty) : '',
         notInStock: initialData.notInStock ?? false,
         isHidden: initialData.isHidden ?? false,
@@ -82,8 +92,7 @@ const DepotVariantForm: React.FC<Props> = ({ initialData, onClose, onSuccess }) 
     const errs: Record<string, string> = {};
     if (!formData.productId) errs.productId = 'Product is required';
     if (!formData.name.trim()) errs.name = 'Variant name required';
-    if (!formData.sellingPrice) errs.sellingPrice = 'Selling price required';
-    if (!formData.purchasePrice) errs.purchasePrice = 'Purchase price required';
+    if (!formData.mrp) errs.mrp = 'MRP required';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -101,13 +110,22 @@ const DepotVariantForm: React.FC<Props> = ({ initialData, onClose, onSuccess }) 
     }
     setLoading(true);
     try {
+      const submissionData = {
+        ...formData,
+        productId: parseInt(formData.productId, 10),
+        mrp: parseFloat(formData.mrp),
+        minimumQty: formData.minimumQty ? parseInt(formData.minimumQty, 10) : 0,
+        price3Day: formData.price3Day ? parseFloat(formData.price3Day) : undefined,
+        price7Day: formData.price7Day ? parseFloat(formData.price7Day) : undefined,
+        price15Day: formData.price15Day ? parseFloat(formData.price15Day) : undefined,
+        price1Month: formData.price1Month ? parseFloat(formData.price1Month) : undefined,
+      };
+
       if (initialData) {
-        await updateDepotVariant(initialData.id, {
-          ...formData,
-        });
+        await updateDepotVariant(initialData.id, submissionData);
         toast.success('Variant updated');
       } else {
-        await createDepotVariant(formData);
+        await createDepotVariant(submissionData);
         toast.success('Variant created');
       }
       onSuccess();
@@ -148,17 +166,10 @@ const DepotVariantForm: React.FC<Props> = ({ initialData, onClose, onSuccess }) 
         <Input name="hsnCode" value={formData.hsnCode} onChange={handleChange} />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Selling Price *</Label>
-          <Input name="sellingPrice" type="number" value={formData.sellingPrice} onChange={handleChange} className={errors.sellingPrice ? 'border-red-500' : ''} />
-          {errors.sellingPrice && <p className="text-xs text-red-500">{errors.sellingPrice}</p>}
-        </div>
-        <div className="space-y-2">
-          <Label>Purchase Price *</Label>
-          <Input name="purchasePrice" type="number" value={formData.purchasePrice} onChange={handleChange} className={errors.purchasePrice ? 'border-red-500' : ''} />
-          {errors.purchasePrice && <p classNames="text-xs text-red-500">{errors.purchasePrice}</p>}
-        </div>
+      <div className="space-y-2">
+        <Label>MRP *</Label>
+        <Input name="mrp" type="number" value={formData.mrp} onChange={handleChange} className={errors.mrp ? 'border-red-500' : ''} />
+        {errors.mrp && <p className="text-xs text-red-500">{errors.mrp}</p>}
       </div>
 
       <div className="space-y-2">

@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { TrendingDown, Clock, Calendar, Zap, X, IndianRupee } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { get } from '@/services/apiService';
+import { useQuery } from '@tanstack/react-query';
 
 interface ProductData {
   id: number;
@@ -16,23 +19,39 @@ interface ProductData {
   buyOncePrice?: number;
 }
 
-interface ProductVariant {
+interface DepotVariant {
   id: string;
   name: string;
   price: number;
   rate: number;
+  mrp?: number; // Maximum Retail Price for savings calculation
   price3Day?: number;
+  price7Day?: number;
   price15Day?: number;
   price1Month?: number;
   buyOncePrice?: number;
-  unit?: string;
+  unit: string;
+  depot: {
+    id: number;
+    name: string;
+    isOnline: boolean;
+    address: string;
+  };
+  product: {
+    id: number;
+    name: string;
+    unit?: string;
+  };
+  isAvailable: boolean;
+  minimumQty?: number;
 }
 
 interface PriceChartProps {
   product?: ProductData;
-  variants?: ProductVariant[];
+  variants?: DepotVariant[];
   className?: string;
   deliveryPreference?: 'home' | 'pickup';
+  selectedDepotId?: number | null;
 }
 
 const subscriptionPeriods = [
@@ -66,43 +85,130 @@ const deliverySchedules = [
   { id: "select-days", label: "Weekdays", description: "Custom days selection (30 days only)" },
 ];
 
-export const PriceChart: React.FC<PriceChartProps> = ({ product, variants, className, deliveryPreference = 'home' }) => {
+export const PriceChart: React.FC<PriceChartProps> = ({ product, variants, className, deliveryPreference = 'home', selectedDepotId }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Pricing matrix based on your requirements
-  const pricingMatrix = {
-    home: { // Website/Online pricing
-      buyOnce: { price: 55, savings: 0 },
-      subscription: {
-        3: { price: 47, savings: 15 }, // (55-47)/55 * 100 ≈ 15%
-        15: { price: 46, savings: 16 }, // (55-46)/55 * 100 ≈ 16%
-        30: { price: 43, savings: 22 }  // (55-43)/55 * 100 ≈ 22%
+  // Fetch depot variants for the current product
+  const fetchDepotVariants = async (): Promise<DepotVariant[]> => {
+    if (!product?.id) return [];
+    const response = await get(`/api/public/depot-variants/${product.id}`);
+    return response.data || [];
+  };
+
+  const { data: depotVariants = [], isLoading: variantsLoading } = useQuery<DepotVariant[]>({
+    queryKey: ['depot-variants', product?.id],
+    queryFn: fetchDepotVariants,
+    enabled: !!product?.id,
+  });
+
+  // Get variants filtered by delivery preference and unit
+  const getVariantsByType = (deliveryPref: 'home' | 'pickup', unit: '500ml' | '1L', forComparison: boolean = false): DepotVariant[] => {
+    return depotVariants.filter(variant => {
+      const isCorrectDelivery = deliveryPref === 'home' ? variant.depot.isOnline : !variant.depot.isOnline;
+      
+      // Enhanced unit matching to handle different formats
+      let isCorrectUnit = false;
+      if (unit === '500ml') {
+        isCorrectUnit = variant.unit === '500ml' || variant.name.includes('500ml') || variant.name.includes('500 ml');
+      } else if (unit === '1L') {
+        isCorrectUnit = variant.unit === '1L' || 
+                       variant.name.includes('1L') || 
+                       variant.name.includes('1 L') || 
+                       variant.name.includes('1 Ltrs') || 
+                       variant.name.includes('1 Ltr') || 
+                       variant.name.includes('1000ml') ||
+                       variant.name.includes('1000 ml');
       }
-    },
-    pickup: { // Store Pickup pricing
-      buyOnce: { price: 50, savings: 9 }, // 9% savings vs online buy once
-      subscription: {
-        3: { price: 45, savings: 18 },  // vs online buy once
-        15: { price: 44, savings: 20 }, // vs online buy once
-        30: { price: 41, savings: 25 }  // vs online buy once
+      
+      // Depot filtering logic:
+      // - For comparison: don't filter by depot
+      // - For home delivery: show variants from any online depot (ignore selectedDepotId)
+      // - For pickup delivery: filter by selectedDepotId if specified
+      let isCorrectDepot = true;
+      if (forComparison) {
+        isCorrectDepot = true; // No depot filtering for comparison
+      } else if (deliveryPref === 'home') {
+        isCorrectDepot = true; // Show all online depot variants for home delivery
+      } else if (deliveryPref === 'pickup') {
+        isCorrectDepot = !selectedDepotId || variant.depot.id === selectedDepotId;
       }
+      
+      return isCorrectDelivery && isCorrectUnit && isCorrectDepot;
+    });
+  };
+
+  // Debug function to check available variants
+  const getAvailableVariants = () => {
+    const online500ml = getVariantsByType('home', '500ml');
+    const online1L = getVariantsByType('home', '1L');
+    const pickup500ml = getVariantsByType('pickup', '500ml');
+    const pickup1L = getVariantsByType('pickup', '1L');
+    
+    console.log('Available variants:', {
+      online500ml: online500ml.map(v => ({ name: v.name, unit: v.unit, depot: v.depot.name })),
+      online1L: online1L.map(v => ({ name: v.name, unit: v.unit, depot: v.depot.name })),
+      pickup500ml: pickup500ml.map(v => ({ name: v.name, unit: v.unit, depot: v.depot.name })),
+      pickup1L: pickup1L.map(v => ({ name: v.name, unit: v.unit, depot: v.depot.name })),
+    });
+    
+    return { online500ml, online1L, pickup500ml, pickup1L };
+  };
+
+  // Helper function to get price for a specific period, delivery preference, and variant
+  const getPriceForPeriod = (period: number | 'buyOnce' | 'mrp', deliveryPref: 'home' | 'pickup' = deliveryPreference, unit: '500ml' | '1L' = '500ml', forComparison: boolean = false): number => {
+    const variants = getVariantsByType(deliveryPref, unit, forComparison);
+    if (variants.length === 0) return 0;
+    
+    const variant = variants[0]; // Take first matching variant
+
+    if (period === 'mrp') {
+      // Use mrp field if available, otherwise fallback to price field
+      return variant.mrp || variant.price || 0;
+    }
+    
+    if (period === 'buyOnce') {
+      return variant.buyOncePrice || 0;
+    }
+    
+    switch (period) {
+      case 3:
+        return variant.price3Day || 0;
+      case 15:
+        return variant.price15Day || 0;
+      case 30:
+        return variant.price1Month || 0;
+      default:
+        return 0;
     }
   };
 
-  // Helper function to get price for a specific period and delivery preference
-  const getPriceForPeriod = (period: number | 'buyOnce', deliveryPref: 'home' | 'pickup' = deliveryPreference): number => {
-    if (period === 'buyOnce') {
-      return pricingMatrix[deliveryPref].buyOnce.price;
-    }
-    return pricingMatrix[deliveryPref].subscription[period as 3 | 15 | 30]?.price || 0;
+  // Calculate savings percentage vs mrp
+  const calculateSavings = (period: number | 'buyOnce', deliveryPref: 'home' | 'pickup' = deliveryPreference, unit: '500ml' | '1L' = '500ml', forComparison: boolean = false): number => {
+    const mrp = getPriceForPeriod('mrp', deliveryPref, unit, forComparison);
+    const subscriptionPrice = getPriceForPeriod(period, deliveryPref, unit, forComparison);
+    
+    if (mrp === 0 || subscriptionPrice === 0) return 0;
+    
+    // Calculate savings vs MRP for all periods including buyOnce
+    const savings = Math.round(((mrp - subscriptionPrice) / mrp) * 100);
+    return Math.max(0, savings); // Ensure no negative savings
   };
 
-  // Calculate savings percentage vs online buy once price
-  const calculateSavings = (period: number | 'buyOnce', deliveryPref: 'home' | 'pickup' = deliveryPreference): number => {
-    if (period === 'buyOnce') {
-      return pricingMatrix[deliveryPref].buyOnce.savings;
-    }
-    return pricingMatrix[deliveryPref].subscription[period as 3 | 15 | 30]?.savings || 0;
+  // Calculate absolute savings amount
+  const calculateSavingsAmount = (period: number | 'buyOnce', deliveryPref: 'home' | 'pickup' = deliveryPreference, unit: '500ml' | '1L' = '500ml', forComparison: boolean = false): number => {
+    const mrp = getPriceForPeriod('mrp', deliveryPref, unit, forComparison);
+    const subscriptionPrice = getPriceForPeriod(period, deliveryPref, unit, forComparison);
+    
+    if (mrp === 0 || subscriptionPrice === 0) return 0;
+    
+    return Math.max(0, mrp - subscriptionPrice);
+  };
+
+  // Get depot name for selected depot
+  const getSelectedDepotName = (): string => {
+    if (!selectedDepotId) return '';
+    const depot = depotVariants.find(variant => variant.depot.id === selectedDepotId)?.depot;
+    return depot ? depot.name : '';
   };
 
   // Get available schedules for a specific period
@@ -141,6 +247,13 @@ export const PriceChart: React.FC<PriceChartProps> = ({ product, variants, class
     return allSchedules.filter(schedule => period >= schedule.minPeriod);
   };
 
+  // Debug variants when data changes
+  React.useEffect(() => {
+    if (depotVariants.length > 0) {
+      getAvailableVariants();
+    }
+  }, [depotVariants, selectedDepotId]);
+
   // Prepare pricing data
   const pricingData = React.useMemo(() => {
     return subscriptionPeriods.map(period => ({
@@ -154,9 +267,22 @@ export const PriceChart: React.FC<PriceChartProps> = ({ product, variants, class
       icon: period.icon,
       availableSchedules: getAvailableSchedules(period.value)
     }));
-  }, [deliveryPreference]);
+  }, [deliveryPreference, depotVariants, selectedDepotId]);
 
-  if (!product && (!variants || variants.length === 0)) {
+  if (variantsLoading) {
+    return (
+      <Button 
+        variant="outline" 
+        disabled
+        className="w-full py-3 text-sm border-blue-500 text-blue-600 hover:bg-blue-50 flex items-center justify-center gap-2"
+      >
+        <Skeleton className="h-4 w-4 rounded-full" />
+        Loading Pricing...
+      </Button>
+    );
+  }
+
+  if (!product && (!variants || variants.length === 0) && depotVariants.length === 0) {
     return null;
   }
 
@@ -191,137 +317,141 @@ export const PriceChart: React.FC<PriceChartProps> = ({ product, variants, class
             {/* Product Info */}
             <div className="bg-blue-50/50 p-4 rounded-lg border">
               <h3 className="font-semibold text-gray-900 mb-2">{product?.name || "Product"}</h3>
-              <p className="text-sm text-gray-600">
-                Choose the best subscription plan for your needs. Longer periods offer better savings!
-              </p>
+              <div className="space-y-2">
+                <p className="text-sm text-gray-600">
+                  Choose the best subscription plan for your needs. Longer periods offer better savings!
+                </p>
+                {deliveryPreference === 'pickup' && selectedDepotId && getSelectedDepotName() && (
+                  <div className="bg-green-100 p-2 rounded-md">
+                    <p className="text-sm text-green-800 font-medium">
+                      📍 Showing prices for: {getSelectedDepotName()}
+                    </p>
+                  </div>
+                )}
+                {deliveryPreference === 'home' && (
+                  <div className="bg-blue-100 p-2 rounded-md">
+                    <p className="text-sm text-blue-800 font-medium">
+                      🚚 Showing online delivery prices
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Pricing Comparison - Side by Side */}
+         
+
+            {/* Pricing Comparison - New 2-Column Layout */}
             <div className="space-y-6">
-              <h4 className="font-semibold text-gray-900 text-lg">Pricing Comparison: Website vs Store Pickup</h4>
+              <h4 className="font-semibold text-gray-900 text-lg">Subscription Pricing for {deliveryPreference === 'home' ? 'Online Delivery' : 'Store Pickup'}</h4>
               
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Website Pricing */}
-                <div className="border-2 border-blue-200 rounded-lg overflow-hidden">
-                  <div className="bg-blue-50 px-4 py-3 border-b border-blue-200">
-                    <h5 className="font-semibold text-blue-900 flex items-center gap-2">
-                      <TrendingDown className="h-4 w-4" />
-                      Website (Online Delivery)
-                    </h5>
-                  </div>
-                  <div className="p-4">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-gray-200">
-                          <th className="text-left py-2 text-sm font-medium text-gray-700">Period</th>
-                          <th className="text-right py-2 text-sm font-medium text-gray-700">Price</th>
-                          <th className="text-right py-2 text-sm font-medium text-gray-700">Savings</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        <tr>
-                          <td className="py-3">
-                            <div className="flex items-center gap-2">
-                              <div className="text-gray-600">Buy Once</div>
+              {/* Horizontal 2-Column Layout */}
+              <div className="overflow-x-auto">
+                <table className="w-full border border-gray-200 rounded-lg">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-700 border-r border-gray-200">Period</th>
+                      <th className="text-center py-3 px-4 text-sm font-medium text-gray-700 border-r border-gray-200" colSpan={2}>
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          500ml
+                        </div>
+                      </th>
+                      <th className="text-center py-3 px-4 text-sm font-medium text-gray-700" colSpan={2}>
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                          1L
+                        </div>
+                      </th>
+                    </tr>
+                    <tr className="bg-gray-50 border-t border-gray-200">
+                      <th className="py-2 px-4 border-r border-gray-200"></th>
+                      <th className="text-center py-2 px-3 text-xs font-medium text-gray-600 border-r border-gray-100">Price</th>
+                      <th className="text-center py-2 px-3 text-xs font-medium text-gray-600 border-r border-gray-200">Savings</th>
+                      <th className="text-center py-2 px-3 text-xs font-medium text-gray-600 border-r border-gray-100">Price</th>
+                      <th className="text-center py-2 px-3 text-xs font-medium text-gray-600">Savings</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {/* Buy Once Row */}
+                    <tr className="hover:bg-gray-50">
+                      <td className="py-3 px-4 border-r border-gray-200">
+                        <div className="flex items-center gap-2">
+                          <div className="text-gray-600 font-medium">Buy Once</div>
+                        </div>
+                      </td>
+                      <td className="text-center py-3 px-3 font-semibold text-gray-900 border-r border-gray-100">
+                        ₹{getPriceForPeriod('buyOnce', deliveryPreference, '500ml') || '--'}
+                      </td>
+                      <td className="text-center py-3 px-3 border-r border-gray-200">
+                        <span className="text-xs text-gray-500">Base Price</span>
+                      </td>
+                      <td className="text-center py-3 px-3 font-semibold text-gray-900 border-r border-gray-100">
+                        ₹{getPriceForPeriod('buyOnce', deliveryPreference, '1L') || '--'}
+                      </td>
+                      <td className="text-center py-3 px-3">
+                        <span className="text-xs text-gray-500">Base Price</span>
+                      </td>
+                    </tr>
+                    
+                    {/* Subscription Periods */}
+                    {subscriptionPeriods.map(period => (
+                      <tr key={period.value} className="hover:bg-gray-50">
+                        <td className="py-3 px-4 border-r border-gray-200">
+                          <div className="flex items-center gap-2">
+                            <div style={{ color: period.color }} className="flex items-center">
+                              {period.icon}
                             </div>
-                          </td>
-                          <td className="text-right py-3 font-semibold text-gray-900">
-                            ₹{getPriceForPeriod('buyOnce', 'home')}
-                          </td>
-                          <td className="text-right py-3 text-gray-500 text-sm">
-                            Base Price
-                          </td>
-                        </tr>
-                        {subscriptionPeriods.map(period => (
-                          <tr key={period.value}>
-                            <td className="py-3">
-                              <div className="flex items-center gap-2">
-                                <div style={{ color: period.color }} className="flex items-center">
-                                  {period.icon}
-                                </div>
-                                <div>
-                                  <div className="font-medium text-gray-900 text-sm">{period.label}</div>
-                                  <div className="text-xs text-gray-500">{period.description}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="text-right py-3 font-semibold text-green-600">
-                              ₹{getPriceForPeriod(period.value, 'home')}
-                            </td>
-                            <td className="text-right py-3">
-                              <Badge className="bg-orange-100 text-orange-800 text-xs">
-                                {calculateSavings(period.value, 'home')}% off
-                              </Badge>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* Store Pickup Pricing */}
-                <div className="border-2 border-green-200 rounded-lg overflow-hidden">
-                  <div className="bg-green-50 px-4 py-3 border-b border-green-200">
-                    <h5 className="font-semibold text-green-900 flex items-center gap-2">
-                      <Calendar className="h-4 w-4" />
-                      Store Pickup
-                    </h5>
-                  </div>
-                  <div className="p-4">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-gray-200">
-                          <th className="text-left py-2 text-sm font-medium text-gray-700">Period</th>
-                          <th className="text-right py-2 text-sm font-medium text-gray-700">Price</th>
-                          <th className="text-right py-2 text-sm font-medium text-gray-700">Savings</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        <tr>
-                          <td className="py-3">
-                            <div className="flex items-center gap-2">
-                              <div className="text-gray-600">Buy Once</div>
+                            <div>
+                              <div className="font-medium text-gray-900 text-sm">{period.label}</div>
+                              <div className="text-xs text-gray-500">{period.description}</div>
                             </div>
-                          </td>
-                          <td className="text-right py-3 font-semibold text-gray-900">
-                            ₹{getPriceForPeriod('buyOnce', 'pickup')}
-                          </td>
-                          <td className="text-right py-3">
-                            <Badge className="bg-green-100 text-green-800 text-xs">
-                              {calculateSavings('buyOnce', 'pickup')}% off vs online
-                            </Badge>
-                          </td>
-                        </tr>
-                        {subscriptionPeriods.map(period => (
-                          <tr key={period.value}>
-                            <td className="py-3">
-                              <div className="flex items-center gap-2">
-                                <div style={{ color: period.color }} className="flex items-center">
-                                  {period.icon}
-                                </div>
-                                <div>
-                                  <div className="font-medium text-gray-900 text-sm">{period.label}</div>
-                                  <div className="text-xs text-gray-500">{period.description}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="text-right py-3 font-semibold text-green-600">
-                              ₹{getPriceForPeriod(period.value, 'pickup')}
-                            </td>
-                            <td className="text-right py-3">
-                              <Badge className="bg-green-100 text-green-800 text-xs">
-                                {calculateSavings(period.value, 'pickup')}% off vs online
+                          </div>
+                        </td>
+                        <td className="text-center py-3 px-3 border-r border-gray-100">
+                          <span className="font-semibold text-green-600">
+                            ₹{getPriceForPeriod(period.value, deliveryPreference, '500ml') || '--'}
+                          </span>
+                        </td>
+                        <td className="text-center py-3 px-3 border-r border-gray-200">
+                          {calculateSavings(period.value, deliveryPreference, '500ml') > 0 ? (
+                            <div className="flex flex-col items-center">
+                              <Badge className="bg-orange-100 text-orange-800 text-xs mb-1">
+                                {calculateSavings(period.value, deliveryPreference, '500ml')}% off
                               </Badge>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                              <span className="text-xs text-green-600 font-medium">
+                                Save ₹{calculateSavingsAmount(period.value, deliveryPreference, '500ml')}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400">No savings</span>
+                          )}
+                        </td>
+                        <td className="text-center py-3 px-3 border-r border-gray-100">
+                          <span className="font-semibold text-green-600">
+                            ₹{getPriceForPeriod(period.value, deliveryPreference, '1L') || '--'}
+                          </span>
+                        </td>
+                        <td className="text-center py-3 px-3">
+                          {calculateSavings(period.value, deliveryPreference, '1L') > 0 ? (
+                            <div className="flex flex-col items-center">
+                              <Badge className="bg-orange-100 text-orange-800 text-xs mb-1">
+                                {calculateSavings(period.value, deliveryPreference, '1L')}% off
+                              </Badge>
+                              <span className="text-xs text-green-600 font-medium">
+                                Save ₹{calculateSavingsAmount(period.value, deliveryPreference, '1L')}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400">No savings</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-
+              
+ 
               {/* Delivery Schedules by Period */}
               <div className="bg-gray-50 rounded-lg p-4">
                 <h5 className="font-medium text-gray-900 mb-3">Available Delivery Schedules by Period</h5>
@@ -390,30 +520,7 @@ export const PriceChart: React.FC<PriceChartProps> = ({ product, variants, class
               </div>
             </div>
 
-            {/* Variants Information */}
-            {variants && variants.length > 1 && (
-              <div className="space-y-4">
-                <h4 className="font-semibold text-gray-900 text-lg">Available Product Variants</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {variants.slice(0, 6).map((variant) => (
-                    <div 
-                      key={variant.id}
-                      className="flex justify-between items-center p-3 border rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
-                    >
-                      <span className="text-sm font-medium text-gray-900">{variant.name}</span>
-                      <Badge variant="outline" className="bg-white">
-                        ₹{variant.rate} per {variant.unit || 'unit'}
-                      </Badge>
-                    </div>
-                  ))}
-                  {variants.length > 6 && (
-                    <div className="text-center text-sm text-gray-500 p-3 border rounded-lg bg-gray-50">
-                      +{variants.length - 6} more variants
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+           
 
             {/* Key Benefits */}
             <div className="space-y-4">

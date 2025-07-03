@@ -32,6 +32,7 @@ interface CarouselImage {
   src: string;
   alt: string;
   title?: string;
+  mobileSrc?: string; // Optional mobile image source
 }
 
 const LandingPage = () => {
@@ -49,6 +50,14 @@ const LandingPage = () => {
   const adminRoles: string[] = ["ADMIN", "SUPER_ADMIN", "ADMINISTRATOR"];
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
+
+  // Mobile image mapping - Add your mobile images here
+  const mobileImageMap: Record<string, string> = {
+    // Map banner IDs to mobile image paths
+    // Example: "banner-1": "/images/mobile/banner-1-mobile.jpg",
+    // "banner-2": "/images/mobile/banner-2-mobile.jpg",
+    // Add more mappings as needed
+  };
 
   const BACKEND_URL =
     import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
@@ -114,12 +123,19 @@ const LandingPage = () => {
         if (responseData && responseData.banners) {
           const transformedBanners = responseData.banners
             .filter((banner) => banner.imagePath)
-            .map((banner) => ({
-              id: banner.id,
-              src: `${BACKEND_URL}${banner.imagePath}`,
-              alt: banner.caption || `Indraai Milk Banner ${banner.id}`,
-              title: banner.description || undefined,
-            }));
+            .map((banner) => {
+              // Check if there's a mobile image mapping for this banner
+              const mobileImagePath = mobileImageMap[banner.id] || 
+                                    (banner.mobileImagePath ? `${BACKEND_URL}${banner.mobileImagePath}` : undefined);
+              
+              return {
+                id: banner.id,
+                src: `${BACKEND_URL}${banner.imagePath}`,
+                alt: banner.caption || `Indraai Milk Banner ${banner.id}`,
+                title: banner.description || undefined,
+                mobileSrc: mobileImagePath,
+              };
+            });
           setHeroBanners(transformedBanners);
         } else {
           setHeroBanners([]);

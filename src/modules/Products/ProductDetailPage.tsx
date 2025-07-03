@@ -488,7 +488,11 @@ const ProductDetailPage: React.FC = () => {
                 </div>}
                 {/* Price Chart Section */}
                 <div className="mt-8">
-                  <PriceChart product={product} deliveryPreference={deliveryPreference} />
+                  <PriceChart 
+                    product={product} 
+                    deliveryPreference={deliveryPreference} 
+                    selectedDepotId={selectedDepotId}
+                  />
                 </div>
               </div>
             )}
@@ -729,7 +733,7 @@ const ProductDetailPage: React.FC = () => {
               </DialogTitle>
               <DialogClose className="absolute right-4 top-4">
                 <X className="h-4 w-4" />
-              </DialogClose>
+              </DialogClose>  
             </DialogHeader>
             <div className="mt-4">
               <div className="overflow-y-auto max-h-[60vh]">
@@ -784,7 +788,7 @@ const ProductDetailPage: React.FC = () => {
                         "Saraswat Colony",
                         "Thakurli Station area",
                         "Tilak Nagar",
-                        "90 Feet"
+                        "90 Feet",
                       ].map((area, index) => (
                         <div key={index} className="flex items-center gap-2 p-2 bg-white rounded border border-blue-100 hover:bg-blue-25 transition-colors">
                           <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -812,7 +816,7 @@ const ProductDetailPage: React.FC = () => {
                         "Kumbarghan Pada",
                         "Umesh Nagar",
                         "Motha Gaon",
-                        "Swaminarayn City"
+                        "Swaminarayn City",
                       ].map((area, index) => (
                         <div key={index} className="flex items-center gap-2 p-2 bg-white rounded border border-orange-100 hover:bg-orange-25 transition-colors">
                           <div className="w-2 h-2 bg-green-500 rounded-full"></div>

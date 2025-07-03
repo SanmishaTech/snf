@@ -23,8 +23,7 @@ const formSchema = z.object({
   productId: z.coerce.number().int().positive({ message: 'Product ID is required' }),
   name: z.string().min(1, 'Variant name is required'),
   hsnCode: z.string().optional(),
-  sellingPrice: z.coerce.number({ invalid_type_error: 'Selling price must be a number' }).nonnegative(),
-  purchasePrice: z.coerce.number({ invalid_type_error: 'Purchase price must be a number' }).nonnegative(),
+  mrp: z.coerce.number({ invalid_type_error: 'MRP must be a number' }).nonnegative(),
   minimumQty: z.coerce.number().int().nonnegative(),
   price3Day: z.coerce.number({ invalid_type_error: '3-day price must be a number' }).nonnegative().optional(),
   price7Day: z.coerce.number({ invalid_type_error: '7-day price must be a number' }).nonnegative().optional(),
@@ -58,8 +57,7 @@ const DepotProductVariantForm: React.FC<Props> = ({ initialData, onClose, onSucc
       productId: initialData?.productId || 0,
       name: initialData?.name || '',
       hsnCode: initialData?.hsnCode || '',
-      sellingPrice: initialData?.sellingPrice || 0,
-      purchasePrice: initialData?.purchasePrice || 0,
+      mrp: initialData?.mrp || 0,
       minimumQty: initialData?.minimumQty || 0,
       notInStock: initialData?.notInStock || false,
       price3Day: initialData?.price3Day ?? 0,
@@ -89,8 +87,7 @@ const DepotProductVariantForm: React.FC<Props> = ({ initialData, onClose, onSucc
         productId: initialData.productId,
         name: initialData.name,
         hsnCode: initialData.hsnCode ?? '',
-        sellingPrice: initialData.sellingPrice,
-        purchasePrice: initialData.purchasePrice,
+        mrp: initialData.mrp,
         minimumQty: initialData.minimumQty,
         notInStock: initialData.notInStock,
         isHidden: initialData.isHidden,
@@ -152,15 +149,9 @@ const DepotProductVariantForm: React.FC<Props> = ({ initialData, onClose, onSucc
       </div>
 
       <div className="grid gap-2">
-        <Label htmlFor="sellingPrice">Selling Price *</Label>
-        <Input type="number" step="0.01" id="sellingPrice" {...register('sellingPrice')} />
-        {errors.sellingPrice && <p className="text-sm text-red-600">{errors.sellingPrice.message}</p>}
-      </div>
-
-      <div className="grid gap-2">
-        <Label htmlFor="purchasePrice">Purchase Price *</Label>
-        <Input type="number" step="0.01" id="purchasePrice" {...register('purchasePrice')} />
-        {errors.purchasePrice && <p className="text-sm text-red-600">{errors.purchasePrice.message}</p>}
+        <Label htmlFor="mrp">MRP *</Label>
+        <Input type="number" step="0.01" id="mrp" {...register('mrp')} />
+        {errors.mrp && <p className="text-sm text-red-600">{errors.mrp.message}</p>}
       </div>
 
       <div className="grid gap-2">

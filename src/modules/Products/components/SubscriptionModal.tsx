@@ -16,7 +16,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon, Plus, Minus, Package, Clock, Sparkles, TrendingDown, Gift, Star, Zap } from "lucide-react";
+import { CalendarIcon, Plus, Minus, Package, Clock, Sparkles, TrendingDown, Gift, Star, Zap, Wallet } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -37,6 +37,8 @@ interface ProductVariant {
   name: string;
   price: number; // base price (sellingPrice)
   rate: number; // alias for base price for backward compatibility
+  mrp?: number; // Maximum Retail Price for savings calculation
+  buyOncePrice?: number; // Buy once price
   price3Day?: number;
   price7Day?: number;
   price15Day?: number;
@@ -73,6 +75,8 @@ interface ProductData {
   name: string;
   price: number;
   rate: number;
+  mrp?: number; // Maximum Retail Price for savings calculation
+  buyOncePrice?: number; // Buy once price
   unit?: string;
   variants?: ProductVariant[];
 }
@@ -246,6 +250,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     ...variant,
     price: toNumber(variant.sellingPrice ?? variant.price) ?? 0,
     rate: toNumber(variant.sellingPrice ?? variant.rate) ?? 0,
+    mrp: toNumber(variant.mrp) ?? toNumber(variant.sellingPrice ?? variant.price) ?? 0,
+    buyOncePrice: toNumber(variant.buyOncePrice),
     price3Day: toNumber(variant.price3Day),
     // price7Day: toNumber(variant.price7Day),
     price15Day: toNumber(variant.price15Day),
@@ -806,15 +812,15 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     }
   };
 
-  // Calculate savings by comparing buyOncePrice with subscription prices
+  // Calculate savings by comparing MRP with subscription prices
   const calculateSavings = () => {
     if (!hasVariants || selectedVariants.length === 0) {
       // For single product without variants
       if (!product) return 0;
 
       const deliveryCount = calculateDeliveryCount();
-      // Use buyOncePrice as the main price reference
-      const buyOncePrice = product.buyOncePrice || product.rate;
+      // Use MRP as the main price reference, fallback to buyOncePrice, then rate
+      const mrp = product.mrp || product.buyOncePrice || product.rate;
       const subscriptionRate = getProductPriceForPeriod(product, selectedPeriod);
 
       // --- DEBUG LOGS ---
@@ -822,12 +828,12 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       console.log('Product:', product);
       console.log('Selected Period:', selectedPeriod);
       console.log('Delivery Count:', deliveryCount);
-      console.log('Buy Once Price:', buyOncePrice);
+      console.log('MRP:', mrp);
       console.log('Subscription Rate:', subscriptionRate);
       // --- END DEBUG LOGS ---
 
-      // Only calculate savings if subscription rate is lower than buyOnce price
-      if (subscriptionRate >= buyOncePrice) return 0;
+      // Only calculate savings if subscription rate is lower than MRP
+      if (subscriptionRate >= mrp) return 0;
 
       let totalQty = 0;
       if (deliveryOption === 'day1-day2') {
@@ -838,24 +844,24 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         totalQty = quantity * deliveryCount;
       }
       
-      const totalBuyOncePrice = buyOncePrice * totalQty;
+      const totalMrpPrice = mrp * totalQty;
       const totalSubscriptionPrice = subscriptionRate * totalQty;
 
-      const savings = Math.max(0, totalBuyOncePrice - totalSubscriptionPrice);
-      console.log('Calculated Savings:', savings);
+      const savings = Math.max(0, totalMrpPrice - totalSubscriptionPrice);
+      console.log('Calculated Savings vs MRP:', savings);
       return savings;
     }
 
     // For products with variants
-    let totalBuyOncePrice = 0;
+    let totalMrpPrice = 0;
     let totalSubscriptionPrice = 0;
 
     selectedVariants.forEach(selectedVariant => {
       const variant = productVariants.find(v => v.id === selectedVariant.variantId);
       if (!variant) return;
 
-      // Use buyOncePrice as the main price reference, fallback to rate
-      const buyOncePrice = variant.buyOncePrice || variant.rate;
+      // Use MRP as the main price reference, fallback to buyOncePrice, then rate
+      const mrp = variant.mrp || variant.buyOncePrice || variant.rate;
       const subscriptionPrice = getVariantPriceForPeriod(variant, selectedPeriod);
       const deliveryCount = calculateVariantDeliveryCount(selectedVariant);
 
@@ -873,15 +879,15 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
           break;
       }
 
-      totalBuyOncePrice += buyOncePrice * totalQty;
+      totalMrpPrice += mrp * totalQty;
       totalSubscriptionPrice += subscriptionPrice * totalQty;
     });
 
-    const savings = Math.max(0, totalBuyOncePrice - totalSubscriptionPrice);
+    const savings = Math.max(0, totalMrpPrice - totalSubscriptionPrice);
     console.log('--- Savings Calculation (Variants) ---');
-    console.log('Total Buy Once Price:', totalBuyOncePrice);
+    console.log('Total MRP Price:', totalMrpPrice);
     console.log('Total Subscription Price:', totalSubscriptionPrice);
-    console.log('Calculated Savings:', savings);
+    console.log('Calculated Savings vs MRP:', savings);
     return savings;
   };
 
@@ -1224,7 +1230,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     <h3 className="text-sm font-medium text-gray-700 mb-3">
                       Subscription Period
                     </h3>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {subscriptionPeriods.map((period) => (
                         <Button
                           key={period.value}
@@ -1233,14 +1239,23 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                               ? "default"
                               : "outline"
                           }
-                          className={`h-10 ${
+                          className={`h-auto py-3 px-3 text-center ${
                             selectedPeriod === period.value
                               ? "bg-primary hover:bg-primary"
                               : "border-gray-300"
                           }`}
                           onClick={() => setSelectedPeriod(period.value)}
                         >
-                          {period.label}
+                          <div className="flex flex-col items-center gap-1">
+                            <span className="text-sm font-medium">
+                              {period.value} Days
+                            </span>
+                            <span className="text-xs opacity-90">
+                              {period.value === 3 && "Trial Pack"}
+                              {period.value === 15 && "Mid Saver"}
+                              {period.value === 30 && "Super Saver"}
+                            </span>
+                          </div>
                         </Button>
                       ))}
                     </div>
@@ -2421,6 +2436,37 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 </div>
               </div>
 
+              {/* Wallet Balance Section */}
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <div className="flex items-center justify-between mb-3">
+                  <Label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                    <Wallet className="h-4 w-4" /> Use Wallet Balance
+                  </Label>
+                  <div className="text-sm font-medium">
+                    Available: ₹{walletBalance.toFixed(2)}
+                  </div>
+                </div>
+
+                {useWallet && walletBalance > 0 && (
+                  <div className="bg-white p-3 rounded border border-blue-300">
+                    <div className="text-xs text-blue-700 space-y-1">
+                      <div className="flex justify-between">
+                        <span>Wallet Balance:</span>
+                        <span>₹{walletBalance.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Amount to be deducted:</span>
+                        <span className="font-medium text-green-600">₹{walletDeduction.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between font-medium pt-1 border-t">
+                        <span>Remaining in wallet:</span>
+                        <span>₹{(walletBalance - walletDeduction).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {subscriptionSummary && (
                 <>
                   {remainingPayable > 0 ? (
@@ -2831,7 +2877,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     <TrendingDown className="h-4 w-4" />
                     <span className="font-medium">You Save: ₹{calculateSavings().toFixed(2)}</span>
                   </div>
-                  <span className="text-gray-500 text-xs">vs buy-once pricing</span>
+                  <span className="text-gray-500 text-xs">vs MRP pricing</span>
                 </div>
               )}
               <Button
@@ -2889,7 +2935,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     <TrendingDown className="h-4 w-4" />
                     <span className="font-medium">Total Savings: ₹{calculateSavings().toFixed(2)}</span>
                   </div>
-                  <span className="text-gray-500 text-xs">vs buy-once pricing</span>
+                  <span className="text-gray-500 text-xs">vs MRP pricing</span>
                 </div>
               )}
               <div className="flex justify-end items-center gap-3 w-full">

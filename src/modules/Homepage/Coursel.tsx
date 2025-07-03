@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
+import mobilebg from "./images/for mobile .png"
+// Removed hardcoded mobile background import - now using dynamic mobileSrc
 
 interface HeroImage {
   id: string | number;
   src: string;
   alt: string;
+  mobileSrc?: string; // Optional mobile image source
 }
 
 interface HeroSectionProps {
@@ -23,11 +27,30 @@ const HeroSection: React.FC<HeroSectionProps> = ({
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoaded(true), 100);
     return () => clearTimeout(timer);
+  }, []);
+
+  // Handle responsive detection with better breakpoints
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth <= 640); // Mobile only (sm breakpoint)
+    };
+    
+    // Check on mount
+    checkIsMobile();
+    
+    // Listen for resize events
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkIsMobile);
+    };
   }, []);
 
   useEffect(() => {
@@ -52,6 +75,26 @@ const HeroSection: React.FC<HeroSectionProps> = ({
     }
   };
 
+  const handleJoinMilkClub = () => {
+    // Check if user is logged in by checking localStorage
+    const authToken = localStorage.getItem('authToken');
+    const user = localStorage.getItem('user');
+    
+    if (authToken && user) {
+      // User is logged in, scroll to product detail section
+      const productSection = document.getElementById('product-detail-section');
+      if (productSection) {
+        productSection.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }
+    } else {
+      // User not logged in, redirect to login page
+      navigate('/login');
+    }
+  };
+
   if (!images || images.length === 0) {
     return (
         <section className={cn("relative w-full h-screen overflow-hidden flex items-center justify-center bg-gray-200", className)}>
@@ -71,13 +114,57 @@ const HeroSection: React.FC<HeroSectionProps> = ({
             key={image.id}
             className={cn(
               "absolute inset-0 transition-opacity duration-1000 ease-in-out",
+              index === currentImageIndex ? "opacity-100" : "opacity-0"
              )}
           >
-            <img src={image.src} alt={image.alt} className="w-full h-full object-fit object-center" onLoad={() => handleImageLoad(index)} loading={index === 0 ? "eager" : "lazy"} />
+            {/* Conditional rendering based on screen size and available mobile image */}
+            <div className="w-full h-full">
+              {/* Mobile Image - only show if mobileSrc is provided */}
+              {mobilebg && (
+                <img
+                  src={mobilebg}
+                  alt={image.alt}
+                  className="w-full h-full object-contain object-center transition-all duration-300 sm:hidden"
+                  onLoad={() => handleImageLoad(index)}
+                  loading={index === 0 ? "eager" : "lazy"}
+                  style={{ 
+                    minHeight: '600px',
+                    maxHeight: '800px',
+                    height: '100vh'
+                  }}
+                />
+              )}
+              
+              {/* Desktop/Tablet Image (or fallback for mobile if no mobileSrc) */}
+              <img
+                src={image.src}
+                alt={image.alt}
+                className={cn(
+                  "w-full h-full transition-all duration-300",
+                  // Show on mobile only if no mobileSrc is available
+                  image.mobileSrc ? "hidden sm:block" : "block",
+                  // Mobile fallback: object-cover
+                  image.mobileSrc ? "" : "object-cover object-center sm:object-contain sm:object-center",
+                  // Tablet: object-contain to prevent cropping
+                  "sm:object-contain sm:object-center",
+                  // Desktop: object-cover for full coverage
+                  "lg:object-cover lg:object-center"
+                )}
+                onLoad={() => handleImageLoad(index)}
+                loading={index === 0 ? "eager" : "lazy"}
+                style={{ 
+                  minHeight: '600px',
+                  maxHeight: '800px',
+                  height: '100vh',
+                  backgroundColor: '#f8f9fa' // Fallback background for object-contain
+                }}
+              />
+            </div>
           </div>
         ))}
         
-        {/* Overlay */}
+        {/* Gradient overlay for better text readability */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/30 to-black/50 z-[1]" />
        </div>
 
       {/* Content Overlay */}
@@ -109,17 +196,6 @@ const HeroSection: React.FC<HeroSectionProps> = ({
               {description}
             </motion.p>
 
-            {/* CTA Buttons */}
-            <motion.div
-              initial={{ opacity: 1, y: 20 }}
-              animate={{ opacity: isLoaded ? 1 : 0, y: isLoaded ? 1 : 20 }}
-              transition={{ duration: 0.6, delay: 1.0 }}
-              className="flex justify-center items-bottom pt-8"
-            >
-              <button className="px-8 py-3 bg-red-500 text-white font-semibold rounded-full hover:bg-red-400/90 transition-colors duration-300 min-w-[240px]">
-                Join Our Milk Club
-              </button>
-            </motion.div>
           </motion.div>
         </div>
       </div>
@@ -147,6 +223,21 @@ const HeroSection: React.FC<HeroSectionProps> = ({
 
       {/* Scroll Indicator */}
  
+      {/* CTA Buttons - Moved to bottom */}
+      <motion.div
+        initial={{ opacity: 1, y: 20 }}
+        animate={{ opacity: isLoaded ? 1 : 0, y: isLoaded ? 1 : 20 }}
+        transition={{ duration: 0.6, delay: 1.0 }}
+        className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-20"
+      >
+        <button 
+          onClick={handleJoinMilkClub}
+          className="px-8 py-3 bg-red-500 text-white font-semibold rounded-full hover:bg-red-400/90 transition-colors duration-300 min-w-[240px]"
+        >
+          Join Our Milk Club
+        </button>
+      </motion.div>
+
     </section>
   );
 };

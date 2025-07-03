@@ -7,8 +7,7 @@ export interface DepotProductVariant {
   productName?: string; // populated from backend include?
   name: string;
   hsnCode?: string;
-  sellingPrice: number;
-  purchasePrice: number;
+  mrp: number;
   minimumQty: number;
   price3Day?: number;
   price7Day?: number;

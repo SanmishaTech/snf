@@ -93,7 +93,7 @@ const GratitudePage: React.FC = () => {
           </div>
 
           <div className="mt-10 text-center text-gray-700">
-            <h3 className="text-xl font-semibold mb-2">I still have questions?</h3>
+            <h3 className="text-xl font-semibold mb-2">still have questions?</h3>
             <p className="mb-1">
               Please drop an email at <a href="mailto:contact@sarkhotnaturalfarms.com" className="text-green-600 hover:underline">contact@sarkhotnaturalfarms.com</a>
             </p>
