@@ -18,7 +18,7 @@ const getBackendUrl = () => {
     }
   }
   // Default for development
-  return "http://www.indraai.in";
+  return "https://www.indraai.in";
 };
 
 export const backendUrl = getBackendUrl();
