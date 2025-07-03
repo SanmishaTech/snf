@@ -142,13 +142,20 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
 
   useEffect(() => {
     if (order) {
-      console.log("Data.asd",order)
+      console.log("Payment Modal Data:", {
+        orderId: order.id,
+        totalAmount: order.totalAmount,
+        walletamt: order.walletamt,
+        payableamt: order.payableamt,
+        currentStatus: order.paymentStatus
+      });
       setPaymentMode(order.paymentMode || '');
       setPaymentReference(order.paymentReferenceNo || '');
       setPaymentDate(order.paymentDate ? format(new Date(order.paymentDate), 'yyyy-MM-dd') : '');
       setPaymentStatusState(order.paymentStatus || '');
-      setPayableAmount(order.totalAmount?.toString() || '0');
-      setReceivedAmount(order.totalAmount?.toString() || '0');
+      // Use order-level payableamt (remaining amount after wallet deduction)
+      setPayableAmount(order.payableamt?.toString() || '0');
+      setReceivedAmount(order.payableamt?.toString() || '0');
     } else {
       setPaymentMode('');
       setPaymentReference('');
@@ -181,12 +188,13 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
         return;
       }
 
-      const payable = order.totalAmount ?? 0;
+      const payable = order.payableamt ?? 0;
       const total = order.totalAmount ?? 0;
       console.log("payable", payable, "total", total)
 
       if (paymentStatusState === "PAID") {
-        // Allow received to match totalAmount if payable is 0 (workaround for old orders)
+        // Allow received to match payableamt (the actual amount owed after wallet deduction)
+        // or totalAmount if payableamt is 0 (workaround for old orders)
         const isValidAmount = (received === payable) || (payable === 0 && received === total);
         if (!isValidAmount) {
           const expectedAmount = (payable === 0 && total > 0) ? total : payable;
@@ -939,7 +947,6 @@ const AdminSubscriptionList: React.FC = () => {
       ) : productOrders.length > 0 ? (
         productOrders.map((order) => {
           const firstSub = order.subscriptions[0];
-                    const totalAmount = order.subscriptions.reduce((sum: number, sub: Subscription) => sum + sub.amount, 0);
           
           return (
             <TableRow key={order.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
@@ -991,7 +998,7 @@ const AdminSubscriptionList: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-1 font-medium">
                       <IndianRupeeIcon className="h-4 w-4" />
-                      <span>₹{totalAmount.toFixed(2)}</span>
+                      <span>{(order.payableamt || 0).toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
