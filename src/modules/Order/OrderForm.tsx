@@ -355,6 +355,12 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
     control,
     name: "orderItems",
   });
+  
+  // Log field changes
+  useEffect(() => {
+    console.log("[OrderForm] Fields updated:", fields);
+    console.log("[OrderForm] Fields length:", fields.length);
+  }, [fields]);
 
   // Fetch vendors
   useEffect(() => {
@@ -513,30 +519,128 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
         setIsFetchingPrefill(true);
         try {
           const formattedDate = format(watchedDeliveryDate, "yyyy-MM-dd");
-          const response = await get(`/vendor-orders/get-order-details?date=${formattedDate}`);
+          console.log("[OrderForm] Fetching prefill data for date:", formattedDate);
           
-          const data = response && response.data && Array.isArray(response.data) ? response.data : response;
-
-          if (data && Array.isArray(data) && data.length > 0) {
-            const newOrderItems = data.map((item: any) => {
-              const product = products.find(p => p.name === item.productName);
-              return {
-                depotId: String(item.depotId),
-                agencyId: String(item.agencyId),
-                productId: product ? String(product.id) : "",
-                depotVariantId: String(item.depotVariantId),
-                quantity: Number(item.totalQuantity),
-              };
+          const response = await get(`/vendor-orders/get-order-details?date=${formattedDate}`);
+          console.log("[OrderForm] Raw API response:", response);
+          
+          // Handle the new enhanced API response format
+          // The API returns { date, summary, data } directly
+          const responseData = response;
+          console.log("[OrderForm] Response data:", responseData);
+          console.log("[OrderForm] Type of responseData:", typeof responseData);
+          console.log("[OrderForm] responseData.data exists:", !!responseData.data);
+          console.log("[OrderForm] responseData.data is Array:", Array.isArray(responseData.data));
+          console.log("[OrderForm] responseData.data length:", responseData.data ? responseData.data.length : 'N/A');
+          
+          if (responseData && responseData.data && Array.isArray(responseData.data) && responseData.data.length > 0) {
+            console.log("[OrderForm] Number of depot-variant groups from API:", responseData.data.length);
+            console.log("[OrderForm] Summary:", responseData.summary);
+            
+            const newOrderItems: any[] = [];
+            
+            // Process each depot-variant group
+            responseData.data.forEach((group: any) => {
+              console.log("[OrderForm] Processing group:", group);
+              
+              // Each group can have multiple agencies and members
+              if (group.depot && group.variant && group.product) {
+                // Check if we should split by agencies or create a single item
+                if (group.agencies && group.agencies.ids.length > 1) {
+                  // Multiple agencies - create separate items for each agency
+                  // Calculate quantity per agency based on member distribution
+                  const membersByAgency: Record<string, number> = {};
+                  
+                  // If we have member details, use them to distribute quantity accurately
+                  if (group.members && Array.isArray(group.members)) {
+                    group.members.forEach((member: any) => {
+                      // For now, we'll distribute evenly since member data doesn't include agency info
+                      // In a real scenario, you might want to map members to agencies
+                    });
+                  }
+                  
+                  // For now, distribute quantity evenly among agencies
+                  const quantityPerAgency = Math.ceil(group.statistics.totalQuantity / group.agencies.ids.length);
+                  
+                  group.agencies.ids.forEach((agencyId: number, index: number) => {
+                    const mappedItem = {
+                      depotId: String(group.depot.id || ''),
+                      agencyId: String(agencyId),
+                      productId: String(group.product.id || ''),
+                      depotVariantId: String(group.variant.id || ''),
+                      quantity: quantityPerAgency,
+                    };
+                    
+                    console.log(`[OrderForm] Mapped item for agency ${group.agencies.names[index]}:`, mappedItem);
+                    
+                    // Only add valid items
+                    if (mappedItem.depotId && mappedItem.agencyId && mappedItem.productId && 
+                        mappedItem.depotVariantId && mappedItem.quantity > 0) {
+                      newOrderItems.push(mappedItem);
+                    }
+                  });
+                } else {
+                  // Single agency or no agency - create one item
+                  const agencyId = group.agencies && group.agencies.ids.length > 0 
+                    ? String(group.agencies.ids[0]) 
+                    : "";
+                  
+                  const mappedItem = {
+                    depotId: String(group.depot.id || ''),
+                    agencyId: agencyId,
+                    productId: String(group.product.id || ''),
+                    depotVariantId: String(group.variant.id || ''),
+                    quantity: Number(group.statistics.totalQuantity || 0),
+                  };
+                  
+                  console.log("[OrderForm] Mapped item:", mappedItem);
+                  
+                  // Validate mapped item
+                  if (!mappedItem.depotId) console.warn("[OrderForm] Item missing depotId");
+                  if (!mappedItem.agencyId) console.warn("[OrderForm] Item missing agencyId - user will need to select");
+                  if (!mappedItem.productId) console.warn("[OrderForm] Item missing productId");
+                  if (!mappedItem.depotVariantId) console.warn("[OrderForm] Item missing depotVariantId");
+                  if (mappedItem.quantity <= 0) console.warn("[OrderForm] Item has invalid quantity:", mappedItem.quantity);
+                  
+                  // Only add valid items (allow missing agencyId as user can select it)
+                  if (mappedItem.depotId && mappedItem.productId && mappedItem.depotVariantId && mappedItem.quantity > 0) {
+                    newOrderItems.push(mappedItem);
+                  }
+                }
+              }
             });
-            setValue("orderItems", newOrderItems, { shouldValidate: true });
-            toast.success(`${newOrderItems.length} order items prefilled for ${format(watchedDeliveryDate, "dd/MM/yyyy")}.`);
+            
+            console.log("[OrderForm] Final mapped order items:", newOrderItems);
+            console.log("[OrderForm] Setting form with", newOrderItems.length, "items");
+            
+            if (newOrderItems.length > 0) {
+              setValue("orderItems", newOrderItems, { shouldValidate: true });
+              toast.success(
+                `${newOrderItems.length} order items prefilled for ${format(watchedDeliveryDate, "dd/MM/yyyy")}. ` +
+                `Total quantity: ${responseData.summary.totalQuantity} units across ${responseData.summary.totalDepots} depots.`
+              );
+            } else {
+              console.warn("[OrderForm] No valid items could be mapped from the response");
+              setValue("orderItems", [{ depotId: "", agencyId: "", productId: "", depotVariantId: "", quantity: 1 }], { shouldValidate: true });
+              toast.warning(`Data found but could not map items for ${format(watchedDeliveryDate, "dd/MM/yyyy")}.`);
+            }
           } else {
+            console.log("[OrderForm] No data found or data format incorrect");
+            console.log("[OrderForm] responseData:", responseData);
+            console.log("[OrderForm] Condition failed:", {
+              hasResponseData: !!responseData,
+              hasDataProperty: !!(responseData && responseData.data),
+              isDataArray: Array.isArray(responseData && responseData.data),
+              dataLength: responseData && responseData.data ? responseData.data.length : 0
+            });
             setValue("orderItems", [{ depotId: "", agencyId: "", productId: "", depotVariantId: "", quantity: 1 }], { shouldValidate: true });
             toast.info(`No scheduled order items found for ${format(watchedDeliveryDate, "dd/MM/yyyy")}.`);
           }
         } catch (error: any) {
-          console.error("Error fetching prefill data:", error);
+          console.error("[OrderForm] Error fetching prefill data:", error);
           toast.error(error.message || "Failed to fetch prefill order items.");
+          // Set empty item on error
+          setValue("orderItems", [{ depotId: "", agencyId: "", productId: "", depotVariantId: "", quantity: 1 }], { shouldValidate: true });
         } finally {
           setIsFetchingPrefill(false);
         }
@@ -862,6 +966,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                   </thead>
                   <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                     {fields.map((itemField, index) => {
+                      console.log(`[OrderForm] Rendering field ${index}:`, itemField, "Watched item:", watchedOrderItems[index]);
                       const productInfo = products.find(p => String(p.id) === watchedOrderItems[index]?.productId);
                       const unitPrice = productInfo ? Number(productInfo.price) : 0;
                       const itemTotal = unitPrice * (watchedOrderItems[index]?.quantity || 0);

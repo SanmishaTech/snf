@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Heart, Shield, Zap, Droplets, Sparkles } from "lucide-react";
 import Indraai from "@/modules/Homepage/images/indraai.png"
+import Cows from "../images/cows.png"
 
 interface A2MilkSectionProps {
   className?: string;
@@ -97,9 +98,9 @@ const A2MilkSection: React.FC<A2MilkSectionProps> = ({ className = "" }) => {
       <div className="max-w-7xl mx-auto space-y-16">
         {/* Main Section */}
         <motion.div
-          className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center"
+          className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center " 
           variants={containerVariants}
-          initial="hidden"
+        initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.3 }}
         >
@@ -110,7 +111,7 @@ const A2MilkSection: React.FC<A2MilkSectionProps> = ({ className = "" }) => {
           >
             <div className="relative overflow-hidden rounded-2xl shadow-2xl">
               <img
-                src={Indraai}
+                src={Cows}
                 alt="A2 Milk from Indian Desi Cows"
                 className="w-full h-[400px] lg:h-[500px] object-cover"
               />

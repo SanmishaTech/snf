@@ -2,14 +2,12 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
-import mobilebg from "./images/for mobile .png"
-// Removed hardcoded mobile background import - now using dynamic mobileSrc
 
 interface HeroImage {
   id: string | number;
   src: string;
   alt: string;
-  mobileSrc?: string; // Optional mobile image source
+  mobileSrc: string; // Now required for proper mobile responsiveness
 }
 
 interface HeroSectionProps {
@@ -39,7 +37,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
   // Handle responsive detection with better breakpoints
   useEffect(() => {
     const checkIsMobile = () => {
-      setIsMobile(window.innerWidth <= 640); // Mobile only (sm breakpoint)
+      setIsMobile(window.innerWidth < 425); // Mobile breakpoint at 768px
     };
     
     // Check on mount
@@ -106,75 +104,51 @@ const HeroSection: React.FC<HeroSectionProps> = ({
   }
 
   return (
-    <section className={cn("relative w-full h-full overflow-hidden", className)}>
-      {/* Background Images */}
-      <div className="absolute inset-0">
-        {images.map((image, index) => (
-          <div
-            key={image.id}
-            className={cn(
-              "absolute inset-0 transition-opacity duration-1000 ease-in-out",
-              index === currentImageIndex ? "opacity-100" : "opacity-0"
-             )}
-          >
-            {/* Conditional rendering based on screen size and available mobile image */}
-            <div className="w-full h-full">
-              {/* Mobile Image - only show if mobileSrc is provided */}
-              {mobilebg && (
+    <section className={cn("relative w-full overflow-hidden", className)}>
+      {/* Hero Container with specific aspect ratio */}
+      <div 
+        className="relative w-full mx-auto"
+        style={{
+          maxWidth: '1600px',
+          aspectRatio: '1600 / 1067'
+        }}
+      >
+        {/* Background Images */}
+        <div className="absolute inset-0 bg-black">
+          {images.map((image, index) => (
+            <div
+              key={image.id}
+              className={cn(
+                "absolute inset-0 transition-opacity duration-1000 ease-in-out",
+                index === currentImageIndex ? "opacity-100" : "opacity-0"
+               )}
+            >
+              {/* Image Container with proper aspect ratio handling */}
+              <div className="relative w-full h-full flex items-center justify-center">
                 <img
-                  src={mobilebg}
+                  src={isMobile ? image.mobileSrc : image.src}
                   alt={image.alt}
-                  className="w-full h-full object-contain object-center transition-all duration-300 sm:hidden"
+                  className="w-full h-full object-cover"
                   onLoad={() => handleImageLoad(index)}
                   loading={index === 0 ? "eager" : "lazy"}
-                  style={{ 
-                    minHeight: '600px',
-                    maxHeight: '800px',
-                    height: '100vh'
-                  }}
                 />
-              )}
+              </div>
               
-              {/* Desktop/Tablet Image (or fallback for mobile if no mobileSrc) */}
-              <img
-                src={image.src}
-                alt={image.alt}
-                className={cn(
-                  "w-full h-full transition-all duration-300",
-                  // Show on mobile only if no mobileSrc is available
-                  image.mobileSrc ? "hidden sm:block" : "block",
-                  // Mobile fallback: object-cover
-                  image.mobileSrc ? "" : "object-cover object-center sm:object-contain sm:object-center",
-                  // Tablet: object-contain to prevent cropping
-                  "sm:object-contain sm:object-center",
-                  // Desktop: object-cover for full coverage
-                  "lg:object-cover lg:object-center"
-                )}
-                onLoad={() => handleImageLoad(index)}
-                loading={index === 0 ? "eager" : "lazy"}
-                style={{ 
-                  minHeight: '600px',
-                  maxHeight: '800px',
-                  height: '100vh',
-                  backgroundColor: '#f8f9fa' // Fallback background for object-contain
-                }}
-              />
+              {/* Gradient overlay for better text readability */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
             </div>
-          </div>
-        ))}
-        
-        {/* Gradient overlay for better text readability */}
+          ))}
         </div>
 
-      {/* Content Overlay */}
-      <div className="relative z-10 flex items-center justify-center h-full px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 1, y: 30 }}
-            animate={{ opacity: isLoaded ? 1 : 0, y: isLoaded ? 1 : 30 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="space-y-6"
-          >
+        {/* Content Overlay */}
+        <div className="absolute inset-0 z-10 flex items-center justify-center px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-4xl mx-auto">
+            <motion.div
+              initial={{ opacity: 1, y: 30 }}
+              animate={{ opacity: isLoaded ? 1 : 0, y: isLoaded ? 1 : 30 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="space-y-6"
+            >
             {/* Main Title */}
             <motion.h1
               initial={{ opacity: 1, y: 30 }}
@@ -195,48 +169,46 @@ const HeroSection: React.FC<HeroSectionProps> = ({
               {description}
             </motion.p>
 
-          </motion.div>
-        </div>
-      </div>
-
-      {/* Image Indicators */}
-      {images.length > 1 && (
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20">
-          <div className="flex space-x-2">
-            {images.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentImageIndex(index)}
-                className={cn(
-                  "w-3 h-3 rounded-full transition-all duration-300",
-                  index === currentImageIndex
-                    ? "bg-white scale-110"
-                    : "bg-white/50 hover:bg-white/70"
-                )}
-                aria-label={`Go to image ${index + 1}`}
-              />
-            ))}
+            </motion.div>
           </div>
         </div>
-      )}
 
-      {/* Scroll Indicator */}
- 
-      {/* CTA Buttons - Moved to bottom */}
-      <motion.div
-        initial={{ opacity: 1, y: 20 }}
-        animate={{ opacity: isLoaded ? 1 : 0, y: isLoaded ? 1 : 20 }}
-        transition={{ duration: 0.6, delay: 1.0 }}
-        className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-20"
-      >
-        <button 
-          onClick={handleJoinMilkClub}
-          className="px-8 py-3 bg-red-500 text-white font-semibold rounded-full hover:bg-red-400/90 transition-colors duration-300 min-w-[240px]"
+        {/* Image Indicators */}
+        {images.length > 1 && (
+          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20">
+            <div className="flex space-x-2">
+              {images.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentImageIndex(index)}
+                  className={cn(
+                    "w-3 h-3 rounded-full transition-all duration-300",
+                    index === currentImageIndex
+                      ? "bg-white scale-110"
+                      : "bg-white/50 hover:bg-white/70"
+                  )}
+                  aria-label={`Go to image ${index + 1}`}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* CTA Buttons */}
+        <motion.div
+          initial={{ opacity: 1, y: 20 }}
+          animate={{ opacity: isLoaded ? 1 : 0, y: isLoaded ? 1 : 20 }}
+          transition={{ duration: 0.6, delay: 1.0 }}
+          className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-20"
         >
-          Join Our Milk Club
-        </button>
-      </motion.div>
-
+          <button 
+            onClick={handleJoinMilkClub}
+            className="px-8 py-3 bg-primary text-white font-semibold rounded-full hover:bg-red-400/90 transition-colors duration-300 min-w-[240px]"
+          >
+            Join Our Milk Club
+          </button>
+        </motion.div>
+      </div>
     </section>
   );
 };
