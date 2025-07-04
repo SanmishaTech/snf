@@ -114,7 +114,7 @@ const A2MilkSection: React.FC<A2MilkSectionProps> = ({ className = "" }) => {
                 alt="A2 Milk from Indian Desi Cows"
                 className="w-full h-[400px] lg:h-[500px] object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+              {/* <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" /> */}
             </div>
             <motion.div
               className="absolute -bottom-4 -right-4 bg-primary text-primary-foreground px-4 py-2 rounded-full shadow-lg"
@@ -170,7 +170,7 @@ const A2MilkSection: React.FC<A2MilkSectionProps> = ({ className = "" }) => {
             variants={itemVariants}
           >
             <h2 className="text-3xl lg:text-4xl font-bold text-foreground">
-              Health Benefits
+              A2 Milk Benefits
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Discover the numerous health advantages of choosing A2 milk for you and your family

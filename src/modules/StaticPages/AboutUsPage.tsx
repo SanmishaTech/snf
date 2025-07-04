@@ -18,7 +18,9 @@ const AboutUsPage: React.FC = () => {
             </div>
             <div className="w-[12rem] h-1 bg-primary rounded-full mb-4"></div>
             <p className="text-lg text-gray-600 font-medium">
-              Namaste, welcome to Sarkhot Natural Farms Family.
+              Namaste, welcome to <a 
+                className="hover:text-green-800 font-bold dark:hover:text-green-400 transition-colors"
+              href="https://sarkhotnaturalfarms.com/">Sarkhot Natural Farms</a> Family.
             </p>
           </div>
 
@@ -26,7 +28,9 @@ const AboutUsPage: React.FC = () => {
           <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed space-y-8">
          
             <p>
-            Sarkhot Natural Farms is a dedicated one-stop destination for 100% naturally grown farm produce.
+            <a 
+                className="hover:text-green-800 font-bold dark:hover:text-green-400 transition-colors"
+              href="https://sarkhotnaturalfarms.com/">Sarkhot Natural Farms</a> is a dedicated one-stop destination for 100% naturally grown farm produce.
 
               By "natural," we mean completely chemical-free, preservative-free, and toxin-free food — cultivated using traditional methods passed down through generations.
             </p>

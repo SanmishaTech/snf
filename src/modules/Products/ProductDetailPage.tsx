@@ -16,6 +16,7 @@ import { BuyOnceModal } from "./components/BuyOnceModal";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import PriceChart from "@/components/PriceChart";
+import LocationsDisplay from "@/components/LocationsDisplay";
 
 // Enhanced Star rating component
 const StarRating: React.FC<{ rating: number }> = ({ rating }) => {
@@ -452,7 +453,7 @@ const ProductDetailPage: React.FC = () => {
                             .filter(depot => !depot.isOnline) // Only show offline depots for pickup
                             .map((d) => (
                               <SelectItem key={d.id} value={d.id.toString()}>
-                                {d.name} - {d.address}
+                                {d.name} 
                               </SelectItem>
                             ))}
                         </SelectContent>
@@ -737,109 +738,7 @@ const ProductDetailPage: React.FC = () => {
             </DialogHeader>
             <div className="mt-4">
               <div className="overflow-y-auto max-h-[60vh]">
-                <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <p className="text-sm text-green-700 mb-2">
-                    <strong>We deliver to the following areas in Dombivli:</strong>
-                  </p>
-                  <p className="text-xs text-green-600">
-                    Fresh milk delivered daily to your doorstep. Select your area during checkout to confirm delivery availability.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Dombivli East */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h3 className="text-lg font-semibold mb-3 text-blue-800 flex items-center gap-2">
-                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                      Dombivli (East)
-                    </h3>
-                    <div className="space-y-2 max-h-80 overflow-y-auto">
-                      {[
-                        "Runwal Garden City",
-                        "Runwal MyCity",
-                        "Palava Phase - 2",
-                        "Casa Bella",
-                        "Casa Rio",
-                        "Lodha Premier",
-                        "Lodha Elite",
-                        "Nilje Gaon",
-                        "Regency, Davdi Village",
-                        "Regency Anantam",
-                        "MIDC area",
-                        "Gograswadi",
-                        "Ajdegaon",
-                        "Gharda Circle",
-                        "Shankeshwar Nagar",
-                        "Sanghvi Garden",
-                        "Lodha Heaven",
-                        "Navneet Nagar",
-                        "Sagaon",
-                        "Gandhi Nagar",
-                        "P & T Colony",
-                        "Nandivli Area",
-                        "Rajaji Path",
-                        "Ayre Village",
-                        "Dattanagar",
-                        "Shrikhandewadi",
-                        "Dombivli East Station Area",
-                        "Sunil Nagar",
-                        "DNC School Area",
-                        "Phadke Road",
-                        "Saraswat Colony",
-                        "Thakurli Station area",
-                        "Tilak Nagar",
-                        "90 Feet",
-                      ].map((area, index) => (
-                        <div key={index} className="flex items-center gap-2 p-2 bg-white rounded border border-blue-100 hover:bg-blue-25 transition-colors">
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                          <span className="text-sm text-gray-800">{area}</span>
-                          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full ml-auto">
-                            Available
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Dombivli West */}
-                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                    <h3 className="text-lg font-semibold mb-3 text-orange-800 flex items-center gap-2">
-                      <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                      Dombivli (West)
-                    </h3>
-                    <div className="space-y-2">
-                      {[
-                        "Koper",
-                        "Station Area",
-                        "Shastri Nagar",
-                        "Vishnu Nagar",
-                        "Kumbarghan Pada",
-                        "Umesh Nagar",
-                        "Motha Gaon",
-                        "Swaminarayn City",
-                      ].map((area, index) => (
-                        <div key={index} className="flex items-center gap-2 p-2 bg-white rounded border border-orange-100 hover:bg-orange-25 transition-colors">
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                          <span className="text-sm text-gray-800">{area}</span>
-                          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full ml-auto">
-                            Available
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Additional Information */}
-                <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                  <h4 className="font-semibold text-gray-900 mb-2">Delivery Information:</h4>
-                  <ul className="text-sm text-gray-600 space-y-1">
-                    <li>• Delivery timing: 6:00 AM - 8:00 AM</li>
-                    <li>• Fresh milk delivered daily to your doorstep</li>
-                    <li>• Glass bottle packaging for freshness and sustainability</li>
-                    <li>• Contact us if your area is not listed above</li>
-                  </ul>
-                </div>
+                <LocationsDisplay title="Home Delivery Areas" showDeliveryInfo={true} />
               </div>
             </div>
             <div className="mt-6 flex justify-end">

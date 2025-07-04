@@ -15,7 +15,7 @@ export default defineConfig({
     proxy: {
       "/api": {
         target: "https://www.indraai.in/",
-//This is https
+        //This is https
         changeOrigin: true,
       },
     },

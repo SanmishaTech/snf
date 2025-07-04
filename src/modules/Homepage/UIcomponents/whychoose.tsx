@@ -11,7 +11,7 @@ function Whychoose() {
           </div> */}
           <div className="flex gap-2 flex-col">
             <h2 className="text-xl md:text-3xl tracking-tighter lg:max-w-xl font-regular">
-             Why choose Indraai
+             Why choose <span className="text-primary">Indraai</span>
             </h2>
           
           </div>

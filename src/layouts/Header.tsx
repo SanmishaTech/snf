@@ -20,13 +20,34 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
   const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
   const [headerVisible, setHeaderVisible] = useState(true);
   const [scrolled, setScrolled] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(() => {
+    try {
+      const userDataString = localStorage.getItem('user');
+      return userDataString ? JSON.parse(userDataString).role : null;
+    } catch (error) {
+      console.error("Failed to parse user data from localStorage on init", error);
+      return null;
+    }
+  });
   const lastScrollY = useRef(0);
   const accountDropdownTimeoutId = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    // This effect updates the role when the user logs in or out.
+    try {
+      const userDataString = localStorage.getItem('user');
+      const role = userDataString ? JSON.parse(userDataString).role : null;
+      setUserRole(role);
+    } catch (error) {
+      console.error("Failed to parse user data from localStorage in effect", error);
+      setUserRole(null);
+    }
+  }, [isLoggedIn]);
 
   const navLinks = [
     { name: 'Home', path: '/' },
     { name: 'About Us', path: '/about' },
-    { name: 'Gratitude', path: '/gratitude' },
+    // { name: 'Gratitude', path: '/gratitude' },
     { name: 'Bharwad Cow', path: '/bharwadcow' },
     { name: 'Products', path: '/member/products' },
 
@@ -161,14 +182,16 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
                           <p className="text-sm font-medium text-gray-800 truncate">{userName}</p>
                         </div>
                       )}
-                      <Link 
-                        to="/member/subscriptions" 
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50 transition-colors" 
-                        onClick={() => setIsAccountDropdownOpen(false)}
-                      >
-                        <ShoppingBag size={16} className="mr-2 text-green-600" />
-                        My Subscriptions
-                      </Link>
+                      {userRole !== 'ADMIN' && (
+                        <Link 
+                          to="/member/subscriptions" 
+                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50 transition-colors" 
+                          onClick={() => setIsAccountDropdownOpen(false)}
+                        >
+                          <ShoppingBag size={16} className="mr-2 text-green-600" />
+                          My Subscriptions
+                        </Link>
+                      )}
                       <button 
                         onClick={() => { onLogout(); setIsAccountDropdownOpen(false); }}
                         className="w-full flex items-center text-left px-4 py-2 text-sm text-gray-700 hover:bg-red-50 transition-colors"

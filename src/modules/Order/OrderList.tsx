@@ -56,6 +56,8 @@ interface OrderItem {
   deliveredQuantity?: number;
   receivedQuantity?: number;
   unit?: string; // Added unit field
+  depotVariantId?: string;
+  depotVariantName?: string; // Added depot variant name field
 }
 
 interface Order {
@@ -369,21 +371,25 @@ const OrderList = () => {
                       <TableCell className="px-6 py-4 whitespace-nowrap text-sm">
                         <div className="flex flex-col space-y-1">
                           {(() => {
-                            const representativeUnit = order.items && order.items.length > 0 && order.items[0].unit ? ` ${order.items[0].unit}` : "";
+                            // Get all unique variant names from items
+                            const variantNames = order.items
+                              .map(item => item.depotVariantName)
+                              .filter((name, index, self) => name && self.indexOf(name) === index);
+                            const variantDisplay = variantNames.length > 0 ? ` (${variantNames.join(', ')})` : "";
                             console.log(order.items)
                             return (
                               <>
-                                <div><span className="font-medium">Ordered:</span> {quantities.ordered}{representativeUnit}</div>
+                                <div><span className="font-medium">Ordered:</span> {quantities.ordered}{variantDisplay}</div>
                                 <div>
                                   <span className="font-medium">Delivered:</span>{" "}
                                   <span className={quantities.delivered < quantities.ordered ? "text-red-500 font-medium" : "text-gray-500 dark:text-gray-300"}>
-                                    {quantities.delivered}{representativeUnit}
+                                    {quantities.delivered}
                                   </span>
                                 </div>
                                 <div>
                                   <span className="font-medium">Received:</span>{" "}
                                   <span className={quantities.received < quantities.delivered ? "text-red-500 font-medium" : "text-gray-500 dark:text-gray-300"}>
-                                    {quantities.received}{representativeUnit}
+                                    {quantities.received}
                                   </span>
                                 </div>
                               </>

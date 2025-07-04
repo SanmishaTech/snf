@@ -1,22 +1,16 @@
 import { useState, useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { get } from "@/services/apiService";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink } from "@/components/ui/breadcrumb";
 import { Badge } from "@/components/ui/badge";
 
 import { format } from "date-fns";
 import {
-  HomeIcon,
-  ArrowLeft,
   Truck,
   Package,
   ShoppingCart,
-  FileText,
   Check,
-  Clock,
   ClipboardCheck,
   PackageCheck
 } from "lucide-react";
@@ -76,9 +70,8 @@ const OrderDetailsPage = () => {
     queryFn: async () => get("/api/users/me"),
     staleTime: 5 * 60 * 1000, 
   });
-  const currentUserRole = currentUserProfile?.role;
 
-  const { data: order, isLoading, isError, refetch } = useQuery<Order>({
+  const { data: order, isLoading, isError } = useQuery<Order>({
     queryKey: ["order", id],
     queryFn: async (): Promise<Order> => {
       const response = await get(`/vendor-orders/${id}`);
@@ -146,7 +139,7 @@ const OrderDetailsPage = () => {
     }
   };
 
-  const breadcrumbBase = currentUserRole === "ADMIN" ? "/admin" : currentUserRole === "VENDOR" ? "/vendor" : currentUserRole === "AGENCY" ? "/admin" : "/";
+  
 
   if (isLoading || isLoadingUserProfile) { 
     return (
@@ -300,20 +293,20 @@ const OrderDetailsPage = () => {
                           </div>
                         </div>
                         <div className="col-span-2 text-right">
-                          {item.quantity} {item.unit && <span className="text-xs text-gray-500 dark:text-gray-400">{item.unit}</span>}
+                          {item.quantity} {item.depotVariantName && <span className="text-xs text-gray-500 dark:text-gray-400">{`(${item.depotVariantName})`}</span>}
                         </div>
                         
                         <div className="col-span-2 text-right">
                           {typeof item.deliveredQuantity === 'number' ? (
                             <>
-                              {item.deliveredQuantity} {item.unit && <span className="text-xs text-gray-500 dark:text-gray-400">{item.unit}</span>}
+                              {item.deliveredQuantity} {item.depotVariantName && <span className="text-xs text-gray-500 dark:text-gray-400">{`(${item.depotVariantName})`}</span>}
                             </>
                           ) : '-'}
                         </div>
                         <div className="col-span-2 text-right"> 
                           {typeof item.receivedQuantity === 'number' ? (
                             <>
-                              {item.receivedQuantity} {item.unit && <span className="text-xs text-gray-500 dark:text-gray-400">{item.unit}</span>}
+                              {item.receivedQuantity} {item.depotVariantName && <span className="text-xs text-gray-500 dark:text-gray-400">{`(${item.depotVariantName})`}</span>}
                             </>
                           ) : '-'}
                         </div>
@@ -356,7 +349,7 @@ const OrderDetailsPage = () => {
                   </div>
                   <div className="flex">
                     <span className="text-gray-500 dark:text-gray-400 w-20">Address:</span>
-                    <span className="font-medium">{order?.vendor?.address1}</span>
+                    <span className="font-medium">{order?.vendor?.address}</span>
                   </div>
                 </div>
               </CardContent>

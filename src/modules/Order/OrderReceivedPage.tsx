@@ -1,15 +1,13 @@
 import { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, QueryClient } from "@tanstack/react-query"; 
 import { get, put } from "@/services/apiService";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Breadcrumb, BreadcrumbItem } from "@/components/ui/breadcrumb";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import {
-  HomeIcon,
   ArrowLeft,
   ClipboardCheck
 } from "lucide-react";
@@ -122,6 +120,17 @@ const OrderReceivedPage = () => {
   }, [order]);
 
   const handleReceivedQuantityChange = (itemId: string, value: string) => {
+    const item = order?.items.find(i => i.id === itemId);
+
+    if (item && typeof item.deliveredQuantity !== 'undefined') {
+      const receivedQty = parseInt(value, 10);
+      if (!isNaN(receivedQty) && receivedQty > item.deliveredQuantity) {
+        toast.error(`Received quantity for ${item.productName} cannot exceed delivered quantity of ${item.deliveredQuantity}.`);
+        setReceivedQuantities(prev => ({ ...prev, [itemId]: String(item.deliveredQuantity) }));
+        return;
+      }
+    }
+
     setReceivedQuantities(prev => ({ ...prev, [itemId]: value }));
   };
 
@@ -267,16 +276,19 @@ const OrderReceivedPage = () => {
                           </div>
                           {item.agencyName && <span className="block text-xs text-gray-500 dark:text-gray-400">Agency: {item.agencyName}</span>}
                         </td>
-                        <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-300">{item.quantity}</td>
-                        <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-300">{item.deliveredQuantity ?? 'N/A'}</td>
+                        <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-300">{item.quantity} {item.depotVariantName && `(${item.depotVariantName})`}</td>
+                        <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-300">{item.deliveredQuantity != null ? `${item.deliveredQuantity} (${item.depotVariantName})` : 'N/A'}</td>
                         <td className="px-4 py-3">
-                          <Input
-                            type="number"
-                            value={receivedQuantities[item.id] || ''}
-                            onChange={(e) => handleReceivedQuantityChange(item.id, e.target.value)}
-                            className="w-full text-right dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
-                            min="0"
-                          />
+                          <div className="flex items-center justify-end space-x-2">
+                            <Input
+                              type="number"
+                              value={receivedQuantities[item.id] || ''}
+                              onChange={(e) => handleReceivedQuantityChange(item.id, e.target.value)}
+                              className="w-24 text-right dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 pr-1"
+                              min="0"
+                            />
+                            {item.depotVariantName && <span className="text-xs text-gray-500 dark:text-gray-400">{item.depotVariantName}</span>}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -325,7 +337,7 @@ const OrderReceivedPage = () => {
               </div>
               <div>
                 <p className="text-gray-500 dark:text-gray-400">Address</p>
-                <p className="font-medium text-gray-800 dark:text-gray-200">{order?.vendor?.address1}</p>
+                <p className="font-medium text-gray-800 dark:text-gray-200">{order?.vendor?.address}</p>
               </div>
             </CardContent>
           </Card>

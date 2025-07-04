@@ -303,7 +303,9 @@ export const PriceChart: React.FC<PriceChartProps> = ({ product, variants, class
 
       {/* Pricing Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-4xl max-h-[85vh] overflow-hidden">
+        <DialogContent 
+          
+        className="sm:max-w-6xl max-h-[90vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold flex items-center gap-2">
               <TrendingDown className="h-5 w-5 text-blue-600" />

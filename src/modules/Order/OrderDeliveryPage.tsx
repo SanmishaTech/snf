@@ -116,6 +116,17 @@ const OrderDeliveryPage = () => {
   }, [order]);
 
   const handleDeliveredQuantityChange = (itemId: string, value: string) => {
+    const item = order?.items.find(i => i.id === itemId);
+
+    if (item) {
+      const deliveredQty = parseInt(value, 10);
+      if (!isNaN(deliveredQty) && deliveredQty > item.quantity) {
+        toast.error(`Delivered quantity for ${item.productName} cannot exceed ordered quantity of ${item.quantity}.`);
+        setDeliveredQuantities(prev => ({ ...prev, [itemId]: String(item.quantity) }));
+        return;
+      }
+    }
+
     setDeliveredQuantities(prev => ({ ...prev, [itemId]: value }));
   };
 
@@ -233,7 +244,7 @@ const OrderDeliveryPage = () => {
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{item.agencyName || 'N/A'}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">
-                          {item.quantity} {item.productUnit}
+                          {item.quantity} {item.depotVariantName && `(${item.depotVariantName})`}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
                           <div className="flex items-center justify-end space-x-2">
@@ -247,7 +258,7 @@ const OrderDeliveryPage = () => {
                               disabled={order?.status?.toUpperCase() === "DELIVERED"}
                               // max={item.quantity} // Optional: prevent delivering more than ordered
                             />
-                            {item.productUnit && <span className="text-gray-500 dark:text-gray-400">{item.productUnit}</span>}
+                            {item.depotVariantName && <span className="text-gray-500 dark:text-gray-400">{item.depotVariantName}</span>}
                           </div>
                         </td>
                       </tr>
@@ -283,7 +294,7 @@ const OrderDeliveryPage = () => {
               <p><strong className="text-gray-600 dark:text-gray-300">Name:</strong> {order.vendor.name}</p>
               <p><strong className="text-gray-600 dark:text-gray-300">Email:</strong> {order.vendor.email}</p>
               <p><strong className="text-gray-600 dark:text-gray-300">Mobile:</strong> {order.vendor.mobile}</p>
-              <p><strong className="text-gray-600 dark:text-gray-300">Address:</strong> {order.vendor.address1}</p>
+              <p><strong className="text-gray-600 dark:text-gray-300">Address:</strong> {order.vendor.address}</p>
             </CardContent>
           </Card>
         </div>

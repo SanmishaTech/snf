@@ -165,12 +165,7 @@ const initialData = {
           icon: FileText,
           groupLabel: "Indraai",
         },
-        {
-          title: "Depot Order Details",
-          url: "/depot-order-details",
-          icon: FileText,
-          groupLabel: "Indraai",
-        },
+        
 
         {
           title: "Customer",
