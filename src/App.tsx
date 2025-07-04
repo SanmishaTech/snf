@@ -41,6 +41,8 @@ import OrderReceivedPage from "./modules/Order/OrderReceivedPage"; // Added for 
 import ProductList from "./modules/Products/ProductList"
 import LandingPage from "./modules/Homepage/LandingPage"; // Added for milk subscription landing page
 import AboutUsPage from "./modules/StaticPages/AboutUsPage"; // Added for About Us page
+import Bharwadcow from "./modules/StaticPages/Bharwadcow"; // Added for About Us page
+
 import ContactUsPage from "./modules/StaticPages/ContactUsPage"; // Added for Contact Us page
 import GratitudePage from "./modules/StaticPages/GratitudePage"; // Added for Gratitude page
 import PrivacyPolicy from "./pages/PrivacyPolicy"; // Added for Privacy Policy page
@@ -114,6 +116,7 @@ const App = () => {
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/about" element={<AboutUsPage />} />
+            <Route path="/bharwadcow" element={<Bharwadcow />} />
             <Route path="/contact" element={<ContactUsPage />} />
             <Route path="/gratitude" element={<GratitudePage />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />

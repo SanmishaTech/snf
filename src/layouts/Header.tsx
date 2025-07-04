@@ -27,6 +27,9 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
     { name: 'Home', path: '/' },
     { name: 'About Us', path: '/about' },
     { name: 'Gratitude', path: '/gratitude' },
+    { name: 'Bharwad Cow', path: '/bharwadcow' },
+    { name: 'Products', path: '/member/products' },
+
     { name: 'Contact Us', path: '/contact' },
   ];
 

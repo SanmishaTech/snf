@@ -93,20 +93,14 @@ const GratitudePage: React.FC = () => {
           </div>
 
           <div className="mt-10 text-center text-gray-700">
-            <h3 className="text-xl font-semibold mb-2">still have questions?</h3>
-            <p className="mb-1">
+             <p className="mb-1">
               Please drop an email at <a href="mailto:contact@sarkhotnaturalfarms.com" className="text-green-600 hover:underline">contact@sarkhotnaturalfarms.com</a>
             </p>
             <p className="mb-1">Connect on WhatsApp / Call: <span className="font-medium">9920999100</span></p>
             <p>We will get back to you within 48 hours</p>
           </div>
 
-          <div className="mt-12 text-center">
-            <div className="inline-flex items-center justify-center bg-gradient-to-r from-amber-400 to-green-500 text-white py-2 px-6 rounded-full">
-              <span className="mr-2">❤️</span>
-              <span className="font-medium">With heartfelt appreciation</span>
-            </div>
-          </div>
+           
         </div>
       </div>
     </div>

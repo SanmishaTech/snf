@@ -341,7 +341,7 @@ const ProductDetailPage: React.FC = () => {
               <motion.img
                 src={`${import.meta.env.VITE_BACKEND_URL}${product.attachmentUrl}`}
                 alt={product.name}
-                className="object-cover max-h-[900px] min-h-[600px] rounded-xl"
+                className="object-fit max-h-[900px] min-h-[600px] rounded-xl"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5 }}

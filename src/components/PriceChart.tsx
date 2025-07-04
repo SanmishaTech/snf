@@ -218,31 +218,32 @@ export const PriceChart: React.FC<PriceChartProps> = ({ product, variants, class
         id: "daily", 
         label: "Daily", 
         description: "Fresh delivery every single day", 
-        tooltip: "Get your product delivered every day without any gaps. Perfect for regular consumption.",
-        minPeriod: 3 
+        tooltip: "Receive your order every day, so you never run out.", 
+      minPeriod: 3 
       },
       { 
         id: "alternate-days", 
         label: "Alternate Days", 
         description: "Every other day delivery", 
-        tooltip: "Delivery every alternate day (Day 1, Day 3, Day 5, etc.). Good for moderate consumption patterns.",
+        tooltip: "Get your order every other day (Day 1, Day 3, Day 5…). Great if you use it regularly but not daily.", 
         minPeriod: 15 
       },
       { 
         id: "day1-day2", 
-        label: "Day 1-Day 2", 
+        label: "Day 1–Day 2", 
         description: "Varying quantities", 
-        tooltip: "Different quantities on different days. For example: 2 units on Day 1, 1 unit on Day 2, then repeat.",
+        tooltip: "On Day 1 you’ll get one quantity, on Day 2 a different quantity, then it repeats. Ideal for changing needs.", 
         minPeriod: 15 
       },
       { 
         id: "select-days", 
         label: "Weekdays", 
         description: "Custom days selection", 
-        tooltip: "Choose specific days of the week for delivery (e.g., Monday, Wednesday, Friday). Maximum flexibility.",
+        tooltip: "Pick the exact weekdays you want deliveries (e.g., Monday, Wednesday, Friday). Total flexibility.", 
         minPeriod: 30 
       },
     ];
+    
     
     return allSchedules.filter(schedule => period >= schedule.minPeriod);
   };
@@ -383,13 +384,13 @@ export const PriceChart: React.FC<PriceChartProps> = ({ product, variants, class
                         ₹{getPriceForPeriod('buyOnce', deliveryPreference, '500ml') || '--'}
                       </td>
                       <td className="text-center py-3 px-3 border-r border-gray-200">
-                        <span className="text-xs text-gray-500">Base Price</span>
+                        <span className="text-xs text-black">Base Price</span>
                       </td>
                       <td className="text-center py-3 px-3 font-semibold text-gray-900 border-r border-gray-100">
                         ₹{getPriceForPeriod('buyOnce', deliveryPreference, '1L') || '--'}
                       </td>
                       <td className="text-center py-3 px-3">
-                        <span className="text-xs text-gray-500">Base Price</span>
+                        <span className="text-xs text-black">Base Price</span>
                       </td>
                     </tr>
                     

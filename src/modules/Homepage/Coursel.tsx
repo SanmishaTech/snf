@@ -164,8 +164,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
         ))}
         
         {/* Gradient overlay for better text readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/30 to-black/50 z-[1]" />
-       </div>
+        </div>
 
       {/* Content Overlay */}
       <div className="relative z-10 flex items-center justify-center h-full px-4 sm:px-6 lg:px-8">

@@ -1,126 +1,51 @@
 import type React from "react"
-import { Leaf, Heart, Users, MapPin, Phone, MessageCircle } from "lucide-react"
+import { Leaf } from "lucide-react"
 
 const AboutUsPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-red-50">
-      {/* Hero Section */}
-      <div className="container mx-auto px-4 py-8 md:py-12 lg:py-16">
-        <div className="max-w-6xl mx-auto">
-          {/* Main Card */}
-          <div className="bg-white/80 backdrop-blur-sm p-8 md:p-12 shadow-2xl rounded-3xl border border-red-100 relative overflow-hidden">
-            {/* Decorative Elements */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-200 to-green-300 rounded-full -translate-y-16 translate-x-16 opacity-20"></div>
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-green-300 to-green-400 rounded-full translate-y-12 -translate-x-12 opacity-20"></div>
-
-            {/* Header */}
-            <div className="text-center mb-12 relative z-10">
-              <div className="flex justify-center mb-4">
-                <div className="p-3 bg-gradient-to-r from-red-600 to-red-700 rounded-full shadow-lg">
-                  <Leaf className="w-8 h-8 text-white" />
-                </div>
+    <div className="min-h-screen ">
+      <div className="container mx-auto px-4 py-16 md:py-24">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="mb-12">
+            <div className="flex items-center mb-4">
+              <div className="p-2 bg-primary rounded-full shadow-lg mr-3">
+                <Leaf className="w-6 h-6 text-white" />
               </div>
-                            <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-red-700 via-red-600 to-red-800 bg-clip-text text-transparent mb-4 tracking-wide">
-                ABOUT US
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+                About Us
               </h1>
-              <div className="w-24 h-1 bg-gradient-to-r from-red-600 to-red-700 mx-auto mb-6 rounded-full"></div>
-              <h2 className="text-lg md:text-xl font-medium text-gray-600 tracking-wider">
-                🙏 NAMASTE, WELCOME TO SARKHOT NATURAL FARMS FAMILY
-              </h2>
             </div>
-
-            {/* Content Sections */}
-            <div className="space-y-8 relative z-10">
-              {/* Mission Section */}
-              <div className="bg-gradient-to-r from-red-50 to-red-100 p-6 md:p-8 rounded-2xl border-l-4 border-red-600">
-                <div className="flex items-start gap-4">
-                  <div className="p-2 bg-red-600 rounded-lg flex-shrink-0 mt-1">
-                    <Heart className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold text-black mb-3">Our Mission</h3>
-                    <p className="text-gray-700 text-base md:text-lg leading-relaxed">
-                      Sarkhot Natural farms is an exclusive one-stop store of only Naturally grown farm produce.
-                      Natural means 100% chemical free, preservative free and poison free. Only Desi cow dung and cow urine based homemade preparations are used by us and our community of farmers in cultivation. This means you get the same produce / products that your grandparents once ate.
-
-                      Our farm, Sarkhot Farm is located at Kambe village, Shahpur district, Maharashtra, where we practice Natural Farming. Thus, along with our 'Kambe Farm produce', we also procure from Natural farmers across India.
-
-                      Our farmers come from different background and are followers of different farming and spiritual gurus. While most of them follow Dr Subhash Palekar Natural Farming method, they are also influenced by teachings of Shri Rajiv Dixit, Varkari community, Tribal teachings and this in a whole inspires the Natural farming movement in its cause of providing Nutritional food devoid of any harmful chemicals.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Quality Promise */}
-              <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-6 md:p-8 rounded-2xl border-l-4 border-blue-600">
-                <div className="flex items-start gap-4">
-                  <div className="p-2 bg-blue-600 rounded-lg flex-shrink-0 mt-1">
-                    <Users className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold text-blue-800 mb-3">Quality Promise</h3>
-                    <p className="text-gray-700 text-base md:text-lg leading-relaxed">
-                      This produce is thoroughly checked, cleaned, sorted, and made available to our Natural Family
-                      Customers (consumers). We also have our own farm (Sarkhot Farm) at Kambe, Shahpur, Maharashtra,
-                      where we practice Natural farming.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Visit Us Section */}
-              <div className="bg-gradient-to-r from-amber-50 to-amber-100 p-6 md:p-8 rounded-2xl border-l-4 border-amber-600">
-                <div className="flex items-start gap-4">
-                  <div className="p-2 bg-amber-600 rounded-lg flex-shrink-0 mt-1">
-                    <MapPin className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold text-amber-800 mb-3">Visit Our Farm</h3>
-                    <p className="text-gray-700 text-base md:text-lg leading-relaxed">
-                      You may visit our farm to see the beauty of Natural farming. We are confident that you will love
-                      our products. Experience the difference of truly natural produce firsthand.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Contact Section */}
-            {/* <div className="mt-12 pt-8 border-t border-gray-200 relative z-10">
-              <h3 className="text-2xl font-semibold text-center text-gray-800 mb-6">Get In Touch</h3>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <div className="flex items-center gap-2 bg-green-100 px-4 py-2 rounded-full">
-                  <Phone className="w-4 h-4 text-green-600" />
-                  <span className="text-green-700 font-medium">Call Us</span>
-                </div>
-                <div className="flex items-center gap-2 bg-green-100 px-4 py-2 rounded-full">
-                  <MessageCircle className="w-4 h-4 text-green-600" />
-                  <span className="text-green-700 font-medium">WhatsApp</span>
-                </div>
-                <div className="flex items-center gap-2 bg-green-100 px-4 py-2 rounded-full">
-                  <MapPin className="w-4 h-4 text-green-600" />
-                  <span className="text-green-700 font-medium">Dombivali East</span>
-                </div>
-              </div>
-              <p className="text-center text-gray-600 mt-4 font-medium">Happy to help! 🌱</p>
-            </div> */}
+            <div className="w-[12rem] h-1 bg-primary rounded-full mb-4"></div>
+            <p className="text-lg text-gray-600 font-medium">
+              Namaste, welcome to Sarkhot Natural Farms Family.
+            </p>
           </div>
 
-          {/* Stats Section */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-            <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg text-center border border-green-100">
-              <div className="text-3xl font-bold text-green-600 mb-2">100%</div>
-              <div className="text-gray-600 font-medium">Chemical Free</div>
-            </div>
-            <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg text-center border border-green-100">
-              <div className="text-3xl font-bold text-green-600 mb-2">🐄</div>
-              <div className="text-gray-600 font-medium">Cow-Based Farming</div>
-            </div>
-            <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg text-center border border-green-100">
-              <div className="text-3xl font-bold text-green-600 mb-2">🌱</div>
-              <div className="text-gray-600 font-medium">Natural Family</div>
-            </div>
+          {/* Content */}
+          <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed space-y-8">
+         
+            <p>
+            Sarkhot Natural Farms is a dedicated one-stop destination for 100% naturally grown farm produce.
+
+              By "natural," we mean completely chemical-free, preservative-free, and toxin-free food — cultivated using traditional methods passed down through generations.
+            </p>
+            
+            <p>
+              Our farming practices rely solely on desi cow dung and cow urine-based homemade inputs, both at our own farm and among our network of like-minded farmers. This ensures that the food you receive is as pure and wholesome as what your grandparents once enjoyed.
+            </p>
+            
+            <p>
+              Located in Kambe village, Shahpur district, Maharashtra, our flagship Sarkhot Farm is rooted in the principles of Natural Farming. In addition to our own produce, we also source from a trusted network of natural farmers across India who share our values.
+            </p>
+            
+            <p>
+              Our farmer community is diverse — united by purpose but inspired by various philosophies. While most follow Dr. Subhash Palekar's Natural Farming methods, others draw wisdom from Shri Rajiv Dixit, the Varkari tradition, tribal knowledge, and spiritual teachings. Together, they form a powerful movement dedicated to producing nutritious food — free from harmful chemicals and full of life-giving energy.
+            </p>
           </div>
+
+          {/* Simple Stats */}
+      
         </div>
       </div>
     </div>

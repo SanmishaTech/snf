@@ -18,7 +18,8 @@ import HeroSection from "./Coursel";
 import type { Banner as ApiBanner } from "../BannerMaster/BannerListPage"; // Renamed to avoid conflict if Banner is used locally
 import Header from "@/layouts/Header";
 import Productdetail from "@/modules/Products/ProductDetailPage"
-
+import {Whychoose} from "./UIcomponents/whychoose"
+import A2MilkSection from "./UIcomponents/A2milkbenifits";
 interface Product {
   id: string | number;
   name: string;
@@ -35,6 +36,13 @@ interface CarouselImage {
   mobileSrc?: string; // Optional mobile image source
 }
 
+  /**
+   * The main landing page component for the milk subscription service.
+   *
+   * This component is the entry point for the user and renders the main sections of the page, including the hero section, benefits section, and product detail section.
+   *
+   * @returns The JSX element for the landing page.
+   */
 const LandingPage = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("login");
@@ -208,20 +216,26 @@ const LandingPage = () => {
       {/* Benefits Section */}
       <section id="benefits" className="py-16 bg-white">
         <div className="container max-w-6xl mx-auto px-4">
-          <div className="text-center mb-16">
+          <div className="text-center text-primary mb-16">
             <h2 className="text-3xl font-bold tracking-tight mb-3">
-              Why Choose Indraai?
+              Indraai
             </h2>
             <div className="flex justify-center mb-6">
               <div className="h-1 w-20  rounded-full"></div>
             </div>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Our commitment to exceptional cow care and uncompromising milk quality sets us apart. 
-              From pasture to bottle, every step reflects our dedication to purity, nutrition, and sustainability.
+            <p className="text-lg text-muted-foreground max-w-7xl  leading-relaxed text-left">
+              Indraai combines two words Indriya (Senses) that connect the soul - Atma to the physical world and Aai (Mother) - i.e., the food from the mother to nourish the senses.
+              <br /><br />
+              Indraai is a brand of Sarkhot Natural Farms that aims to give wholesome pure food, without addition of any artificial substances.
+              <br /><br />
+              The Dairy and Processed products such as A2 ghee, A2 Ghee ladoos, Woodpressed oils, Namkeen etc. are marketed under the brand name of Indraai.
             </p>
           </div>
+          <div className="block">
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 md:gap-2 max-w-7xl mx-auto bg-white">
+            <Whychoose/>
+          </div>
+          {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 md:gap-2 max-w-7xl mx-auto bg-white">
             {[
               {
                 title: "Loving Bond & Ethical Cow Care",
@@ -284,6 +298,10 @@ const LandingPage = () => {
                 </div>
               </div>
             ))}
+          </div> */}
+
+          <div>
+            <A2MilkSection/>
           </div>
         </div>
       </section>
