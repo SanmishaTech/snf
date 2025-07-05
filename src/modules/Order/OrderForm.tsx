@@ -1281,7 +1281,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                                        
                                       </div>
                                       <span className="font-semibold text-blue-600 dark:text-blue-400">
-                                        {variantInfo.quantity} {variantInfo.unit || 'units'}
+                                        {variantInfo.quantity} {variantInfo.unit || 'Quantity'}
                                       </span>
                                     </div>
                                     
@@ -1337,7 +1337,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                         <div className="flex justify-between items-center text-sm">
                           <span className="text-gray-600 dark:text-gray-400">Total Items:</span>
                           <span className="font-medium text-gray-800 dark:text-gray-200">
-                            {Object.values(groupedProductSummary).reduce((sum, item) => sum + item.totalQuantity, 0)} units
+                            {Object.values(groupedProductSummary).reduce((sum, item) => sum + item.totalQuantity, 0)} Quantity
                           </span>
                         </div>
                         <div className="flex justify-between items-center text-sm">
