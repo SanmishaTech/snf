@@ -271,7 +271,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
                           <SelectValue placeholder="Select a location" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent className="max-h-60 overflow-y-auto">
                         {locations.map(location => (
                           <SelectItem key={location.id} value={String(location.id)}>
                             {location.name}
@@ -280,6 +280,11 @@ const AddressForm: React.FC<AddressFormProps> = ({
                       </SelectContent>
                     </Select>
                     <FormMessage />
+                    <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
+                      <p className="text-xs text-blue-700">
+                        <span className="font-medium">Note:</span> If your area is not listed above, please contact us at <span className="font-semibold">+91-XXXXXXXXXX</span> for assistance with delivery arrangements.
+                      </p>
+                    </div>
                   </FormItem>
                 )}
               />
@@ -328,7 +333,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
                           <SelectValue placeholder="Select a state" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent className="max-h-60 overflow-y-auto">
                         {INDIAN_STATES.map((st) => (
                           <SelectItem key={st.value} value={st.label}>
                             {st.label}
