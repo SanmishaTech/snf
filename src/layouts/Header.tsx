@@ -122,13 +122,13 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
       <div className="flex justify-between items-center py-2">
         {/* Logo */}
         <Link to="/" className="flex items-center">
-          <img src={Sarkotlogo} alt="Logo" className="h-10 w-auto object-contain mr-2" />
+          <img src={Indraipng} alt="Logo" className="h-10 w-auto object-contain mr-2" />
         </Link>
 
              {/* Right side: Social Icons & Top Links */}
              <div className="flex items-center space-x-4">
               <a href="/" aria-label="Sarkhot Logo">
-                <img src={Indraipng} alt="Sarkhot Logo" className="h-8 w-auto object-contain" />
+                <img src={Sarkotlogo} alt="Sarkhot Logo" className="h-8 w-auto object-contain" />
               </a>
              <a
              target="_blank" 
