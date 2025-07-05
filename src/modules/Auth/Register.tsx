@@ -107,19 +107,7 @@ const Register: React.FC<RegisterProps> = () => {
   return (
     <div className="w-full max-w-md mx-auto">
       <div className="text-center mb-8">
-        {location.pathname !== "/" && (
-          <div className="mx-auto bg-gradient-to-br from-primary to-purple-600 w-16 h-16 rounded-xl flex items-center justify-center mb-4">
-            {/* You can use a different icon for registration, e.g., UserPlus */}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="white"
-              className="w-8 h-8"
-            >
-              <path d="M12 2.5a5.5 5.5 0 0 1 5.5 5.5c0 1.826-.889 3.442-2.25 4.465A9.003 9.003 0 0 1 20 18.75a.75.75 0 0 1-1.5 0A7.503 7.503 0 0 0 13 12.198V13.5a.75.75 0 0 1-1.5 0v-1.302a7.503 7.503 0 0 0-5.5 6.552.75.75 0 0 1-1.5 0A9.003 9.003 0 0 1 8.75 12.465C7.389 11.442 6.5 9.826 6.5 8a5.5 5.5 0 0 1 5.5-5.5Zm2.506 17.084a.75.75 0 0 1 .988 0l2.25 1.5a.75.75 0 0 1-.988 1.424l-2.25-1.5a.75.75 0 0 1 0-1.424ZM19.25 18a.75.75 0 0 0 .75-.75v-1.5a.75.75 0 0 0-1.5 0v1.5a.75.75 0 0 0 .75.75ZM8.994 19.584a.75.75 0 0 1-.988 0l-2.25-1.5a.75.75 0 1 1 .988-1.424l2.25 1.5a.75.75 0 0 1 0 1.424ZM4.75 18a.75.75 0 0 0-.75-.75v-1.5a.75.75 0 0 0-1.5 0v1.5A.75.75 0 0 0 4 18Z" />
-            </svg>
-          </div>
-        )}
+         
         {location.pathname !== "/" && (
           <h1 className="text-3xl font-bold mb-2">Create your account</h1>
         )}
