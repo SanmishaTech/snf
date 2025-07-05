@@ -730,7 +730,7 @@ const ProductDetailPage: React.FC = () => {
             <DialogHeader>
               <DialogTitle className="text-xl font-bold flex items-center gap-2">
                 <Truck className="h-5 w-5 text-green-600" />
-                Home Delivery Areas - Dombivli
+                Home Delivery Areas
               </DialogTitle>
               <DialogClose className="absolute right-4 top-4">
                 <X className="h-4 w-4" />

@@ -1,0 +1,68 @@
+/* Mobile Theme Override - Forces light mode on mobile devices */
+
+/* Media query for mobile devices */
+@media (max-width: 768px), (pointer: coarse), (hover: none) {
+  /* Force light theme colors */
+  :root,
+  :root.dark,
+  .dark,
+  body.dark,
+  html.dark {
+    --background: oklch(0.9853 0.0029 84.56) !important;
+    --foreground: oklch(0.141 0.005 285.823) !important;
+    --card: oklch(1 0 0) !important;
+    --card-foreground: oklch(0.141 0.005 285.823) !important;
+    --popover: oklch(1 0 0) !important;
+    --popover-foreground: oklch(0.141 0.005 285.823) !important;
+    --primary: oklch(0.5123 0.1601 23.15) !important;
+    --primary-foreground: oklch(0.971 0.013 17.38) !important;
+    --secondary: oklch(0.1867 0 0) !important;
+    --secondary-foreground: oklch(0.21 0.006 285.885) !important;
+    --muted: oklch(0.967 0.001 286.375) !important;
+    --muted-foreground: oklch(0.552 0.016 285.938) !important;
+    --accent: oklch(0.8822 0 0) !important;
+    --accent-foreground: oklch(0.8822 0 0) !important;
+    --destructive: oklch(0.577 0.245 27.325) !important;
+    --border: oklch(0.92 0.004 286.32) !important;
+    --input: oklch(0.92 0.004 286.32) !important;
+    --ring: oklch(0.5123 0.1601 23.15) !important;
+    
+    /* Ensure background colors are light */
+    background-color: white !important;
+    color: black !important;
+  }
+  
+  /* Remove dark mode background gradient */
+  body,
+  body.dark {
+    background-image: none !important;
+    background-color: white !important;
+  }
+  
+  /* Override any dark mode specific styles */
+  .dark * {
+    --tw-bg-opacity: 1 !important;
+    --tw-text-opacity: 1 !important;
+  }
+  
+  /* Ensure text is always readable */
+  *:not(button):not(a) {
+    color: inherit !important;
+  }
+  
+  /* Keep buttons and links with their intended colors */
+  button,
+  a {
+    opacity: 1 !important;
+  }
+}
+
+/* Additional specificity for touch devices */
+@media (hover: none) and (pointer: coarse) {
+  html,
+  body,
+  #root {
+    color-scheme: light !important;
+    background: white !important;
+  }
+}

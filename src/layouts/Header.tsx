@@ -192,6 +192,16 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
                           My Subscriptions
                         </Link>
                       )}
+                        {userRole === 'MEMBER' && (
+                        <Link 
+                          to="/member/addresses" 
+                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50 transition-colors" 
+                          onClick={() => setIsAccountDropdownOpen(false)}
+                        >
+                          <ShoppingBag size={16} className="mr-2 text-green-600" />
+                          Manage Address
+                        </Link>
+                      )}
                       <button 
                         onClick={() => { onLogout(); setIsAccountDropdownOpen(false); }}
                         className="w-full flex items-center text-left px-4 py-2 text-sm text-gray-700 hover:bg-red-50 transition-colors"

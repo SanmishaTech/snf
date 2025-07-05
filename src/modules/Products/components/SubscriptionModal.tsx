@@ -4,7 +4,13 @@ import { get, post } from "@/services/apiService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { INDIAN_STATES } from "@/config/states";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
@@ -16,7 +22,19 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon, Plus, Minus, Package, Clock, Sparkles, TrendingDown, Gift, Star, Zap, Wallet } from "lucide-react";
+import {
+  CalendarIcon,
+  Plus,
+  Minus,
+  Package,
+  Clock,
+  Sparkles,
+  TrendingDown,
+  Gift,
+  Star,
+  Zap,
+  Wallet,
+} from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -35,9 +53,7 @@ import {
 interface ProductVariant {
   id: string;
   name: string;
-  price: number; // base price (sellingPrice)
-  rate: number; // alias for base price for backward compatibility
-  mrp?: number; // Maximum Retail Price for savings calculation
+  mrp?: number; // Maximum Retail Price for display only
   buyOncePrice?: number; // Buy once price
   price3Day?: number;
   price7Day?: number;
@@ -51,6 +67,10 @@ interface ProductVariant {
 interface LocationData {
   id: number;
   name: string;
+  city?: {
+    id: number;
+    name: string;
+  };
 }
 
 interface AddressData {
@@ -67,16 +87,18 @@ interface AddressData {
   label: string;
   depotId?: number;
   locationId?: number;
-  location?: LocationData; 
+  location?: LocationData;
 }
 
 interface ProductData {
   id: number;
   name: string;
-  price: number;
-  rate: number;
-  mrp?: number; // Maximum Retail Price for savings calculation
+  mrp?: number; // Maximum Retail Price for display only
   buyOncePrice?: number; // Buy once price
+  price3Day?: number;
+  price7Day?: number;
+  price15Day?: number;
+  price1Month?: number;
   unit?: string;
   variants?: ProductVariant[];
 }
@@ -94,7 +116,7 @@ interface DepotData {
   id: number;
   name: string;
   isOnline: boolean;
-   address: string;
+  address: string;
   pincode?: string;
   city?: string;
   state?: string;
@@ -109,15 +131,15 @@ interface SubscriptionModalProps {
   selectedDepot: DepotData | null; // Add this new prop
 }
 
-  const daysOfWeek = [
-    { id: "mon", label: "Mon", fullName: "Monday" },
-    { id: "tue", label: "Tue", fullName: "Tuesday" },
-    { id: "wed", label: "Wed", fullName: "Wednesday" },
-    { id: "thu", label: "Thu", fullName: "Thursday" },
-    { id: "fri", label: "Fri", fullName: "Friday" },
-    { id: "sat", label: "Sat", fullName: "Saturday" },
-    { id: "sun", label: "Sun", fullName: "Sunday" },
-  ];
+const daysOfWeek = [
+  { id: "mon", label: "Mon", fullName: "Monday" },
+  { id: "tue", label: "Tue", fullName: "Tuesday" },
+  { id: "wed", label: "Wed", fullName: "Wednesday" },
+  { id: "thu", label: "Thu", fullName: "Thursday" },
+  { id: "fri", label: "Fri", fullName: "Friday" },
+  { id: "sat", label: "Sat", fullName: "Saturday" },
+  { id: "sun", label: "Sun", fullName: "Sunday" },
+];
 
 const subscriptionPeriods = [
   { value: 3, label: "3 Days (Trial Pack)" },
@@ -142,7 +164,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   const [startDate, setStartDate] = useState<Date | undefined>(() => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 3);
-    return tomorrow;  
+    return tomorrow;
   });
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [selectedPeriod, setSelectedPeriod] =
@@ -174,9 +196,11 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
   useEffect(() => {
     const resetOptionIfNeeded = (option: string) => {
-      const isAlternateInvalid = selectedPeriod < 15 && option === "alternate-days";
+      const isAlternateInvalid =
+        selectedPeriod < 15 && option === "alternate-days";
       const isDay1Day2Invalid = selectedPeriod < 7 && option === "day1-day2";
-      const isSelectDaysInvalid = selectedPeriod < 30 && option === "select-days";
+      const isSelectDaysInvalid =
+        selectedPeriod < 30 && option === "select-days";
 
       if (isAlternateInvalid || isDay1Day2Invalid || isSelectDaysInvalid) {
         return "daily";
@@ -206,8 +230,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     plotBuilding: "",
     streetArea: "",
     landmark: "",
-    city: "",
-    state: "",
+    city: "Dombivli",
+    state: "Maharashtra",
     pincode: "",
     isDefault: false,
     label: "Home",
@@ -238,8 +262,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     handleAddressChange("label", value);
   };
 
-
-
   // Utility to map backend variant to frontend variant structure with numeric prices
   const toNumber = (v: any): number | undefined => {
     const n = Number(v);
@@ -247,15 +269,16 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   };
 
   const transformVariant = (variant: any): ProductVariant => ({
-    ...variant,
-    price: toNumber(variant.sellingPrice ?? variant.price) ?? 0,
-    rate: toNumber(variant.sellingPrice ?? variant.rate) ?? 0,
-    mrp: toNumber(variant.mrp) ?? toNumber(variant.sellingPrice ?? variant.price) ?? 0,
+    id: variant.id?.toString() || variant.id,
+    name: variant.name,
+    mrp: toNumber(variant.mrp),
     buyOncePrice: toNumber(variant.buyOncePrice),
     price3Day: toNumber(variant.price3Day),
-    // price7Day: toNumber(variant.price7Day),
     price15Day: toNumber(variant.price15Day),
     price1Month: toNumber(variant.price1Month),
+    unit: variant.unit,
+    description: variant.description,
+    isAvailable: variant.isAvailable ?? true,
   });
 
   // Helper to get price of a variant based on selected period
@@ -270,7 +293,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       case 3:
         candidate = pick(variant.price3Day);
         break;
-      
       case 15:
         candidate = pick(variant.price15Day);
         break;
@@ -278,7 +300,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         candidate = pick(variant.price1Month);
         break;
     }
-    return candidate ?? variant.rate;
+    // Fallback to buyOncePrice then MRP if no period-specific price is available
+    return candidate ?? variant.buyOncePrice ?? variant.mrp ?? 0;
   };
 
   const fetchVariants = useCallback(
@@ -286,9 +309,10 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       if (!productId || depotId == null) return;
 
       try {
-        const fetchedVariants = await get(
-          `/depot-product-variants/product/${productId}?depotId=${depotId}`
+        const response = await get(
+          `/public/depot-variants/${productId}?depotId=${depotId}`
         );
+        const fetchedVariants = response?.data || response;
 
         if (
           fetchedVariants &&
@@ -326,17 +350,21 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   );
 
   useEffect(() => {
-    const fetchLocations = async () => {
-      try {
-        const response = await get("/admin/locations");
-        if (response && Array.isArray(response.locations)) {
-          setLocations(response.locations);
-        }
-      } catch (error) {
-        console.error("Failed to fetch locations:", error);
-        toast.error("Could not load locations.");
+  const fetchLocations = async () => {
+    try {
+      const response = await get("/public/locations");
+      // Use the same structure as useLocations hook
+      if (response && response.data && Array.isArray(response.data.locations)) {
+        setLocations(response.data.locations);
+      } else if (response && Array.isArray(response)) {
+        // Fallback in case the response structure is different
+        setLocations(response);
       }
-    };
+    } catch (error) {
+      console.error("Failed to fetch locations:", error);
+      toast.error("Could not load locations.");
+    }
+  };
 
     if (isOpen) {
       if (productId && depotId != null) {
@@ -351,8 +379,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       setModalView("subscriptionDetails");
     }
   }, [isOpen, productId, depotId, fetchVariants]);
-
-
 
   // Helper functions for variant management
   const updateVariantDeliveryOption = (
@@ -497,11 +523,12 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       plotBuilding: "",
       streetArea: "",
       landmark: "",
-      city: "",
-      state: "",
+      city: "Dombivli",
+      state: "Maharashtra",
       pincode: "",
       isDefault: false,
       label: "Home",
+      locationId: undefined,
     });
     setFormErrors({});
   };
@@ -536,10 +563,12 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     if (!startDate) {
       errors.startDate = "Start date is required.";
     } else {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      if (startDate < today) {
-        errors.startDate = "Start date cannot be in the past.";
+      // Minimum date should be +3 days from current date
+      const minDate = new Date();
+      minDate.setDate(minDate.getDate() + 3);
+      minDate.setHours(0, 0, 0, 0);
+      if (startDate < minDate) {
+        errors.startDate = "Start date must be at least 3 days from today.";
       }
     }
 
@@ -564,16 +593,20 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     // Validate address based on depot type
     if (selectedDepot?.isOnline) {
       // For online depots, user must select a delivery address
-      if (selectedAddressId == null || String(selectedAddressId).trim() === "") {
+      if (
+        selectedAddressId == null ||
+        String(selectedAddressId).trim() === ""
+      ) {
         errors.selectedAddressId = "Please select a delivery address.";
       }
     } else {
       // For offline depots, ensure depot has an address ID for pickup
       if (selectedDepot?.address == null) {
-        errors.depotAddress = "Depot address information is missing. Please contact support.";
+        errors.depotAddress =
+          "Depot address information is missing. Please contact support.";
       }
     }
-    
+
     if (hasVariants && selectedVariants.length === 0) {
       errors.selectedVariants = "Please select at least one variant.";
     }
@@ -674,7 +707,11 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
   useEffect(() => {
     // Only fetch user addresses if the depot is online
-    if (isOpen && modalView === "subscriptionDetails" && selectedDepot?.isOnline) {
+    if (
+      isOpen &&
+      modalView === "subscriptionDetails" &&
+      selectedDepot?.isOnline
+    ) {
       addressService
         .getUserAddresses()
         .then((addresses) => {
@@ -690,8 +727,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       setModalView("subscriptionDetails");
     }
   }, [isOpen, modalView, selectedDepot?.isOnline]); // Rerun when depot's online status changes
-
-
 
   const handleSaveAddress = async () => {
     if (!validateAddressForm()) return;
@@ -733,12 +768,23 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
   const handleProceedToConfirmation = () => {
     // Enforce minimum 3 selected days for weekday schedule
-    if (!hasVariants && deliveryOption === "select-days" && selectedDays.length < 3) {
+    if (
+      !hasVariants &&
+      deliveryOption === "select-days" &&
+      selectedDays.length < 3
+    ) {
       toast.error("Please select at least 3 delivery days.");
       return;
     }
-    if (hasVariants && selectedVariants.some(v => v.deliveryOption === "select-days" && v.selectedDays.length < 3)) {
-      toast.error("Please select at least 3 delivery days for all selected variants.");
+    if (
+      hasVariants &&
+      selectedVariants.some(
+        (v) => v.deliveryOption === "select-days" && v.selectedDays.length < 3
+      )
+    ) {
+      toast.error(
+        "Please select at least 3 delivery days for all selected variants."
+      );
       return;
     }
 
@@ -751,8 +797,13 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
     // For offline depots, ensure depot has address information
     if (!selectedDepot?.isOnline && selectedDepot?.address == null) {
-      console.error("Depot address information is missing. AddressId:", selectedDepot?.address);
-      toast.error("Depot address information is missing. Please contact support.");
+      console.error(
+        "Depot address information is missing. AddressId:",
+        selectedDepot?.address
+      );
+      toast.error(
+        "Depot address information is missing. Please contact support."
+      );
       return;
     }
 
@@ -761,7 +812,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
   // Helper to get the subscription price for a base product based on the period
   const getProductPriceForPeriod = (
-    product: Product,
+    product: ProductData,
     period: number
   ): number => {
     const pick = (val: number | null | undefined) =>
@@ -778,7 +829,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         candidate = pick(product.price1Month);
         break;
     }
-    return candidate ?? product.rate; // Fallback to regular rate
+    return candidate ?? product.buyOncePrice ?? product.mrp ?? 0; // Fallback chain
   };
 
   // Helper to calculate delivery count for non-variant products
@@ -792,11 +843,15 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         const selectedDayNumbers = selectedDays
           .map((day) => dayMap[day as keyof typeof dayMap])
           .filter((day): day is number => day !== undefined);
-        
+
         let count = 0;
         const endDate = new Date(startDate);
         endDate.setDate(endDate.getDate() + selectedPeriod - 1);
-        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+        for (
+          let d = new Date(startDate);
+          d <= endDate;
+          d.setDate(d.getDate() + 1)
+        ) {
           if (selectedDayNumbers.includes(d.getDay())) {
             count++;
           }
@@ -819,36 +874,39 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       if (!product) return 0;
 
       const deliveryCount = calculateDeliveryCount();
-      // Use MRP as the main price reference, fallback to buyOncePrice, then rate
-      const mrp = product.mrp || product.buyOncePrice || product.rate;
-      const subscriptionRate = getProductPriceForPeriod(product, selectedPeriod);
+      // Use MRP for display/savings calculation only
+      const mrp = product.mrp || product.buyOncePrice || 0;
+      const subscriptionRate = getProductPriceForPeriod(
+        product,
+        selectedPeriod
+      );
 
       // --- DEBUG LOGS ---
-      console.log('--- Savings Calculation (No Variants) ---');
-      console.log('Product:', product);
-      console.log('Selected Period:', selectedPeriod);
-      console.log('Delivery Count:', deliveryCount);
-      console.log('MRP:', mrp);
-      console.log('Subscription Rate:', subscriptionRate);
+      console.log("--- Savings Calculation (No Variants) ---");
+      console.log("Product:", product);
+      console.log("Selected Period:", selectedPeriod);
+      console.log("Delivery Count:", deliveryCount);
+      console.log("MRP:", mrp);
+      console.log("Subscription Rate:", subscriptionRate);
       // --- END DEBUG LOGS ---
 
       // Only calculate savings if subscription rate is lower than MRP
       if (subscriptionRate >= mrp) return 0;
 
       let totalQty = 0;
-      if (deliveryOption === 'day1-day2') {
+      if (deliveryOption === "day1-day2") {
         const days1 = Math.ceil(selectedPeriod / 2);
         const days2 = Math.floor(selectedPeriod / 2);
         totalQty = quantity * days1 + quantityVarying2 * days2;
       } else {
         totalQty = quantity * deliveryCount;
       }
-      
+
       const totalMrpPrice = mrp * totalQty;
       const totalSubscriptionPrice = subscriptionRate * totalQty;
 
       const savings = Math.max(0, totalMrpPrice - totalSubscriptionPrice);
-      console.log('Calculated Savings vs MRP:', savings);
+      console.log("Calculated Savings vs MRP:", savings);
       return savings;
     }
 
@@ -856,13 +914,18 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     let totalMrpPrice = 0;
     let totalSubscriptionPrice = 0;
 
-    selectedVariants.forEach(selectedVariant => {
-      const variant = productVariants.find(v => v.id === selectedVariant.variantId);
+    selectedVariants.forEach((selectedVariant) => {
+      const variant = productVariants.find(
+        (v) => v.id === selectedVariant.variantId
+      );
       if (!variant) return;
 
-      // Use MRP as the main price reference, fallback to buyOncePrice, then rate
-      const mrp = variant.mrp || variant.buyOncePrice || variant.rate;
-      const subscriptionPrice = getVariantPriceForPeriod(variant, selectedPeriod);
+      // Use MRP for display/savings calculation only
+      const mrp = variant.mrp || variant.buyOncePrice || 0;
+      const subscriptionPrice = getVariantPriceForPeriod(
+        variant,
+        selectedPeriod
+      );
       const deliveryCount = calculateVariantDeliveryCount(selectedVariant);
 
       let totalQty = 0;
@@ -875,7 +938,9 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         case "day1-day2":
           const days1 = Math.ceil(selectedPeriod / 2);
           const days2 = Math.floor(selectedPeriod / 2);
-          totalQty = selectedVariant.quantity * days1 + (selectedVariant.quantityVarying2 || 1) * days2;
+          totalQty =
+            selectedVariant.quantity * days1 +
+            (selectedVariant.quantityVarying2 || 1) * days2;
           break;
       }
 
@@ -884,23 +949,27 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     });
 
     const savings = Math.max(0, totalMrpPrice - totalSubscriptionPrice);
-    console.log('--- Savings Calculation (Variants) ---');
-    console.log('Total MRP Price:', totalMrpPrice);
-    console.log('Total Subscription Price:', totalSubscriptionPrice);
-    console.log('Calculated Savings vs MRP:', savings);
+    console.log("--- Savings Calculation (Variants) ---");
+    console.log("Total MRP Price:", totalMrpPrice);
+    console.log("Total Subscription Price:", totalSubscriptionPrice);
+    console.log("Calculated Savings vs MRP:", savings);
     return savings;
   };
 
   const handleConfirmSubscription = async () => {
     if (!validateSubscriptionDetails()) return;
-    
+
     // Determine the correct address ID based on depot type
     const deliveryAddressIdForPayload = selectedDepot?.isOnline
       ? selectedAddressId
       : selectedDepot?.address;
 
-
-    if (product == null || productId == null || deliveryAddressIdForPayload == null || startDate == null) {
+    if (
+      product == null ||
+      productId == null ||
+      deliveryAddressIdForPayload == null ||
+      startDate == null
+    ) {
       const missingItems = [];
       if (product == null) missingItems.push("product information");
       if (productId == null) missingItems.push("product ID");
@@ -912,8 +981,10 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         }
       }
       if (startDate == null) missingItems.push("start date");
-      
-      const errorMessage = `Missing: ${missingItems.join(", ")}. Please ensure all required information is provided.`;
+
+      const errorMessage = `Missing: ${missingItems.join(
+        ", "
+      )}. Please ensure all required information is provided.`;
       toast.error(errorMessage);
       return;
     }
@@ -1147,7 +1218,9 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
           break;
       }
 
-      totalPrice = product.rate * totalQuantity;
+      // Use period-specific pricing for non-variant products
+      const productPriceForPeriod = getProductPriceForPeriod(product, selectedPeriod);
+      totalPrice = productPriceForPeriod * totalQuantity;
     }
 
     return {
@@ -1196,8 +1269,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         if (!open) setModalView("subscriptionDetails");
       }}
     >
-      <DialogContent 
-        className="max-sm:max-w-md flex flex-col max-h-[90vh] p-0 bg-white min-w-[70%] rounded-xl overflow-hidden"
+      <DialogContent
+        className="max-sm:max-w-md flex flex-col max-h-[95vh] p-0 bg-white min-w-[80%] rounded-xl overflow-hidden"
         onPointerDownOutside={(event) => {
           const target = event.target as HTMLElement;
           if (
@@ -1216,7 +1289,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               Create Subscription for {product?.name}
             </DialogTitle>
           </div>
-          
         </DialogHeader>
 
         <div className="flex-grow overflow-y-auto px-5 py-4 space-y-6 bg-gray-50">
@@ -1262,7 +1334,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   </div>
 
                   {/* Start Date */}
-              
+
                   {/* Variant Selection Section */}
                   {hasVariants && productVariants.length > 0 && (
                     <div className="bg-white border border-gray-200 rounded-lg p-4">
@@ -1375,63 +1447,142 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                           </Label>
                                           <div className="grid grid-cols-2 gap-1">
                                             <Button
-                                              variant={selectedVariant.deliveryOption === 'daily' ? 'default' : 'outline'}
+                                              variant={
+                                                selectedVariant.deliveryOption ===
+                                                "daily"
+                                                  ? "default"
+                                                  : "outline"
+                                              }
                                               size="sm"
-                                              className={`h-7 text-xs hover:text-white ${selectedVariant.deliveryOption === 'daily' ? 'bg-secondary hover:bg-secondary/80 hover:text-white' : 'border-gray-300'} truncate`}
+                                              className={`h-7 text-xs hover:text-white ${
+                                                selectedVariant.deliveryOption ===
+                                                "daily"
+                                                  ? "bg-secondary hover:bg-secondary/80 hover:text-white"
+                                                  : "border-gray-300"
+                                              } truncate`}
                                               title="Delivery every day"
-                                              onClick={() => updateVariantDeliveryOption(variant.id, 'daily')}
+                                              onClick={() =>
+                                                updateVariantDeliveryOption(
+                                                  variant.id,
+                                                  "daily"
+                                                )
+                                              }
                                             >
                                               Daily
                                             </Button>
                                             {selectedPeriod >= 15 && (
                                               <Button
-                                                variant={selectedVariant.deliveryOption === 'alternate-days' ? 'default' : 'outline'}
+                                                variant={
+                                                  selectedVariant.deliveryOption ===
+                                                  "alternate-days"
+                                                    ? "default"
+                                                    : "outline"
+                                                }
                                                 size="sm"
-                                                className={`h-7 text-xs ${selectedVariant.deliveryOption === 'alternate-days' ? 'bg-secondary hover:bg-secondary/80' : 'border-gray-300'}`}
+                                                className={`h-7 text-xs ${
+                                                  selectedVariant.deliveryOption ===
+                                                  "alternate-days"
+                                                    ? "bg-secondary hover:bg-secondary/80"
+                                                    : "border-gray-300"
+                                                }`}
                                                 title="Delivery every other day"
-                                                onClick={() => updateVariantDeliveryOption(variant.id, 'alternate-days')}
+                                                onClick={() =>
+                                                  updateVariantDeliveryOption(
+                                                    variant.id,
+                                                    "alternate-days"
+                                                  )
+                                                }
                                               >
                                                 Alternate Days
                                               </Button>
                                             )}
                                             {selectedPeriod >= 7 && (
                                               <Button
-                                                variant={selectedVariant.deliveryOption === 'day1-day2' ? 'default' : 'outline'}
+                                                variant={
+                                                  selectedVariant.deliveryOption ===
+                                                  "day1-day2"
+                                                    ? "default"
+                                                    : "outline"
+                                                }
                                                 size="sm"
-                                                className={`h-7 text-xs ${selectedVariant.deliveryOption === 'day1-day2' ? 'bg-secondary hover:bg-blue-600' : 'border-gray-300'} truncate`}
+                                                className={`h-7 text-xs ${
+                                                  selectedVariant.deliveryOption ===
+                                                  "day1-day2"
+                                                    ? "bg-secondary hover:bg-blue-600"
+                                                    : "border-gray-300"
+                                                } truncate`}
                                                 title="Daily Delivery with Varying Quantities"
-                                                onClick={() => updateVariantDeliveryOption(variant.id, 'day1-day2')}
-                                      >
-                                        Day 1 - Day 2
-                                      </Button>
-                                    )}
-                                    {selectedPeriod >= 30 && (
-                                      <Button
-                                        variant={selectedVariant.deliveryOption === 'select-days' ? 'default' : 'outline'}
-                                        size="sm"
-                                        className={`h-7 text-xs ${selectedVariant.deliveryOption === 'select-days' ? 'bg-secondary hover:bg-blue-600' : 'border-gray-300'}`}
-                                        title="Choose specific days for delivery"
-                                        onClick={() => updateVariantDeliveryOption(variant.id, 'select-days')}
-                                      >
-                                        Weekdays
-                                      </Button>
-                                    )}
-                                  </div>
-                                  
-                                  {/* Schedule Description */}
-                                  <div className="mt-2 text-xs text-blue-700 bg-blue-50 px-2 py-1 rounded-md border border-blue-200">
-                                    <span className="font-medium">
-                                      {selectedVariant.deliveryOption === 'daily' && 'Daily delivery - Fresh every day'}
-                                      {selectedVariant.deliveryOption === 'select-days' && selectedVariant.selectedDays.length > 0 && `Selected days: ${selectedVariant.selectedDays.map(day => daysOfWeek.find(d => d.id === day)?.label).join(', ')}`}
-                          
-                                      {selectedVariant.deliveryOption === 'select-days' && selectedVariant.selectedDays.length === 0 && 'Choose specific weekdays for delivery'}
-                                      {selectedVariant.deliveryOption === 'alternate-days' && 'Every other day delivery'}
-                                      {selectedVariant.deliveryOption === 'day1-day2' && 'Daily Delivery with Varying Quantities'}
-                                    </span>
-                                    
-                                  </div>
-                           
-                                </div>
+                                                onClick={() =>
+                                                  updateVariantDeliveryOption(
+                                                    variant.id,
+                                                    "day1-day2"
+                                                  )
+                                                }
+                                              >
+                                                Day 1 - Day 2
+                                              </Button>
+                                            )}
+                                            {selectedPeriod >= 30 && (
+                                              <Button
+                                                variant={
+                                                  selectedVariant.deliveryOption ===
+                                                  "select-days"
+                                                    ? "default"
+                                                    : "outline"
+                                                }
+                                                size="sm"
+                                                className={`h-7 text-xs ${
+                                                  selectedVariant.deliveryOption ===
+                                                  "select-days"
+                                                    ? "bg-secondary hover:bg-blue-600"
+                                                    : "border-gray-300"
+                                                }`}
+                                                title="Choose specific days for delivery"
+                                                onClick={() =>
+                                                  updateVariantDeliveryOption(
+                                                    variant.id,
+                                                    "select-days"
+                                                  )
+                                                }
+                                              >
+                                                Weekdays
+                                              </Button>
+                                            )}
+                                          </div>
+
+                                          {/* Schedule Description */}
+                                          <div className="mt-2 text-xs text-blue-700 bg-blue-50 px-2 py-1 rounded-md border border-blue-200">
+                                            <span className="font-medium">
+                                              {selectedVariant.deliveryOption ===
+                                                "daily" &&
+                                                "Daily delivery - Fresh every day"}
+                                              {selectedVariant.deliveryOption ===
+                                                "select-days" &&
+                                                selectedVariant.selectedDays
+                                                  .length > 0 &&
+                                                `Selected days: ${selectedVariant.selectedDays
+                                                  .map(
+                                                    (day) =>
+                                                      daysOfWeek.find(
+                                                        (d) => d.id === day
+                                                      )?.label
+                                                  )
+                                                  .join(", ")}`}
+
+                                              {selectedVariant.deliveryOption ===
+                                                "select-days" &&
+                                                selectedVariant.selectedDays
+                                                  .length === 0 &&
+                                                "Choose specific weekdays for delivery"}
+                                              {selectedVariant.deliveryOption ===
+                                                "alternate-days" &&
+                                                "Every other day delivery"}
+                                              {selectedVariant.deliveryOption ===
+                                                "day1-day2" &&
+                                                "Daily Delivery with Varying Quantities"}
+                                            </span>
+                                          </div>
+                                        </div>
 
                                         {/* Day Selection for Select Days Option */}
                                         {selectedVariant.deliveryOption ===
@@ -1683,39 +1834,69 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       </h3>
                       <div className="grid grid-cols-3 gap-2">
                         <Button
-                          variant={deliveryOption === 'daily' ? 'default' : 'outline'}
-                          className={`h-9 text-xs ${deliveryOption === 'daily' ? 'bg-secondary hover:bg-blue-600' : 'border-gray-300'}`}
+                          variant={
+                            deliveryOption === "daily" ? "default" : "outline"
+                          }
+                          className={`h-9 text-xs ${
+                            deliveryOption === "daily"
+                              ? "bg-secondary hover:bg-blue-600"
+                              : "border-gray-300"
+                          }`}
                           title="Delivery every day"
-                          onClick={() => setDeliveryOption('daily')}
+                          onClick={() => setDeliveryOption("daily")}
                         >
                           Daily
                         </Button>
                         {selectedPeriod >= 15 && (
                           <Button
-                            variant={deliveryOption === 'alternate-days' ? 'default' : 'outline'}
-                            className={`h-9 text-xs ${deliveryOption === 'alternate-days' ? 'bg-secondary hover:bg-blue-600' : 'border-gray-300'}`}
+                            variant={
+                              deliveryOption === "alternate-days"
+                                ? "default"
+                                : "outline"
+                            }
+                            className={`h-9 text-xs ${
+                              deliveryOption === "alternate-days"
+                                ? "bg-secondary hover:bg-blue-600"
+                                : "border-gray-300"
+                            }`}
                             title="Delivery every other day"
-                            onClick={() => setDeliveryOption('alternate-days')}
+                            onClick={() => setDeliveryOption("alternate-days")}
                           >
                             Alternate Days
                           </Button>
                         )}
                         {selectedPeriod >= 7 && (
                           <Button
-                            variant={deliveryOption === 'day1-day2' ? 'default' : 'outline'}
-                            className={`h-9 text-xs ${deliveryOption === 'day1-day2' ? 'bg-secondary hover:bg-blue-600' : 'border-gray-300'}`}
+                            variant={
+                              deliveryOption === "day1-day2"
+                                ? "default"
+                                : "outline"
+                            }
+                            className={`h-9 text-xs ${
+                              deliveryOption === "day1-day2"
+                                ? "bg-secondary hover:bg-blue-600"
+                                : "border-gray-300"
+                            }`}
                             title="Customize quantities for Day 1 and Day 2"
-                            onClick={() => setDeliveryOption('day1-day2')}
+                            onClick={() => setDeliveryOption("day1-day2")}
                           >
                             Day 1 - Day 2
                           </Button>
                         )}
                         {selectedPeriod >= 30 && (
                           <Button
-                            variant={deliveryOption === 'select-days' ? 'default' : 'outline'}
-                            className={`h-9 text-xs ${deliveryOption === 'select-days' ? 'bg-secondary hover:bg-blue-600' : 'border-gray-300'}`}
+                            variant={
+                              deliveryOption === "select-days"
+                                ? "default"
+                                : "outline"
+                            }
+                            className={`h-9 text-xs ${
+                              deliveryOption === "select-days"
+                                ? "bg-secondary hover:bg-blue-600"
+                                : "border-gray-300"
+                            }`}
                             title="Choose specific days for delivery"
-                            onClick={() => setDeliveryOption('select-days')}
+                            onClick={() => setDeliveryOption("select-days")}
                           >
                             Weekdays
                           </Button>
@@ -1867,8 +2048,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     </div>
                   )}
 
-              
-
                   <div>
                     <h3 className="text-sm font-medium text-gray-700 mb-2">
                       Start Date
@@ -1907,12 +2086,13 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                               }));
                           }}
                           initialFocus
-                          disabled={(date) =>
-                            date <
-                            new Date(
-                              new Date().setDate(new Date().getDate() - 1)
-                            )
-                          }
+                          disabled={(date) => {
+                            // Disable dates before +3 days from current date
+                            const minDate = new Date();
+                            minDate.setDate(minDate.getDate() + 3);
+                            minDate.setHours(0, 0, 0, 0);
+                            return date < minDate;
+                          }}
                         />
                       </PopoverContent>
                     </Popover>
@@ -1922,7 +2102,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       </p>
                     )}
                   </div>
-
                 </div>
 
                 {/* Right Column - Address Section */}
@@ -1995,13 +2174,17 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                         <span className="font-medium text-gray-900">
                                           {address.recipientName}
                                         </span>
-                                        <Badge variant="outline">{address.label}</Badge>
+                                        <Badge variant="outline">
+                                          {address.label}
+                                        </Badge>
                                       </div>
                                       <p className="text-xs text-gray-600 mt-1">
-                                        {address.plotBuilding}, {address.streetArea}
+                                        {address.plotBuilding},{" "}
+                                        {address.streetArea}
                                       </p>
                                       <p className="text-xs text-gray-600">
-                                        {address.city}, {address.state} - {address.pincode}
+                                        {address.city}, {address.state} -{" "}
+                                        {address.pincode}
                                       </p>
                                       {address.isDefault && (
                                         <span className="inline-block mt-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">
@@ -2030,7 +2213,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                 setModalView("addressForm");
                               }}
                             >
-                              <Plus className="h-3 w-3 mr-1" /> Add Delivery Address
+                              <Plus className="h-3 w-3 mr-1" /> Add Delivery
+                              Address
                             </Button>
                           </div>
                         )}
@@ -2056,7 +2240,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                 {selectedDepot.address}
                               </p>
                               <p className="text-xs text-gray-600">
-                                {selectedDepot.city} {selectedDepot.state} {selectedDepot.pincode}
+                                {selectedDepot.city} {selectedDepot.state}{" "}
+                                {selectedDepot.pincode}
                               </p>
                             </div>
                           </div>
@@ -2070,7 +2255,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       </>
                     )}
                   </div>
-
 
                   {/* Enhanced Summary Section with Per-Variant Details */}
                   {subscriptionSummary && (
@@ -2105,155 +2289,200 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                               </h4>
                             </div>
                             <div className="space-y-3">
-                              {selectedVariants.map((selectedVariant, index) => {
-                                const variant = productVariants.find(
-                                  (v) => v.id === selectedVariant.variantId
-                                );
-                                if (!variant) return null;
+                              {selectedVariants.map(
+                                (selectedVariant, index) => {
+                                  const variant = productVariants.find(
+                                    (v) => v.id === selectedVariant.variantId
+                                  );
+                                  if (!variant) return null;
 
-                                const deliveryCount =
-                                  calculateVariantDeliveryCount(selectedVariant);
-                                let variantTotalQty = 0;
+                                  const deliveryCount =
+                                    calculateVariantDeliveryCount(
+                                      selectedVariant
+                                    );
+                                  let variantTotalQty = 0;
 
-                                switch (selectedVariant.deliveryOption) {
-                                  case "daily":
-                                  case "select-days":
-                                    variantTotalQty =
-                                      selectedVariant.quantity * deliveryCount;
-                                    break;
-                                  case "day1-day2":
-                                    const days1 = Math.ceil(selectedPeriod / 2);
-                                    const days2 = Math.floor(selectedPeriod / 2);
-                                    variantTotalQty =
-                                      selectedVariant.quantity * days1 +
-                                      (selectedVariant.quantityVarying2 || 1) *
-                                        days2;
-                                    break;
-                                  case "alternate-days":
-                                    variantTotalQty =
-                                      selectedVariant.quantity *
-                                      Math.ceil(selectedPeriod / 2);
-                                    break;
-                                }
-
-                                const scheduleText =
-                                  selectedVariant.deliveryOption === "daily"
-                                    ? "Daily"
-                                    : selectedVariant.deliveryOption ===
-                                      "select-days"
-                                    ? `${selectedVariant.selectedDays.length} days/week`
-                                    : selectedVariant.deliveryOption ===
-                                      "alternate-days"
-                                    ? "Alternate Days"
-                                    : "Day1-Day2";
-
-                                const getScheduleIcon = () => {
                                   switch (selectedVariant.deliveryOption) {
                                     case "daily":
-                                      return "🌅"; // Daily sunrise
                                     case "select-days":
-                                      return "📅"; // Selected days
-                                    case "alternate-days":
-                                      return "🔄"; // Alternating
+                                      variantTotalQty =
+                                        selectedVariant.quantity *
+                                        deliveryCount;
+                                      break;
                                     case "day1-day2":
-                                      return "⚖️"; // Varying quantities
-                                    default:
-                                      return "📦";
+                                      const days1 = Math.ceil(
+                                        selectedPeriod / 2
+                                      );
+                                      const days2 = Math.floor(
+                                        selectedPeriod / 2
+                                      );
+                                      variantTotalQty =
+                                        selectedVariant.quantity * days1 +
+                                        (selectedVariant.quantityVarying2 ||
+                                          1) *
+                                          days2;
+                                      break;
+                                    case "alternate-days":
+                                      variantTotalQty =
+                                        selectedVariant.quantity *
+                                        Math.ceil(selectedPeriod / 2);
+                                      break;
                                   }
-                                };
 
-                                return (
-                                  <div
-                                    key={index}
-                                    className="border border-gray-200 rounded-lg p-3 bg-gradient-to-r from-gray-50 to-blue-50 hover:shadow-sm transition-shadow"
-                                  >
-                                    {/* Header with variant name and schedule */}
-                                    <div className="flex items-center justify-between mb-2">
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-lg">{getScheduleIcon()}</span>
-                                        <span className="font-semibold text-gray-800 text-sm">
-                                          {variant.name}
-                                        </span>
-                                      </div>
-                                      <Badge
-                                        variant="secondary"
-                                        className="text-xs bg-blue-100 text-blue-700 border-blue-200"
-                                      >
-                                        {scheduleText}
-                                      </Badge>
-                                    </div>
+                                  const scheduleText =
+                                    selectedVariant.deliveryOption === "daily"
+                                      ? "Daily"
+                                      : selectedVariant.deliveryOption ===
+                                        "select-days"
+                                      ? `${selectedVariant.selectedDays.length} days/week`
+                                      : selectedVariant.deliveryOption ===
+                                        "alternate-days"
+                                      ? "Alternate Days"
+                                      : "Day1-Day2";
 
-                                    {/* Quantity and pricing details */}
-                                    <div className="grid grid-cols-2 gap-3 text-xs">
-                                      <div className="space-y-1">
-                                        <div className="text-gray-500 font-medium">Quantity Details</div>
-                                        <div className="flex items-center gap-1">
-                                          <span className="text-gray-700">
-                                            {selectedVariant.deliveryOption === "day1-day2" ? (
-                                              <>
-                                                {selectedVariant.quantity} + {selectedVariant.quantityVarying2 || 1} {variant.unit}
-                                              </>
-                                            ) : (
-                                              <>
-                                                {selectedVariant.quantity} {variant.unit}/delivery
-                                              </>
-                                            )}
+                                  const getScheduleIcon = () => {
+                                    switch (selectedVariant.deliveryOption) {
+                                      case "daily":
+                                        return "🌅"; // Daily sunrise
+                                      case "select-days":
+                                        return "📅"; // Selected days
+                                      case "alternate-days":
+                                        return "🔄"; // Alternating
+                                      case "day1-day2":
+                                        return "⚖️"; // Varying quantities
+                                      default:
+                                        return "📦";
+                                    }
+                                  };
+
+                                  return (
+                                    <div
+                                      key={index}
+                                      className="border border-gray-200 rounded-lg p-3 bg-gradient-to-r from-gray-50 to-blue-50 hover:shadow-sm transition-shadow"
+                                    >
+                                      {/* Header with variant name and schedule */}
+                                      <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-lg">
+                                            {getScheduleIcon()}
+                                          </span>
+                                          <span className="font-semibold text-gray-800 text-sm">
+                                            {variant.name}
                                           </span>
                                         </div>
-                                        <div className="text-gray-600">
-                                          Total: <span className="font-medium">{variantTotalQty} {variant.unit}</span>
-                                        </div>
+                                        <Badge
+                                          variant="secondary"
+                                          className="text-xs bg-blue-100 text-blue-700 border-blue-200"
+                                        >
+                                          {scheduleText}
+                                        </Badge>
                                       </div>
 
-                                      <div className="space-y-1">
-                                        <div className="text-gray-500 font-medium">Pricing</div>
-                                        <div className="text-gray-700">
-                                          ₹{getVariantPriceForPeriod(variant, selectedPeriod)} per {variant.unit}
+                                      {/* Quantity and pricing details */}
+                                      <div className="grid grid-cols-2 gap-3 text-xs">
+                                        <div className="space-y-1">
+                                          <div className="text-gray-500 font-medium">
+                                            Quantity Details
+                                          </div>
+                                          <div className="flex items-center gap-1">
+                                            <span className="text-gray-700">
+                                              {selectedVariant.deliveryOption ===
+                                              "day1-day2" ? (
+                                                <>
+                                                  {selectedVariant.quantity} +{" "}
+                                                  {selectedVariant.quantityVarying2 ||
+                                                    1}{" "}
+                                                  {variant.unit}
+                                                </>
+                                              ) : (
+                                                <>
+                                                  {selectedVariant.quantity}{" "}
+                                                  {variant.unit}/delivery
+                                                </>
+                                              )}
+                                            </span>
+                                          </div>
+                                          <div className="text-gray-600">
+                                            Total:{" "}
+                                            <span className="font-medium">
+                                              {variantTotalQty} {variant.unit}
+                                            </span>
+                                          </div>
                                         </div>
-                                        <div className="text-green-600 font-semibold">
-                                          ₹{(
-                                            variantTotalQty *
-                                            getVariantPriceForPeriod(
+
+                                        <div className="space-y-1">
+                                          <div className="text-gray-500 font-medium">
+                                            Pricing
+                                          </div>
+                                          <div className="text-gray-700">
+                                            ₹
+                                            {getVariantPriceForPeriod(
                                               variant,
                                               selectedPeriod
-                                            )
-                                          ).toFixed(2)}
+                                            )}{" "}
+                                            per {variant.unit}
+                                          </div>
+                                          <div className="text-green-600 font-semibold">
+                                            ₹
+                                            {(
+                                              variantTotalQty *
+                                              getVariantPriceForPeriod(
+                                                variant,
+                                                selectedPeriod
+                                              )
+                                            ).toFixed(2)}
+                                          </div>
                                         </div>
                                       </div>
+
+                                      {/* Additional delivery info for special schedules */}
+                                      {selectedVariant.deliveryOption ===
+                                        "select-days" &&
+                                        selectedVariant.selectedDays && (
+                                          <div className="mt-2 pt-2 border-t border-gray-200">
+                                            <div className="text-xs text-gray-500 mb-1">
+                                              Delivery Days:
+                                            </div>
+                                            <div className="flex flex-wrap gap-1">
+                                              {selectedVariant.selectedDays.map(
+                                                (day, dayIndex) => (
+                                                  <span
+                                                    key={dayIndex}
+                                                    className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded"
+                                                  >
+                                                    {day}
+                                                  </span>
+                                                )
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+
+                                      {selectedVariant.deliveryOption ===
+                                        "day1-day2" && (
+                                        <div className="mt-2 pt-2 border-t border-gray-200">
+                                          <div className="text-xs text-gray-500 grid grid-cols-2 gap-2">
+                                            <div>
+                                              First half:{" "}
+                                              {Math.ceil(selectedPeriod / 2)}{" "}
+                                              days × {selectedVariant.quantity}{" "}
+                                              {variant.unit}
+                                            </div>
+                                            <div>
+                                              Second half:{" "}
+                                              {Math.floor(selectedPeriod / 2)}{" "}
+                                              days ×{" "}
+                                              {selectedVariant.quantityVarying2 ||
+                                                1}{" "}
+                                              {variant.unit}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      )}
                                     </div>
-
-                                    {/* Additional delivery info for special schedules */}
-                                    {selectedVariant.deliveryOption === "select-days" && selectedVariant.selectedDays && (
-                                      <div className="mt-2 pt-2 border-t border-gray-200">
-                                        <div className="text-xs text-gray-500 mb-1">Delivery Days:</div>
-                                        <div className="flex flex-wrap gap-1">
-                                          {selectedVariant.selectedDays.map((day, dayIndex) => (
-                                            <span
-                                              key={dayIndex}
-                                              className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded"
-                                            >
-                                              {day}
-                                            </span>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {selectedVariant.deliveryOption === "day1-day2" && (
-                                      <div className="mt-2 pt-2 border-t border-gray-200">
-                                        <div className="text-xs text-gray-500 grid grid-cols-2 gap-2">
-                                          <div>
-                                            First half: {Math.ceil(selectedPeriod / 2)} days × {selectedVariant.quantity} {variant.unit}
-                                          </div>
-                                          <div>
-                                            Second half: {Math.floor(selectedPeriod / 2)} days × {selectedVariant.quantityVarying2 || 1} {variant.unit}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })}
+                                  );
+                                }
+                              )}
                             </div>
                           </div>
                         )}
@@ -2272,7 +2501,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                             {/* Animated Background */}
                             <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 animate-pulse"></div>
                             <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/90 via-green-400/90 to-teal-400/90"></div>
-                            
+
                             {/* Sparkle Animation Elements */}
                             <div className="absolute top-2 left-4 animate-bounce delay-75">
                               <Star className="h-3 w-3 text-yellow-300 fill-yellow-300" />
@@ -2283,9 +2512,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                             <div className="absolute bottom-2 right-4 animate-bounce delay-300">
                               <Zap className="h-3 w-3 text-yellow-300 fill-yellow-300" />
                             </div>
-                            
+
                             {/* Main Content */}
-                           
                           </div>
                         )}
 
@@ -2400,8 +2628,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 </div>
 
                 {/* Enhanced Savings Display in Confirmation */}
-          
-                
+
                 <div className="pt-2 border-t border-gray-200 space-y-2">
                   <div className="flex justify-between">
                     <span className="text-sm font-medium">Subtotal:</span>
@@ -2425,7 +2652,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       ₹{remainingPayable.toFixed(2)}
                     </span>
                   </div>
-                 
 
                   {/* <div className="flex items-center justify-between mt-4">
                     <Label htmlFor="useWallet" className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
@@ -2456,11 +2682,15 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       </div>
                       <div className="flex justify-between">
                         <span>Amount to be deducted:</span>
-                        <span className="font-medium text-green-600">₹{walletDeduction.toFixed(2)}</span>
+                        <span className="font-medium text-green-600">
+                          ₹{walletDeduction.toFixed(2)}
+                        </span>
                       </div>
                       <div className="flex justify-between font-medium pt-1 border-t">
                         <span>Remaining in wallet:</span>
-                        <span>₹{(walletBalance - walletDeduction).toFixed(2)}</span>
+                        <span>
+                          ₹{(walletBalance - walletDeduction).toFixed(2)}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -2523,24 +2753,25 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 </>
               )}
               <div className="bg-green-50 p-3 rounded-md border border-green-100">
-                      <p className="text-xs text-primary flex items-start">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4 mr-1.5 mt-0.5 flex-shrink-0"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                        This is not a cash on delivery. But Amount will be collected, Our team will contact you for futher instructions
-                      </p>
-                    </div>
+                <p className="text-xs text-primary flex items-start">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 mr-1.5 mt-0.5 flex-shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  This is not a cash on delivery. But Amount will be collected,
+                  Our team will contact you for futher instructions
+                </p>
+              </div>
 
               {selectedDepot?.isOnline ? (
                 <div className="bg-white p-4 rounded-md border">
@@ -2575,7 +2806,9 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 </div>
               ) : (
                 <div className="bg-white p-4 rounded-md border">
-                  <h4 className="text-sm font-medium mb-2">Pickup from Depot:</h4>
+                  <h4 className="text-sm font-medium mb-2">
+                    Pickup from Depot:
+                  </h4>
                   <div className="text-sm">
                     <p className="font-medium">{selectedDepot?.name}</p>
                     <p>{selectedDepot?.address}</p>
@@ -2767,7 +3000,9 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       onValueChange={(val) => handleAddressChange("state", val)}
                       defaultValue={addressFormState.state}
                     >
-                      <SelectTrigger className={formErrors.state ? "border-red-500" : ""}>
+                      <SelectTrigger
+                        className={formErrors.state ? "border-red-500" : ""}
+                      >
                         <SelectValue placeholder="Select a state" />
                       </SelectTrigger>
                       <SelectContent className="max-h-60 overflow-y-auto">
@@ -2790,7 +3025,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     htmlFor="location"
                     className="text-sm font-medium mb-1.5 block"
                   >
-                    Your Nearest Location*
+                    Our Delivery Areas*
                   </Label>
                   <Select
                     onValueChange={(value) =>
@@ -2799,19 +3034,24 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     value={addressFormState.locationId?.toString()}
                   >
                     <SelectTrigger
-                      className={
-                        formErrors.locationId ? "border-red-500" : ""
-                      }
+                      className={formErrors.locationId ? "border-red-500" : ""}
                     >
                       <SelectValue placeholder="Select a location" />
                     </SelectTrigger>
                     <SelectContent className="max-h-60 overflow-y-auto">
-                      {locations.map((location) => (
+                      {locations
+                        .sort((a, b) => {
+                          // Sort by city name first, then by location name
+                          const cityComparison = (a.city?.name || '').localeCompare(b.city?.name || '');
+                          if (cityComparison !== 0) return cityComparison;
+                          return a.name.localeCompare(b.name);
+                        })
+                        .map((location) => (
                         <SelectItem
                           key={location.id}
                           value={location.id.toString()}
                         >
-                          {location.name}
+                          {location.name} - {location.city?.name || 'Unknown City'}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -2823,7 +3063,10 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   )}
                   <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
                     <p className="text-xs text-blue-700">
-                      <span className="font-medium">Note:</span> If your area is not listed above, please contact us at <span className="font-semibold">+91-9920999100</span> for assistance with delivery arrangements.
+                      <span className="font-medium">Note:</span> If your area is
+                      not listed above, please contact us at{" "}
+                      <span className="font-semibold">+91-9920999100</span> for
+                      assistance with delivery arrangements.
                     </p>
                   </div>
                 </div>
@@ -2880,7 +3123,9 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 <div className="flex items-center justify-center gap-2 text-sm">
                   <div className="flex items-center gap-1 text-green-600">
                     <TrendingDown className="h-4 w-4" />
-                    <span className="font-medium">You Save: ₹{calculateSavings().toFixed(2)}</span>
+                    <span className="font-medium">
+                      You Save: ₹{calculateSavings().toFixed(2)}
+                    </span>
                   </div>
                   <span className="text-gray-500 text-xs">vs MRP pricing</span>
                 </div>
@@ -2889,14 +3134,15 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 onClick={handleProceedToConfirmation}
                 disabled={
                   isLoadingAddresses ||
-                  (
-                    !hasVariants && deliveryOption === "select-days" && selectedDays.length < 3
-                  ) ||
-                  (
-                    hasVariants && selectedVariants.some(
-                      (v) => v.deliveryOption === "select-days" && v.selectedDays.length < 3
-                    )
-                  )
+                  (!hasVariants &&
+                    deliveryOption === "select-days" &&
+                    selectedDays.length < 3) ||
+                  (hasVariants &&
+                    selectedVariants.some(
+                      (v) =>
+                        v.deliveryOption === "select-days" &&
+                        v.selectedDays.length < 3
+                    ))
                 }
                 className="w-full bg-primary hover:bg-primary text-white py-2 rounded-md font-medium"
               >
@@ -2938,7 +3184,9 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 <div className="flex items-center justify-center gap-2 text-sm">
                   <div className="flex items-center gap-1 text-green-600">
                     <TrendingDown className="h-4 w-4" />
-                    <span className="font-medium">Total Savings: ₹{calculateSavings().toFixed(2)}</span>
+                    <span className="font-medium">
+                      Total Savings: ₹{calculateSavings().toFixed(2)}
+                    </span>
                   </div>
                   <span className="text-gray-500 text-xs">vs MRP pricing</span>
                 </div>

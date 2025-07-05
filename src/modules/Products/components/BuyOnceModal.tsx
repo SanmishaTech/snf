@@ -53,6 +53,10 @@ interface DepotVariantPricingResponse {
 interface LocationData {
   id: number;
   name: string;
+  city?: {
+    id: number;
+    name: string;
+  };
 }
 
 interface AddressData {
@@ -105,7 +109,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
   selectedDepot,
 }) => {
   const [quantity, setQuantity] = useState(1);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(addDays(new Date(), 2));
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(addDays(new Date(), 3));
 
   const [userAddresses, setUserAddresses] = useState<AddressData[]>([]);
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
@@ -130,9 +134,13 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
   // Fetch list of serviceable locations (used in AddressForm)
   const fetchLocations = async () => {
     try {
-      const response = await get("/admin/locations");
-      if (response && Array.isArray(response.locations)) {
-        setLocations(response.locations);
+      const response = await get("/public/locations");
+      // Use the same structure as useLocations hook
+      if (response && response.data && Array.isArray(response.data.locations)) {
+        setLocations(response.data.locations);
+      } else if (response && Array.isArray(response)) {
+        // Fallback in case the response structure is different
+        setLocations(response);
       }
     } catch (error) {
       console.error("Failed to fetch locations:", error);
@@ -141,7 +149,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
   }
 
   const getBuyOncePrice = () => {
-    return product?.depotVariantPricing?.buyOncePrice || product?.price || product?.rate || 0;
+    return product?.depotVariantPricing?.buyOncePrice || product?.buyOncePrice || product?.mrp || 0;
   };
 
   useEffect(() => {
@@ -164,8 +172,8 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
           name: variant.name,
           depot: variant.depot,
           buyOncePrice: parseFloat(variant.buyOncePrice) || 0,
-          sellingPrice: parseFloat(variant.price) || 0,
-          mrp: parseFloat(variant.mrp) || parseFloat(variant.price) || 0,
+          sellingPrice: parseFloat(variant.buyOncePrice) || parseFloat(variant.mrp) || 0,
+          mrp: parseFloat(variant.mrp) || parseFloat(variant.buyOncePrice) || 0,
           minimumQty: variant.minimumQty || 0,
         }));
 
@@ -341,6 +349,22 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
               onSuccess={handleAddressSaveSuccess}
               onCancel={() => setShowAddressFormView(false)}
               locations={locations}
+              initialData={{
+                recipientName: '',
+                mobile: '',
+                plotBuilding: '',
+                streetArea: '',
+                landmark: '',
+                pincode: '',
+                city: 'Dombivli',
+                state: 'Maharashtra',
+                isDefault: false,
+                label: 'Home',
+                id: '',
+                memberId: 0,
+                createdAt: '',
+                updatedAt: ''
+              }}
             />
           ) : (
             <>

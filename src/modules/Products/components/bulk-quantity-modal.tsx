@@ -149,7 +149,7 @@ export const BulkQuantityModal: React.FC<BulkQuantityModalProps> = ({
                     <div>
                       <h4 className="font-medium text-gray-900">{variant.name}</h4>
                       <Badge variant="outline" className="text-xs mt-1">
-                        ₹{variant.rate} {variant.unit && `per ${variant.unit}`}
+                        ₹{variant.mrp || 0} {variant.unit && `per ${variant.unit}`}
                       </Badge>
                     </div>
                   </div>

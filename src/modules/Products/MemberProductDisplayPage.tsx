@@ -220,11 +220,11 @@ const EnhancedProductCard: React.FC<EnhancedProductCardProps> = ({ product, onVi
               <span className="text-xl sm:text-2xl font-bold text-primary dark:text-primary">
                 {formatCurrency(product.price)}
               </span>
-              {product.unit && (
+              {/* {product.unit && (
                 <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-400">
                   / {product.unit}
                 </span>
-              )}
+              )} */}
             </div>
             
             {/* Product Description - HTML and Truncated */}

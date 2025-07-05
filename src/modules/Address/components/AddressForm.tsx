@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -65,6 +65,10 @@ type AddressFormData = z.infer<typeof addressSchema>;
 interface Location {
   id: number;
   name: string;
+  city?: {
+    id: number;
+    name: string;
+  };
 }
 
 interface AddressFormProps {
@@ -84,10 +88,41 @@ const AddressForm: React.FC<AddressFormProps> = ({
   onSuccess,
   onCancel, // Added for modal integration
   depotId,
-  locations,
+  locations: propLocations,
 }) => {
   const navigate = useNavigate();
   const isEditMode = mode === 'edit';
+  const [locations, setLocations] = useState<Location[]>(propLocations || []);
+  const [isLoadingLocations, setIsLoadingLocations] = useState(false);
+
+  // Fetch locations if not provided as props
+  useEffect(() => {
+    const fetchLocations = async () => {
+      if (propLocations && propLocations.length > 0) {
+        setLocations(propLocations);
+        return;
+      }
+
+      setIsLoadingLocations(true);
+      try {
+        const response = await apiService.get('/public/locations');
+        // Use the same structure as useLocations hook
+        if (response && response.data && Array.isArray(response.data.locations)) {
+          setLocations(response.data.locations);
+        } else if (response && Array.isArray(response)) {
+          // Fallback in case the response structure is different
+          setLocations(response);
+        }
+      } catch (error) {
+        console.error('Failed to fetch locations:', error);
+        toast.error('Could not load locations.');
+      } finally {
+        setIsLoadingLocations(false);
+      }
+    };
+
+    fetchLocations();
+  }, [propLocations]);
 
   const form = useForm<AddressFormData>({
     resolver: zodResolver(addressSchema),
@@ -111,8 +146,8 @@ const AddressForm: React.FC<AddressFormProps> = ({
       streetArea: '',
       landmark: '',
       pincode: '',
-      city: '',
-      state: '',
+      city: 'Dombivli',
+      state: 'Maharashtra',
       isDefault: false,
       label: 'Home', // Added label default value
     },
@@ -258,37 +293,52 @@ const AddressForm: React.FC<AddressFormProps> = ({
               )}
             />
 
-            {locations && locations.length > 0 && (
-              <FormField
-                control={form.control}
-                name="locationId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Your Nearest Location*</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a location" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent className="max-h-60 overflow-y-auto">
-                        {locations.map(location => (
+            <FormField
+              control={form.control}
+              name="locationId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Our Delivery Areas*</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoadingLocations}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={isLoadingLocations ? "Loading locations..." : "Select a location"} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="max-h-60 overflow-y-auto">
+                      {isLoadingLocations ? (
+                        <SelectItem value="loading" disabled>
+                          Loading locations...
+                        </SelectItem>
+                      ) : locations.length > 0 ? (
+                        locations
+                          .sort((a, b) => {
+                            // Sort by city name first, then by location name
+                            const cityComparison = (a.city?.name || '').localeCompare(b.city?.name || '');
+                            if (cityComparison !== 0) return cityComparison;
+                            return a.name.localeCompare(b.name);
+                          })
+                          .map(location => (
                           <SelectItem key={location.id} value={String(location.id)}>
-                            {location.name}
+                            {location.name} - {location.city?.name || 'Unknown City'}
                           </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                    <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
-                      <p className="text-xs text-blue-700">
-                        <span className="font-medium">Note:</span> If your area is not listed above, please contact us at <span className="font-semibold">+91-XXXXXXXXXX</span> for assistance with delivery arrangements.
-                      </p>
-                    </div>
-                  </FormItem>
-                )}
-              />
-            )}
+                        ))
+                      ) : (
+                        <SelectItem value="no-locations" disabled>
+                          No locations available
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                  <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
+                    <p className="text-xs text-blue-700">
+                      <span className="font-medium">Note:</span> If your area is not listed above, please contact us at <span className="font-semibold">+91-9920999100</span> for assistance with delivery arrangements.
+                    </p>
+                  </div>
+                </FormItem>
+              )}
+            />
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <FormField

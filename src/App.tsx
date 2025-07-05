@@ -6,6 +6,8 @@ import {
   Routes,
   Route,
 } from "react-router-dom";
+import { ThemeProvider } from "./providers/theme-provider"; // Import ThemeProvider
+import { MobileThemeEnforcer } from "./components/MobileThemeEnforcer"; // Import MobileThemeEnforcer
 
 import AuthLayout from "./layouts/AuthLayout";
 import MainLayout from "./layouts/MainLayout";
@@ -94,7 +96,8 @@ const App = () => {
   }, []);
 
   return (
-    <>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+      <MobileThemeEnforcer />
       <Toaster richColors position="top-center" />
       <Router>
         <Routes>
@@ -208,7 +211,7 @@ const App = () => {
           </Route>
         </Routes>
       </Router>
-    </>
+    </ThemeProvider>
   );
 };
 

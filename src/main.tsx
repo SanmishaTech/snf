@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'; // Import QueryClient and QueryClientProvider
 import './index.css';
+import './styles/mobile-theme-override.css'; // Import mobile theme override styles
 import App from './App.tsx';
 
 // Create a QueryClient instance

@@ -49,9 +49,7 @@ interface OrderFormProps {
 interface Product {
   id: number;
   name: string;
-  price: string;
   description?: string;
-  unit?: string; // Added to display product unit
 }
 
 interface Vendor {
@@ -75,6 +73,9 @@ interface Depot {
 interface DepotVariant {
   id: string;
   name: string;
+  mrp?: number;
+  buyOncePrice?: number;
+  unit?: string;
 }
 
 // Helper functions from user's Calendar28
@@ -254,8 +255,6 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
       [productId: string]: { 
         name: string; 
         totalQuantity: number; 
-        unit?: string;
-        price?: number;
         totalPrice?: number;
         variants: {
           [variantId: string]: {
@@ -263,6 +262,8 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
             quantity: number;
             agencies: string[];
             depots: string[];
+            unit?: string;
+            price?: number;
           }
         }
       } 
@@ -282,23 +283,21 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
       const agency = agencies.find(a => String(a.id) === item.agencyId);
       const depot = depots.find(d => String(d.id) === item.depotId);
       
-      if (product) {
-        const productPrice = Number(product.price) || 0;
+      if (product && variant) {
+        const variantPrice = Number(variant.mrp) || Number(variant.buyOncePrice) || 0;
         const itemQuantity = Number(item.quantity);
         
         if (!summary[item.productId]) {
           summary[item.productId] = {
             name: product.name,
             totalQuantity: 0,
-            unit: product.unit,
-            price: productPrice,
             totalPrice: 0,
             variants: {}
           };
         }
         
         summary[item.productId].totalQuantity += itemQuantity;
-        summary[item.productId].totalPrice = (summary[item.productId].totalPrice || 0) + (productPrice * itemQuantity);
+        summary[item.productId].totalPrice = (summary[item.productId].totalPrice || 0) + (variantPrice * itemQuantity);
         
         // Handle variants
         if (variant && item.depotVariantId) {
@@ -307,7 +306,9 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
               name: variant.name,
               quantity: 0,
               agencies: [],
-              depots: []
+              depots: [],
+              unit: variant.unit,
+              price: variantPrice
             };
           }
           
@@ -746,18 +747,8 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
       "Watched items (stringified for dep):", watchedOrderItemsString
     );
     const calculatedTotalPrice = Object.values(groupedProductSummary).reduce((accumulator, summaryItem) => {
-      const product = products.find(p => p.name === summaryItem.name);
-      // Ensure product exists and its price is valid (not null or undefined)
-      if (product && product.price != null) {
-        const price = Number(product.price);
-        const quantity = Number(summaryItem.totalQuantity);
-
-        // Add to total only if both price and quantity are valid numbers
-        if (!isNaN(price) && !isNaN(quantity)) {
-          return accumulator + (price * quantity);
-        }
-      }
-      return accumulator; // Otherwise, this item does not contribute to the total
+      // Use the totalPrice already calculated in groupedProductSummary
+      return accumulator + (summaryItem.totalPrice || 0);
     }, 0);
     console.log("[OrderForm] calculatedTotalPrice:", calculatedTotalPrice);
     setordertotal(calculatedTotalPrice);
@@ -967,8 +958,8 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                   <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                     {fields.map((itemField, index) => {
                       console.log(`[OrderForm] Rendering field ${index}:`, itemField, "Watched item:", watchedOrderItems[index]);
-                      const productInfo = products.find(p => String(p.id) === watchedOrderItems[index]?.productId);
-                      const unitPrice = productInfo ? Number(productInfo.price) : 0;
+                      const variantInfo = depotVariants.find(v => String(v.id) === watchedOrderItems[index]?.depotVariantId);
+                      const unitPrice = variantInfo ? (Number(variantInfo.mrp) || Number(variantInfo.buyOncePrice) || 0) : 0;
                       const itemTotal = unitPrice * (watchedOrderItems[index]?.quantity || 0);
 
                       return (
@@ -1255,8 +1246,6 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                                   {summaryItem.name}
                                 </h3>
                                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                                  Unit Price: {formatCurrency(summaryItem.price || 0)}
-                                  {summaryItem.unit && ` per ${summaryItem.unit}`}
                                   {!isProductExpanded && hasVariants && (
                                     <span className="ml-2 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">
                                       {Object.keys(summaryItem.variants).length} variant{Object.keys(summaryItem.variants).length !== 1 ? 's' : ''}
@@ -1267,7 +1256,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                             </div>
                             <div className="text-right">
                               <p className="text-lg font-bold text-gray-800 dark:text-gray-200">
-                                {summaryItem.totalQuantity} {summaryItem.unit || 'units'}
+                                {summaryItem.totalQuantity} items
                               </p>
                               <p className="text-sm font-semibold text-green-600 dark:text-green-400">
                                 {formatCurrency(totalOrderValue)}
@@ -1285,11 +1274,14 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                                 {Object.entries(summaryItem.variants).map(([variantId, variantInfo]) => (
                                   <div key={`variant-${variantId}`} className="bg-white dark:bg-gray-800 rounded-md p-3 border border-gray-200 dark:border-gray-700">
                                     <div className="flex items-center justify-between mb-2">
-                                      <span className="font-medium text-gray-700 dark:text-gray-300">
-                                        {variantInfo.name}
-                                      </span>
+                                      <div>
+                                        <span className="font-medium text-gray-700 dark:text-gray-300">
+                                          {variantInfo.name}
+                                        </span>
+                                       
+                                      </div>
                                       <span className="font-semibold text-blue-600 dark:text-blue-400">
-                                        {variantInfo.quantity} {summaryItem.unit || 'units'}
+                                        {variantInfo.quantity} {variantInfo.unit || 'units'}
                                       </span>
                                     </div>
                                     

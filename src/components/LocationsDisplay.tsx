@@ -1,6 +1,7 @@
-import React from 'react';
-import { MapPin, Truck } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { MapPin, Truck, Search } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
 import { useLocations, type Location } from '@/hooks/useLocations';
 
 interface LocationsDisplayProps {
@@ -12,10 +13,18 @@ const LocationsDisplay: React.FC<LocationsDisplayProps> = ({
   title = "Home Delivery Areas", 
   showDeliveryInfo = true 
 }) => {
+  const [searchTerm, setSearchTerm] = useState("");
   const { data: locations = [], isLoading, isError } = useLocations();
 
-  // Group locations by city
-  const locationsByCity = locations.reduce((acc, location) => {
+// Filter and group locations by city
+  const filteredLocations = useMemo(() => {
+    return locations.filter(location =>
+      location.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      location.city.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [locations, searchTerm]);
+
+  const locationsByCity = filteredLocations.reduce((acc, location) => {
     const cityName = location.city.name;
     if (!acc[cityName]) {
       acc[cityName] = [];
@@ -69,7 +78,29 @@ const LocationsDisplay: React.FC<LocationsDisplayProps> = ({
         </div>
       )}
 
+      {/* Search Bar */}
+      <div className="mb-4 relative">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Input
+            type="text"
+            placeholder="Search locations by name or city..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+      </div>
+
       <div className="space-y-6">
+        {Object.entries(locationsByCity).length === 0 && searchTerm && (
+          <div className="text-center py-6">
+            <Search className="mx-auto h-8 w-8 mb-2 text-gray-400" />
+            <p className="text-gray-500">No locations found for "{searchTerm}"</p>
+            <p className="text-sm text-gray-400 mt-1">Try a different search term</p>
+          </div>
+        )}
+        
         {Object.entries(locationsByCity).map(([cityName, cityLocations]) => (
           <div key={cityName} className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <h3 className="text-lg font-semibold mb-3 text-blue-800 flex items-center gap-2">

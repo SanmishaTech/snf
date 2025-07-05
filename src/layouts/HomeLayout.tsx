@@ -168,6 +168,12 @@ export default function MemberLayout({ children }: MemberLayoutProps) { // Destr
                 My Subscriptions
               </Button>
             )}
+            {userData && (
+              <Button variant="ghost" onClick={() => navigate("/member/addresses")}>
+                <Repeat className="h-5 w-5 mr-2" />
+                Manage Address
+              </Button>
+            )}
           </nav>
 
           {/* Right side controls */}
