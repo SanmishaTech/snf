@@ -94,19 +94,19 @@ const A2MilkSection: React.FC<A2MilkSectionProps> = ({ className = "" }) => {
   };
 
   return (
-    <div className={`min-h-screen  py-16 px-4 ${className}`}>
+    <div className={`min-h-screen py-16 px-4 overflow-x-hidden ${className}`}>
       <div className="max-w-7xl mx-auto space-y-16">
         {/* Main Section */}
         <motion.div
           className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center " 
           variants={containerVariants}
-        initial="hidden"
+          initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.3 }}
         >
           {/* Image Section */}
           <motion.div
-            className="relative"
+            className="relative   "
             variants={imageVariants}
           >
             <div className="relative overflow-hidden rounded-2xl shadow-2xl">
@@ -118,7 +118,7 @@ const A2MilkSection: React.FC<A2MilkSectionProps> = ({ className = "" }) => {
               {/* <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" /> */}
             </div>
             <motion.div
-              className="absolute -bottom-4 -right-4 bg-primary text-primary-foreground px-4 py-2 rounded-full shadow-lg"
+              className="absolute z-22 -bottom-4 -right-4 bg-primary text-primary-foreground px-4 py-2 rounded-full shadow-lg"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ duration: 0.5 }}
@@ -130,7 +130,7 @@ const A2MilkSection: React.FC<A2MilkSectionProps> = ({ className = "" }) => {
 
           {/* Text Content */}
           <motion.div
-            className="space-y-6"
+            className="space-y-6 overflow-hidden"
             variants={textVariants}
           >
             <div>
@@ -140,7 +140,7 @@ const A2MilkSection: React.FC<A2MilkSectionProps> = ({ className = "" }) => {
               <h1 className="text-4xl lg:text-5xl font-bold text-foreground mb-6">
                 A2 Milk
               </h1>
-              <div className="space-y-4 text-muted-foreground leading-relaxed">
+              <div className="space-y-4 text-gray-700 leading-relaxed">
                 <p>
                   A2 milk contains the A2 beta-casein protein, which is naturally present in the milk of Indian-origin (Desi) cow breeds such as Gir, Kathiawadi, Dangi, Sahiwal, Hallikar, Konkan Gidda, and others. This protein makes A2 milk lighter on the stomach and easier to digest.
                 </p>
@@ -173,7 +173,7 @@ const A2MilkSection: React.FC<A2MilkSectionProps> = ({ className = "" }) => {
             <h2 className="text-3xl lg:text-4xl font-bold text-foreground">
               A2 Milk Benefits
             </h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-gray-700 max-w-2xl mx-auto">
               Discover the numerous health advantages of choosing A2 milk for you and your family
             </p>
           </motion.div>

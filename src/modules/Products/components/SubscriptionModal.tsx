@@ -1457,7 +1457,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                                     selectedVariant.selectedDays.includes(
                                                       day.id
                                                     )
-                                                      ? "bg-orange-500"
+                                                      ? "bg-primary"
                                                       : "border-gray-300 text-gray-700"
                                                   }`}
                                                   onClick={() =>

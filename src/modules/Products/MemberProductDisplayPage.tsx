@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertCircle, Search, Heart, Milk, Package, Zap, Leaf, CheckCircle, Eye } from 'lucide-react'; // Removed ShoppingCart, Star. Added Eye.
+import { AlertCircle, Search, Milk, Package, Zap, Leaf, CheckCircle, Eye } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/formatter'; // Assuming this is your currency formatter
@@ -58,15 +58,15 @@ const EnhancedProductCard: React.FC<EnhancedProductCardProps> = ({ product, onVi
 
   const getProductIcon = (category?: string, name?: string) => {
     if (category === 'dairy' || name?.toLowerCase().includes('milk') || name?.toLowerCase().includes('yogurt')) {
-      return <Milk className="w-6 h-6 text-secondary" />;
+      // return <Milk className="w-6 h-6 text-primary" />;
     }
     if (category === 'bakery' || name?.toLowerCase().includes('bread')) {
-      return <Package className="w-6 h-6 text-yellow-600" />;
+      // return <Package className="w-6 h-6 text-primary" />;
     }
     if (category === 'produce' || name?.toLowerCase().includes('fruit') || name?.toLowerCase().includes('vegetable')) {
-      return <Leaf className="w-6 h-6 text-green-500" />;
+      return <Leaf className="w-6 h-6 text-primary" />;
     }
-    return <Package className="w-6 h-6 text-gray-500" />;
+    return <Package className="w-6 h-6 text-gray-700" />;
   };
 
   const cardVariants = {
@@ -138,8 +138,8 @@ const EnhancedProductCard: React.FC<EnhancedProductCardProps> = ({ product, onVi
               />
             ) : (
               <div className="h-full w-full flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-700">
-                {getProductIcon(product.category, product.name)}
-                <span className="mt-2 text-xs text-gray-500 dark:text-gray-400">No Image Available</span>
+                {/* {getProductIcon(product.category, product.name)} */}
+                <span className="mt-2 text-xs text-gray-700 dark:text-gray-400">No Image Available</span>
               </div>
             )}
           </motion.div>
@@ -170,7 +170,7 @@ const EnhancedProductCard: React.FC<EnhancedProductCardProps> = ({ product, onVi
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
-            className="absolute top-3 left-3 bg-gradient-to-r from-green-500 to-teal-500 text-white px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg flex items-center"
+            className="absolute top-3 left-3 bg-primary text-white px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg flex items-center"
           >
             <Zap size={14} className="mr-1" /> Fresh
           </motion.div>
@@ -191,7 +191,7 @@ const EnhancedProductCard: React.FC<EnhancedProductCardProps> = ({ product, onVi
                   animate={{ scale: 1, opacity: 1, transition: { delay: 0.1 } }}
                   className="text-white text-center"
                 >
-                  <Eye className="w-10 h-10 mx-auto mb-2 text-orange-400" />
+                  <Eye className="w-10 h-10 mx-auto mb-2 text-primary" />
                   <p className="text-base font-semibold">Subscribe</p>
                   <p className="text-xs text-gray-300">Click to subscribe</p>
                 </motion.div>
@@ -203,13 +203,13 @@ const EnhancedProductCard: React.FC<EnhancedProductCardProps> = ({ product, onVi
         <CardHeader className="pb-0 pt-4 px-4"> {/* Reduced bottom padding and added horizontal padding */}
           <div className="flex items-start justify-between space-x-2">
             <div className="flex-1 min-w-0">
-              <CardTitle className="text-base sm:text-lg font-semibold leading-tight line-clamp-2 text-gray-800 dark:text-gray-100 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors duration-200">
+              <CardTitle className="text-base sm:text-lg font-semibold leading-tight line-clamp-2 text-gray-700 dark:text-gray-100 group-hover:text-primary dark:group-hover:text-primary transition-colors duration-200">
                 {product.name}
               </CardTitle>
               {/* Reviews removed as per request */}
             </div>
             <div className="flex-shrink-0 pt-1">
-              {getProductIcon(product.category, product.name)}
+              {/* {getProductIcon(product.category, product.name)} */}
             </div>
           </div>
         </CardHeader>
@@ -217,27 +217,27 @@ const EnhancedProductCard: React.FC<EnhancedProductCardProps> = ({ product, onVi
         <CardContent className="flex-grow pt-0 pb-3 px-4">
           <div className="space-y-2.5">
             <div className="flex items-baseline space-x-1.5">
-              <span className="text-xl sm:text-2xl font-bold text-orange-600 dark:text-orange-400">
-                {formatCurrency(product.price)} {/* Changed product.rate to product.price */}
+              <span className="text-xl sm:text-2xl font-bold text-primary dark:text-primary">
+                {formatCurrency(product.price)}
               </span>
               {product.unit && (
-                <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-400">
                   / {product.unit}
                 </span>
               )}
-            </div> {/* Closes 'flex items-baseline' */}
+            </div>
             
             {/* Product Description - HTML and Truncated */}
             {product.description && (
               <div 
-                className="mt-2 text-xs text-gray-600 dark:text-gray-400 prose prose-sm dark:prose-invert max-w-full"
+                className="mt-2 text-xs text-gray-700 dark:text-gray-400 prose prose-sm dark:prose-invert max-w-full"
                 style={{ 
                   display: '-webkit-box',
                   WebkitBoxOrient: 'vertical',
                   WebkitLineClamp: 3,
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
-                  maxHeight: '4.5em', // 3 lines * 1.5em (approx line height for text-xs)
+                  maxHeight: '4.5em',
                 }}
                 dangerouslySetInnerHTML={{ __html: product.description }}
               />
@@ -245,15 +245,15 @@ const EnhancedProductCard: React.FC<EnhancedProductCardProps> = ({ product, onVi
 
             {/* Product Features - Organic, Certified etc. */}
             <div className="grid grid-cols-2 gap-2 pt-3">
-              <div className="bg-green-50 dark:bg-green-900/30 rounded-md p-2 text-center flex flex-col items-center justify-center">
-                <Leaf size={16} className="text-green-600 dark:text-green-400 mb-0.5" />
-                <div className="text-xs font-medium text-green-700 dark:text-green-300">Organic</div>
+              <div className="bg-primary/10 dark:bg-primary/20 rounded-md p-2 text-center flex flex-col items-center justify-center">
+                <Leaf size={16} className="text-primary dark:text-primary mb-0.5" />
+                <div className="text-xs font-medium text-primary dark:text-primary">Organic</div>
               </div>
-              <div className="bg-blue-50 dark:bg-blue-900/30 rounded-md p-2 text-center flex flex-col items-center justify-center">
-                <CheckCircle size={16} className="text-blue-600 dark:text-blue-400 mb-0.5" />
-                <div className="text-xs font-medium text-blue-700 dark:text-blue-300">Certified</div>
+              <div className="bg-primary/10 dark:bg-primary/20 rounded-md p-2 text-center flex flex-col items-center justify-center">
+                <CheckCircle size={16} className="text-primary dark:text-primary mb-0.5" />
+                <div className="text-xs font-medium text-primary dark:text-primary">Certified</div>
               </div>
-            </div> {/* Closes 'grid grid-cols-2' */}
+            </div>
           </div> {/* Closes 'space-y-2.5' */}
         </CardContent>
 
@@ -264,7 +264,7 @@ const EnhancedProductCard: React.FC<EnhancedProductCardProps> = ({ product, onVi
             className="w-full"
           >
             <Button 
-              className="w-full bg-gradient-to-r from-[var(--destructive)] to-orange-500 text-white font-semibold py-2.5 sm:py-3 shadow-md hover:shadow-lg transition-all duration-200 group text-sm sm:text-base rounded-lg hover:brightness-90"
+              className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-2.5 sm:py-3 shadow-md hover:shadow-lg transition-all duration-200 group text-sm sm:text-base rounded-lg"
               onClick={(e) => { e.stopPropagation(); onViewDetails(product.id); }}
               aria-label={`Subscribe for ${product.name}`}
             >
@@ -316,7 +316,7 @@ const MemberProductDisplayPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-gray-50 to-red-50 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900 py-8 sm:py-12">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900 py-8 sm:py-12">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12 sm:mb-16">
             <Skeleton className="h-10 sm:h-12 w-3/5 sm:w-1/2 mx-auto mb-4 bg-gray-300 dark:bg-gray-700" />
@@ -330,17 +330,17 @@ const MemberProductDisplayPage: React.FC = () => {
     );
   }
 
-  if (isError && error) { // Check for error object as well
+  if (isError && error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="container mx-auto px-4 py-8">
           <Alert variant="destructive" className="max-w-lg mx-auto bg-red-100 dark:bg-red-900/50 border-red-500 dark:border-red-700 p-6 rounded-lg shadow-xl">
             <AlertCircle className="h-6 w-6 text-red-700 dark:text-red-400" />
             <AlertTitle className="text-xl font-semibold text-red-800 dark:text-red-300">Oops! Something went wrong.</AlertTitle>
-            <AlertDescription className="text-red-700 dark:text-red-400 mt-1">
+            <AlertDescription className="text-gray-700 dark:text-red-400 mt-1">
               {error?.message || 'We couldn\'t fetch the products at this moment. Please try refreshing the page or check back later.'}
             </AlertDescription>
-            <Button variant="outline" className="mt-4 border-red-600 text-red-700 hover:bg-red-200 dark:border-red-500 dark:text-red-300 dark:hover:bg-red-800/50" onClick={() => window.location.reload()}>
+            <Button variant="outline" className="mt-4 border-primary text-primary hover:bg-primary/10 dark:border-primary dark:text-primary dark:hover:bg-primary/20" onClick={() => window.location.reload()}>
               Refresh Page
             </Button>
           </Alert>
@@ -351,21 +351,21 @@ const MemberProductDisplayPage: React.FC = () => {
 
   if (products.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="container mx-auto px-4 py-8 text-center">
           <motion.div 
             initial={{ opacity:0, scale: 0.8 }}
             animate={{ opacity:1, scale: 1 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
           >
-            <Search size={72} className="mx-auto mb-6 text-orange-500 dark:text-orange-400" />
-            <h2 className="text-3xl sm:text-4xl font-bold mb-3 text-gray-800 dark:text-gray-100">
+            <Search size={72} className="mx-auto mb-6 text-primary dark:text-primary" />
+            <h2 className="text-3xl sm:text-4xl font-bold mb-3 text-gray-700 dark:text-gray-100">
               No Products Found
             </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-md mx-auto">
+            <p className="text-lg text-gray-700 dark:text-gray-400 max-w-md mx-auto">
               It seems we're all out of stock for now! Please check back soon for fresh arrivals.
             </p>
-            <Button className="mt-8 bg-orange-500 hover:bg-orange-600 text-white" onClick={() => window.location.reload() /* Or navigate to home */}>
+            <Button className="mt-8 bg-primary hover:bg-primary/90 text-white" onClick={() => window.location.reload()}>
               Check Again
             </Button>
           </motion.div>
@@ -375,21 +375,25 @@ const MemberProductDisplayPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-yellow-50 dark:from-gray-900 dark:via-slate-800 dark:to-gray-900 selection:bg-orange-500 selection:text-white">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-slate-800 dark:to-gray-900 selection:bg-primary selection:text-white">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16">
         {/* Header Section */}
         <motion.div
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: "easeOut" }}
-          className="text-center mb-12 sm:mb-20"
+          className="mb-12 sm:mb-20"
         >
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold mb-4 tracking-tight">
-            <span className="bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500 bg-clip-text text-transparent">
-              Discover Our Products
-            </span>
-          </h1>
-          <p className="text-base sm:text-lg lg:text-xl text-gray-600 dark:text-gray-300 max-w-xl lg:max-w-2xl mx-auto leading-relaxed">
+          <div className="flex items-center mb-4">
+            <div className="p-2 bg-primary rounded-full shadow-lg mr-3">
+              <Package className="w-6 h-6 text-white" />
+            </div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-700">
+              Our Products
+            </h1>
+          </div>
+          <div className="w-[12rem] h-1 bg-primary rounded-full mb-4"></div>
+          <p className="text-base sm:text-lg lg:text-xl text-gray-700 dark:text-gray-300 max-w-xl lg:max-w-2xl leading-relaxed">
             Explore a curated selection of farm-fresh dairy, organic groceries, and artisanal goods. Subscribe for convenience and quality, delivered to your door.
           </p>
         </motion.div>

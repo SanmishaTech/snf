@@ -6,6 +6,11 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        'sans': ['Roboto', 'system-ui', 'sans-serif'],
+        'display': ['Roboto', 'system-ui', 'sans-serif'],
+        'mono': ['Roboto Mono', 'monospace'],
+      },
       colors: {
         primary: {
           light: '#3fbaeb',

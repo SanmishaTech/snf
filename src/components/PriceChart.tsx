@@ -418,10 +418,10 @@ export const PriceChart: React.FC<PriceChartProps> = ({ product, variants, class
                         <td className="text-center py-3 px-3 border-r border-gray-200">
                           {calculateSavings(period.value, deliveryPreference, '500ml') > 0 ? (
                             <div className="flex flex-col items-center">
-                              <Badge className="bg-orange-100 text-orange-800 text-xs mb-1">
+                              <Badge className="bg-primary text-primary-foreground text-xs mb-1">
                                 {calculateSavings(period.value, deliveryPreference, '500ml')}% off
                               </Badge>
-                              <span className="text-xs text-green-600 font-medium">
+                              <span className="text-xs text-primary-foreground font-medium">
                                 Save ₹{calculateSavingsAmount(period.value, deliveryPreference, '500ml')}
                               </span>
                             </div>
@@ -437,10 +437,10 @@ export const PriceChart: React.FC<PriceChartProps> = ({ product, variants, class
                         <td className="text-center py-3 px-3">
                           {calculateSavings(period.value, deliveryPreference, '1L') > 0 ? (
                             <div className="flex flex-col items-center">
-                              <Badge className="bg-orange-100 text-orange-800 text-xs mb-1">
+                              <Badge className="bg-primary text-primary-foreground text-xs mb-1">
                                 {calculateSavings(period.value, deliveryPreference, '1L')}% off
                               </Badge>
-                              <span className="text-xs text-green-600 font-medium">
+                              <span className="text-xs text-primary-foreground font-medium">
                                 Save ₹{calculateSavingsAmount(period.value, deliveryPreference, '1L')}
                               </span>
                             </div>

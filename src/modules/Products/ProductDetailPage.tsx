@@ -28,7 +28,7 @@ const StarRating: React.FC<{ rating: number }> = ({ rating }) => {
           className={`w-5 h-5 ${i < rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
         />
       ))}
-      <span className="ml-2 text-sm text-muted-foreground">
+      <span className="ml-2 text-sm text-gray-700">
         {rating}/5 <span className="ml-1">({70} Ratings)</span>
       </span>
     </div>
@@ -337,18 +337,18 @@ const ProductDetailPage: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
           {/* Product Image */}
-          <div className="bg-muted/10 rounded-2xl flex items-center justify-center p-8 border border-muted/20">
+          <div className="bg-muted/10 rounded-2xl flex items-center justify-center  border border-muted/20">
             {product.attachmentUrl ? (
               <motion.img
                 src={`${import.meta.env.VITE_BACKEND_URL}${product.attachmentUrl}`}
                 alt={product.name}
-                className="object-fit max-h-[900px] min-h-[600px] rounded-xl"
+                className="object-cover max-md:object-fit max-sm:object-contain rounded-2xl max-h-[900px] min-h-[600px]"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5 }}
               />
             ) : (
-              <div className="flex flex-col items-center justify-center h-[400px] text-muted-foreground">
+              <div className="flex flex-col items-center justify-center h-[400px] text-gray-700">
                 <div className="bg-muted/30 rounded-full p-6 mb-4">
                   <Leaf className="w-16 h-16" />
                 </div>
@@ -366,17 +366,17 @@ const ProductDetailPage: React.FC = () => {
             <div className="mt-6">
               <div className="flex items-baseline gap-3">
                 {/* <p className="text-4xl font-bold text-primary">₹{product?.rate}</p> */}
-                {/* <p className="text-muted-foreground line-through">₹{product.rate + 5}</p> */}
+                {/* <p className="text-gray-700 line-through">₹{product.rate + 5}</p> */}
                 {/* <span className="bg-green-100 text-green-800 text-sm px-2 py-1 rounded-full ml-2">
                   5% OFF
                 </span> */}
               </div>
-              {/* <p className="text-sm text-muted-foreground mt-1">per {product.unit || 'unit'}</p> */}
+              {/* <p className="text-sm text-gray-700 mt-1">per {product.unit || 'unit'}</p> */}
             </div>
 
             <div className="mt-8">
               <h2 className="text-xl font-semibold mb-3">Description</h2>
-              <div className="text-muted-foreground leading-relaxed prose">
+              <div className="text-gray-700 leading-relaxed prose">
                 {product.description ? (
                   <>
                     <div
@@ -516,7 +516,7 @@ const ProductDetailPage: React.FC = () => {
                     <div className="mr-3 mt-1">{benefit.icon}</div>
                     <div>
                       <h3 className="font-medium">{benefit.title}</h3>
-                      <p className="text-sm text-muted-foreground">{benefit.description}</p>
+                      <p className="text-sm text-gray-700">{benefit.description}</p>
                     </div>
                   </motion.div>
                 ))}
@@ -601,7 +601,7 @@ const ProductDetailPage: React.FC = () => {
               </DialogClose>
             </DialogHeader>
             <div className="mt-4 max-h-[70vh] overflow-y-auto">
-              <div className="text-muted-foreground leading-relaxed prose" dangerouslySetInnerHTML={{ __html: product.description || "Our premium milk comes from grass-fed cows raised in natural pastures. Rich in calcium and essential nutrients, it's pasteurized for safety while maintaining its natural goodness. We source our milk from local farms that prioritize animal welfare and sustainable farming practices. Each bottle undergoes rigorous quality checks to ensure you receive the freshest, most nutritious product possible. The cows are fed a natural diet without hormones or antibiotics, resulting in milk that's both delicious and healthier. Perfect for drinking, cooking, or adding to your morning coffee, our milk is a versatile addition to any kitchen. We're proud to support local farmers and bring you a product that's not only good for you but also good for the environment." }} />
+              <div className="text-gray-700 leading-relaxed prose" dangerouslySetInnerHTML={{ __html: product.description || "Our premium milk comes from grass-fed cows raised in natural pastures. Rich in calcium and essential nutrients, it's pasteurized for safety while maintaining its natural goodness. We source our milk from local farms that prioritize animal welfare and sustainable farming practices. Each bottle undergoes rigorous quality checks to ensure you receive the freshest, most nutritious product possible. The cows are fed a natural diet without hormones or antibiotics, resulting in milk that's both delicious and healthier. Perfect for drinking, cooking, or adding to your morning coffee, our milk is a versatile addition to any kitchen. We're proud to support local farmers and bring you a product that's not only good for you but also good for the environment." }} />
             </div>
           </DialogContent>
         </Dialog>
@@ -759,7 +759,7 @@ const ProductDetailPage: React.FC = () => {
           <div className="space-y-4">
             <div className="bg-card p-5 rounded-xl border border-muted/20">
               <h3 className="font-semibold">How often will I receive deliveries?</h3>
-              <p className="text-muted-foreground mt-2">
+              <p className="text-gray-700 mt-2">
                 You can choose daily delivery or customize your delivery schedule during the subscription process. 
                 We offer flexible options to match your consumption needs.
               </p>
@@ -767,7 +767,7 @@ const ProductDetailPage: React.FC = () => {
             
             <div className="bg-card p-5 rounded-xl border border-muted/20">
               <h3 className="font-semibold">Can I pause or modify my subscription?</h3>
-              <p className="text-muted-foreground mt-2">
+              <p className="text-gray-700 mt-2">
                 Yes! You can easily pause, modify, or cancel your subscription anytime through your account dashboard. 
                 Changes made before 6 PM will apply to the next day's delivery.
               </p>
@@ -775,7 +775,7 @@ const ProductDetailPage: React.FC = () => {
             
             <div className="bg-card p-5 rounded-xl border border-muted/20">
               <h3 className="font-semibold">How is the milk packaged?</h3>
-              <p className="text-muted-foreground mt-2">
+              <p className="text-gray-700 mt-2">
                 We use reusable glass bottles to maintain freshness and reduce environmental impact. 
                 Simply leave empty bottles outside for collection during your next delivery.
               </p>

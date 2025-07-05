@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
-
+import Mobilesrcimage from "./images/indraai 640 x 960.png"
 interface HeroImage {
   id: string | number;
   src: string;
@@ -37,7 +37,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
   // Handle responsive detection with better breakpoints
   useEffect(() => {
     const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 425); // Mobile breakpoint at 768px
+      setIsMobile(window.innerWidth < 436); // Mobile breakpoint at 768px
     };
     
     // Check on mount
@@ -107,28 +107,28 @@ const HeroSection: React.FC<HeroSectionProps> = ({
     <section className={cn("relative w-full overflow-hidden", className)}>
       {/* Hero Container with specific aspect ratio */}
       <div 
-        className="relative w-full mx-auto"
+        className="relative w-full mx-auto max-sm:w-full max-sm:h-[16rem] max-[439px]:min-h-[39rem] "
         style={{
-          maxWidth: '1600px',
-          aspectRatio: '1600 / 1067'
-        }}
+          maxWidth: '1920px',
+           aspectRatio: '1584 / 632',
+         }}
       >
         {/* Background Images */}
-        <div className="absolute inset-0 bg-black">
+        <div className="absolute inset-0 ">
           {images.map((image, index) => (
             <div
               key={image.id}
               className={cn(
                 "absolute inset-0 transition-opacity duration-1000 ease-in-out",
-                index === currentImageIndex ? "opacity-100" : "opacity-0"
+                index === currentImageIndex ? "opacity-100" : "opacity-100"
                )}
             >
               {/* Image Container with proper aspect ratio handling */}
               <div className="relative w-full h-full flex items-center justify-center">
                 <img
-                  src={isMobile ? image.mobileSrc : image.src}
+                  src={isMobile ? Mobilesrcimage : image.src}
                   alt={image.alt}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover max-sm:object-fit max-[380px]:object-contain "
                   onLoad={() => handleImageLoad(index)}
                   loading={index === 0 ? "eager" : "lazy"}
                 />
@@ -199,11 +199,20 @@ const HeroSection: React.FC<HeroSectionProps> = ({
           initial={{ opacity: 1, y: 20 }}
           animate={{ opacity: isLoaded ? 1 : 0, y: isLoaded ? 1 : 20 }}
           transition={{ duration: 0.6, delay: 1.0 }}
-          className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-20"
+          className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-20 
+                     lg:bottom-20 
+                     md:bottom-16 
+                     sm:bottom-12 
+                     max-sm:bottom-8"
         >
           <button 
             onClick={handleJoinMilkClub}
-            className="px-8 py-3 bg-primary text-white font-semibold rounded-full hover:bg-red-400/90 transition-colors duration-300 min-w-[240px]"
+            className="px-8 py-3 bg-primary text-white font-semibold rounded-full hover:bg-red-400/90 transition-colors duration-300 
+                       min-w-[240px] 
+                       lg:min-w-[240px] lg:px-8 lg:py-3 lg:text-base
+                       md:min-w-[200px] md:px-6 md:py-2.5 md:text-sm
+                       sm:min-w-[180px] sm:px-5 sm:py-2 sm:text-sm
+                       max-sm:min-w-[150px] max-sm:px-4 max-sm:py-2 max-sm:text-xs"
           >
             Join Our Milk Club
           </button>

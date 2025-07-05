@@ -278,7 +278,7 @@ const LandingPage = () => {
             <div className="flex justify-center mb-6">
               <div className="h-1 w-20  rounded-full"></div>
             </div>
-            <p className="text-lg text-muted-foreground max-w-7xl  leading-relaxed text-left">
+            <p className="text-lg max-w-7xl text-gray-800 leading-relaxed text-left">
               Indraai combines two words Indriya (Senses) that connect the soul
               - Atma to the physical world and Aai (Mother) - i.e., the food
               from the mother to nourish the senses.
@@ -358,7 +358,7 @@ const LandingPage = () => {
                     <h3 className="text-lg font-semibold text-foreground">
                       {feature.title}
                     </h3>
-                    <p className="mt-2 text-muted-foreground">
+                    <p className="mt-2 text-gray-700">
                       {feature.description}
                     </p>
                   </div>
@@ -404,8 +404,8 @@ const LandingPage = () => {
             {/* Feature 1: Native Breed */}
             <div className="group">
               <div className="bg-white rounded-2xl shadow-lg p-8 h-full hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-                <div className="flex items-center justify-center w-16 h-16 bg-orange-100 rounded-full mb-6 mx-auto group-hover:bg-orange-200 transition-colors">
-                  <FaCow className="w-8 h-8 text-orange-600" />
+                <div className="flex items-center justify-center w-16 h-16 bg-orange-200 rounded-full mb-6 mx-auto group-hover:bg-primary/20 transition-colors">
+                  <FaCow className="w-8 h-8 text-primary" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
                   Native Heritage
@@ -422,8 +422,8 @@ const LandingPage = () => {
             {/* Feature 2: Respectful Practices */}
             <div className="group">
               <div className="bg-white rounded-2xl shadow-lg p-8 h-full hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-                <div className="flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-6 mx-auto group-hover:bg-green-200 transition-colors">
-                  <FaHeart className="w-8 h-8 text-green-600" />
+                <div className="flex items-center justify-center w-16 h-16 bg-primary/20 rounded-full mb-6 mx-auto group-hover:bg-primary/20 transition-colors">
+                  <FaHeart className="w-8 h-8 text-primary" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
                   Natural Milking Cycle
