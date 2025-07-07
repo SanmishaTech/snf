@@ -35,6 +35,12 @@ interface Product {
   unit?: string; // Added to include product unit
 }
 
+interface DepotProductVariant {
+  id: number;
+  name: string;
+  mrp?: number;
+}
+
 interface DeliveryAddress {
   id: string;
   memberId: number;
@@ -56,6 +62,7 @@ interface Subscription {
   id: number;
   member: Member;
   product: Product;
+  depotProductVariant?: DepotProductVariant; // Added depotProductVariant field
   deliverySchedule: string; // DAILY, WEEKDAYS, ALTERNATE_DAYS, SELECT_DAYS, VARYING
   weekdays?: string | null; // JSON string array like '["MONDAY", "TUESDAY"]'
   qty: number;
@@ -987,7 +994,9 @@ const AdminSubscriptionList: React.FC = () => {
                              ? `×${sub.qty}/${sub.altQty ?? '-'}`
                              : `×${sub.qty}`}
                          </span>
-                        <span className="text-blue-600">{sub.product?.unit}</span>
+                        <span className="text-blue-600">
+                          {sub.depotProductVariant?.name || sub.product?.unit || ''}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -1025,12 +1034,16 @@ const AdminSubscriptionList: React.FC = () => {
                           <div className="flex items-center gap-2 text-xs">
                             <div className="flex items-center gap-1">
                               <div className="w-1.5 h-1.5 bg-secondary rounded-full"></div>
-                              <span className="text-blue-700 font-medium">{sub.qty}{sub.product?.unit}</span>
+                              <span className="text-blue-700 font-medium">
+                                {sub.qty} {sub.depotProductVariant?.name || sub.product?.unit || 'units'}
+                              </span>
                             </div>
                             <span className="text-gray-400">•</span>
                             <div className="flex items-center gap-1">
                               <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                              <span className="text-green-700 font-medium">{sub.altQty}{sub.product?.unit}</span>
+                              <span className="text-green-700 font-medium">
+                                {sub.altQty} {sub.depotProductVariant?.name || sub.product?.unit || 'units'}
+                              </span>
                             </div>
                             <span className="text-gray-400 text-xs italic ml-1">skip day pattern</span>
                           </div>
@@ -1039,12 +1052,16 @@ const AdminSubscriptionList: React.FC = () => {
                           <div className="flex items-center gap-2 text-xs">
                             <div className="flex items-center gap-1">
                               <div className="w-1.5 h-1.5 bg-secondary rounded-full"></div>
-                              <span className="text-blue-700 font-medium">{sub.qty}{sub.product?.unit}</span>
+                              <span className="text-blue-700 font-medium">
+                                {sub.qty} {sub.depotProductVariant?.name || sub.product?.unit || 'units'}
+                              </span>
                             </div>
                             <span className="text-gray-400">•</span>
                             <div className="flex items-center gap-1">
                               <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                              <span className="text-green-700 font-medium">{sub.altQty}{sub.product?.unit}</span>
+                              <span className="text-green-700 font-medium">
+                                {sub.altQty} {sub.depotProductVariant?.name || sub.product?.unit || 'units'}
+                              </span>
                             </div>
                             <span className="text-gray-400 text-xs italic ml-1">daily rotation</span>
                           </div>
@@ -1052,7 +1069,7 @@ const AdminSubscriptionList: React.FC = () => {
                           /* Regular Schedule Display */
                           sub.qty && (
                             <div className="text-xs text-gray-600">
-                              {sub.qty} {sub.product?.unit || 'units'}
+                              {sub.qty} {sub.depotProductVariant?.name || sub.product?.unit || 'units'}
                               {sub.deliverySchedule === 'DAILY' ? ' daily' :
                                sub.deliverySchedule === 'WEEKDAYS' ? ' on weekdays' :
                                sub.deliverySchedule === 'WEEKENDS' ? ' on weekends' :

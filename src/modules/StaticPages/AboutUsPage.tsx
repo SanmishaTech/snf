@@ -4,7 +4,7 @@ import { Leaf } from "lucide-react"
 const AboutUsPage: React.FC = () => {
   return (
     <div className="min-h-screen ">
-      <div className="container mx-auto px-4 py-16 md:py-24">
+            <div className="container mx-auto px-4 py-16 md:py-24" style={{ textAlign: "justify" }}>
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="mb-12">

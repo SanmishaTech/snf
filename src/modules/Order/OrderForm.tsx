@@ -374,10 +374,10 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
             setVendors(response.data.map((v: any) => ({ ...v, id: String(v.id) })));
         } else {
             setVendors([]);
-            toast.error("Failed to fetch vendors or data is not in expected format.");
+            toast.error("Failed to fetch farmer or data is not in expected format.");
         }
       } catch (error) {
-        toast.error("Failed to fetch vendors");
+        toast.error("Failed to fetch farmer");
         setVendors([]);
       }
     };
@@ -673,7 +673,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
         setSelectedVendor(vendorDetail);
         console.log("Vendor set in form:", initialData.vendorId, vendorDetail);
       } else {
-        console.warn(`Vendor with ID ${initialData.vendorId} not found in fetched vendors list. Cannot preselect.`);
+        console.warn(`Vendor with ID ${initialData.vendorId} not found in fetched farmer list. Cannot preselect.`);
         setSelectedVendor(null); // Clear if not found to avoid stale selection
       }
     }
@@ -850,7 +850,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
             
             <div className="grid gap-4">
               <div className="relative">
-                <Label htmlFor="vendorId" className="text-gray-700 dark:text-gray-300 font-medium mb-2">Select Vendor</Label>
+                <Label htmlFor="vendorId" className="text-gray-700 dark:text-gray-300 font-medium mb-2">Select Farmer</Label>
                 <Controller
                   control={control}
                   name="vendorId"

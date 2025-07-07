@@ -376,7 +376,9 @@ const ProductDetailPage: React.FC = () => {
 
             <div className="mt-8">
               <h2 className="text-xl font-semibold mb-3">Description</h2>
-              <div className="text-gray-700 leading-relaxed prose">
+              <div
+                style={{textAlign: "justify"}}
+              className="text-gray-700 leading-relaxed prose">
                 {product.description ? (
                   <>
                     <div

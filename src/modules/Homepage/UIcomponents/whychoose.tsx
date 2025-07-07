@@ -1,10 +1,9 @@
 import { Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-
 function Whychoose() {
   return (
     <div className="w-full ">
-      <div className="container mx-auto">
+              <div className="container mx-auto" style={{ textAlign: "justify" }}>
         <div className="flex gap-4 py-10 mb-10 lg:py-10 flex-col items-start">
           {/* <div>
             <Badge>Platform</Badge>

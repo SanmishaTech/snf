@@ -140,7 +140,7 @@ const A2MilkSection: React.FC<A2MilkSectionProps> = ({ className = "" }) => {
               <h1 className="text-4xl lg:text-5xl font-bold text-foreground mb-6">
                 A2 Milk
               </h1>
-              <div className="space-y-4 text-gray-700 leading-relaxed">
+              <div className="space-y-4 text-gray-700 leading-relaxed text-justify">
                 <p>
                   A2 milk contains the A2 beta-casein protein, which is naturally present in the milk of Indian-origin (Desi) cow breeds such as Gir, Kathiawadi, Dangi, Sahiwal, Hallikar, Konkan Gidda, and others. This protein makes A2 milk lighter on the stomach and easier to digest.
                 </p>

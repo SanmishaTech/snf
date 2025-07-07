@@ -75,7 +75,7 @@ const LandingPage = () => {
   };
 
   const BACKEND_URL =
-    import.meta.env.VITE_BACKEND_URL || "https://www.indraai.in/";
+    import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
   useEffect(() => {
     const fetchProducts = async () => {
       setIsLoading(true);
@@ -95,7 +95,6 @@ const LandingPage = () => {
     };
 
     fetchProducts();
-
     const userDetailsString = localStorage.getItem("user");
     if (userDetailsString) {
       try {
@@ -278,7 +277,7 @@ const LandingPage = () => {
             <div className="flex justify-center mb-6">
               <div className="h-1 w-20  rounded-full"></div>
             </div>
-            <p className="text-lg max-w-7xl text-gray-800 leading-relaxed text-left">
+            <p className="text-lg max-w-7xl text-gray-800 leading-relaxed text-justify">
               Indraai combines two words Indriya (Senses) that connect the soul
               - Atma to the physical world and Aai (Mother) - i.e., the food
               from the mother to nourish the senses.
@@ -387,13 +386,13 @@ const LandingPage = () => {
               The way we satisfy the demand of A2 Milk
             </h2>
             <div className="w-[46rem] max-md:w-36 h-1 bg-primary rounded-full mx-auto mb-6"></div>
-            <p className="text-lg text-gray-700 max-w-4xl mx-auto leading-relaxed">
+            <p className="text-lg text-gray-700 max-w-4xl mx-auto leading-relaxed text-justify">
               Absolutely nothing—we don't regulate milk supply based on demand.
               Our milk comes directly from the Bharwad community, who have been
               rearing Gir cows for generations, without any external chemicals
               or additives to boost production.
             </p>
-            <p className="text-lg text-gray-700 max-w-4xl mx-auto leading-relaxed mt-4">
+            <p className="text-lg text-gray-700 max-w-4xl mx-auto leading-relaxed mt-4 text-justify">
               Instead, the Bharwad community's relationship with Desi Gir cows
               transcends today's commercial mindset:
             </p>
