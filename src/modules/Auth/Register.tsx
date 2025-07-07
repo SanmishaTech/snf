@@ -105,7 +105,7 @@ const Register: React.FC<RegisterProps> = () => {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto">
+    <div className="w-full max-w-md mx-auto mt-10">
       <div className="text-center mb-8">
          
         {location.pathname !== "/" && (

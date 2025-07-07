@@ -995,7 +995,7 @@ const AdminSubscriptionList: React.FC = () => {
                              : `×${sub.qty}`}
                          </span>
                         <span className="text-blue-600">
-                          {sub.depotProductVariant?.name || sub.product?.unit || ''}
+                          {sub.depotProductVariant?.name || ''}
                         </span>
                       </div>
                     ))}
@@ -1035,14 +1035,14 @@ const AdminSubscriptionList: React.FC = () => {
                             <div className="flex items-center gap-1">
                               <div className="w-1.5 h-1.5 bg-secondary rounded-full"></div>
                               <span className="text-blue-700 font-medium">
-                                {sub.qty} {sub.depotProductVariant?.name || sub.product?.unit || 'units'}
+                                {sub.qty} {sub.depotProductVariant?.name || 'units'}
                               </span>
                             </div>
                             <span className="text-gray-400">•</span>
                             <div className="flex items-center gap-1">
                               <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
                               <span className="text-green-700 font-medium">
-                                {sub.altQty} {sub.depotProductVariant?.name || sub.product?.unit || 'units'}
+                                {sub.altQty} {sub.depotProductVariant?.name || 'units'}
                               </span>
                             </div>
                             <span className="text-gray-400 text-xs italic ml-1">skip day pattern</span>
@@ -1053,14 +1053,14 @@ const AdminSubscriptionList: React.FC = () => {
                             <div className="flex items-center gap-1">
                               <div className="w-1.5 h-1.5 bg-secondary rounded-full"></div>
                               <span className="text-blue-700 font-medium">
-                                {sub.qty} {sub.depotProductVariant?.name || sub.product?.unit || 'units'}
+                                {sub.qty} {sub.depotProductVariant?.name || 'units'}
                               </span>
                             </div>
                             <span className="text-gray-400">•</span>
                             <div className="flex items-center gap-1">
                               <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
                               <span className="text-green-700 font-medium">
-                                {sub.altQty} {sub.depotProductVariant?.name || sub.product?.unit || 'units'}
+                                {sub.altQty} {sub.depotProductVariant?.name || 'units'}
                               </span>
                             </div>
                             <span className="text-gray-400 text-xs italic ml-1">daily rotation</span>
@@ -1069,7 +1069,7 @@ const AdminSubscriptionList: React.FC = () => {
                           /* Regular Schedule Display */
                           sub.qty && (
                             <div className="text-xs text-gray-600">
-                              {sub.qty} {sub.depotProductVariant?.name || sub.product?.unit || 'units'}
+                              {sub.qty} {sub.depotProductVariant?.name || 'units'}
                               {sub.deliverySchedule === 'DAILY' ? ' daily' :
                                sub.deliverySchedule === 'WEEKDAYS' ? ' on weekdays' :
                                sub.deliverySchedule === 'WEEKENDS' ? ' on weekends' :

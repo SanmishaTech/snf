@@ -326,12 +326,12 @@ const Login: React.FC<LoginProps> = () => {
       )}
 
       {/* Enhanced Login Form */}
-      <div className="w-full max-w-md mx-auto">
+      <div className="w-full max-w-md mx-auto mt-10">
         <div className="text-center mb-8">
        
-      { location.pathname !== "/" &&
-          <h1 className="text-3xl font-bold mb-2">Welcome back</h1>}
-     {location.pathname !== "/" &&      <p className="text-muted-foreground">
+            { location.pathname !== "/" &&
+                <h1 className="text-3xl font-bold mb-2">Welcome back</h1>}
+          {location.pathname !== "/" &&      <p className="text-muted-foreground">
             Sign in to continue to {appName}
           </p>}
         </div>
