@@ -43,6 +43,15 @@ export interface DeliveryAddress {
   label?: string; // Added label
   createdAt: string;
   updatedAt: string;
+  locationId?: number;
+  location?: {
+    id: number;
+    name: string;
+    cityId: number;
+    createdAt: string;
+    updatedAt: string;
+    agencyId: number;
+  };
 }
 
 // Validation schema using Zod
@@ -131,6 +140,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
       mobile: initialData.mobile,
       plotBuilding: initialData.plotBuilding,
       streetArea: initialData.streetArea,
+      locationId: initialData.locationId ? String(initialData.locationId) : undefined,
       landmark: initialData.landmark || '',
       pincode: initialData.pincode,
       city: initialData.city,
@@ -152,6 +162,32 @@ const AddressForm: React.FC<AddressFormProps> = ({
       label: 'Home', // Added label default value
     },
   });
+
+  // Debug logging and form reset when initialData changes
+  useEffect(() => {
+    if (initialData) {
+      console.log('Initial data:', initialData);
+      console.log('LocationId from initial data:', initialData.locationId);
+      console.log('Converted locationId:', initialData.locationId ? String(initialData.locationId) : undefined);
+      
+      // Reset form with new initial data
+      form.reset({
+        recipientName: initialData.recipientName,
+        mobile: initialData.mobile,
+        plotBuilding: initialData.plotBuilding,
+        streetArea: initialData.streetArea,
+        locationId: initialData.locationId ? String(initialData.locationId) : undefined,
+        landmark: initialData.landmark || '',
+        pincode: initialData.pincode,
+        city: initialData.city,
+        state: initialData.state,
+        isDefault: initialData.isDefault,
+        label: (initialData.label === 'Home' || initialData.label === 'Work' || initialData.label === 'Other') 
+               ? initialData.label 
+               : 'Home',
+      });
+    }
+  }, [initialData, form]);
 
   const onSubmit = async (data: AddressFormData) => {
     try {
@@ -175,6 +211,9 @@ const AddressForm: React.FC<AddressFormProps> = ({
       toast.error(error.message || 'An error occurred while saving the address');
     }
   };
+
+
+  
 
   return (
     <Card className="w-full  mx-auto">
@@ -296,10 +335,13 @@ const AddressForm: React.FC<AddressFormProps> = ({
             <FormField
               control={form.control}
               name="locationId"
-              render={({ field }) => (
+              render={({ field }) => {
+                console.log('Location field value:', field.value);
+                console.log('Available locations:', locations);
+                return (
                 <FormItem>
                   <FormLabel>Our Delivery Areas*</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoadingLocations}>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingLocations}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder={isLoadingLocations ? "Loading locations..." : "Select a location"} />
@@ -337,7 +379,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
                     </p>
                   </div>
                 </FormItem>
-              )}
+              )}}
             />
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -377,7 +419,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>State*</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a state" />

@@ -683,7 +683,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                 <Button
                   onClick={handleConfirm}
                   disabled={!selectedDate || !selectedAddressId || !selectedVariantId || quantity < 1}
-                  className="flex-1 sm:flex-auto bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-3 text-base font-semibold rounded-lg shadow-md disabled:from-gray-300 disabled:to-gray-400 disabled:shadow-none transition-all duration-200"
+                  className="flex-1 sm:flex-auto bg-primary hover:bg-primary/80 text-white py-3 text-base font-semibold rounded-lg shadow-md disabled:from-gray-300 disabled:to-gray-400 disabled:shadow-none transition-all duration-200"
                 >
                   <span className="hidden sm:inline">Confirm Order & Pay ₹{payableAmount.toFixed(2)}</span>
                   <span className="sm:hidden">Pay ₹{payableAmount.toFixed(2)}</span>
