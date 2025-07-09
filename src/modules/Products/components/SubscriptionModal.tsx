@@ -3160,7 +3160,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               </Button>
               <Button
                 onClick={handleSaveAddress}
-                className="bg-green-500 hover:bg-green-600 text-white rounded-lg h-11"
+                className="bg-primary hover:bg-primary text-white rounded-lg h-11"
                 disabled={
                   !!(
                     formErrors.recipientName ||

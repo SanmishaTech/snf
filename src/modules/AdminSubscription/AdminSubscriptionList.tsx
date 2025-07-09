@@ -1040,7 +1040,7 @@ const AdminSubscriptionList: React.FC = () => {
                             </div>
                             <span className="text-gray-400">•</span>
                             <div className="flex items-center gap-1">
-                              <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                              <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
                               <span className="text-green-700 font-medium">
                                 {sub.altQty} {sub.depotProductVariant?.name || 'units'}
                               </span>
@@ -1058,7 +1058,7 @@ const AdminSubscriptionList: React.FC = () => {
                             </div>
                             <span className="text-gray-400">•</span>
                             <div className="flex items-center gap-1">
-                              <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                              <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
                               <span className="text-green-700 font-medium">
                                 {sub.altQty} {sub.depotProductVariant?.name || 'units'}
                               </span>

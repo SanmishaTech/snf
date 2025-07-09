@@ -253,7 +253,7 @@ export const BulkQuantityModal: React.FC<BulkQuantityModalProps> = ({
           <Button variant="outline" onClick={handleCancel}>
             Cancel
           </Button>
-          <Button onClick={handleSave} className="bg-green-500 hover:bg-green-600">
+          <Button onClick={handleSave} className="bg-primary hover:bg-primary">
             Update Quantities
           </Button>
         </DialogFooter>

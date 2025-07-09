@@ -229,7 +229,7 @@ const OrderList = () => {
       case "DELIVERED":
         return "bg-secondary";
       case "RECEIVED":
-        return "bg-green-500";
+        return "bg-primary";
       default:
         return "bg-gray-500";
     }

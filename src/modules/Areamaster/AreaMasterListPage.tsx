@@ -342,7 +342,7 @@ const AreaMasterListPage: React.FC = () => {
                             <TableCell className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300 max-w-xs">{truncatePincodes(am.pincodes)}</TableCell>
                             <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300">{am.depot?.name ?? <span className="text-slate-400">N/A</span>}</TableCell>
                             <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300">
-                              <span className={`px-2 py-1 text-xs font-semibold rounded-full ${am.deliveryType === DeliveryType.HandDelivery ? 'bg-green-100 text-green-700 dark:bg-green-700/20 dark:text-green-400' : 'bg-purple-100 text-purple-700 dark:bg-purple-700/20 dark:text-purple-400'}`}>
+                              <span className={`px-2 py-1 text-xs font-semibold rounded-full ${am.deliveryType === DeliveryType.HandDelivery ? 'bg-green-100 text-green-700 dark:bg-primary/20 dark:text-green-400' : 'bg-purple-100 text-purple-700 dark:bg-purple-700/20 dark:text-purple-400'}`}>
                                 {am.deliveryType.replace(/([A-Z])/g, ' $1').trim()}
                               </span>
                             </TableCell>

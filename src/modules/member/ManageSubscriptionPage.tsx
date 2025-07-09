@@ -351,7 +351,7 @@ const ManageSubscriptionPage: React.FC = () => {
                       <span className="font-medium text-gray-800 dark:text-gray-100">{format(delivery.date, 'EEE, dd/MM/yyyy')}</span>
                       <span className={`ml-2 text-xs font-semibold px-2 py-0.5 rounded-full ${
                         delivery.status === 'SKIPPED' ? 'bg-red-100 text-red-700 dark:bg-red-700 dark:text-red-100'
-                        : delivery.status === 'DELIVERED' ? 'bg-green-100 text-green-700 dark:bg-green-700 dark:text-green-100'
+                        : delivery.status === 'DELIVERED' ? 'bg-green-100 text-green-700 dark:bg-primary dark:text-green-100'
                         : delivery.status === 'NOT_DELIVERED' ? 'bg-orange-100 text-orange-700 dark:bg-orange-700 dark:text-orange-100'
                         : delivery.status === 'CANCELLED' ? 'bg-gray-200 text-gray-600 dark:bg-gray-600 dark:text-gray-300'
                         : delivery.date.getTime() === today.getTime() && delivery.status === 'SCHEDULED' ? 'bg-blue-100 text-blue-700 dark:bg-blue-700 dark:text-blue-100'

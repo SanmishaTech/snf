@@ -273,7 +273,7 @@ const LandingPage = () => {
       <section id="benefits" className="py-16 bg-white">
         <div className="container max-w-6xl mx-auto px-4">
           <div className="text-center text-primary mb-16">
-            <h2 className="text-3xl font-bold tracking-tight mb-3">Indraai</h2>
+            <h2 className="text-3xl font-bold tracking-tight mb-3 text-primary">Indraai</h2>
             <div className="flex justify-center mb-6">
               <div className="h-1 w-20  rounded-full"></div>
             </div>

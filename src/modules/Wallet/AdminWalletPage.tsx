@@ -441,7 +441,7 @@ const AdminWalletPage: React.FC = () => {
                 <Button
                   onClick={() => handleBalanceModification("CREDIT")}
                   size="sm"
-                  className="bg-green-600 hover:bg-green-700 text-white"
+                  className="bg-green-600 hover:bg-primary text-white"
                 >
                   <TrendingUp className="mr-1 h-4 w-4" />
                   Deposit
@@ -627,7 +627,7 @@ const AdminWalletPage: React.FC = () => {
               type="button"
               onClick={handleSubmitTransaction}
               disabled={isSubmitting || Object.keys(formErrors).length > 0}
-              className={`w-full ${currentTransactionType === "CREDIT" ? "bg-green-600 hover:bg-green-700 text-white" : "bg-red-600 hover:bg-red-700 text-white"}`}
+              className={`w-full ${currentTransactionType === "CREDIT" ? "bg-green-600 hover:bg-primary text-white" : "bg-red-600 hover:bg-red-700 text-white"}`}
             >
               {isSubmitting ? (
                 <>

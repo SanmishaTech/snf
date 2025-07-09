@@ -530,19 +530,19 @@ export const PriceChart: React.FC<PriceChartProps> = ({ product, variants, class
               <h4 className="font-semibold text-gray-900 text-lg">Subscription Benefits</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-center gap-3 p-3 border rounded-lg bg-green-50/50">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <div className="w-2 h-2 bg-primary rounded-full"></div>
                   <span className="text-sm text-green-700 font-medium">Better pricing than one-time purchases</span>
                 </div>
                 <div className="flex items-center gap-3 p-3 border rounded-lg bg-green-50/50">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <div className="w-2 h-2 bg-primary rounded-full"></div>
                   <span className="text-sm text-green-700 font-medium">Flexible delivery schedules</span>
                 </div>
                 <div className="flex items-center gap-3 p-3 border rounded-lg bg-green-50/50">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <div className="w-2 h-2 bg-primary rounded-full"></div>
                   <span className="text-sm text-green-700 font-medium">Pause or modify anytime</span>
                 </div>
                 <div className="flex items-center gap-3 p-3 border rounded-lg bg-green-50/50">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <div className="w-2 h-2 bg-primary rounded-full"></div>
                   <span className="text-sm text-green-700 font-medium">Fresh delivery guaranteed</span>
                 </div>
               </div>

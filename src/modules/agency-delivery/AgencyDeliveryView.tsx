@@ -341,7 +341,7 @@ const AgencyDeliveryView: React.FC = () => {
             disabled={deliveries.length === 0 || loading}
             className={clsx(
               "inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
-              deliveries.length === 0 || loading ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-500 focus-visible:outline-green-600"
+              deliveries.length === 0 || loading ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-primary focus-visible:outline-green-600"
             )}
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 mr-2">
@@ -425,7 +425,7 @@ const AgencyDeliveryView: React.FC = () => {
                           "text-xs font-medium py-1 px-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1",
                           (delivery.status !== DeliveryStatus.PENDING || updatingStatus[delivery.id])
                             ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                            : "bg-green-500 text-white hover:bg-green-600 focus:ring-green-400"
+                            : "bg-primary text-white hover:bg-primary focus:ring-green-400"
                         )}
                         title="Mark as Delivered"
                       >

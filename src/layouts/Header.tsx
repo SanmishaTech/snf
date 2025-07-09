@@ -49,7 +49,7 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
     { name: 'About Us', path: '/about' },
     // { name: 'Gratitude', path: '/gratitude' },
     { name: 'Bharwad Cow', path: '/bharwadcow' },
-    { name: 'Products', path: '/member/products' },
+    { name: 'Products', path: '/member/products/1' },
 
     { name: 'Contact Us', path: '/contact' },
   ];
@@ -291,7 +291,7 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
                 className="block py-3 px-4 text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors flex items-center group"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                <span className="w-1.5 h-1.5 bg-green-500 rounded-full mr-3 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                <span className="w-1.5 h-1.5 bg-primary rounded-full mr-3 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                 {link.name}
               </Link>
             ))}
@@ -317,7 +317,7 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
                 className="block py-3 px-4 text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors flex items-center group"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                <span className="w-1.5 h-1.5 bg-green-500 rounded-full mr-3 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                <span className="w-1.5 h-1.5 bg-primary rounded-full mr-3 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                 <UserCircle size={16} className="mr-2" /> Account
               </Link>
             )}

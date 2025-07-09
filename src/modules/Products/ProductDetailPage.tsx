@@ -470,7 +470,7 @@ const ProductDetailPage: React.FC = () => {
                     <Button
                       variant="outline"
                       onClick={() => setIsHomeDeliveryLocationsModalOpen(true)}
-                      className="w-full py-2 text-sm border-green-500 text-green-600 hover:bg-green-50"
+                      className="w-full py-2 text-sm border-primary text-primary hover:bg-primary/10 hover:text-white"
                     >
                       <Truck className="h-4 w-4 mr-2" />
                       View Home Delivery Areas
@@ -656,7 +656,7 @@ const ProductDetailPage: React.FC = () => {
                                   className={`px-4 py-3 rounded-lg border ${index % 2 === 0 ? 'bg-white border-green-200' : 'bg-green-25 border-green-200'}`}
                                 >
                                   <div className="flex items-center gap-2">
-                                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    <div className="w-2 h-2 bg-primary rounded-full"></div>
                                     <span className="text-sm font-medium text-gray-900">{depot.name}</span>
                                     <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full ml-auto">
                                       Home Delivery

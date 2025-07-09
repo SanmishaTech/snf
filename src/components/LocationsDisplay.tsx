@@ -68,11 +68,11 @@ const LocationsDisplay: React.FC<LocationsDisplayProps> = ({
   return (
     <div>
       {showDeliveryInfo && (
-        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <p className="text-sm text-green-700 mb-2">
+        <div className="mb-4 p-4 bg-primary border border-green-200 rounded-lg">
+          <p className="text-sm text-white mb-2">
             <strong>We deliver to the following areas:</strong>
           </p>
-          <p className="text-xs text-green-600">
+          <p className="text-xs text-white">
             Fresh milk delivered daily to your doorstep. Select your area during checkout to confirm delivery availability.
           </p>
         </div>
@@ -113,9 +113,9 @@ const LocationsDisplay: React.FC<LocationsDisplayProps> = ({
                   key={location.id}
                   className="flex items-center gap-2 p-2 bg-white rounded border border-blue-100 hover:bg-blue-25 transition-colors"
                 >
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <div className="w-2 h-2 bg-primary rounded-full"></div>
                   <span className="text-sm text-gray-800">{location.name}</span>
-                  <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full ml-auto">
+                  <span className="text-xs bg-primary text-white px-2 py-1 rounded-full ml-auto">
                     Available
                   </span>
                 </div>
@@ -129,9 +129,8 @@ const LocationsDisplay: React.FC<LocationsDisplayProps> = ({
         <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
           <h4 className="font-semibold text-gray-900 mb-2">Delivery Information:</h4>
           <ul className="text-sm text-gray-600 space-y-1">
-            <li>• Delivery timing: 6:00 AM - 8:00 AM</li>
+            <li>• Delivery timing: 6:00 AM - 9:30 AM</li>
             <li>• Fresh milk delivered daily to your doorstep</li>
-            <li>• Glass bottle packaging for freshness and sustainability</li>
             <li>• Contact us if your area is not listed above</li>
           </ul>
         </div>

@@ -232,3 +232,33 @@
     }
   }
 }
+
+/* Utility classes for primary colors that work across all screen sizes */
+@layer utilities {
+  .text-primary {
+    color: var(--primary) !important;
+  }
+  
+  .bg-primary {
+    background-color: var(--primary) !important;
+  }
+  
+  .border-primary {
+    border-color: var(--primary) !important;
+  }
+  
+  /* Ensure primary colors are not overridden on any screen size */
+  @media screen and (max-width: 768px) {
+    .text-primary {
+      color: var(--primary) !important;
+    }
+    
+    .bg-primary {
+      background-color: var(--primary) !important;
+    }
+    
+    .border-primary {
+      border-color: var(--primary) !important;
+    }
+  }
+}

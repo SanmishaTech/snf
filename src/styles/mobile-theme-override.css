@@ -29,7 +29,7 @@
     
     /* Ensure background colors are light */
     background-color: white !important;
-    color: black !important;
+    /* Removed forced black color to allow primary colors */
   }
   
   /* Remove dark mode background gradient */
@@ -45,15 +45,31 @@
     --tw-text-opacity: 1 !important;
   }
   
-  /* Ensure text is always readable */
-  *:not(button):not(a) {
-    color: inherit !important;
-  }
+  /* Remove forced color inheritance to allow primary colors to show */
+  /* Removed the global color override that was forcing black text */
   
   /* Keep buttons and links with their intended colors */
   button,
   a {
     opacity: 1 !important;
+  }
+  
+  /* Ensure primary color classes are respected */
+  .text-primary,
+  .text-primary-light,
+  .text-primary-dark {
+    color: var(--primary) !important;
+  }
+  
+  /* Preserve text colors that use CSS variables */
+  [style*="color: var(--primary)"],
+  [style*="color: oklch"] {
+    color: inherit !important;
+  }
+  
+  /* Ensure Tailwind color utilities work properly */
+  [class*="text-primary"] {
+    color: var(--primary) !important;
   }
 }
 

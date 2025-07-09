@@ -257,7 +257,7 @@ const VendorList: React.FC = () => {
               <Button
                 size="sm"
                 onClick={() => navigate("/admin/vendors/create")} // Navigate to create vendor page
-                className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white"
+                className="w-full sm:w-auto bg-green-600 hover:bg-primary text-white"
               >
                 <PlusCircle size={16} className="mr-2" />
                 Add Vendor

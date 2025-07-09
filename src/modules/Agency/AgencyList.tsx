@@ -275,7 +275,7 @@ const AgencyList: React.FC = () => {
               <Button
                 size="sm"
                 onClick={() => navigate("/admin/agencies/create")}
-                className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white"
+                className="w-full sm:w-auto bg-green-600 hover:bg-primary text-white"
               >
                 <PlusCircle size={16} className="mr-2" />
                 Add Delivery Agency
@@ -456,7 +456,7 @@ const AgencyList: React.FC = () => {
               </p>
               <Button
                 onClick={() => navigate("/admin/agencies/create")}
-                className="bg-green-600 hover:bg-green-700 text-white"
+                className="bg-green-600 hover:bg-primary text-white"
               >
                 <PlusCircle size={16} className="mr-2" />
                 Add Delivery Agency

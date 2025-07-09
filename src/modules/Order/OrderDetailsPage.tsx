@@ -411,7 +411,7 @@ const OrderDetailsPage = () => {
                   { 
                     title: "Order Delivered",
                     activeIcon: <Check className="h-5 w-5 text-white" />,
-                    activeIconBg: "bg-green-500",
+                    activeIconBg: "bg-primary",
                     placeholderIcon: <Truck className="h-5 w-5 text-gray-600 dark:text-gray-400" />,
                     placeholderIconBg: "bg-gray-300 dark:bg-gray-700",
                     time: (order.status === "DELIVERED" || order.status === "RECEIVED") ? format(new Date(order.updatedAt), "dd/MM/yyyy HH:mm") : "Awaiting delivery",
