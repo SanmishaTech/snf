@@ -50,8 +50,8 @@ const ContactUsPage: React.FC = () => {
             <div>
               <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-4">Opening Time</h2>
               <div className="space-y-1 text-gray-700">
-                <p>Monday – Friday: 8.00 AM – 7.00 PM</p>
-                <p>Saturday, Sunday: 9.00 AM – 8.00 PM</p>
+                <p>Store time : 7 am - 9 pm (Monday - Sunday)</p>
+      
               </div>
             </div>
           </div>
