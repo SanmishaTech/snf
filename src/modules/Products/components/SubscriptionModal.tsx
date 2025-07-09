@@ -2402,10 +2402,11 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                               )}
                                             </span>
                                           </div>
+                                          {console.log("Asdddddddddddddddddddddddddddddddd",variant)}
                                           <div className="text-gray-600">
                                             Total:{" "}
                                             <span className="font-medium">
-                                              {variantTotalQty} {variant.unit}
+                                              {variantTotalQty} {variant.name}
                                             </span>
                                           </div>
                                         </div>

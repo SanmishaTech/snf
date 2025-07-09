@@ -455,7 +455,7 @@ const ProductDetailPage: React.FC = () => {
                             .filter(depot => !depot.isOnline) // Only show offline depots for pickup
                             .map((d) => (
                               <SelectItem key={d.id} value={d.id.toString()}>
-                                {d.name} 
+                                {d.name} - {d.address}
                               </SelectItem>
                             ))}
                         </SelectContent>
@@ -486,7 +486,7 @@ const ProductDetailPage: React.FC = () => {
                     className="w-full py-2 text-sm border-blue-500 text-blue-600 hover:bg-blue-50"
                   >
                     <Truck className="h-4 w-4 mr-2" />
-                    View All Delivery Locations
+                    View Store Pickup Locations
                   </Button>
                 </div>}
                 {/* Price Chart Section */}
