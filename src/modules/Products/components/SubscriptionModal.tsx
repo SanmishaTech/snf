@@ -1270,7 +1270,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       }}
     >
       <DialogContent
-        className="max-sm:max-w-md flex flex-col max-h-[95vh] p-0 bg-white min-w-[80%] rounded-xl overflow-hidden"
+        className="max-sm:max-w-full flex flex-col max-h-[95vh] p-0 bg-white w-[90vw] max-w-6xl rounded-xl overflow-hidden"
         onPointerDownOutside={(event) => {
           const target = event.target as HTMLElement;
           if (
@@ -1349,8 +1349,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                         </Badge>
                       </div>
 
-                      {/* Variant Grid Selection with Individual Delivery Schedules */}
-                      <div className="space-y-4 max-h-96 overflow-y-auto">
+                      {/* Variant Grid Selection with Individual Delivery Schedules - Horizontal Layout */}
+                      <div className="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2">
                         {productVariants.map((variant) => {
                           const isSelected = selectedVariants.some(
                             (sv) => sv.variantId === variant.id
@@ -1362,114 +1362,113 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                           return (
                             <div
                               key={variant.id}
-                              className={`border rounded-lg p-4 transition-all ${
+                              className={`flex-shrink-0 w-72 border rounded-lg p-3 transition-all ${
                                 isSelected
-                                  ? "border-red-500  bg-red-50"
+                                  ? "border-red-500 bg-red-50 shadow-md"
                                   : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                               }`}
                             >
-                              <div className="flex items-start justify-between mb-3">
-                                <div className="flex items-start gap-3 flex-1">
-                                  {/* Checkbox */}
-                                  <div
-                                    className={`w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 cursor-pointer ${
-                                      isSelected
-                                        ? "bg-primary border-primary"
-                                        : "border-gray-300"
-                                    }`}
-                                    onClick={() => {
-                                      if (isSelected) {
-                                        // Remove variant
-                                        setSelectedVariants((prev) =>
-                                          prev.filter(
-                                            (sv) => sv.variantId !== variant.id
-                                          )
-                                        );
-                                      } else {
-                                        // Add variant
-                                        setSelectedVariants((prev) => [
-                                          ...prev,
-                                          {
-                                            variantId: variant.id,
-                                            quantity: 1,
-                                            quantityVarying2: 1,
-                                            deliveryOption: "daily",
-                                            selectedDays: [],
-                                          },
-                                        ]);
-                                      }
-                                    }}
-                                  >
-                                    {isSelected && (
-                                      <svg
-                                        className="w-3 h-3 text-white"
-                                        fill="currentColor"
-                                        viewBox="0 0 20 20"
-                                      >
-                                        <path
-                                          fillRule="evenodd"
-                                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                          clipRule="evenodd"
-                                        />
-                                      </svg>
-                                    )}
-                                  </div>
-
-                                  {/* Variant Info */}
-                                  <div className="flex-1">
-                                    <div className="flex justify-between items-start mb-1">
-                                      <h4 className="font-medium text-gray-900">
-                                        {variant.name}
-                                      </h4>
-                                      <Badge variant="outline">
-                                        ₹
-                                        {getVariantPriceForPeriod(
-                                          variant,
-                                          selectedPeriod
-                                        )}{" "}
-                                        {variant.unit && `per ${variant.unit}`}
-                                      </Badge>
+                              {/* Variant Header - Always Visible */}
+                              <div className="mb-3">
+                                <div className="flex items-start justify-between mb-2">
+                                  <div className="flex items-start gap-2 flex-1">
+                                    {/* Checkbox */}
+                                    <div
+                                      className={`w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 cursor-pointer flex-shrink-0 ${
+                                        isSelected
+                                          ? "bg-primary border-primary"
+                                          : "border-gray-300"
+                                      }`}
+                                      onClick={() => {
+                                        if (isSelected) {
+                                          setSelectedVariants((prev) =>
+                                            prev.filter(
+                                              (sv) => sv.variantId !== variant.id
+                                            )
+                                          );
+                                        } else {
+                                          setSelectedVariants((prev) => [
+                                            ...prev,
+                                            {
+                                              variantId: variant.id,
+                                              quantity: 1,
+                                              quantityVarying2: 1,
+                                              deliveryOption: "daily",
+                                              selectedDays: [],
+                                            },
+                                          ]);
+                                        }
+                                      }}
+                                    >
+                                      {isSelected && (
+                                        <svg
+                                          className="w-3 h-3 text-white"
+                                          fill="currentColor"
+                                          viewBox="0 0 20 20"
+                                        >
+                                          <path
+                                            fillRule="evenodd"
+                                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                            clipRule="evenodd"
+                                          />
+                                        </svg>
+                                      )}
                                     </div>
-                                    {variant.description && (
-                                      <p className="text-xs text-gray-600 mb-3">
-                                        {variant.description}
-                                      </p>
-                                    )}
 
-                                    {/* Individual Delivery Schedule Controls - Only show when selected */}
-                                    {isSelected && selectedVariant && (
-                                      <div className="space-y-4 pt-3 border-t border-gray-200">
-                                        {/* Delivery Schedule Options */}
-                                        <div>
-                                          <Label className="text-xs font-medium text-gray-700 mb-2 block flex items-center gap-1">
-                                            <Clock className="h-3 w-3" />
-                                            Delivery Schedule
-                                          </Label>
-                                          <div className="grid grid-cols-2 gap-1">
-                                            <Button
-                                              variant={
-                                                selectedVariant.deliveryOption ===
-                                                "daily"
-                                                  ? "default"
-                                                  : "outline"
-                                              }
-                                              size="sm"
-                                              className={`h-7 text-xs hover:text-white ${
-                                                selectedVariant.deliveryOption ===
-                                                "daily"
-                                                  ? "bg-secondary hover:bg-secondary/80 hover:text-white"
-                                                  : "border-gray-300"
-                                              } truncate`}
-                                              title="Delivery every day"
-                                              onClick={() =>
-                                                updateVariantDeliveryOption(
-                                                  variant.id,
-                                                  "daily"
-                                                )
-                                              }
-                                            >
-                                              Daily
-                                            </Button>
+                                    {/* Variant Name */}
+                                    <h4 className="font-medium text-gray-900 text-sm">
+                                      {variant.name}
+                                    </h4>
+                                  </div>
+                                  
+                                  {/* Price Badge */}
+                                  <Badge variant="outline" className="text-xs">
+                                    ₹{getVariantPriceForPeriod(variant, selectedPeriod)}
+                                    {variant.unit && `/${variant.unit}`}
+                                  </Badge>
+                                </div>
+                                
+                                {/* Description */}
+                                {variant.description && (
+                                  <p className="text-xs text-gray-600 ml-7">
+                                    {variant.description}
+                                  </p>
+                                )}
+                              </div>
+
+                              {/* Expandable Content - Only show when selected */}
+                              {isSelected && selectedVariant && (
+                                <div className="space-y-3 border-t border-gray-200 pt-3">
+                                  {/* Delivery Schedule Options */}
+                                  <div>
+                                    <Label className="text-xs font-medium text-gray-700 mb-1.5 block flex items-center gap-1">
+                                      <Clock className="h-3 w-3" />
+                                      Delivery Schedule
+                                    </Label>
+                                    <div className="grid grid-cols-2 gap-1">
+                                      <Button
+                                        variant={
+                                          selectedVariant.deliveryOption ===
+                                          "daily"
+                                            ? "default"
+                                            : "outline"
+                                        }
+                                        size="sm"
+                                        className={`h-7 text-xs ${
+                                          selectedVariant.deliveryOption ===
+                                          "daily"
+                                            ? "bg-secondary hover:bg-secondary/80"
+                                            : "border-gray-300"
+                                        }`}
+                                        onClick={() =>
+                                          updateVariantDeliveryOption(
+                                            variant.id,
+                                            "daily"
+                                          )
+                                        }
+                                      >
+                                        Daily
+                                      </Button>
                                             {selectedPeriod >= 15 && (
                                               <Button
                                                 variant={
@@ -1548,234 +1547,205 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                                 Weekdays
                                               </Button>
                                             )}
-                                          </div>
+                                    </div>
+                                  </div>
 
-                                          {/* Schedule Description */}
-                                          <div className="mt-2 text-xs text-blue-700 bg-blue-50 px-2 py-1 rounded-md border border-blue-200">
-                                            <span className="font-medium">
-                                              {selectedVariant.deliveryOption ===
-                                                "daily" &&
-                                                "Daily delivery - Fresh every day"}
-                                              {selectedVariant.deliveryOption ===
-                                                "select-days" &&
-                                                selectedVariant.selectedDays
-                                                  .length > 0 &&
-                                                `Selected days: ${selectedVariant.selectedDays
-                                                  .map(
-                                                    (day) =>
-                                                      daysOfWeek.find(
-                                                        (d) => d.id === day
-                                                      )?.label
-                                                  )
-                                                  .join(", ")}`}
+                                  {/* Day Selection for Select Days Option */}
+                                  {selectedVariant.deliveryOption ===
+                                    "select-days" && (
+                                    <div>
+                                      <Label className="text-xs font-medium text-gray-700 mb-1 block">
+                                        Select days (min 3):
+                                      </Label>
+                                      <div className="flex flex-wrap gap-1">
+                                        {daysOfWeek.map((day) => (
+                                          <Button
+                                            key={day.id}
+                                            type="button"
+                                            size="sm"
+                                            variant={
+                                              selectedVariant.selectedDays.includes(
+                                                day.id
+                                              )
+                                                ? "default"
+                                                : "outline"
+                                            }
+                                            className={`h-6 w-8 p-0 text-xs ${
+                                              selectedVariant.selectedDays.includes(
+                                                day.id
+                                              )
+                                                ? "bg-primary"
+                                                : "border-gray-300 text-gray-700"
+                                            }`}
+                                            onClick={() =>
+                                              toggleVariantDay(
+                                                variant.id,
+                                                day.id
+                                              )
+                                            }
+                                          >
+                                            {day.label}
+                                          </Button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
 
-                                              {selectedVariant.deliveryOption ===
-                                                "select-days" &&
-                                                selectedVariant.selectedDays
-                                                  .length === 0 &&
-                                                "Choose specific weekdays for delivery"}
-                                              {selectedVariant.deliveryOption ===
-                                                "alternate-days" &&
-                                                "Every other day delivery"}
-                                              {selectedVariant.deliveryOption ===
-                                                "day1-day2" &&
-                                                "Daily Delivery with Varying Quantities"}
+                                  {/* Quantity Controls */}
+                                  {(selectedVariant.deliveryOption ===
+                                    "daily" ||
+                                    selectedVariant.deliveryOption ===
+                                      "select-days" ||
+                                    selectedVariant.deliveryOption ===
+                                      "alternate-days") && (
+                                    <div>
+                                      <Label className="text-xs font-medium text-gray-700 mb-1 block">
+                                        Quantity per delivery:
+                                      </Label>
+                                      <div className="flex items-center border rounded overflow-hidden bg-white w-fit">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() =>
+                                            updateVariantQuantity(
+                                              variant.id,
+                                              "quantity",
+                                              selectedVariant.quantity - 1
+                                            )
+                                          }
+                                          className="h-7 w-7 p-0 hover:bg-gray-100"
+                                        >
+                                          <Minus className="h-3 w-3" />
+                                        </Button>
+                                        <span className="px-3 py-1 text-sm font-medium min-w-[40px] text-center">
+                                          {selectedVariant.quantity}
+                                        </span>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() =>
+                                            updateVariantQuantity(
+                                              variant.id,
+                                              "quantity",
+                                              selectedVariant.quantity + 1
+                                            )
+                                          }
+                                          className="h-7 w-7 p-0 hover:bg-gray-100"
+                                        >
+                                          <Plus className="h-3 w-3" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {selectedVariant.deliveryOption ===
+                                    "day1-day2" && (
+                                    <div>
+                                      <Label className="text-xs font-medium text-gray-700 mb-1 block">
+                                        Quantities:
+                                      </Label>
+                                      <div className="flex gap-3">
+                                        <div>
+                                          <div className="text-xs text-gray-600 mb-1">Day 1:</div>
+                                          <div className="flex items-center border rounded overflow-hidden bg-white">
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() =>
+                                                updateVariantQuantity(
+                                                  variant.id,
+                                                  "quantity",
+                                                  selectedVariant.quantity - 1
+                                                )
+                                              }
+                                              className="h-7 w-7 p-0 hover:bg-gray-100"
+                                            >
+                                              <Minus className="h-3 w-3" />
+                                            </Button>
+                                            <span className="px-2 py-1 text-sm font-medium min-w-[30px] text-center">
+                                              {selectedVariant.quantity}
                                             </span>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() =>
+                                                updateVariantQuantity(
+                                                  variant.id,
+                                                  "quantity",
+                                                  selectedVariant.quantity + 1
+                                                )
+                                              }
+                                              className="h-7 w-7 p-0 hover:bg-gray-100"
+                                            >
+                                              <Plus className="h-3 w-3" />
+                                            </Button>
                                           </div>
                                         </div>
-
-                                        {/* Day Selection for Select Days Option */}
-                                        {selectedVariant.deliveryOption ===
-                                          "select-days" && (
-                                          <div>
-                                            <Label className="text-xs font-medium text-gray-700 mb-2 block">
-                                              Select min 3 delivery days:
-                                            </Label>
-                                            <div className="flex flex-wrap gap-1">
-                                              {daysOfWeek.map((day) => (
-                                                <Button
-                                                  key={day.id}
-                                                  type="button"
-                                                  size="sm"
-                                                  variant={
-                                                    selectedVariant.selectedDays.includes(
-                                                      day.id
-                                                    )
-                                                      ? "default"
-                                                      : "outline"
-                                                  }
-                                                  className={`h-6 w-8 p-0 text-xs ${
-                                                    selectedVariant.selectedDays.includes(
-                                                      day.id
-                                                    )
-                                                      ? "bg-primary"
-                                                      : "border-gray-300 text-gray-700"
-                                                  }`}
-                                                  onClick={() =>
-                                                    toggleVariantDay(
-                                                      variant.id,
-                                                      day.id
-                                                    )
-                                                  }
-                                                >
-                                                  {day.label}
-                                                </Button>
-                                              ))}
-                                            </div>
-                                          </div>
-                                        )}
-
-                                        {/* Quantity Controls */}
-                                        {(selectedVariant.deliveryOption ===
-                                          "daily" ||
-                                          selectedVariant.deliveryOption ===
-                                            "select-days" ||
-                                          selectedVariant.deliveryOption ===
-                                            "alternate-days") && (
-                                          <div className="flex items-center justify-between">
-                                            <span className="text-xs font-medium text-gray-700">
-                                              Quantity per delivery:
+                                        <div>
+                                          <div className="text-xs text-gray-600 mb-1">Day 2:</div>
+                                          <div className="flex items-center border rounded overflow-hidden bg-white">
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() =>
+                                                updateVariantQuantity(
+                                                  variant.id,
+                                                  "quantityVarying2",
+                                                  (selectedVariant.quantityVarying2 || 1) - 1
+                                                )
+                                              }
+                                              className="h-7 w-7 p-0 hover:bg-gray-100"
+                                            >
+                                              <Minus className="h-3 w-3" />
+                                            </Button>
+                                            <span className="px-2 py-1 text-sm font-medium min-w-[30px] text-center">
+                                              {selectedVariant.quantityVarying2 || 1}
                                             </span>
-                                            <div className="flex items-center border rounded overflow-hidden bg-white">
-                                              <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() =>
-                                                  updateVariantQuantity(
-                                                    variant.id,
-                                                    "quantity",
-                                                    selectedVariant.quantity - 1
-                                                  )
-                                                }
-                                                className="h-7 w-7 p-0 hover:bg-gray-100"
-                                              >
-                                                <Minus className="h-3 w-3" />
-                                              </Button>
-                                              <span className="px-3 py-1 text-sm font-medium min-w-[40px] text-center">
-                                                {selectedVariant.quantity}
-                                              </span>
-                                              <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() =>
-                                                  updateVariantQuantity(
-                                                    variant.id,
-                                                    "quantity",
-                                                    selectedVariant.quantity + 1
-                                                  )
-                                                }
-                                                className="h-7 w-7 p-0 hover:bg-gray-100"
-                                              >
-                                                <Plus className="h-3 w-3" />
-                                              </Button>
-                                            </div>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() =>
+                                                updateVariantQuantity(
+                                                  variant.id,
+                                                  "quantityVarying2",
+                                                  (selectedVariant.quantityVarying2 || 1) + 1
+                                                )
+                                              }
+                                              className="h-7 w-7 p-0 hover:bg-gray-100"
+                                            >
+                                              <Plus className="h-3 w-3" />
+                                            </Button>
                                           </div>
-                                        )}
-
-                                        {selectedVariant.deliveryOption ===
-                                          "day1-day2" && (
-                                          <div className="space-y-2">
-                                            <div className="flex items-center justify-between">
-                                              <span className="text-xs font-medium text-gray-700">
-                                                Day 1:
-                                              </span>
-                                              <div className="flex items-center border rounded overflow-hidden bg-white">
-                                                <Button
-                                                  variant="ghost"
-                                                  size="sm"
-                                                  onClick={() =>
-                                                    updateVariantQuantity(
-                                                      variant.id,
-                                                      "quantity",
-                                                      selectedVariant.quantity -
-                                                        1
-                                                    )
-                                                  }
-                                                  className="h-7 w-7 p-0 hover:bg-gray-100"
-                                                >
-                                                  <Minus className="h-3 w-3" />
-                                                </Button>
-                                                <span className="px-3 py-1 text-sm font-medium min-w-[40px] text-center">
-                                                  {selectedVariant.quantity}
-                                                </span>
-                                                <Button
-                                                  variant="ghost"
-                                                  size="sm"
-                                                  onClick={() =>
-                                                    updateVariantQuantity(
-                                                      variant.id,
-                                                      "quantity",
-                                                      selectedVariant.quantity +
-                                                        1
-                                                    )
-                                                  }
-                                                  className="h-7 w-7 p-0 hover:bg-gray-100"
-                                                >
-                                                  <Plus className="h-3 w-3" />
-                                                </Button>
-                                              </div>
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                              <span className="text-xs font-medium text-gray-700">
-                                                Day 2:
-                                              </span>
-                                              <div className="flex items-center border rounded overflow-hidden bg-white">
-                                                <Button
-                                                  variant="ghost"
-                                                  size="sm"
-                                                  onClick={() =>
-                                                    updateVariantQuantity(
-                                                      variant.id,
-                                                      "quantityVarying2",
-                                                      (selectedVariant.quantityVarying2 ||
-                                                        1) - 1
-                                                    )
-                                                  }
-                                                  className="h-7 w-7 p-0 hover:bg-gray-100"
-                                                >
-                                                  <Minus className="h-3 w-3" />
-                                                </Button>
-                                                <span className="px-3 py-1 text-sm font-medium min-w-[40px] text-center">
-                                                  {selectedVariant.quantityVarying2 ||
-                                                    1}
-                                                </span>
-                                                <Button
-                                                  variant="ghost"
-                                                  size="sm"
-                                                  onClick={() =>
-                                                    updateVariantQuantity(
-                                                      variant.id,
-                                                      "quantityVarying2",
-                                                      (selectedVariant.quantityVarying2 ||
-                                                        1) + 1
-                                                    )
-                                                  }
-                                                  className="h-7 w-7 p-0 hover:bg-gray-100"
-                                                >
-                                                  <Plus className="h-3 w-3" />
-                                                </Button>
-                                              </div>
-                                            </div>
-                                          </div>
-                                        )}
+                                        </div>
                                       </div>
-                                    )}
+                                    </div>
+                                  )}
+                                  {/* Schedule Summary */}
+                                  <div className="bg-blue-50 px-2 py-1 rounded text-xs text-blue-700 border border-blue-200">
+                                    <span className="font-medium">
+                                      {selectedVariant.deliveryOption === "daily" && "Daily delivery"}
+                                      {selectedVariant.deliveryOption === "select-days" &&
+                                        (selectedVariant.selectedDays.length > 0
+                                          ? `${selectedVariant.selectedDays.length} days/week`
+                                          : "Select delivery days")}
+                                      {selectedVariant.deliveryOption === "alternate-days" && "Alternate days"}
+                                      {selectedVariant.deliveryOption === "day1-day2" && "Varying quantities"}
+                                    </span>
                                   </div>
                                 </div>
-                              </div>
+                              )}
                             </div>
                           );
                         })}
                       </div>
 
                       {/* Quick Actions */}
-                      <div className="flex justify-between items-center mt-4 pt-3 border-t border-gray-200">
+                      <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-200">
                         <div className="flex gap-2">
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => {
-                              // Select all variants
                               const allVariants =
                                 productVariants?.map((variant) => ({
                                   variantId: variant.id,
@@ -1786,10 +1756,9 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                 })) || [];
                               setSelectedVariants(allVariants);
                             }}
-                            className="text-xs h-8"
+                            className="text-xs h-7"
                             disabled={
-                              selectedVariants.length ===
-                              productVariants?.length
+                              selectedVariants.length === productVariants?.length
                             }
                           >
                             Select All
@@ -1798,17 +1767,16 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                             variant="outline"
                             size="sm"
                             onClick={() => setSelectedVariants([])}
-                            className="text-xs h-8"
+                            className="text-xs h-7"
                             disabled={selectedVariants.length === 0}
                           >
-                            Clear All
+                            Clear
                           </Button>
                         </div>
 
                         {selectedVariants.length > 0 && (
                           <div className="text-xs text-gray-600">
-                            {selectedVariants.length} variant
-                            {selectedVariants.length > 1 ? "s" : ""} selected
+                            {selectedVariants.length} of {productVariants.length} selected
                           </div>
                         )}
                       </div>
@@ -1828,18 +1796,19 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
                   {/* Non-variant delivery options */}
                   {!hasVariants && (
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-700 mb-3">
+                    <div className="bg-white border border-gray-200 rounded-lg p-4">
+                      <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
                         Delivery Schedule
                       </h3>
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="flex gap-2 flex-wrap">
                         <Button
                           variant={
                             deliveryOption === "daily" ? "default" : "outline"
                           }
-                          className={`h-9 text-xs ${
+                          className={`h-8 text-xs px-3 ${
                             deliveryOption === "daily"
-                              ? "bg-secondary hover:bg-blue-600"
+                              ? "bg-secondary hover:bg-secondary/80"
                               : "border-gray-300"
                           }`}
                           title="Delivery every day"
@@ -1854,15 +1823,15 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                 ? "default"
                                 : "outline"
                             }
-                            className={`h-9 text-xs ${
+                            className={`h-8 text-xs px-3 ${
                               deliveryOption === "alternate-days"
-                                ? "bg-secondary hover:bg-blue-600"
+                                ? "bg-secondary hover:bg-secondary/80"
                                 : "border-gray-300"
                             }`}
                             title="Delivery every other day"
                             onClick={() => setDeliveryOption("alternate-days")}
                           >
-                            Alternate Days
+                            Alternate
                           </Button>
                         )}
                         {selectedPeriod >= 7 && (
@@ -1872,15 +1841,15 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                 ? "default"
                                 : "outline"
                             }
-                            className={`h-9 text-xs ${
+                            className={`h-8 text-xs px-3 ${
                               deliveryOption === "day1-day2"
-                                ? "bg-secondary hover:bg-blue-600"
+                                ? "bg-secondary hover:bg-secondary/80"
                                 : "border-gray-300"
                             }`}
                             title="Customize quantities for Day 1 and Day 2"
                             onClick={() => setDeliveryOption("day1-day2")}
                           >
-                            Day 1 - Day 2
+                            Day 1-2
                           </Button>
                         )}
                         {selectedPeriod >= 30 && (
@@ -1890,156 +1859,178 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                 ? "default"
                                 : "outline"
                             }
-                            className={`h-9 text-xs ${
+                            className={`h-8 text-xs px-3 ${
                               deliveryOption === "select-days"
-                                ? "bg-secondary hover:bg-blue-600"
+                                ? "bg-secondary hover:bg-secondary/80"
                                 : "border-gray-300"
                             }`}
                             title="Choose specific days for delivery"
                             onClick={() => setDeliveryOption("select-days")}
                           >
-                            Weekdays
+                            Select Days
                           </Button>
                         )}
                       </div>
 
-                      {deliveryOption === "select-days" && (
-                        <div className="mt-4 p-3 rounded-md bg-white border border-gray-200">
-                          <h4 className="text-xs font-medium text-gray-600 mb-2">
-                            Select delivery days:
-                          </h4>
-                          <div className="flex flex-wrap gap-2">
-                            {daysOfWeek.map((day) => (
-                              <Button
-                                key={day.id}
-                                type="button"
-                                size="sm"
-                                variant={
-                                  selectedDays.includes(day.id)
-                                    ? "default"
-                                    : "outline"
-                                }
-                                className={`h-8 w-9 p-0 ${
-                                  selectedDays.includes(day.id)
-                                    ? "bg-orange-500"
-                                    : "border-gray-300 text-gray-700"
-                                }`}
-                                onClick={() => {
-                                  toggleDaySelection(day.id);
-                                  if (formErrors.selectedDays)
-                                    setFormErrors((prev) => ({
-                                      ...prev,
-                                      selectedDays: "",
-                                    }));
-                                }}
-                              >
-                                {day.label}
-                              </Button>
-                            ))}
+                      {/* Inline details based on selected option */}
+                      <div className="mt-3">
+                        {deliveryOption === "daily" && (
+                          <div className="text-xs text-blue-700 bg-blue-50 px-3 py-2 rounded-md border border-blue-200">
+                            Daily delivery - Fresh products every day
                           </div>
-                          {formErrors.selectedDays && (
-                            <p className="text-red-500 text-xs mt-1">
-                              {formErrors.selectedDays}
-                            </p>
-                          )}
-                        </div>
-                      )}
+                        )}
+                        
+                        {deliveryOption === "alternate-days" && (
+                          <div className="text-xs text-blue-700 bg-blue-50 px-3 py-2 rounded-md border border-blue-200">
+                            Every other day starting from your selected start date
+                          </div>
+                        )}
+                        
+                        {deliveryOption === "day1-day2" && (
+                          <div className="text-xs text-blue-700 bg-blue-50 px-3 py-2 rounded-md border border-blue-200">
+                            Daily delivery with different quantities on alternating days
+                          </div>
+                        )}
+
+                        {deliveryOption === "select-days" && (
+                          <div className="space-y-3">
+                            <div className="text-xs text-gray-600">
+                              Select delivery days (minimum 3):
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {daysOfWeek.map((day) => (
+                                <Button
+                                  key={day.id}
+                                  type="button"
+                                  size="sm"
+                                  variant={
+                                    selectedDays.includes(day.id)
+                                      ? "default"
+                                      : "outline"
+                                  }
+                                  className={`h-7 w-10 p-0 text-xs ${
+                                    selectedDays.includes(day.id)
+                                      ? "bg-primary"
+                                      : "border-gray-300 text-gray-700"
+                                  }`}
+                                  onClick={() => {
+                                    toggleDaySelection(day.id);
+                                    if (formErrors.selectedDays)
+                                      setFormErrors((prev) => ({
+                                        ...prev,
+                                        selectedDays: "",
+                                      }));
+                                  }}
+                                >
+                                  {day.label}
+                                </Button>
+                              ))}
+                            </div>
+                            {formErrors.selectedDays && (
+                              <p className="text-red-500 text-xs">
+                                {formErrors.selectedDays}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
 
                       {/* Quantity selectors for non-variant products */}
-                      <div className="mt-4">
+                      <div className="mt-4 border-t pt-4">
                         {(deliveryOption === "daily" ||
                           deliveryOption === "select-days" ||
                           deliveryOption === "alternate-days") && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-gray-700">
+                          <div>
+                            <Label className="text-xs font-medium text-gray-700 mb-2 block">
                               Quantity per delivery:
-                            </span>
-                            <div className="flex items-center border rounded-lg overflow-hidden bg-white w-28">
+                            </Label>
+                            <div className="flex items-center border rounded overflow-hidden bg-white w-fit">
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() =>
                                   setQuantity(Math.max(1, quantity - 1))
                                 }
-                                className="h-9 w-9 p-0 hover:bg-gray-100"
+                                className="h-8 w-8 p-0 hover:bg-gray-100"
                               >
-                                <Minus className="h-4 w-4" />
+                                <Minus className="h-3 w-3" />
                               </Button>
-                              <span className="flex-1 text-center font-medium">
+                              <span className="px-4 text-center font-medium min-w-[50px]">
                                 {quantity}
                               </span>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setQuantity(quantity + 1)}
-                                className="h-9 w-9 p-0 hover:bg-gray-100"
+                                className="h-8 w-8 p-0 hover:bg-gray-100"
                               >
-                                <Plus className="h-4 w-4" />
+                                <Plus className="h-3 w-3" />
                               </Button>
                             </div>
                           </div>
                         )}
 
                         {deliveryOption === "day1-day2" && (
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium text-gray-700">
-                                D A:
-                              </span>
-                              <div className="flex items-center border rounded-lg overflow-hidden bg-white w-28">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() =>
-                                    setQuantity(Math.max(1, quantity - 1))
-                                  }
-                                  className="h-9 w-9 p-0 hover:bg-gray-100"
-                                >
-                                  <Minus className="h-4 w-4" />
-                                </Button>
-                                <span className="flex-1 text-center font-medium">
-                                  {quantity}
-                                </span>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => setQuantity(quantity + 1)}
-                                  className="h-9 w-9 p-0 hover:bg-gray-100"
-                                >
-                                  <Plus className="h-4 w-4" />
-                                </Button>
+                          <div>
+                            <Label className="text-xs font-medium text-gray-700 mb-2 block">
+                              Quantities:
+                            </Label>
+                            <div className="flex gap-4">
+                              <div>
+                                <div className="text-xs text-gray-600 mb-1">Day A:</div>
+                                <div className="flex items-center border rounded overflow-hidden bg-white">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() =>
+                                      setQuantity(Math.max(1, quantity - 1))
+                                    }
+                                    className="h-8 w-8 p-0 hover:bg-gray-100"
+                                  >
+                                    <Minus className="h-3 w-3" />
+                                  </Button>
+                                  <span className="px-3 text-center font-medium min-w-[40px]">
+                                    {quantity}
+                                  </span>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setQuantity(quantity + 1)}
+                                    className="h-8 w-8 p-0 hover:bg-gray-100"
+                                  >
+                                    <Plus className="h-3 w-3" />
+                                  </Button>
+                                </div>
                               </div>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium text-gray-700">
-                                Day B:
-                              </span>
-                              <div className="flex items-center border rounded-lg overflow-hidden bg-white w-28">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() =>
-                                    setQuantityVarying2(
-                                      Math.max(1, quantityVarying2 - 1)
-                                    )
-                                  }
-                                  className="h-9 w-9 p-0 hover:bg-gray-100"
-                                >
-                                  <Minus className="h-4 w-4" />
-                                </Button>
-                                <span className="flex-1 text-center font-medium">
-                                  {quantityVarying2}
-                                </span>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() =>
-                                    setQuantityVarying2(quantityVarying2 + 1)
-                                  }
-                                  className="h-9 w-9 p-0 hover:bg-gray-100"
-                                >
-                                  <Plus className="h-4 w-4" />
-                                </Button>
+                              <div>
+                                <div className="text-xs text-gray-600 mb-1">Day B:</div>
+                                <div className="flex items-center border rounded overflow-hidden bg-white">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() =>
+                                      setQuantityVarying2(
+                                        Math.max(1, quantityVarying2 - 1)
+                                      )
+                                    }
+                                    className="h-8 w-8 p-0 hover:bg-gray-100"
+                                  >
+                                    <Minus className="h-3 w-3" />
+                                  </Button>
+                                  <span className="px-3 text-center font-medium min-w-[40px]">
+                                    {quantityVarying2}
+                                  </span>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() =>
+                                      setQuantityVarying2(quantityVarying2 + 1)
+                                    }
+                                    className="h-8 w-8 p-0 hover:bg-gray-100"
+                                  >
+                                    <Plus className="h-3 w-3" />
+                                  </Button>
+                                </div>
                               </div>
                             </div>
                           </div>
