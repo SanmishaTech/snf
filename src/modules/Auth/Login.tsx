@@ -71,24 +71,24 @@ const Login: React.FC<LoginProps> = () => {
 
   // Helper function to determine redirect path based on user role
   const determineRedirectPath = (user: User | undefined): string => {
-    if (user && user.role === 'MEMBER') {
-      return '/member/products'; // Redirect members to the dashboard
+    if (user && user.role === "MEMBER") {
+      return "/member/products/1"; // Redirect members to the dashboard
     }
-    if (user && user.role === 'DepotAdmin') {
-      return '/admin/purchases';
+    if (user && user.role === "DepotAdmin") {
+      return "/admin/purchases";
     }
-    if(user && user.role === 'ADMIN') {
-      return '/admin/dashboard';
+    if (user && user.role === "ADMIN") {
+      return "/admin/dashboard";
     }
-    if(user && user.role === 'VENDOR') {
-      return '/admin/dashboard';
+    if (user && user.role === "VENDOR") {
+      return "/admin/dashboard";
     }
-    if(user && user.role === 'AGENCY') {
-      return '/admin/dashboard';
+    if (user && user.role === "AGENCY") {
+      return "/admin/dashboard";
     }
     // Add other role-based redirects here if needed in the future
     // e.g., if (user && user.role === 'ADMIN') return '/admin/overview';
-    return '/'; // Default path for other roles or if user is undefined
+    return "/"; // Default path for other roles or if user is undefined
   };
 
   // Get setError from useForm
@@ -195,7 +195,11 @@ const Login: React.FC<LoginProps> = () => {
       // Now, handle general errors or specific non-field errors
       const errorMessage = error.data?.message || error.message;
 
-      if (error.status === 403 && errorMessage && errorMessage.toLowerCase().includes("account is inactive")) {
+      if (
+        error.status === 403 &&
+        errorMessage &&
+        errorMessage.toLowerCase().includes("account is inactive")
+      ) {
         toast.error(errorMessage); // Specific message for inactive account
       } else if (!didDisplayFieldErrors || error.status === 401) {
         // If field errors weren't displayed OR it's a 401 (likely "Invalid credentials"), show a general toast.
@@ -245,7 +249,8 @@ const Login: React.FC<LoginProps> = () => {
     onSuccess: (data) => {
       // Assuming 'data.user' contains the updated user object after policy acceptance
       // If not, retrieve from localStorage or ensure backend sends it.
-      const updatedUser = data.user || JSON.parse(localStorage.getItem("user") || "null");
+      const updatedUser =
+        data.user || JSON.parse(localStorage.getItem("user") || "null");
       localStorage.setItem("user", JSON.stringify(updatedUser));
 
       toast.success("Policy accepted. Login complete!");
@@ -283,36 +288,50 @@ const Login: React.FC<LoginProps> = () => {
         <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-card border border-border rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
             <div className="p-6 border-b border-border">
-              <h2 className="text-2xl font-bold text-center">Accept Terms & Conditions</h2>
+              <h2 className="text-2xl font-bold text-center">
+                Accept Terms & Conditions
+              </h2>
               <p className="text-center text-muted-foreground mt-2">
                 To continue using {appName}, please review and accept our policy
               </p>
             </div>
-            
+
             <div className="p-6 overflow-y-auto flex-grow bg-gray-50 dark:bg-gray-900">
               <div className="prose prose-sm max-w-none bg-white dark:bg-gray-800 p-6 rounded-lg border">
                 {isPolicyLoading ? (
                   <div className="flex justify-center items-center h-40">
-                    <LoaderCircle className="animate-spin text-primary" size={24} />
+                    <LoaderCircle
+                      className="animate-spin text-primary"
+                      size={24}
+                    />
                   </div>
                 ) : (
                   <div dangerouslySetInnerHTML={{ __html: policyText }} />
                 )}
               </div>
             </div>
-            
+
             <div className="p-6 border-t border-border flex flex-col sm:flex-row justify-end gap-3">
               <Button
                 variant="outline"
                 onClick={handleDisagree}
-                disabled={isPolicyLoading || loginMutation.isPending || acceptPolicyMutation.isPending}
+                disabled={
+                  isPolicyLoading ||
+                  loginMutation.isPending ||
+                  acceptPolicyMutation.isPending
+                }
                 className="w-full sm:w-auto"
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleAgreeAndLogin}
-                disabled={isPolicyLoading || loginMutation.isPending || !policyText || acceptPolicyMutation.isPending}
+                disabled={
+                  isPolicyLoading ||
+                  loginMutation.isPending ||
+                  !policyText ||
+                  acceptPolicyMutation.isPending
+                }
                 className="w-full sm:w-auto"
               >
                 {acceptPolicyMutation.isPending ? (
@@ -328,12 +347,14 @@ const Login: React.FC<LoginProps> = () => {
       {/* Enhanced Login Form */}
       <div className="w-full max-w-md mx-auto mt-10">
         <div className="text-center mb-8">
-       
-            { location.pathname !== "/" &&
-                <h1 className="text-3xl font-bold mb-2">Welcome back</h1>}
-          {location.pathname !== "/" &&      <p className="text-muted-foreground">
-            Sign in to continue to {appName}
-          </p>}
+          {location.pathname !== "/" && (
+            <h1 className="text-3xl font-bold mb-2">Welcome back</h1>
+          )}
+          {location.pathname !== "/" && (
+            <p className="text-muted-foreground">
+              Sign in to continue to {appName}
+            </p>
+          )}
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -346,13 +367,24 @@ const Login: React.FC<LoginProps> = () => {
                 type="text"
                 placeholder="name@example.com or 9876543210"
                 {...register("identifier")}
-                disabled={loginMutation.isPending || acceptPolicyMutation.isPending}
+                disabled={
+                  loginMutation.isPending || acceptPolicyMutation.isPending
+                }
                 className="py-5 px-4"
               />
               {errors.identifier && (
                 <p className="text-destructive text-sm flex items-center mt-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 mr-1">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    className="w-4 h-4 mr-1"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                   {errors.identifier.message}
                 </p>
@@ -363,8 +395,10 @@ const Login: React.FC<LoginProps> = () => {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
-                <Link 
-                  to={isAdminPath ? "/admin/forgot-password" : "/forgot-password"} 
+                <Link
+                  to={
+                    isAdminPath ? "/admin/forgot-password" : "/forgot-password"
+                  }
                   className="text-sm font-medium text-primary hover:underline"
                 >
                   Forgot password?
@@ -374,13 +408,24 @@ const Login: React.FC<LoginProps> = () => {
                 id="password"
                 placeholder="••••••••"
                 {...register("password")}
-                disabled={loginMutation.isPending || acceptPolicyMutation.isPending}
+                disabled={
+                  loginMutation.isPending || acceptPolicyMutation.isPending
+                }
                 className="py-5 px-4"
               />
               {errors.password && (
                 <p className="text-destructive text-sm flex items-center mt-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 mr-1">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    className="w-4 h-4 mr-1"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                   {errors.password.message}
                 </p>
@@ -388,25 +433,25 @@ const Login: React.FC<LoginProps> = () => {
             </div>
 
             {/* Submit Button */}
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full py-5 font-semibold"
-              disabled={loginMutation.isPending || acceptPolicyMutation.isPending}
+              disabled={
+                loginMutation.isPending || acceptPolicyMutation.isPending
+              }
             >
               {loginMutation.isPending ? (
                 <>
                   <LoaderCircle className="animate-spin mr-2" size={20} />
                   Signing in...
                 </>
-              ) : "Sign In"}
+              ) : (
+                "Sign In"
+              )}
             </Button>
 
-           
-
-             
-
             {/* Registration Link */}
-            {allowRegistration && location.pathname !== "/" &&(
+            {allowRegistration && location.pathname !== "/" && (
               <p className="text-center text-sm text-muted-foreground mt-6 pt-4 border-t border-border">
                 Don't have an account?{" "}
                 <Link
