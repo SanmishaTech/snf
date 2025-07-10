@@ -401,7 +401,8 @@ const ProductDetailPage: React.FC = () => {
               </div>
             </div>
 
-
+            <div className="border-t border-muted/20 my-4"></div>
+            <h1 className="text-xl font-semibold mb-4">Subscribe by making an online payment or by paying in advance.</h1>
             <div className="border-t border-muted/20 my-4"></div>
 
             {/* Delivery Preference and Depot Selection - Only show for logged-in users */}

@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { get } from '../../services/apiService'; // Corrected to import 'get' named export
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'; // Added CardFooter
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, PackageSearch } from 'lucide-react'; // Added PackageSearch for empty state
+import { Loader2, PackageSearch, Download } from 'lucide-react'; // Added PackageSearch for empty state and Download for invoice
 import { Button } from '@/components/ui/button'; // Added Button
 import { Link } from 'react-router-dom'; // Added Link
 import { format } from 'date-fns';
@@ -50,6 +50,12 @@ export interface MemberSubscription {
   agency?: Agency | null;
   amount?: number;
   deliveryAddress?: Address | null;
+  productOrder?: {
+    id: string;
+    orderNo: string;
+    invoiceNo?: string | null;
+    invoicePath?: string | null;
+  };
 }
 
 const formatPeriod = (inputPeriod: MemberSubscription['period'] | string | number) => {
@@ -191,11 +197,27 @@ const MySubscriptionsPage: React.FC = () => {
                 {sub.amount !== undefined && <p className="font-semibold text-base"><strong>Total Amount:</strong> ₹{sub.amount.toFixed(2)}</p>}
               </CardContent>
               <CardFooter className="p-4 pt-0">
-                {sub.paymentStatus === 'PAID' && (
-                  <Link to={`/manage-subscription/${sub.id}`} className="w-full">
-                    <Button variant="outline" className="w-full">Manage</Button>
-                  </Link>
-                )}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2">
+                  {sub.paymentStatus === 'PAID' && (
+                    <Link to={`/manage-subscription/${sub.id}`} className="w-full sm:flex-1">
+                      <Button variant="outline" className="w-full">Manage</Button>
+                    </Link>
+                  )}
+                  {sub.productOrder?.invoicePath && (
+                    <Button
+                      onClick={() => {
+                        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://www.indraai.in/';
+                        const invoiceUrl = `${baseUrl}/invoices/${sub.productOrder.invoicePath}`;
+                        window.open(invoiceUrl, '_blank');
+                      }}
+                      variant="outline"
+                      className="w-full sm:flex-1 flex items-center justify-center gap-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      <span className="text-sm sm:text-base">Download Invoice</span>
+                    </Button>
+                  )}
+                </div>
               </CardFooter>
             </Card>
           ))}

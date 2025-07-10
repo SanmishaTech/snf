@@ -15,7 +15,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, CalendarDays, CheckCircle, XCircle, SkipForward } from 'lucide-react';
+import { Loader2, CalendarDays, CheckCircle, XCircle, SkipForward, Download } from 'lucide-react';
 import { format, parseISO, isAfter, addDays, differenceInDays, startOfDay } from 'date-fns';
 import { MemberSubscription as BaseMemberSubscription } from './MySubscriptionsPage'; // Assuming the interface is exported
 
@@ -111,6 +111,12 @@ interface DeliveryScheduleEntryFromAPI {
 interface ExtendedMemberSubscription extends BaseMemberSubscription {
   memberId: string; // Added memberId, assuming it comes from the backend
   deliveryScheduleEntries?: DeliveryScheduleEntryFromAPI[];
+  productOrder?: {
+    id: string;
+    orderNo: string;
+    invoiceNo?: string | null;
+    invoicePath?: string | null;
+  };
 }
 
 // Frontend representation of a delivery for display
@@ -314,6 +320,22 @@ const ManageSubscriptionPage: React.FC = () => {
             <p className="font-semibold text-base"><strong>Total Amount:</strong> ₹{subscription.amount.toFixed(2)}</p>
           )}
         </CardContent>
+        {subscription.productOrder?.invoicePath && (
+          <div className="px-4 pb-4">
+            <Button
+              onClick={() => {
+                const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://www.indraai.in/';
+                const invoiceUrl = `${baseUrl}/invoices/${subscription.productOrder.invoicePath}`;
+                window.open(invoiceUrl, '_blank');
+              }}
+              variant="outline"
+              className="w-full flex items-center justify-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Download Invoice
+            </Button>
+          </div>
+        )}
       </Card>
 
       <Card className="shadow-lg">

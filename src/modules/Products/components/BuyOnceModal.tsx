@@ -33,6 +33,9 @@ interface DepotVariant {
     id: number;
     name: string;
     isOnline: boolean;
+    address?: string;
+    city?: string;
+    pincode?: string;
   };
   buyOncePrice: number;
   sellingPrice: number;
@@ -252,10 +255,14 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
   };
 
   useEffect(() => {
-    if (isOpen) {
-      fetchUserAddresses();
+    // Only fetch user addresses if we have an online depot selected
+    if (isOpen && selectedVariantId) {
+      const selectedVariant = depotVariants.find(v => v.id === selectedVariantId);
+      if (selectedVariant?.depot?.isOnline) {
+        fetchUserAddresses();
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, selectedVariantId, depotVariants]);
 
   const formatDateForInput = (date: Date | undefined): string => {
     if (!date) return '';
@@ -276,8 +283,34 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
   }, [mrpPrice, buyOncePrice, quantity]);
 
   const handleConfirm = async () => {
-    if (!selectedDate || !selectedAddressId || !selectedVariantId) {
-      toast.error("Please select a delivery date, address, and depot variant.");
+    if (!selectedDate || !selectedVariantId) {
+      toast.error("Please select a delivery date and depot variant.");
+      return;
+    }
+
+    // Get the selected variant to check if its depot is online
+    const selectedVariant = depotVariants.find(v => v.id === selectedVariantId);
+    if (!selectedVariant) {
+      toast.error("Invalid depot variant selected.");
+      return;
+    }
+
+    // Determine the correct address ID based on depot type
+    const deliveryAddressIdForPayload = selectedVariant.depot.isOnline
+      ? selectedAddressId
+      : selectedVariant.depot.address;
+
+    // Validate address based on depot type
+    if (selectedVariant.depot.isOnline && !selectedAddressId) {
+      toast.error("Please select a delivery address.");
+      return;
+    } else if (!selectedVariant.depot.isOnline && !selectedVariant.depot.address) {
+      toast.error("Depot address information is missing. Please contact support.");
+      return;
+    }
+
+    if (!deliveryAddressIdForPayload) {
+      toast.error("Address information is missing.");
       return;
     }
 
@@ -291,7 +324,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
           qty: quantity,
         },
       ],
-      deliveryAddressId: parseInt(selectedAddressId, 10),
+      deliveryAddressId: parseInt(String(deliveryAddressIdForPayload), 10),
       walletamt: useWallet ? walletDeduction : 0,
     };
 
@@ -334,7 +367,14 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                   </div>
                 ) : (
                   <div className="text-center">
-                    <p className="text-lg font-bold text-green-600">₹{Number(buyOncePrice || 0).toFixed(2)}</p>
+                    {mrpPrice && mrpPrice > buyOncePrice ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <span className="text-sm text-gray-500 line-through font-medium">₹{Number(mrpPrice).toFixed(2)}</span>
+                        <span className="text-lg font-bold text-green-600">₹{Number(buyOncePrice || 0).toFixed(2)}</span>
+                      </div>
+                    ) : (
+                      <p className="text-lg font-bold text-green-600">₹{Number(buyOncePrice || 0).toFixed(2)}</p>
+                    )}
                   </div>
                 )}
               </div>
@@ -370,62 +410,114 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
             <>
               {/* Date and Address Selection Inputs - These remain as they are */}
 
+              {/* Conditionally render address selection based on selected depot type */}
+              {(() => {
+                const selectedVariant = depotVariants.find(v => v.id === selectedVariantId);
+                const isOnlineDepot = selectedVariant?.depot?.isOnline;
 
-              {/* Delivery Address Selection */}
-              <div>
-                <Label className="text-sm font-medium mb-2 block">Select delivery address:</Label>
-                {isLoadingAddresses ? (
-                  <div className="text-center py-4">Loading addresses...</div>
-                ) : userAddresses.length > 0 ? (
-                  <RadioGroup
-                    value={selectedAddressId || ''}
-                    onValueChange={setSelectedAddressId}
-                    className="gap-3 mt-2"
-                  >
-                    {userAddresses.map((address) => (
-                      <div
-                        key={address.id}
-                        className={`border rounded-lg p-3 cursor-pointer ${selectedAddressId === address.id ? 'border-green-500 bg-green-50' : 'border-gray-200'}`}
-                        onClick={() => setSelectedAddressId(address.id)}
-                      >
-                        <div className="flex items-start gap-3">
-                          <RadioGroupItem value={address.id} id={`address-${address.id}`} className="mt-1" />
-                          <div className="flex-1">
-                            <div className="flex justify-between items-start">
-                              <Label
-                                htmlFor={`address-${address.id}`}
-                                className="font-medium cursor-pointer flex items-center gap-1"
-                              >
-                                {address.label}
-                                {address.isDefault && <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">Default</span>}
-                              </Label>
+                if (isOnlineDepot) {
+                  // Online depot - show delivery address selection
+                  return (
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">Select delivery address:</Label>
+                      {isLoadingAddresses ? (
+                        <div className="text-center py-4">Loading addresses...</div>
+                      ) : userAddresses.length > 0 ? (
+                        <RadioGroup
+                          value={selectedAddressId || ''}
+                          onValueChange={setSelectedAddressId}
+                          className="gap-3 mt-2"
+                        >
+                          {userAddresses.map((address) => (
+                            <div
+                              key={address.id}
+                              className={`border rounded-lg p-3 cursor-pointer ${selectedAddressId === address.id ? 'border-green-500 bg-green-50' : 'border-gray-200'}`}
+                              onClick={() => setSelectedAddressId(address.id)}
+                            >
+                              <div className="flex items-start gap-3">
+                                <RadioGroupItem value={address.id} id={`address-${address.id}`} className="mt-1" />
+                                <div className="flex-1">
+                                  <div className="flex justify-between items-start">
+                                    <Label
+                                      htmlFor={`address-${address.id}`}
+                                      className="font-medium cursor-pointer flex items-center gap-1"
+                                    >
+                                      {address.label}
+                                      {address.isDefault && <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">Default</span>}
+                                    </Label>
+                                  </div>
+                                  <p className="text-sm text-gray-600 mt-1">{address.recipientName} • {address.mobile}</p>
+                                  <p className="text-sm text-gray-600 mt-0.5">
+                                    {address.plotBuilding}, {address.streetArea}
+                                    {address.landmark ? `, ${address.landmark}` : ''}, {address.city}, {address.state} - {address.pincode}
+                                  </p>
+                                </div>
+                              </div>
                             </div>
-                            <p className="text-sm text-gray-600 mt-1">{address.recipientName} • {address.mobile}</p>
-                            <p className="text-sm text-gray-600 mt-0.5">
-                              {address.plotBuilding}, {address.streetArea}
-                              {address.landmark ? `, ${address.landmark}` : ''}, {address.city}, {address.state} - {address.pincode}
-                            </p>
-                          </div>
+                          ))}
+                        </RadioGroup>
+                      ) : (
+                        <div className="text-center py-4 border border-dashed border-gray-300 rounded-lg">
+                          <MapPin className="mx-auto h-6 w-6 text-gray-400 mb-2" />
+                          <p className="text-gray-500">No saved addresses found.</p>
+                          <p className="text-gray-500 text-sm">Please add an address in your profile first.</p>
                         </div>
+                      )}
+                      <Button
+                        variant="outline"
+                        className="mt-4 text-sm border-orange-500 text-orange-500 w-full hover:bg-orange-50"
+                        size="sm"
+                        onClick={() => setShowAddressFormView(true)}
+                      >
+                        <Plus className="h-4 w-4 mr-2" /> Add New Address
+                      </Button>
+                    </div>
+                  );
+                } else if (selectedVariant) {
+                  // Offline depot - show pickup location
+                  return (
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">Pickup from Depot:</Label>
+                      <div className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                        <div className="flex items-center gap-2 mb-1">
+                          <svg className="h-4 w-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
+                          <span className="font-medium">{selectedVariant.depot.name}</span>
+                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">Pickup</span>
+                        </div>
+                        {selectedVariant.depot.address ? (
+                          <p className="text-sm text-gray-600">
+                            {selectedVariant.depot.address}
+                            {selectedVariant.depot.city && `, ${selectedVariant.depot.city}`}
+                            {selectedVariant.depot.pincode && ` - ${selectedVariant.depot.pincode}`}
+                          </p>
+                        ) : (
+                          <p className="text-sm text-gray-500 italic">Depot address information not available</p>
+                        )}
                       </div>
-                    ))}
-                  </RadioGroup>
-                ) : (
-                  <div className="text-center py-4 border border-dashed border-gray-300 rounded-lg">
-                    <MapPin className="mx-auto h-6 w-6 text-gray-400 mb-2" />
-                    <p className="text-gray-500">No saved addresses found.</p>
-                    <p className="text-gray-500 text-sm">Please add an address in your profile first.</p>
-                  </div>
-                )}
-                <Button
-                  variant="outline"
-                  className="mt-4 text-sm border-orange-500 text-orange-500 w-full hover:bg-orange-50"
-                  size="sm"
-                  onClick={() => setShowAddressFormView(true)}
-                >
-                  <Plus className="h-4 w-4 mr-2" /> Add New Address
-                </Button>
-              </div>
+                      <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                        <p className="text-sm text-blue-700 flex items-start">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          You will need to pick up your order from this depot location.
+                        </p>
+                      </div>
+                    </div>
+                  );
+                } else {
+                  // No variant selected yet
+                  return (
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">Delivery/Pickup Address:</Label>
+                      <div className="text-center py-4 border border-dashed border-gray-300 rounded-lg">
+                        <p className="text-gray-500">Please select a depot variant first</p>
+                      </div>
+                    </div>
+                  );
+                }
+              })()}
 
               {/* Depot Variant Selection */}
               <div>
@@ -466,14 +558,22 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                                 className="font-medium cursor-pointer flex items-center gap-1"
                               >
                                 {variant.name}
-                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
-                                  {variant.depot.isOnline ? 'Online' : 'Offline'}
-                                </span>
                               </Label>
                               <div className="text-right">
-                                <span className="text-sm font-semibold text-green-600">
-                                  ₹{Number(variant.buyOncePrice || 0).toFixed(2)}
-                                </span>
+                                {variant.mrp && variant.mrp > variant.buyOncePrice ? (
+                                  <div className="flex flex-col items-end gap-0.5">
+                                    <span className="text-xs text-gray-500 line-through">
+                                      ₹{Number(variant.mrp).toFixed(2)}
+                                    </span>
+                                    <span className="text-sm font-semibold text-green-600">
+                                      ₹{Number(variant.buyOncePrice || 0).toFixed(2)}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span className="text-sm font-semibold text-green-600">
+                                    ₹{Number(variant.buyOncePrice || 0).toFixed(2)}
+                                  </span>
+                                )}
                               </div>
                             </div>
 

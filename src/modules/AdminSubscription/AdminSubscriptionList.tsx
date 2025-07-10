@@ -1035,14 +1035,14 @@ const AdminSubscriptionList: React.FC = () => {
                             <div className="flex items-center gap-1">
                               <div className="w-1.5 h-1.5 bg-secondary rounded-full"></div>
                               <span className="text-blue-700 font-medium">
-                                {sub.qty} {sub.depotProductVariant?.name || 'units'}
+                                {sub.qty} - {sub.depotProductVariant?.name || 'units'}
                               </span>
                             </div>
                             <span className="text-gray-400">•</span>
                             <div className="flex items-center gap-1">
                               <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
                               <span className="text-green-700 font-medium">
-                                {sub.altQty} {sub.depotProductVariant?.name || 'units'}
+                                {sub.altQty} - {sub.depotProductVariant?.name || 'units'}
                               </span>
                             </div>
                             <span className="text-gray-400 text-xs italic ml-1">skip day pattern</span>
@@ -1053,14 +1053,14 @@ const AdminSubscriptionList: React.FC = () => {
                             <div className="flex items-center gap-1">
                               <div className="w-1.5 h-1.5 bg-secondary rounded-full"></div>
                               <span className="text-blue-700 font-medium">
-                                {sub.qty} {sub.depotProductVariant?.name || 'units'}
+                                {sub.qty} - {sub.depotProductVariant?.name || 'units'}
                               </span>
                             </div>
                             <span className="text-gray-400">•</span>
                             <div className="flex items-center gap-1">
                               <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
                               <span className="text-green-700 font-medium">
-                                {sub.altQty} {sub.depotProductVariant?.name || 'units'}
+                                {sub.altQty} - {sub.depotProductVariant?.name || 'units'}
                               </span>
                             </div>
                             <span className="text-gray-400 text-xs italic ml-1">daily rotation</span>
@@ -1069,7 +1069,7 @@ const AdminSubscriptionList: React.FC = () => {
                           /* Regular Schedule Display */
                           sub.qty && (
                             <div className="text-xs text-gray-600">
-                              {sub.qty} {sub.depotProductVariant?.name || 'units'}
+                              {sub.qty} - {sub.depotProductVariant?.name || 'units'}
                               {sub.deliverySchedule === 'DAILY' ? ' daily' :
                                sub.deliverySchedule === 'WEEKDAYS' ? ' on weekdays' :
                                sub.deliverySchedule === 'WEEKENDS' ? ' on weekends' :
@@ -1127,7 +1127,7 @@ const AdminSubscriptionList: React.FC = () => {
                       <CalendarIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
                       <div className="flex flex-col">
                         <span className="text-xs text-gray-500">Start</span>
-                        <span>{format(new Date(firstSub.startDate), 'dd MMM')}</span>
+                        <span>{format(new Date(firstSub.startDate), 'dd MMM yyyy')}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 mt-1">
@@ -1178,7 +1178,7 @@ const AdminSubscriptionList: React.FC = () => {
                       </TooltipContent>
                     </Tooltip>
                     
-                    <Tooltip>
+                    {/* <Tooltip>
                       <TooltipTrigger asChild>
                         <Button 
                           variant="outline" 
@@ -1193,7 +1193,7 @@ const AdminSubscriptionList: React.FC = () => {
                       <TooltipContent side="top">
                         <p>{!!firstSub?.agencyId ? "Agent assigned" : firstSub?.paymentStatus !== 'PAID' ? "Complete payment first" : "Assign Agent"}</p>
                       </TooltipContent>
-                    </Tooltip>
+                    </Tooltip> */}
                   </TooltipProvider>
                 </div>
               </TableCell>

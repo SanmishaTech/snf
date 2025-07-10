@@ -59,7 +59,7 @@ interface ProductVariant {
   price7Day?: number;
   price15Day?: number;
   price1Month?: number;
-  unit?: string;
+  name?: string;
   description?: string;
   isAvailable?: boolean;
 }
@@ -99,7 +99,7 @@ interface ProductData {
   price7Day?: number;
   price15Day?: number;
   price1Month?: number;
-  unit?: string;
+  name?: string;
   variants?: ProductVariant[];
 }
 
@@ -276,7 +276,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     price3Day: toNumber(variant.price3Day),
     price15Day: toNumber(variant.price15Day),
     price1Month: toNumber(variant.price1Month),
-    unit: variant.unit,
+    unit: variant.name,
     description: variant.description,
     isAvailable: variant.isAvailable ?? true,
   });
@@ -797,10 +797,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
     // For offline depots, ensure depot has address information
     if (!selectedDepot?.isOnline && selectedDepot?.address == null) {
-      console.error(
-        "Depot address information is missing. AddressId:",
-        selectedDepot?.address
-      );
       toast.error(
         "Depot address information is missing. Please contact support."
       );
@@ -881,14 +877,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         selectedPeriod
       );
 
-      // --- DEBUG LOGS ---
-      console.log("--- Savings Calculation (No Variants) ---");
-      console.log("Product:", product);
-      console.log("Selected Period:", selectedPeriod);
-      console.log("Delivery Count:", deliveryCount);
-      console.log("MRP:", mrp);
-      console.log("Subscription Rate:", subscriptionRate);
-      // --- END DEBUG LOGS ---
 
       // Only calculate savings if subscription rate is lower than MRP
       if (subscriptionRate >= mrp) return 0;
@@ -906,7 +894,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       const totalSubscriptionPrice = subscriptionRate * totalQty;
 
       const savings = Math.max(0, totalMrpPrice - totalSubscriptionPrice);
-      console.log("Calculated Savings vs MRP:", savings);
       return savings;
     }
 
@@ -949,10 +936,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     });
 
     const savings = Math.max(0, totalMrpPrice - totalSubscriptionPrice);
-    console.log("--- Savings Calculation (Variants) ---");
-    console.log("Total MRP Price:", totalMrpPrice);
-    console.log("Total Subscription Price:", totalSubscriptionPrice);
-    console.log("Calculated Savings vs MRP:", savings);
     return savings;
   };
 
@@ -1270,7 +1253,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       }}
     >
       <DialogContent
-        className="max-sm:max-w-full flex flex-col max-h-[95vh] p-0 bg-white w-[90vw] max-w-6xl rounded-xl overflow-hidden"
+        className="max-sm:max-w-full flex flex-col max-h-[95vh] p-0 bg-white min-w-[100vw] max-w-8xl rounded-xl overflow-hidden"
         onPointerDownOutside={(event) => {
           const target = event.target as HTMLElement;
           if (
@@ -1283,52 +1266,56 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
           }
         }}
       >
-        <DialogHeader className="p-5 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
-          <div className="flex justify-between items-center mb-3">
-            <DialogTitle className="text-xl font-semibold text-gray-800">
-              Create Subscription for {product?.name}
-            </DialogTitle>
-          </div>
+        <DialogHeader className="p-4 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
+          <DialogTitle className="text-lg font-semibold text-gray-800">
+            Create Subscription for {product?.name}
+          </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-grow overflow-y-auto px-5 py-4 space-y-6 bg-gray-50">
+        <div className="flex-grow overflow-y-auto px-4 py-3 space-y-4 bg-gray-50">
           {modalView === "subscriptionDetails" ? (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Left Column */}
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {/* Subscription Period */}
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-3">
+                  <div className="bg-white border border-gray-200 rounded-lg p-3">
+                    <h3 className="text-sm font-medium text-gray-600 mb-2 flex items-center gap-1">
+                      <CalendarIcon className="h-3.5 w-3.5" />
                       Subscription Period
                     </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex gap-1.5 bg-gray-50 p-1 rounded-lg">
                       {subscriptionPeriods.map((period) => (
-                        <Button
+                        <button
                           key={period.value}
-                          variant={
+                          type="button"
+                          className={`flex-1 h-9 px-3 rounded-md transition-all duration-200 relative ${
                             selectedPeriod === period.value
-                              ? "default"
-                              : "outline"
-                          }
-                          className={`h-auto py-3 px-3 text-center ${
-                            selectedPeriod === period.value
-                              ? "bg-primary hover:bg-primary"
-                              : "border-gray-300"
+                              ? "bg-primary text-white shadow-sm"
+                              : "bg-white hover:bg-gray-100 text-gray-700 border border-gray-200"
                           }`}
                           onClick={() => setSelectedPeriod(period.value)}
                         >
-                          <div className="flex flex-col items-center gap-1">
-                            <span className="text-sm font-medium">
-                              {period.value} Days
-                            </span>
-                            <span className="text-xs opacity-90">
-                              {period.value === 3 && "Trial Pack"}
-                              {period.value === 15 && "Mid Saver"}
-                              {period.value === 30 && "Super Saver"}
-                            </span>
+                          <div className="flex items-center justify-center h-full">
+                            <div className="flex items-baseline gap-1">
+                              <span className="font-semibold text-base">
+                                {period.value}
+                              </span>
+                              <span className={`text-sm ${
+                                selectedPeriod === period.value ? "text-white/90" : "text-gray-500"
+                              }`}>
+                                days
+                                
+                              </span>
+                            </div>
+                            
+                            {period.value === 30 && (
+                              <span className="absolute -top-2 -right-1 bg-green-500 text-white text-[9px] px-1.5 py-0.5 rounded-full font-medium">
+                                Best Value
+                              </span>
+                            )}
                           </div>
-                        </Button>
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -1337,16 +1324,23 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
                   {/* Variant Selection Section */}
                   {hasVariants && productVariants.length > 0 && (
-                    <div className="bg-white border border-gray-200 rounded-lg p-4">
-                      <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                          <Package className="h-4 w-4" />
-                          Select Product Variants & Schedules
+                    <div className="bg-white border border-gray-200 rounded-lg p-2.5">
+                      <div className="flex justify-between items-center mb-2">
+                        <h3 className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                          <Package className="h-3 w-3" />
+                          Product Variants
                         </h3>
-                        <Badge variant="outline" className="text-xs">
-                          {selectedVariants.length} of {productVariants.length}{" "}
-                          selected
-                        </Badge>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedVariants([])}
+                            className="text-sm h-7"
+                            disabled={selectedVariants.length === 0}
+                          >
+                            Clear
+                          </Button>
+
+                   
                       </div>
 
                       {/* Variant Grid Selection with Individual Delivery Schedules - Horizontal Layout */}
@@ -1422,15 +1416,30 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                   </div>
                                   
                                   {/* Price Badge */}
-                                  <Badge variant="outline" className="text-xs">
-                                    ₹{getVariantPriceForPeriod(variant, selectedPeriod)}
-                                    {variant.unit && `/${variant.unit}`}
+                                  <Badge variant="outline" className="bg-green-50 border-green-600 px-2 py-1">
+                                    {variant.mrp && variant.mrp > getVariantPriceForPeriod(variant, selectedPeriod) ? (
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-xs text-gray-500 line-through">
+                                          ₹{variant.mrp}
+                                        </span>
+                                        <span className="text-sm text-green-700 font-bold">
+                                          ₹{getVariantPriceForPeriod(variant, selectedPeriod)}
+                                        </span>
+                                      </div>
+                                    ) : (
+                                      <span className="text-sm text-green-700 font-bold">
+                                        ₹{getVariantPriceForPeriod(variant, selectedPeriod)}
+                                      </span>
+                                    )}
+                                    {variant.unit && (
+                                      <span className="text-xs text-gray-600 ml-1">/{variant.unit}</span>
+                                    )}
                                   </Badge>
                                 </div>
                                 
                                 {/* Description */}
                                 {variant.description && (
-                                  <p className="text-xs text-gray-600 ml-7">
+                                  <p className="text-sm text-gray-600 ml-7">
                                     {variant.description}
                                   </p>
                                 )}
@@ -1441,11 +1450,11 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                 <div className="space-y-3 border-t border-gray-200 pt-3">
                                   {/* Delivery Schedule Options */}
                                   <div>
-                                    <Label className="text-xs font-medium text-gray-700 mb-1.5 block flex items-center gap-1">
-                                      <Clock className="h-3 w-3" />
-                                      Delivery Schedule
+                                    <Label className="text-[10px] font-medium text-gray-700 mb-1 block flex items-center gap-0.5">
+                                      <Clock className="h-2.5 w-2.5" />
+                                      Schedule
                                     </Label>
-                                    <div className="grid grid-cols-2 gap-1">
+                                    <div className="grid grid-cols-2 gap-0.5">
                                       <Button
                                         variant={
                                           selectedVariant.deliveryOption ===
@@ -1454,7 +1463,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                             : "outline"
                                         }
                                         size="sm"
-                                        className={`h-7 text-xs ${
+                                        className={`h-6 text-sm px-1 ${
                                           selectedVariant.deliveryOption ===
                                           "daily"
                                             ? "bg-secondary hover:bg-secondary/80"
@@ -1478,7 +1487,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                                     : "outline"
                                                 }
                                                 size="sm"
-                                                className={`h-7 text-xs ${
+                                                className={`h-7 text-sm ${
                                                   selectedVariant.deliveryOption ===
                                                   "alternate-days"
                                                     ? "bg-secondary hover:bg-secondary/80"
@@ -1504,7 +1513,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                                     : "outline"
                                                 }
                                                 size="sm"
-                                                className={`h-7 text-xs ${
+                                                className={`h-7 text-sm ${
                                                   selectedVariant.deliveryOption ===
                                                   "day1-day2"
                                                     ? "bg-secondary hover:bg-blue-600"
@@ -1530,7 +1539,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                                     : "outline"
                                                 }
                                                 size="sm"
-                                                className={`h-7 text-xs ${
+                                                className={`h-7 text-sm ${
                                                   selectedVariant.deliveryOption ===
                                                   "select-days"
                                                     ? "bg-secondary hover:bg-blue-600"
@@ -1554,7 +1563,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                   {selectedVariant.deliveryOption ===
                                     "select-days" && (
                                     <div>
-                                      <Label className="text-xs font-medium text-gray-700 mb-1 block">
+                                      <Label className="text-sm font-medium text-gray-700 mb-1 block">
                                         Select days (min 3):
                                       </Label>
                                       <div className="flex flex-wrap gap-1">
@@ -1570,7 +1579,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                                 ? "default"
                                                 : "outline"
                                             }
-                                            className={`h-6 w-8 p-0 text-xs ${
+                                            className={`h-6 w-8 p-0 text-sm ${
                                               selectedVariant.selectedDays.includes(
                                                 day.id
                                               )
@@ -1599,7 +1608,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                     selectedVariant.deliveryOption ===
                                       "alternate-days") && (
                                     <div>
-                                      <Label className="text-xs font-medium text-gray-700 mb-1 block">
+                                      <Label className="text-sm font-medium text-gray-700 mb-1 block">
                                         Quantity per delivery:
                                       </Label>
                                       <div className="flex items-center border rounded overflow-hidden bg-white w-fit">
@@ -1641,12 +1650,12 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                   {selectedVariant.deliveryOption ===
                                     "day1-day2" && (
                                     <div>
-                                      <Label className="text-xs font-medium text-gray-700 mb-1 block">
+                                      <Label className="text-sm font-medium text-gray-700 mb-1 block">
                                         Quantities:
                                       </Label>
                                       <div className="flex gap-3">
                                         <div>
-                                          <div className="text-xs text-gray-600 mb-1">Day 1:</div>
+                                          <div className="text-sm text-gray-600 mb-1">Day 1:</div>
                                           <div className="flex items-center border rounded overflow-hidden bg-white">
                                             <Button
                                               variant="ghost"
@@ -1682,7 +1691,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                           </div>
                                         </div>
                                         <div>
-                                          <div className="text-xs text-gray-600 mb-1">Day 2:</div>
+                                          <div className="text-sm text-gray-600 mb-1">Day 2:</div>
                                           <div className="flex items-center border rounded overflow-hidden bg-white">
                                             <Button
                                               variant="ghost"
@@ -1721,7 +1730,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                     </div>
                                   )}
                                   {/* Schedule Summary */}
-                                  <div className="bg-blue-50 px-2 py-1 rounded text-xs text-blue-700 border border-blue-200">
+                                  <div className="bg-blue-50 px-2 py-1 rounded text-sm text-blue-700 border border-blue-200">
                                     <span className="font-medium">
                                       {selectedVariant.deliveryOption === "daily" && "Daily delivery"}
                                       {selectedVariant.deliveryOption === "select-days" &&
@@ -1739,55 +1748,15 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                         })}
                       </div>
 
-                      {/* Quick Actions */}
-                      <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-200">
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const allVariants =
-                                productVariants?.map((variant) => ({
-                                  variantId: variant.id,
-                                  quantity: 1,
-                                  quantityVarying2: 1,
-                                  deliveryOption: "daily",
-                                  selectedDays: [],
-                                })) || [];
-                              setSelectedVariants(allVariants);
-                            }}
-                            className="text-xs h-7"
-                            disabled={
-                              selectedVariants.length === productVariants?.length
-                            }
-                          >
-                            Select All
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setSelectedVariants([])}
-                            className="text-xs h-7"
-                            disabled={selectedVariants.length === 0}
-                          >
-                            Clear
-                          </Button>
-                        </div>
-
-                        {selectedVariants.length > 0 && (
-                          <div className="text-xs text-gray-600">
-                            {selectedVariants.length} of {productVariants.length} selected
-                          </div>
-                        )}
-                      </div>
+                      
 
                       {formErrors.selectedVariants && (
-                        <p className="text-red-500 text-xs mt-2">
+                        <p className="text-red-500 text-sm mt-2">
                           {formErrors.selectedVariants}
                         </p>
                       )}
                       {formErrors.variantSchedules && (
-                        <p className="text-red-500 text-xs mt-2">
+                        <p className="text-red-500 text-sm mt-2">
                           {formErrors.variantSchedules}
                         </p>
                       )}
@@ -1806,7 +1775,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                           variant={
                             deliveryOption === "daily" ? "default" : "outline"
                           }
-                          className={`h-8 text-xs px-3 ${
+                          className={`h-8 text-sm px-3 ${
                             deliveryOption === "daily"
                               ? "bg-secondary hover:bg-secondary/80"
                               : "border-gray-300"
@@ -1823,7 +1792,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                 ? "default"
                                 : "outline"
                             }
-                            className={`h-8 text-xs px-3 ${
+                            className={`h-8 text-sm px-3 ${
                               deliveryOption === "alternate-days"
                                 ? "bg-secondary hover:bg-secondary/80"
                                 : "border-gray-300"
@@ -1841,7 +1810,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                 ? "default"
                                 : "outline"
                             }
-                            className={`h-8 text-xs px-3 ${
+                            className={`h-8 text-sm px-3 ${
                               deliveryOption === "day1-day2"
                                 ? "bg-secondary hover:bg-secondary/80"
                                 : "border-gray-300"
@@ -1859,7 +1828,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                 ? "default"
                                 : "outline"
                             }
-                            className={`h-8 text-xs px-3 ${
+                            className={`h-8 text-sm px-3 ${
                               deliveryOption === "select-days"
                                 ? "bg-secondary hover:bg-secondary/80"
                                 : "border-gray-300"
@@ -1875,26 +1844,26 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       {/* Inline details based on selected option */}
                       <div className="mt-3">
                         {deliveryOption === "daily" && (
-                          <div className="text-xs text-blue-700 bg-blue-50 px-3 py-2 rounded-md border border-blue-200">
+                          <div className="text-sm text-blue-700 bg-blue-50 px-3 py-2 rounded-md border border-blue-200">
                             Daily delivery - Fresh products every day
                           </div>
                         )}
                         
                         {deliveryOption === "alternate-days" && (
-                          <div className="text-xs text-blue-700 bg-blue-50 px-3 py-2 rounded-md border border-blue-200">
+                          <div className="text-sm text-blue-700 bg-blue-50 px-3 py-2 rounded-md border border-blue-200">
                             Every other day starting from your selected start date
                           </div>
                         )}
                         
                         {deliveryOption === "day1-day2" && (
-                          <div className="text-xs text-blue-700 bg-blue-50 px-3 py-2 rounded-md border border-blue-200">
+                          <div className="text-sm text-blue-700 bg-blue-50 px-3 py-2 rounded-md border border-blue-200">
                             Daily delivery with different quantities on alternating days
                           </div>
                         )}
 
                         {deliveryOption === "select-days" && (
                           <div className="space-y-3">
-                            <div className="text-xs text-gray-600">
+                            <div className="text-sm text-gray-600">
                               Select delivery days (minimum 3):
                             </div>
                             <div className="flex flex-wrap gap-1">
@@ -1908,7 +1877,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                       ? "default"
                                       : "outline"
                                   }
-                                  className={`h-7 w-10 p-0 text-xs ${
+                                  className={`h-7 w-10 p-0 text-sm ${
                                     selectedDays.includes(day.id)
                                       ? "bg-primary"
                                       : "border-gray-300 text-gray-700"
@@ -1927,7 +1896,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                               ))}
                             </div>
                             {formErrors.selectedDays && (
-                              <p className="text-red-500 text-xs">
+                              <p className="text-red-500 text-sm">
                                 {formErrors.selectedDays}
                               </p>
                             )}
@@ -1941,7 +1910,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                           deliveryOption === "select-days" ||
                           deliveryOption === "alternate-days") && (
                           <div>
-                            <Label className="text-xs font-medium text-gray-700 mb-2 block">
+                            <Label className="text-sm font-medium text-gray-700 mb-2 block">
                               Quantity per delivery:
                             </Label>
                             <div className="flex items-center border rounded overflow-hidden bg-white w-fit">
@@ -1972,12 +1941,12 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
                         {deliveryOption === "day1-day2" && (
                           <div>
-                            <Label className="text-xs font-medium text-gray-700 mb-2 block">
+                            <Label className="text-sm font-medium text-gray-700 mb-2 block">
                               Quantities:
                             </Label>
                             <div className="flex gap-4">
                               <div>
-                                <div className="text-xs text-gray-600 mb-1">Day A:</div>
+                                <div className="text-sm text-gray-600 mb-1">Day A:</div>
                                 <div className="flex items-center border rounded overflow-hidden bg-white">
                                   <Button
                                     variant="ghost"
@@ -2003,7 +1972,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                 </div>
                               </div>
                               <div>
-                                <div className="text-xs text-gray-600 mb-1">Day B:</div>
+                                <div className="text-sm text-gray-600 mb-1">Day B:</div>
                                 <div className="flex items-center border rounded overflow-hidden bg-white">
                                   <Button
                                     variant="ghost"
@@ -2039,8 +2008,170 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     </div>
                   )}
 
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-2">
+                
+                </div>
+
+                {/* Right Column - Address Section */}
+                <div className="space-y-4">
+                  <div className="bg-white border border-gray-200 rounded-lg p-2.5">
+                    {/* Conditionally render based on depot type */}
+                    {selectedDepot?.isOnline ? (
+                      <>
+                        {/* ===== UI for ONLINE Depots (Home Delivery) ===== */}
+                        <div className="flex justify-between items-center mb-1.5">
+                          <h3 className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                            <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            Delivery Address
+                          </h3>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setAddressFormState((prev) => ({
+                                ...prev,
+                                mobile: userMobile,
+                              }));
+                              setModalView("addressForm");
+                            }}
+                            className="text-[10px] h-6 px-1.5"
+                          >
+                            <Plus className="h-2.5 w-2.5 mr-0.5" /> Add
+                          </Button>
+                        </div>
+
+                        {isLoadingAddresses ? (
+                          <div className="flex items-center justify-center py-2">
+                            <span className="text-gray-500 text-[10px]">
+                              Loading...
+                            </span>
+                          </div>
+                        ) : userAddresses.length > 0 ? (
+                          <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+                            <RadioGroup
+                              value={selectedAddressId || ""}
+                              onValueChange={(id: string) => {
+                                setSelectedAddressId(id);
+                                if (formErrors.selectedAddressId)
+                                  setFormErrors((prev) => ({
+                                    ...prev,
+                                    selectedAddressId: "",
+                                  }));
+                              }}
+                              className="flex gap-1.5"
+                            >
+                              {userAddresses.map((address) => (
+                                <div
+                                  key={address.id}
+                                  className={`flex-shrink-0 w-52 p-1.5 border rounded cursor-pointer transition-all ${
+                                    selectedAddressId === address.id
+                                      ? "border-red-500 bg-red-50 shadow-sm"
+                                      : "border-gray-200 hover:bg-gray-50"
+                                  }`}
+                                >
+                                  <Label
+                                    htmlFor={`address-item-${address.id}`}
+                                    className="flex items-start space-x-1.5 w-full cursor-pointer"
+                                  >
+                                    <RadioGroupItem
+                                      value={address.id}
+                                      id={`address-item-${address.id}`}
+                                      className="mt-0.5 h-3 w-3"
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center justify-between gap-1 mb-0.5">
+                                        <span className="font-medium text-gray-900 text-[12px] truncate ">
+                                          {address.recipientName}
+                                        </span>
+                                        <Badge variant="outline" className="text-[9px] py-0 px-1 h-3.5">
+                                          {address.label}
+                                        </Badge>
+                                      </div>
+                                      <p className="text-[10px] text-gray-600 truncate leading-tight">
+                                        {address.plotBuilding}, {address.streetArea}
+                                      </p>
+                                      <p className="text-[10px] text-gray-600 truncate leading-tight">
+                                        {address.city} - {address.pincode}
+                                      </p>
+                                      {address.isDefault && (
+                                        <span className="inline-block mt-0.5 px-1 py-0 bg-blue-100 text-blue-800 rounded text-[8px]">
+                                          Default
+                                        </span>
+                                      )}
+                                    </div>
+                                  </Label>
+                                </div>
+                              ))}
+                            </RadioGroup>
+                          </div>
+                        ) : (
+                          <div className="text-center py-2">
+                            <p className="text-gray-500 text-[10px] mb-1">
+                              No addresses saved
+                            </p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setAddressFormState((prev) => ({
+                                  ...prev,
+                                  mobile: userMobile,
+                                }));
+                                setModalView("addressForm");
+                              }}
+                              className="text-[10px] h-6 px-2"
+                            >
+                              <Plus className="h-2.5 w-2.5 mr-0.5" /> Add Address
+                            </Button>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {/* ===== UI for OFFLINE Depots (Pickup) ===== */}
+                        <div className="flex justify-between items-center mb-1.5">
+                          <h3 className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                            <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                            Pickup Location
+                          </h3>
+                        </div>
+                        {selectedDepot ? (
+                          <div className="p-1.5 border rounded bg-gray-50">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-medium text-gray-900 text-[11px]">
+                                {selectedDepot.name}
+                              </span>
+                              <Badge variant="secondary" className="text-[9px] py-0 px-1 h-3.5">Pickup</Badge>
+                            </div>
+                            <p className="text-[10px] text-gray-600 mt-0.5">
+                              {selectedDepot.address}, {selectedDepot.city} - {selectedDepot.pincode}
+                            </p>
+                            <div className="mt-3 p-1 bg-blue-50 border border-blue-200 rounded-md">
+                        <p className="text-[11px] text-blue-700 flex items-start ml-2 ">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5  flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          You will need to pick up your order from this depot location.
+                        </p>
+                      </div>
+                          </div>
+                        ) : (
+                          <div className="text-center py-2">
+                            <p className="text-gray-500 text-[10px]">
+                              Depot address not available
+                            </p>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                  <div className="bg-white border border-gray-200 rounded-lg p-2.5">
+                    <h3 className="text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1">
+                      <CalendarIcon className="h-3 w-3" />
                       Start Date
                     </h3>
                     <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
@@ -2048,15 +2179,15 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                         <Button
                           variant={"outline"}
                           className={cn(
-                            "w-full justify-start text-left font-normal border-gray-300 rounded-md",
+                            "w-full justify-start text-left font-normal border-gray-300 rounded h-7 text-sm",
                             !startDate && "text-muted-foreground"
                           )}
                         >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          <CalendarIcon className="mr-1.5 h-3 w-3" />
                           {startDate ? (
                             format(startDate, "dd/MM/yyyy")
                           ) : (
-                            <span>Pick a date</span>
+                            <span>Select date</span>
                           )}
                         </Button>
                       </PopoverTrigger>
@@ -2088,173 +2219,19 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       </PopoverContent>
                     </Popover>
                     {formErrors.startDate && (
-                      <p className="text-red-500 text-xs mt-1">
+                      <p className="text-red-500 text-sm mt-1">
                         {formErrors.startDate}
                       </p>
                     )}
                   </div>
-                </div>
-
-                {/* Right Column - Address Section */}
-                <div className="space-y-6">
-                  <div className="bg-white border border-gray-200 rounded-lg p-4">
-                    {/* Conditionally render based on depot type */}
-                    {selectedDepot?.isOnline ? (
-                      <>
-                        {/* ===== UI for ONLINE Depots (Home Delivery) ===== */}
-                        <div className="flex justify-between items-center mb-3">
-                          <h3 className="text-sm font-medium text-gray-700">
-                            Delivery Address
-                          </h3>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setAddressFormState((prev) => ({
-                                ...prev,
-                                mobile: userMobile,
-                              }));
-                              setModalView("addressForm");
-                            }}
-                            className="text-xs h-8"
-                          >
-                            <Plus className="h-3 w-3 mr-1" /> Add New
-                          </Button>
-                        </div>
-
-                        {isLoadingAddresses ? (
-                          <div className="flex items-center justify-center py-6">
-                            <span className="text-gray-500 text-sm">
-                              Loading your addresses...
-                            </span>
-                          </div>
-                        ) : userAddresses.length > 0 ? (
-                          <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
-                            <RadioGroup
-                              value={selectedAddressId || ""}
-                              onValueChange={(id: string) => {
-                                setSelectedAddressId(id);
-                                if (formErrors.selectedAddressId)
-                                  setFormErrors((prev) => ({
-                                    ...prev,
-                                    selectedAddressId: "",
-                                  }));
-                              }}
-                              className="space-y-3"
-                            >
-                              {userAddresses.map((address) => (
-                                <div
-                                  key={address.id}
-                                  className={`p-3 border rounded-lg cursor-pointer transition-all ${
-                                    selectedAddressId === address.id
-                                      ? "border-red-500 bg-red-50"
-                                      : "border-gray-200 hover:bg-gray-50"
-                                  }`}
-                                >
-                                  <Label
-                                    htmlFor={`address-item-${address.id}`}
-                                    className="flex items-start space-x-3 w-full"
-                                  >
-                                    <RadioGroupItem
-                                      value={address.id}
-                                      id={`address-item-${address.id}`}
-                                      className="mt-1"
-                                    />
-                                    <div className="flex-1">
-                                      <div className="flex justify-between">
-                                        <span className="font-medium text-gray-900">
-                                          {address.recipientName}
-                                        </span>
-                                        <Badge variant="outline">
-                                          {address.label}
-                                        </Badge>
-                                      </div>
-                                      <p className="text-xs text-gray-600 mt-1">
-                                        {address.plotBuilding},{" "}
-                                        {address.streetArea}
-                                      </p>
-                                      <p className="text-xs text-gray-600">
-                                        {address.city}, {address.state} -{" "}
-                                        {address.pincode}
-                                      </p>
-                                      {address.isDefault && (
-                                        <span className="inline-block mt-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">
-                                          Default
-                                        </span>
-                                      )}
-                                    </div>
-                                  </Label>
-                                </div>
-                              ))}
-                            </RadioGroup>
-                          </div>
-                        ) : (
-                          <div className="text-center py-6">
-                            <p className="text-gray-500 text-sm mb-3">
-                              No delivery addresses saved.
-                            </p>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setAddressFormState((prev) => ({
-                                  ...prev,
-                                  mobile: userMobile,
-                                }));
-                                setModalView("addressForm");
-                              }}
-                            >
-                              <Plus className="h-3 w-3 mr-1" /> Add Delivery
-                              Address
-                            </Button>
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        {/* ===== UI for OFFLINE Depots (Pickup) ===== */}
-                        <div className="flex justify-between items-center mb-3">
-                          <h3 className="text-sm font-medium text-gray-700">
-                            Pickup From
-                          </h3>
-                        </div>
-                        {selectedDepot ? (
-                          <div className="p-3 border rounded-lg bg-gray-100">
-                            <div className="flex-1">
-                              <div className="flex justify-between items-center">
-                                <span className="font-medium text-gray-900">
-                                  {selectedDepot.name}
-                                </span>
-                                <Badge variant="secondary">Pickup Point</Badge>
-                              </div>
-                              <p className="text-xs text-gray-600 mt-2">
-                                {selectedDepot.address}
-                              </p>
-                              <p className="text-xs text-gray-600">
-                                {selectedDepot.city} {selectedDepot.state}{" "}
-                                {selectedDepot.pincode}
-                              </p>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-center py-6">
-                            <p className="text-gray-500 text-sm">
-                              Depot address not available.
-                            </p>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-
                   {/* Enhanced Summary Section with Per-Variant Details */}
                   {subscriptionSummary && (
-                    <div className="bg-white border border-gray-200 rounded-lg p-4">
-                      <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-                        <Package className="h-4 w-4" />
+                    <div className="bg-white border border-gray-200 rounded-lg p-3">
+                      <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                        <Package className="h-3.5 w-3.5" />
                         Order Summary
                       </h3>
-                      <div className="space-y-2 text-sm">
+                      <div className="space-y-1.5 text-sm">
                         <div className="flex justify-between">
                           <span className="text-gray-600">Period:</span>
                           <span>{subscriptionSummary.period}</span>
@@ -2265,21 +2242,21 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                             {subscriptionSummary.deliveryDescription}
                           </span>
                         </div> */}
-                        <div className="flex justify-between">
+                        {/* <div className="flex justify-between">
                           <span className="text-gray-600">Start Date:</span>
                           <span>{subscriptionSummary.startDate}</span>
-                        </div>
+                        </div> */}
 
                         {/* Per-Variant Summary - Enhanced */}
                         {hasVariants && selectedVariants.length > 0 && (
-                          <div className="border-t border-gray-200 pt-4 mt-4">
-                            <div className="flex items-center gap-2 mb-3">
-                              <Package className="h-4 w-4 text-blue-600" />
+                          <div className="border-t border-gray-200 pt-2 mt-2">
+                            <div className="flex items-center gap-1 mb-2">
+                              <Package className="h-3 w-3 text-blue-600" />
                               <h4 className="text-sm font-semibold text-gray-800">
                                 Variant Details
                               </h4>
                             </div>
-                            <div className="space-y-3">
+                            <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
                               {selectedVariants.map(
                                 (selectedVariant, index) => {
                                   const variant = productVariants.find(
@@ -2349,125 +2326,57 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                   return (
                                     <div
                                       key={index}
-                                      className="border border-gray-200 rounded-lg p-3 bg-gradient-to-r from-gray-50 to-blue-50 hover:shadow-sm transition-shadow"
+                                      className="flex-shrink-0 w-56 border border-gray-200 rounded-md p-2 bg-gradient-to-r from-gray-50 to-blue-50"
                                     >
                                       {/* Header with variant name and schedule */}
-                                      <div className="flex items-center justify-between mb-2">
-                                        <div className="flex items-center gap-2">
-                                          <span className="text-lg">
+                                      <div className="flex items-center justify-between mb-1.5">
+                                        <div className="flex items-center gap-1 flex-1 min-w-0">
+                                          <span className="text-sm">
                                             {getScheduleIcon()}
                                           </span>
-                                          <span className="font-semibold text-gray-800 text-sm">
+                                          <span className="font-medium text-gray-800 text-sm truncate">
                                             {variant.name}
                                           </span>
                                         </div>
                                         <Badge
                                           variant="secondary"
-                                          className="text-xs bg-blue-100 text-blue-700 border-blue-200"
+                                          className="text-[11px] bg-blue-100 text-blue-700 border-blue-200 py-0 px-1.5 h-4"
                                         >
                                           {scheduleText}
                                         </Badge>
                                       </div>
 
-                                      {/* Quantity and pricing details */}
-                                      <div className="grid grid-cols-2 gap-3 text-xs">
-                                        <div className="space-y-1">
-                                          <div className="text-gray-500 font-medium">
-                                            Quantity Details
-                                          </div>
-                                          <div className="flex items-center gap-1">
-                                            <span className="text-gray-700">
-                                              {selectedVariant.deliveryOption ===
-                                              "day1-day2" ? (
-                                                <>
-                                                  {selectedVariant.quantity} +{" "}
-                                                  {selectedVariant.quantityVarying2 ||
-                                                    1}{" "}
-                                                  {variant.unit}
-                                                </>
-                                              ) : (
-                                                <>
-                                                  {selectedVariant.quantity}{" "}
-                                                  {variant.unit}/delivery
-                                                </>
-                                              )}
-                                            </span>
-                                          </div>
-                                          {console.log("Asdddddddddddddddddddddddddddddddd",variant)}
-                                          <div className="text-gray-600">
-                                            Total:{" "}
-                                            <span className="font-medium">
-                                              {variantTotalQty} {variant.name}
-                                            </span>
-                                          </div>
+                                      {/* Compact details */}
+                                      <div className="text-[11px] space-y-1">
+                                        <div className="flex justify-between items-center">
+                                          <span className="text-gray-600 text-xs" >Qty/delivery:</span>
+                                          <span className="text-gray-900 font-medium text-xs">
+                                            {selectedVariant.deliveryOption === "day1-day2" ? (
+                                              <>{selectedVariant.quantity} + {selectedVariant.quantityVarying2 || 1} - {variant.name || 'Quantity'}{selectedVariant.quantity > 1 || (selectedVariant.quantityVarying2 || 1) > 1 ? 's' : ''}</>                                              
+                                            ) : (
+                                              <>{selectedVariant.quantity} - {variant.name || 'Quantity'}</>                                              
+                                            )}
+                                          </span>
                                         </div>
-
-                                        <div className="space-y-1">
-                                          <div className="text-gray-500 font-medium">
-                                            Pricing
-                                          </div>
-                                          <div className="text-gray-700">
-                                            ₹
-                                            {getVariantPriceForPeriod(
-                                              variant,
-                                              selectedPeriod
-                                            )}{" "}
-                                            per {variant.unit}
-                                          </div>
-                                          <div className="text-green-600 font-semibold">
-                                            ₹
-                                            {(
-                                              variantTotalQty *
-                                              getVariantPriceForPeriod(
-                                                variant,
-                                                selectedPeriod
-                                              )
-                                            ).toFixed(2)}
-                                          </div>
+                                        <div className="flex justify-between items-center">
+                                          <span className="text-gray-600 text-xs">Total:</span>
+                                          <span className="text-gray-900 font-medium text-xs">
+                                            {variantTotalQty} - {variant.name || 'Quantity'}
+                                          </span>
+                                        </div>
+                                        <div className="flex justify-between items-center pt-1 border-t border-gray-200">
+                                          <span className="text-gray-600">Price:</span>
+                                          <span className="text-green-700 font-semibold">
+                                            ₹{(variantTotalQty * getVariantPriceForPeriod(variant, selectedPeriod)).toFixed(2)}
+                                          </span>
                                         </div>
                                       </div>
 
-                                      {/* Additional delivery info for special schedules */}
-                                      {selectedVariant.deliveryOption ===
-                                        "select-days" &&
-                                        selectedVariant.selectedDays && (
-                                          <div className="mt-2 pt-2 border-t border-gray-200">
-                                            <div className="text-xs text-gray-500 mb-1">
-                                              Delivery Days:
-                                            </div>
-                                            <div className="flex flex-wrap gap-1">
-                                              {selectedVariant.selectedDays.map(
-                                                (day, dayIndex) => (
-                                                  <span
-                                                    key={dayIndex}
-                                                    className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded"
-                                                  >
-                                                    {day}
-                                                  </span>
-                                                )
-                                              )}
-                                            </div>
-                                          </div>
-                                        )}
-
-                                      {selectedVariant.deliveryOption ===
-                                        "day1-day2" && (
-                                        <div className="mt-2 pt-2 border-t border-gray-200">
-                                          <div className="text-xs text-gray-500 grid grid-cols-2 gap-2">
-                                            <div>
-                                              First half:{" "}
-                                              {Math.ceil(selectedPeriod / 2)}{" "}
-                                              days × {selectedVariant.quantity}{" "}
-                                              {variant.unit}
-                                            </div>
-                                            <div>
-                                              Second half:{" "}
-                                              {Math.floor(selectedPeriod / 2)}{" "}
-                                              days ×{" "}
-                                              {selectedVariant.quantityVarying2 ||
-                                                1}{" "}
-                                              {variant.unit}
-                                            </div>
+                                      {/* Additional info for select-days */}
+                                      {selectedVariant.deliveryOption === "select-days" && selectedVariant.selectedDays.length > 0 && (
+                                        <div className="mt-1 pt-1 border-t border-gray-200">
+                                          <div className="text-[10px] text-gray-600">
+                                            Days: {selectedVariant.selectedDays.join(", ")}
                                           </div>
                                         </div>
                                       )}
@@ -2481,9 +2390,9 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
                         <div className="flex justify-between">
                           <span className="text-gray-600">Total Quantity:</span>
-                          <span>
+                          <span className="font-medium">
                             {subscriptionSummary.totalQuantity}{" "}
-                            {!hasVariants ? product?.unit || "" : "items"}
+                            {!hasVariants ? product?.name || "" : "items"}
                           </span>
                         </div>
 
@@ -2509,8 +2418,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                           </div>
                         )}
 
-                        <div className="border-t border-gray-200 pt-2 mt-2">
-                          <div className="flex justify-between font-medium">
+                        <div className="border-t border-gray-200 pt-1.5 mt-1.5">
+                          <div className="flex justify-between font-medium text-sm">
                             <span>Total Price:</span>
                             <span className="text-green-600">
                               ₹{subscriptionSummary.totalPrice.toFixed(2)}
@@ -2518,8 +2427,11 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                           </div>
                         </div>
                       </div>
+                      
                     </div>
+                    
                   )}
+                  
                 </div>
               </div>
             </>
@@ -2580,10 +2492,10 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                   variant,
                                   selectedPeriod
                                 )}{" "}
-                                {variant.unit && `per ${variant.unit}`}
+                                {variant.name && `per ${variant.name}`}
                               </Badge>
                             </div>
-                            <div className="text-xs text-gray-600 space-y-1">
+                            <div className="text-sm text-gray-600 space-y-1">
                               <div>Schedule: {scheduleText}</div>
                               <div>Deliveries: {deliveryCount} times</div>
                               {selectedVariant.deliveryOption !==
@@ -2615,7 +2527,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   <span className="text-sm font-medium">Total Quantity:</span>
                   <span>
                     {subscriptionSummary?.totalQuantity}{" "}
-                    {!hasVariants ? product?.unit || "" : "items"}
+                    {!hasVariants ? product?.name || "" : "items"}
                   </span>
                 </div>
 
@@ -2667,7 +2579,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
                 {useWallet && walletBalance > 0 && (
                   <div className="bg-white p-3 rounded border border-blue-300">
-                    <div className="text-xs text-blue-700 space-y-1">
+                    <div className="text-sm text-blue-700 space-y-1">
                       <div className="flex justify-between">
                         <span>Wallet Balance:</span>
                         <span>₹{walletBalance.toFixed(2)}</span>
@@ -2693,7 +2605,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 <>
                   {remainingPayable > 0 ? (
                     <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
-                      <p className="text-xs text-blue-700 flex items-start">
+                      <p className="text-sm text-blue-700 flex items-start">
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           className="h-4 w-4 mr-1.5 mt-0.5 flex-shrink-0"
@@ -2721,7 +2633,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     </div>
                   ) : (
                     <div className="bg-green-50 p-3 rounded-md border border-green-100">
-                      <p className="text-xs text-green-700 flex items-start">
+                      <p className="text-sm text-green-700 flex items-start">
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           className="h-4 w-4 mr-1.5 mt-0.5 flex-shrink-0"
@@ -2745,7 +2657,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 </>
               )}
               <div className="bg-green-50 p-3 rounded-md border border-green-100">
-                <p className="text-xs text-primary flex items-start">
+                <p className="text-sm text-primary flex items-start">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-4 w-4 mr-1.5 mt-0.5 flex-shrink-0"
@@ -2774,11 +2686,11 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     if (address.id === selectedAddressId) {
                       return (
                         <div key={address.id} className="text-sm">
-                          <Badge variant="outline" className="mt-1">
+                          <Badge variant="outline" className="mt-1 ">
                             {address.label}
                           </Badge>
                           <p>
-                            <span className="font-medium">
+                            <span className="font-medium ">
                               {address.recipientName}
                             </span>{" "}
                             • {address.mobile}
@@ -2853,7 +2765,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     </div>
                   </RadioGroup>
                   {formErrors.label && (
-                    <p className="text-red-500 text-xs mt-1">
+                    <p className="text-red-500 text-sm mt-1">
                       {formErrors.label}
                     </p>
                   )}
@@ -2874,7 +2786,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
                   />
                   {formErrors.recipientName && (
-                    <p className="text-red-500 text-xs mt-1">
+                    <p className="text-red-500 text-sm mt-1">
                       {formErrors.recipientName}
                     </p>
                   )}
@@ -2895,7 +2807,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
                   />
                   {formErrors.mobile && (
-                    <p className="text-red-500 text-xs mt-1">
+                    <p className="text-red-500 text-sm mt-1">
                       {formErrors.mobile}
                     </p>
                   )}
@@ -2916,7 +2828,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
                   />
                   {formErrors.plotBuilding && (
-                    <p className="text-red-500 text-xs mt-1">
+                    <p className="text-red-500 text-sm mt-1">
                       {formErrors.plotBuilding}
                     </p>
                   )}
@@ -2937,7 +2849,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
                   />
                   {formErrors.streetArea && (
-                    <p className="text-red-500 text-xs mt-1">
+                    <p className="text-red-500 text-sm mt-1">
                       {formErrors.streetArea}
                     </p>
                   )}
@@ -3054,7 +2966,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     </p>
                   )}
                   <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
-                    <p className="text-xs text-blue-700">
+                    <p className="text-sm text-blue-700">
                       <span className="font-medium">Note:</span> If your area is
                       not listed above, please contact us at{" "}
                       <span className="font-semibold">+91-9920999100</span> for
@@ -3079,7 +2991,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
                   />
                   {formErrors.pincode && (
-                    <p className="text-red-500 text-xs mt-1">
+                    <p className="text-red-500 text-sm mt-1">
                       {formErrors.pincode}
                     </p>
                   )}
@@ -3119,7 +3031,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       You Save: ₹{calculateSavings().toFixed(2)}
                     </span>
                   </div>
-                  <span className="text-gray-500 text-xs">vs MRP pricing</span>
+                  <span className="text-gray-500 text-sm">vs MRP pricing</span>
                 </div>
               )}
               <Button
@@ -3180,7 +3092,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       Total Savings: ₹{calculateSavings().toFixed(2)}
                     </span>
                   </div>
-                  <span className="text-gray-500 text-xs">vs MRP pricing</span>
+                  <span className="text-gray-500 text-sm">vs MRP pricing</span>
                 </div>
               )}
               <div className="flex justify-end items-center gap-3 w-full">
