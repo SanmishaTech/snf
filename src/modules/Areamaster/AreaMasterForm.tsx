@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -25,6 +26,7 @@ const AreaMasterForm: React.FC<AreaMasterFormProps> = ({ initialData, onClose, o
     pincodes: '',
     depotId: '', // depotId is now required
     deliveryType: DeliveryType.HandDelivery,
+    isDairyProduct: false,
   });
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [depots, setDepots] = useState<DepotListItem[]>([]);
@@ -38,6 +40,7 @@ const AreaMasterForm: React.FC<AreaMasterFormProps> = ({ initialData, onClose, o
         pincodes: initialData.pincodes,
         depotId: initialData.depotId ? String(initialData.depotId) : '', // Always string for Select
         deliveryType: initialData.deliveryType || DeliveryType.HandDelivery, // Ensure valid DeliveryType
+        isDairyProduct: initialData.isDairyProduct || false,
       });
     } else if (!initialData) {
       // Reset for new form only if initialData is not present
@@ -46,6 +49,7 @@ const AreaMasterForm: React.FC<AreaMasterFormProps> = ({ initialData, onClose, o
         pincodes: '',
         depotId: '',
         deliveryType: DeliveryType.HandDelivery,
+        isDairyProduct: false,
       });
     }
   }, [initialData, depots]);
@@ -146,6 +150,14 @@ const AreaMasterForm: React.FC<AreaMasterFormProps> = ({ initialData, onClose, o
     } else if (name === 'deliveryType') {
         setErrors(prevErrors => ({ ...prevErrors, deliveryType: '' }));
     }
+  };
+
+  // Handler for checkbox components
+  const handleCheckboxChange = (name: string, checked: boolean) => {
+    setFormData(prevFormData => ({
+      ...prevFormData,
+      [name]: checked,
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -280,6 +292,22 @@ const AreaMasterForm: React.FC<AreaMasterFormProps> = ({ initialData, onClose, o
           </SelectContent>
         </Select>
         {errors.deliveryType && <p className="mt-1 text-xs text-red-500">{errors.deliveryType}</p>}
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="isDairyProduct"
+            checked={formData.isDairyProduct}
+            onCheckedChange={(checked) => handleCheckboxChange('isDairyProduct', !!checked)}
+          />
+          <Label htmlFor="isDairyProduct" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+            Supports Dairy Products
+          </Label>
+        </div>
+        <p className="text-xs text-gray-600">
+          Check this if this delivery area can handle dairy products that require special handling/temperature control.
+        </p>
       </div>
 
       <div className="flex justify-end space-x-3 pt-4">

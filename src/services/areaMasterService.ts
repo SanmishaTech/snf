@@ -14,6 +14,7 @@ export interface AreaMaster {
   depotId?: string | null; // Changed to string
   depot?: { id: string; name: string; } | null; // Added depot object
   deliveryType: DeliveryType;
+  isDairyProduct: boolean; // Flag to indicate if area supports dairy products
   createdAt: string; // ISO date string
   updatedAt: string; // ISO date string
 }
@@ -24,6 +25,7 @@ export interface AreaMasterFormData {
   pincodes: string;
   depotId?: string | null; // Changed to string
   deliveryType: DeliveryType;
+  isDairyProduct: boolean;
 }
 
 // Interface for a simplified Depot object (for dropdowns)
@@ -104,4 +106,46 @@ export const deleteAreaMaster = async (id: number): Promise<{ message: string }>
  */
 export const getAllDepots = async (): Promise<DepotLite[]> => {
   return get<DepotLite[]>('/admin/depots/all-list'); // Assumes a new endpoint that returns all depots
+};
+
+// Public API functions for frontend consumption
+
+/**
+ * Get all public area masters for frontend dropdown
+ * @returns A list of all area masters
+ */
+export const getPublicAreaMasters = async (): Promise<AreaMaster[]> => {
+  const response = await get<{ success: boolean; data: AreaMaster[] }>('/api/public/area-masters');
+  return response.data;
+};
+
+/**
+ * Validate if an area supports dairy products by pincode
+ * @param pincode - The pincode to validate
+ * @returns Validation result with support information
+ */
+export const validateDairySupport = async (pincode: string): Promise<{
+  success: boolean;
+  supported: boolean;
+  message: string;
+  areas: AreaMaster[];
+  dairySupportedAreas?: AreaMaster[];
+}> => {
+  return get<{
+    success: boolean;
+    supported: boolean;
+    message: string;
+    areas: AreaMaster[];
+    dairySupportedAreas?: AreaMaster[];
+  }>(`/api/public/area-masters/validate-dairy/${pincode}`);
+};
+
+/**
+ * Get area masters by pincode
+ * @param pincode - The pincode to search for
+ * @returns Area masters that service this pincode
+ */
+export const getAreaMastersByPincode = async (pincode: string): Promise<AreaMaster[]> => {
+  const response = await get<{ success: boolean; data: AreaMaster[]; count: number }>(`/api/public/area-masters/by-pincode/${pincode}`);
+  return response.data;
 };

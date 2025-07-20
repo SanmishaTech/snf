@@ -11,8 +11,15 @@ import { DialogClose } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { get, post } from "@/services/apiService";
 import { toast } from "sonner";
-import AddressForm from "@/modules/Address/components/AddressForm";
 import { formatDate } from "@/lib/formatter";
+import { INDIAN_STATES } from "@/config/states";
+import {
+  getPublicAreaMasters,
+  validateDairySupport,
+  type AreaMaster,
+} from "@/services/areaMasterService";
+import { createLead } from "@/services/leadService";
+import { ServiceNotAvailableDialog } from "@/modules/Lead";
 
 interface ProductData {
   id: number;
@@ -20,6 +27,7 @@ interface ProductData {
   price: number;
   rate: number;
   unit?: string;
+  isDairyProduct?: boolean; // Flag to indicate if product is dairy
   depotVariantPricing?: {
     buyOncePrice: number;
     subscriptionPrice: number;
@@ -126,30 +134,192 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
   const [depotVariants, setDepotVariants] = useState<DepotVariant[]>([]);
   const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
   const [locations, setLocations] = useState<LocationData[]>([]);
+  const [areaMasters, setAreaMasters] = useState<AreaMaster[]>([]);
+  const [selectedAreaMaster, setSelectedAreaMaster] = useState<AreaMaster | null>(null);
+  const [showServiceNotAvailableDialog, setShowServiceNotAvailableDialog] = useState(false);
+  const [serviceNotAvailableMessage, setServiceNotAvailableMessage] = useState<string>("");
+  
+  // Address form state (matching SubscriptionModal)
+  const [addressFormState, setAddressFormState] = useState({
+    recipientName: "",
+    mobile: "",
+    plotBuilding: "",
+    streetArea: "",
+    landmark: "",
+    pincode: "",
+    city: "Dombivli",
+    state: "Maharashtra",
+    isDefault: false,
+    label: "Home",
+  });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  // Fetch locations list when modal opens
+  // Fetch area masters list when modal opens
   useEffect(() => {
     if (isOpen) {
-      fetchLocations();
+      fetchAreaMasters();
     }
   }, [isOpen]);
 
-  // Fetch list of serviceable locations (used in AddressForm)
-  const fetchLocations = async () => {
+  // Fetch list of serviceable area masters
+  const fetchAreaMasters = async () => {
     try {
-      const response = await get("/public/locations");
-      // Use the same structure as useLocations hook
-      if (response && response.data && Array.isArray(response.data.locations)) {
-        setLocations(response.data.locations);
-      } else if (response && Array.isArray(response)) {
-        // Fallback in case the response structure is different
-        setLocations(response);
-      }
+      const areaMastersList = await getPublicAreaMasters();
+      setAreaMasters(areaMastersList);
     } catch (error) {
-      console.error("Failed to fetch locations:", error);
-      toast.error("Could not load locations.");
+      console.error("Failed to fetch area masters:", error);
+      toast.error("Could not load delivery areas.");
     }
-  }
+  };
+
+  // Handle area master selection and dairy validation
+  const handleAreaMasterSelection = async (areaMaster: AreaMaster) => {
+    setSelectedAreaMaster(areaMaster);
+    
+    // Store dairy validation message for later use during save, but don't show dialog immediately
+    if (product?.isDairyProduct && !areaMaster.isDairyProduct) {
+      const message = `We don't currently serve dairy products in ${areaMaster.name}. However, we'd love to expand our dairy delivery services to your area!`;
+      setServiceNotAvailableMessage(message);
+    } else {
+      // Area is valid for this product type
+      setServiceNotAvailableMessage("");
+    }
+  };
+
+  // Address form handlers (matching SubscriptionModal)
+  const handleAddressChange = (field: keyof typeof addressFormState, value: string | boolean) => {
+    setAddressFormState(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleAddressFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    setAddressFormState(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handleAddressLabelChange = (value: string) => {
+    setAddressFormState(prev => ({
+      ...prev,
+      label: value
+    }));
+  };
+
+  const validateAddressForm = (): boolean => {
+    const errors: Record<string, string> = {};
+    if (!addressFormState?.recipientName?.trim())
+      errors.recipientName = "Recipient name is required.";
+    if (!addressFormState?.mobile?.trim())
+      errors.mobile = "Mobile number is required.";
+    else if (!/^\d{10}$/.test(addressFormState.mobile.trim()))
+      errors.mobile = "Mobile number must be 10 digits.";
+    if (!addressFormState?.plotBuilding?.trim())
+      errors.plotBuilding = "Plot/Building is required.";
+    if (!addressFormState?.streetArea?.trim())
+      errors.streetArea = "Street/Area is required.";
+    if (!addressFormState?.pincode?.trim())
+      errors.pincode = "Pincode is required.";
+    else if (!/^\d{6}$/.test(addressFormState.pincode.trim()))
+      errors.pincode = "Pincode must be 6 digits.";
+    if (!addressFormState?.city?.trim()) errors.city = "City is required.";
+    if (!addressFormState?.state?.trim()) errors.state = "State is required.";
+    if (!addressFormState?.label?.trim())
+      errors.label = "Address label is required.";
+    
+    // Area master selection is required
+    if (!selectedAreaMaster) {
+      errors.areaMaster = "Please select a delivery area.";
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSaveAddress = async () => {
+    if (!validateAddressForm()) return;
+    
+    // Check if this is a dairy product in a non-dairy area
+    const isDairyProductInNonDairyArea = product?.isDairyProduct && 
+      selectedAreaMaster && 
+      !selectedAreaMaster.isDairyProduct;
+    
+    if (isDairyProductInNonDairyArea) {
+      // Create lead instead of address
+      const leadData = {
+        name: addressFormState.recipientName,
+        mobile: addressFormState.mobile,
+        email: "",
+        plotBuilding: addressFormState.plotBuilding,
+        streetArea: addressFormState.streetArea,
+        landmark: addressFormState.landmark || "",
+        pincode: addressFormState.pincode,
+        city: addressFormState.city,
+        state: addressFormState.state,
+        productId: product.id,
+        isDairyProduct: true,
+        notes: `Lead captured from buy-once modal for area: ${selectedAreaMaster.name}`,
+        status: "NEW"
+      };
+
+      try {
+        await createLead(leadData);
+        toast.success("Thank you for your interest! We've noted your details and will contact you when we expand dairy delivery to your area.");
+        
+        // Show area not served message
+        setServiceNotAvailableMessage(`We don't currently serve dairy products in ${selectedAreaMaster.name}. However, we've saved your details and will notify you when service becomes available in your area!`);
+        setShowServiceNotAvailableDialog(true);
+        
+        // Reset form
+        setAddressFormState({
+          recipientName: "",
+          mobile: "",
+          plotBuilding: "",
+          streetArea: "",
+          landmark: "",
+          pincode: "",
+          city: "Dombivli",
+          state: "Maharashtra",
+          isDefault: false,
+          label: "Home",
+        });
+        setSelectedAreaMaster(null);
+        setShowAddressFormView(false);
+      } catch (error) {
+        console.error("Failed to save lead:", error);
+        toast.error("An error occurred while saving your information. Please try again.");
+      }
+    } else {
+      // Normal address saving flow
+      try {
+        const newAddress = await post('/delivery-addresses', addressFormState);
+        await fetchUserAddresses();
+        setSelectedAddressId(newAddress.id);
+        setShowAddressFormView(false);
+        toast.success("Address added successfully!");
+        
+        // Reset form
+        setAddressFormState({
+          recipientName: "",
+          mobile: "",
+          plotBuilding: "",
+          streetArea: "",
+          landmark: "",
+          pincode: "",
+          city: "Dombivli",
+          state: "Maharashtra",
+          isDefault: false,
+          label: "Home",
+        });
+      } catch (error) {
+        console.error("Failed to save address:", error);
+        toast.error("An error occurred while saving your address. Please try again.");
+      }
+    }
+  };
 
   const getBuyOncePrice = () => {
     return product?.depotVariantPricing?.buyOncePrice || product?.buyOncePrice || product?.mrp || 0;
@@ -338,12 +508,6 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
     }
   };
 
-  const handleAddressSaveSuccess = (newAddress: AddressData) => {
-    fetchUserAddresses();
-    setSelectedAddressId(newAddress.id);
-    setShowAddressFormView(false);
-    toast.success("Address added successfully!");
-  };
 
   if (!product) return null;
 
@@ -384,28 +548,263 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
 
         <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto flex-grow pb-8">
           {showAddressFormView ? (
-            <AddressForm
-              mode="create"
-              onSuccess={handleAddressSaveSuccess}
-              onCancel={() => setShowAddressFormView(false)}
-              locations={locations}
-              initialData={{
-                recipientName: '',
-                mobile: '',
-                plotBuilding: '',
-                streetArea: '',
-                landmark: '',
-                pincode: '',
-                city: 'Dombivli',
-                state: 'Maharashtra',
-                isDefault: false,
-                label: 'Home',
-                id: '',
-                memberId: 0,
-                createdAt: '',
-                updatedAt: ''
-              }}
-            />
+            /* Inline Address Form - matching SubscriptionModal */
+            <div className="bg-white p-4 rounded-md space-y-4">
+              <h3 className="text-lg font-semibold">Add New Address</h3>
+              <div className="space-y-5">
+                <div>
+                  <Label htmlFor="address-label" className="text-sm font-medium mb-2 block">
+                    Address Label
+                  </Label>
+                  <RadioGroup
+                    defaultValue="Home"
+                    value={addressFormState.label}
+                    onValueChange={handleAddressLabelChange}
+                    className="flex gap-4 mt-1"
+                    id="address-label"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="Home" id="type-home" className="text-green-500" />
+                      <Label htmlFor="type-home" className="text-sm">Home</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="Work" id="type-work" className="text-green-500" />
+                      <Label htmlFor="type-work" className="text-sm">Work</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="Other" id="label-other" />
+                      <Label htmlFor="label-other">Other</Label>
+                    </div>
+                  </RadioGroup>
+                  {formErrors.label && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.label}</p>
+                  )}
+                </div>
+                
+                <div>
+                  <Label htmlFor="recipientName" className="text-sm font-medium mb-1.5 block">
+                    Delivery To*
+                  </Label>
+                  <input
+                    id="recipientName"
+                    name="recipientName"
+                    value={addressFormState.recipientName}
+                    onChange={handleAddressFormChange}
+                    placeholder="Full name of recipient"
+                    className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
+                  />
+                  {formErrors.recipientName && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.recipientName}</p>
+                  )}
+                </div>
+                
+                <div>
+                  <Label htmlFor="mobile" className="text-sm font-medium mb-1.5 block">
+                    Mobile*
+                  </Label>
+                  <input
+                    id="mobile"
+                    name="mobile"
+                    value={addressFormState.mobile}
+                    onChange={handleAddressFormChange}
+                    placeholder="Mobile number"
+                    className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
+                  />
+                  {formErrors.mobile && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.mobile}</p>
+                  )}
+                </div>
+                
+                <div>
+                  <Label htmlFor="plotBuilding" className="text-sm font-medium mb-1.5 block">
+                    Plot/Building*
+                  </Label>
+                  <input
+                    id="plotBuilding"
+                    name="plotBuilding"
+                    value={addressFormState.plotBuilding}
+                    onChange={handleAddressFormChange}
+                    placeholder="Plot number, building name"
+                    className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
+                  />
+                  {formErrors.plotBuilding && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.plotBuilding}</p>
+                  )}
+                </div>
+                
+                <div>
+                  <Label htmlFor="streetArea" className="text-sm font-medium mb-1.5 block">
+                    Street/Area*
+                  </Label>
+                  <input
+                    id="streetArea"
+                    name="streetArea"
+                    value={addressFormState.streetArea}
+                    onChange={handleAddressFormChange}
+                    placeholder="Street, area"
+                    className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
+                  />
+                  {formErrors.streetArea && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.streetArea}</p>
+                  )}
+                </div>
+                
+                <div>
+                  <Label htmlFor="landmark" className="text-sm font-medium mb-1.5 block">
+                    Landmark (Optional)
+                  </Label>
+                  <input
+                    id="landmark"
+                    name="landmark"
+                    value={addressFormState.landmark}
+                    onChange={handleAddressFormChange}
+                    placeholder="Nearby landmark"
+                    className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="city" className="text-sm font-medium mb-1.5 block">
+                      City*
+                    </Label>
+                    <Input
+                      id="city"
+                      value={addressFormState.city}
+                      onChange={(e) => handleAddressChange("city", e.target.value)}
+                      placeholder="e.g., Metropolis"
+                      className={formErrors.city ? "border-red-500" : ""}
+                    />
+                    {formErrors.city && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors.city}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="state" className="text-sm font-medium mb-1.5 block">
+                      State*
+                    </Label>
+                    <Select
+                      onValueChange={(val) => handleAddressChange("state", val)}
+                      value={addressFormState.state}
+                    >
+                      <SelectTrigger className={formErrors.state ? "border-red-500" : ""}>
+                        <SelectValue placeholder="Select a state" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60 overflow-y-auto">
+                        {INDIAN_STATES.filter(st => st && typeof st.label === 'string').map((st) => (
+                          <SelectItem key={st.value} value={st.label}>
+                            {st.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {formErrors.state && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors.state}</p>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Area Master Selection */}
+                <div>
+                  <Label htmlFor="areaMaster" className="text-sm font-medium mb-1.5 block">
+                    Our Delivery Areas*
+                    {product?.isDairyProduct && (
+                      <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                        Dairy Product
+                      </span>
+                    )}
+                  </Label>
+                  <Select
+                    onValueChange={(value) => {
+                      const areaMaster = areaMasters.find(am => am.id === parseInt(value));
+                      if (areaMaster) {
+                        handleAreaMasterSelection(areaMaster);
+                      }
+                    }}
+                    value={selectedAreaMaster?.id?.toString() || ""}
+                  >
+                    <SelectTrigger className={formErrors.areaMaster ? "border-red-500" : ""}>
+                      <SelectValue placeholder="Select your delivery area" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60 overflow-y-auto">
+                      {areaMasters
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .map((areaMaster) => (
+                        <SelectItem
+                          key={areaMaster.id}
+                          value={areaMaster.id.toString()}
+                        >
+                          <div className="flex items-center justify-between w-full">
+                            <span>{areaMaster.name}</span>
+                            <div className="flex gap-1 ml-2">
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                areaMaster.deliveryType === 'HandDelivery' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-blue-100 text-blue-800'
+                              }`}>
+                                {areaMaster.deliveryType === 'HandDelivery' ? 'Hand Delivery' : 'Courier'}
+                              </span>
+                              {areaMaster.isDairyProduct && (
+                                <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">
+                                  Dairy Available
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {formErrors.areaMaster && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.areaMaster}</p>
+                  )}
+                  {product?.isDairyProduct && (
+                    <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
+                      <p className="text-sm text-yellow-700">
+                        <span className="font-medium">Dairy Product Notice:</span> This product requires areas that support dairy delivery. Areas marked with "Dairy Available" can serve this product.
+                      </p>
+                    </div>
+                  )}
+                </div>
+                
+                <div>
+                  <Label htmlFor="pincode" className="text-sm font-medium mb-1.5 block">
+                    Pincode*
+                  </Label>
+                  <input
+                    id="pincode"
+                    name="pincode"
+                    type="text"
+                    value={addressFormState.pincode}
+                    onChange={handleAddressFormChange}
+                    placeholder="Pincode"
+                    className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
+                  />
+                  {formErrors.pincode && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.pincode}</p>
+                  )}
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="isDefault"
+                    name="isDefault"
+                    checked={addressFormState.isDefault}
+                    onChange={(e) =>
+                      setAddressFormState((prev) => ({
+                        ...prev,
+                        isDefault: e.target.checked,
+                      }))
+                    }
+                    className="h-4 w-4 text-green-500 focus:ring-green-500 border-gray-300 rounded"
+                  />
+                  <Label htmlFor="isDefault" className="text-sm">
+                    Set as default address
+                  </Label>
+                </div>
+              </div>
+            </div>
           ) : (
             <>
               {/* Date and Address Selection Inputs - These remain as they are */}
@@ -463,11 +862,14 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                           <p className="text-gray-500 text-sm">Please add an address in your profile first.</p>
                         </div>
                       )}
+                      
                       <Button
                         variant="outline"
                         className="mt-4 text-sm border-orange-500 text-orange-500 w-full hover:bg-orange-50"
                         size="sm"
-                        onClick={() => setShowAddressFormView(true)}
+                        onClick={() => {
+                          setShowAddressFormView(true);
+                        }}
                       >
                         <Plus className="h-4 w-4 mr-2" /> Add New Address
                       </Button>
@@ -752,6 +1154,40 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
           )}
         </div>
 
+        {/* Address Form Footer */}
+        {showAddressFormView && (
+          <DialogFooter className="p-4 sm:p-6 border-t bg-white">
+            <div className="flex justify-end gap-3 w-full">
+              <Button
+                variant="outline"
+                onClick={() => setShowAddressFormView(false)}
+                className="rounded-lg h-11 border-gray-300"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveAddress}
+                className="bg-primary hover:bg-primary text-white rounded-lg h-11"
+                disabled={
+                  !!(
+                    formErrors.recipientName ||
+                    formErrors.mobile ||
+                    formErrors.plotBuilding ||
+                    formErrors.streetArea ||
+                    formErrors.pincode ||
+                    formErrors.city ||
+                    formErrors.state ||
+                    formErrors.label ||
+                    formErrors.areaMaster
+                  )
+                }
+              >
+                Save Address
+              </Button>
+            </div>
+          </DialogFooter>
+        )}
+
         {/* Footer with Confirm Button */}
         {!showAddressFormView && (
           <DialogFooter className="p-4 sm:p-6 border-t bg-gray-50">
@@ -793,6 +1229,15 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
           </DialogFooter>
         )}
       </DialogContent>
+      
+      {/* Service Not Available Dialog */}
+      <ServiceNotAvailableDialog
+        isOpen={showServiceNotAvailableDialog}
+        onOpenChange={setShowServiceNotAvailableDialog}
+        productName={product?.name}
+        areaName={selectedAreaMaster?.name}
+        message={serviceNotAvailableMessage}
+      />
     </Dialog>
   );
 };

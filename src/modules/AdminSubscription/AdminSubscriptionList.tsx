@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { get, put } from '@/services/apiService'; // Assuming you have a configured apiService
+import { get, put, post } from '@/services/apiService'; // Assuming you have a configured apiService
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,9 +8,10 @@ import { Skeleton } from '@/components/ui/skeleton'; // For loading state
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { X, UserPlus, UserIcon, PhoneIcon, MailIcon, PackageIcon, ShoppingCartIcon, IndianRupeeIcon, CalendarIcon, CalendarCheckIcon, UserCheckIcon, Calendar } from 'lucide-react';
+import { X, UserPlus, UserIcon, PhoneIcon, MailIcon, PackageIcon, ShoppingCartIcon, IndianRupeeIcon, CalendarIcon, CalendarCheckIcon, UserCheckIcon, Calendar, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from "sonner"; // Using Sonner for toasts
+import { BulkAgencyAssignmentModal } from './components/BulkAgencyAssignmentModal';
 
 // Define interfaces based on expected API response and schema
 interface Agency {
@@ -27,7 +28,7 @@ interface User {
 }
 
 interface Member {
-  user: User;
+  user?: User;
 }
 
 interface Product {
@@ -60,7 +61,7 @@ interface DeliveryAddress {
 
 interface Subscription {
   id: number;
-  member: Member;
+  member?: Member;
   product: Product;
   depotProductVariant?: DepotProductVariant; // Added depotProductVariant field
   deliverySchedule: string; // DAILY, WEEKDAYS, ALTERNATE_DAYS, SELECT_DAYS, VARYING
@@ -105,7 +106,7 @@ interface ProductOrder {
   paymentReferenceNo?: string | null;
   paymentDate?: string | null;
   createdAt: string;
-  member: Member;
+  member?: Member;
   subscriptions: Subscription[];
 }
 
@@ -435,7 +436,7 @@ const AssignAgentModal: React.FC<AssignAgentModalProps> = ({
         <DialogHeader>
           <DialogTitle>Assign Agent for: {subscription.product.name}</DialogTitle>
           <DialogDescription>
-            Subscription for {subscription.member.user.name}
+            Subscription for {subscription.member?.user?.name || 'Unknown Member'}
           </DialogDescription>
         </DialogHeader>
         <DialogClose className="absolute right-4 top-4 z-10" onClick={() => onOpenChange(false)}>
@@ -507,9 +508,9 @@ const AssignAgentModal: React.FC<AssignAgentModalProps> = ({
           <div className="bg-gray-50 p-4 rounded-lg">
             <h3 className="text-sm font-medium mb-2">Member Details</h3>
             <div className="grid gap-1 text-sm">
-              <p><span className="text-gray-500">Name:</span> {subscription.member.user.name}</p>
-              <p><span className="text-gray-500">Email:</span> {subscription.member.user.email}</p>
-              {subscription.member.user.mobile && (
+              <p><span className="text-gray-500">Name:</span> {subscription.member?.user?.name || 'N/A'}</p>
+              <p><span className="text-gray-500">Email:</span> {subscription.member?.user?.email || 'N/A'}</p>
+              {subscription.member?.user?.mobile && (
                 <p><span className="text-gray-500">Mobile:</span> {subscription.member.user.mobile}</p>
               )}
             </div>
@@ -563,9 +564,11 @@ const AdminSubscriptionList: React.FC = () => {
   const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isAssignAgentModalOpen, setIsAssignAgentModalOpen] = useState(false);
+  const [isBulkAssignModalOpen, setIsBulkAssignModalOpen] = useState(false);
   const [agencies, setAgencies] = useState<Agency[]>([]);
   const [isLoadingAgencies, setIsLoadingAgencies] = useState<boolean>(false);
   const [showFilters] = useState<boolean>(false);
+  const [showUnassignedOnly, setShowUnassignedOnly] = useState<boolean>(false);
   const [filters, setFilters] = useState<{[key: string]: string | undefined}>({
     searchTerm: '',
     memberName: '',
@@ -765,6 +768,27 @@ const AdminSubscriptionList: React.FC = () => {
     }
   };
 
+  const handleOpenBulkAssignModal = () => {
+    setIsBulkAssignModalOpen(true);
+    fetchAgencies();
+  };
+
+  const handleBulkAssignAgency = async (subscriptionIds: number[], agencyId: number | null) => {
+    try {
+      await post('/subscriptions/bulk-assign-agency', {
+        subscriptionIds,
+        agencyId
+      });
+      
+      toast.success(`Successfully assigned agency to ${subscriptionIds.length} subscription(s)`);
+      fetchProductOrders(); // Refresh the list to show updated assignments
+    } catch (error) {
+      console.error('Bulk agency assignment failed:', error);
+      toast.error('Failed to assign agencies. Please try again.');
+      throw error; // Re-throw to let the modal handle it
+    }
+  };
+
   const formatWeekdayToShort = (day: string): string => {
     const dayMap: Record<string, string> = {
       'MONDAY': 'Mon',
@@ -824,7 +848,23 @@ const AdminSubscriptionList: React.FC = () => {
   return (
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
       
-      <h1 className="text-2xl font-bold mb-6">Admin - Subscriptions Management</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Admin - Subscriptions Management</h1>
+        <div className="flex gap-2">
+          <Button 
+            variant={showUnassignedOnly ? "default" : "outline"} 
+            onClick={() => setShowUnassignedOnly(!showUnassignedOnly)} 
+            className="flex items-center gap-2"
+          >
+            <UserPlus className="h-4 w-4" />
+            {showUnassignedOnly ? "Show All" : "Unassigned Only"}
+          </Button>
+          <Button onClick={handleOpenBulkAssignModal} className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Bulk Assign Agencies
+          </Button>
+        </div>
+      </div>
 
       {/* <Button 
         variant="outline"
@@ -952,7 +992,12 @@ const AdminSubscriptionList: React.FC = () => {
       {isLoading ? (
         renderSkeletons(7)
       ) : productOrders.length > 0 ? (
-        productOrders.map((order) => {
+        productOrders.filter((order) => {
+          if (!showUnassignedOnly) return true;
+          
+          // Show only orders that have at least one subscription without an assigned agency
+          return order.subscriptions.some(subscription => !subscription.agencyId);
+        }).map((order) => {
           const firstSub = order.subscriptions[0];
           
           return (
@@ -1178,7 +1223,7 @@ const AdminSubscriptionList: React.FC = () => {
                       </TooltipContent>
                     </Tooltip>
                     
-                    {/* <Tooltip>
+                    <Tooltip>
                       <TooltipTrigger asChild>
                         <Button 
                           variant="outline" 
@@ -1193,7 +1238,7 @@ const AdminSubscriptionList: React.FC = () => {
                       <TooltipContent side="top">
                         <p>{!!firstSub?.agencyId ? "Agent assigned" : firstSub?.paymentStatus !== 'PAID' ? "Complete payment first" : "Assign Agent"}</p>
                       </TooltipContent>
-                    </Tooltip> */}
+                    </Tooltip>
                   </TooltipProvider>
                 </div>
               </TableCell>
@@ -1247,6 +1292,15 @@ const AdminSubscriptionList: React.FC = () => {
           onUpdateSubscription={handleAgentAssignmentUpdate}
         />
       )}
+
+      <BulkAgencyAssignmentModal
+        isOpen={isBulkAssignModalOpen}
+        onOpenChange={setIsBulkAssignModalOpen}
+        subscriptions={productOrders.flatMap(order => order.subscriptions)}
+        agencies={agencies}
+        isLoadingAgencies={isLoadingAgencies}
+        onBulkUpdateSubscriptions={handleBulkAssignAgency}
+      />
       {/* <Toaster richColors position="top-right" /> */}
     </div>
   );

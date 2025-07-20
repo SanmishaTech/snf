@@ -48,6 +48,13 @@ import {
   type OrderWithSubscriptionsRequest,
   type SubscriptionDetail,
 } from "@/services/subscriptionService";
+import {
+  getPublicAreaMasters,
+  validateDairySupport,
+  type AreaMaster,
+} from "@/services/areaMasterService";
+import { createLead } from "@/services/leadService";
+import { ServiceNotAvailableDialog } from "@/modules/Lead";
 
 // Enhanced interfaces to support variants with individual delivery schedules
 interface ProductVariant {
@@ -100,6 +107,7 @@ interface ProductData {
   price15Day?: number;
   price1Month?: number;
   name?: string;
+  isDairyProduct?: boolean; // Flag to indicate if product is dairy
   variants?: ProductVariant[];
 }
 
@@ -193,6 +201,10 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [useWallet, setUseWallet] = useState(true);
   const [locations, setLocations] = useState<LocationData[]>([]);
+  const [areaMasters, setAreaMasters] = useState<AreaMaster[]>([]);
+  const [selectedAreaMaster, setSelectedAreaMaster] = useState<AreaMaster | null>(null);
+  const [showServiceNotAvailableDialog, setShowServiceNotAvailableDialog] = useState(false);
+  const [serviceNotAvailableMessage, setServiceNotAvailableMessage] = useState<string>("");
 
   useEffect(() => {
     const resetOptionIfNeeded = (option: string) => {
@@ -226,7 +238,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     Omit<AddressData, "id" | "location">
   >({
     recipientName: "",
-    mobile: userMobile,
+    mobile: userMobile || "",
     plotBuilding: "",
     streetArea: "",
     landmark: "",
@@ -350,19 +362,13 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   );
 
   useEffect(() => {
-  const fetchLocations = async () => {
+  const fetchAreaMasters = async () => {
     try {
-      const response = await get("/public/locations");
-      // Use the same structure as useLocations hook
-      if (response && response.data && Array.isArray(response.data.locations)) {
-        setLocations(response.data.locations);
-      } else if (response && Array.isArray(response)) {
-        // Fallback in case the response structure is different
-        setLocations(response);
-      }
+      const areaMastersList = await getPublicAreaMasters();
+      setAreaMasters(areaMastersList);
     } catch (error) {
-      console.error("Failed to fetch locations:", error);
-      toast.error("Could not load locations.");
+      console.error("Failed to fetch area masters:", error);
+      toast.error("Could not load delivery areas.");
     }
   };
 
@@ -370,7 +376,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       if (productId && depotId != null) {
         fetchVariants(productId, depotId);
       }
-      fetchLocations();
+      fetchAreaMasters();
     } else {
       // Reset on close
       setProductVariants([]);
@@ -515,6 +521,16 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     fetchUserProfile();
   }, []);
 
+  // Sync userMobile with addressFormState when userMobile is updated
+  useEffect(() => {
+    if (userMobile) {
+      setAddressFormState(prev => ({
+        ...prev,
+        mobile: userMobile
+      }));
+    }
+  }, [userMobile]);
+
   const handleCancelAddAddress = () => {
     setModalView("subscriptionDetails");
     setAddressFormState({
@@ -535,24 +551,29 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
   const validateAddressForm = (): boolean => {
     const errors: Record<string, string> = {};
-    if (!addressFormState.recipientName.trim())
+    if (!addressFormState?.recipientName?.trim())
       errors.recipientName = "Recipient name is required.";
-    if (!addressFormState.mobile.trim())
+    if (!addressFormState?.mobile?.trim())
       errors.mobile = "Mobile number is required.";
     else if (!/^\d{10}$/.test(addressFormState.mobile.trim()))
       errors.mobile = "Mobile number must be 10 digits.";
-    if (!addressFormState.plotBuilding.trim())
+    if (!addressFormState?.plotBuilding?.trim())
       errors.plotBuilding = "Plot/Building is required.";
-    if (!addressFormState.streetArea.trim())
+    if (!addressFormState?.streetArea?.trim())
       errors.streetArea = "Street/Area is required.";
-    if (!addressFormState.pincode.trim())
+    if (!addressFormState?.pincode?.trim())
       errors.pincode = "Pincode is required.";
     else if (!/^\d{6}$/.test(addressFormState.pincode.trim()))
       errors.pincode = "Pincode must be 6 digits.";
-    if (!addressFormState.city.trim()) errors.city = "City is required.";
-    if (!addressFormState.state.trim()) errors.state = "State is required.";
-    if (!addressFormState.label.trim())
+    if (!addressFormState?.city?.trim()) errors.city = "City is required.";
+    if (!addressFormState?.state?.trim()) errors.state = "State is required.";
+    if (!addressFormState?.label?.trim())
       errors.label = "Address label is required.";
+    
+    // Area master selection is required
+    if (!selectedAreaMaster) {
+      errors.areaMaster = "Please select a delivery area.";
+    }
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -730,31 +751,98 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
   const handleSaveAddress = async () => {
     if (!validateAddressForm()) return;
-    const addressToCreate = {
-      ...addressFormState,
-    };
+    
+    // Check if this is a dairy product in a non-dairy area
+    const isDairyProductInNonDairyArea = product?.isDairyProduct && 
+      selectedAreaMaster && 
+      !selectedAreaMaster.isDairyProduct;
+    
+    
+    if (isDairyProductInNonDairyArea) {
+      // Create lead instead of address
+      const leadData = {
+        name: addressFormState.recipientName,
+        mobile: addressFormState.mobile,
+        email: "", // Optional, we don't collect email in address form
+        plotBuilding: addressFormState.plotBuilding,
+        streetArea: addressFormState.streetArea,
+        landmark: addressFormState.landmark || "",
+        pincode: addressFormState.pincode,
+        city: addressFormState.city,
+        state: addressFormState.state,
+        productId: product.id,
+        isDairyProduct: true,
+        notes: `Lead captured from subscription modal for area: ${selectedAreaMaster.name}`,
+        status: "NEW"
+      };
 
-    try {
-      await addressService.createUserAddress(addressToCreate);
-      toast.success("Address saved successfully!");
-      setModalView("subscriptionDetails");
-      setAddressFormState({
-        recipientName: "",
-        mobile: "",
-        plotBuilding: "",
-        streetArea: "",
-        landmark: "",
-        city: "",
-        state: "",
-        pincode: "",
-        isDefault: false,
-        label: "Home",
-      });
-    } catch (error) {
-      console.error("Failed to save address:", error);
-      const errorMessage =
-        "An error occurred while saving your address. Please try again.";
-      toast.error(errorMessage);
+      try {
+        await createLead(leadData);
+        toast.success("Thank you for your interest! We've noted your details and will contact you when we expand dairy delivery to your area.");
+        
+        // Show area not served message
+        setServiceNotAvailableMessage(`We don't currently serve dairy products in ${selectedAreaMaster.name}. However, we'd love to expand our dairy delivery services to your area! We've saved your details and will notify you when service becomes available.`);
+        setShowServiceNotAvailableDialog(true);
+        
+        // Reset form and go back to subscription details
+        setAddressFormState({
+          recipientName: "",
+          mobile: "",
+          plotBuilding: "",
+          streetArea: "",
+          landmark: "",
+          city: "",
+          state: "",
+          isDefault: false,
+          label: "Home",
+        });
+        setSelectedAreaMaster(null);
+        setModalView("subscriptionDetails");
+      } catch (error) {
+        console.error("Failed to save lead:", error);
+        toast.error("An error occurred while saving your information. Please try again.");
+      }
+    } else {
+      // Normal address saving flow
+      const addressToCreate = {
+        ...addressFormState,
+      };
+
+      try {
+        await addressService.createUserAddress(addressToCreate);
+        toast.success("Address saved successfully!");
+        setModalView("subscriptionDetails");
+        setAddressFormState({
+          recipientName: "",
+          mobile: "",
+          plotBuilding: "",
+          streetArea: "",
+          landmark: "",
+          city: "",
+          state: "",
+          isDefault: false,
+          label: "Home",
+        });
+      } catch (error) {
+        console.error("Failed to save address:", error);
+        const errorMessage =
+          "An error occurred while saving your address. Please try again.";
+        toast.error(errorMessage);
+      }
+    }
+  };
+
+  // Handle area master selection 
+  const handleAreaMasterSelection = async (areaMaster: AreaMaster) => {
+    setSelectedAreaMaster(areaMaster);
+    
+    // Store dairy validation message for later use during save, but don't show dialog immediately
+    if (product?.isDairyProduct && !areaMaster.isDairyProduct) {
+      const message = `We don't currently serve dairy products in ${areaMaster.name}. However, we'd love to expand our dairy delivery services to your area!`;
+      setServiceNotAvailableMessage(message);
+    } else {
+      // Area is valid for this product type
+      setServiceNotAvailableMessage("");
     }
   };
 
@@ -941,6 +1029,12 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
   const handleConfirmSubscription = async () => {
     if (!validateSubscriptionDetails()) return;
+
+    // Check dairy product validation - show service not available dialog if trying to save with incompatible area
+    if (product?.isDairyProduct && selectedAreaMaster && !selectedAreaMaster.isDairyProduct) {
+      setShowServiceNotAvailableDialog(true);
+      return;
+    }
 
     // Determine the correct address ID based on depot type
     const deliveryAddressIdForPayload = selectedDepot?.isOnline
@@ -2910,7 +3004,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                         <SelectValue placeholder="Select a state" />
                       </SelectTrigger>
                       <SelectContent className="max-h-60 overflow-y-auto">
-                        {INDIAN_STATES.map((st) => (
+                        {INDIAN_STATES.filter(st => st && typeof st.label === 'string').map((st) => (
                           <SelectItem key={st.value} value={st.label}>
                             {st.label}
                           </SelectItem>
@@ -2926,51 +3020,75 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 </div>
                 <div>
                   <Label
-                    htmlFor="location"
+                    htmlFor="areaMaster"
                     className="text-sm font-medium mb-1.5 block"
                   >
                     Our Delivery Areas*
+                    {product?.isDairyProduct && (
+                      <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                        Dairy Product
+                      </span>
+                    )}
                   </Label>
                   <Select
-                    onValueChange={(value) =>
-                      handleAddressChange("locationId", parseInt(value))
-                    }
-                    value={addressFormState.locationId?.toString()}
+                    onValueChange={(value) => {
+                      const areaMaster = areaMasters.find(am => am.id === parseInt(value));
+                      if (areaMaster) {
+                        handleAreaMasterSelection(areaMaster);
+                      }
+                    }}
+                    value={selectedAreaMaster?.id?.toString() || ""}
                   >
                     <SelectTrigger
-                      className={formErrors.locationId ? "border-red-500" : ""}
+                      className={formErrors.areaMaster ? "border-red-500" : ""}
                     >
-                      <SelectValue placeholder="Select a location" />
+                      <SelectValue placeholder="Select your delivery area" />
                     </SelectTrigger>
                     <SelectContent className="max-h-60 overflow-y-auto">
-                      {locations
-                        .sort((a, b) => {
-                          // Sort by city name first, then by location name
-                          const cityComparison = (a.city?.name || '').localeCompare(b.city?.name || '');
-                          if (cityComparison !== 0) return cityComparison;
-                          return a.name.localeCompare(b.name);
-                        })
-                        .map((location) => (
+                      {areaMasters
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .map((areaMaster) => (
                         <SelectItem
-                          key={location.id}
-                          value={location.id.toString()}
+                          key={areaMaster.id}
+                          value={areaMaster.id.toString()}
                         >
-                          {location.name} - {location.city?.name || 'Unknown City'}
+                          <div className="flex items-center justify-between w-full">
+                            <span>{areaMaster.name}</span>
+                            <div className="flex gap-1 ml-2">
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                areaMaster.deliveryType === 'HandDelivery' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-blue-100 text-blue-800'
+                              }`}>
+                                {areaMaster.deliveryType === 'HandDelivery' ? 'Hand Delivery' : 'Courier'}
+                              </span>
+                              {areaMaster.isDairyProduct && (
+                                <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">
+                                  Dairy Available
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  {formErrors.locationId && (
+                  {formErrors.areaMaster && (
                     <p className="text-red-500 text-sm mt-1">
-                      {formErrors.locationId}
+                      {formErrors.areaMaster}
                     </p>
+                  )}
+                  {product?.isDairyProduct && (
+                    <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
+                      <p className="text-sm text-yellow-700">
+                        <span className="font-medium">Dairy Product Notice:</span> This product requires areas that support dairy delivery. Areas marked with "Dairy Available" can serve this product.
+                      </p>
+                    </div>
                   )}
                   <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
                     <p className="text-sm text-blue-700">
                       <span className="font-medium">Note:</span> If your area is
-                      not listed above, please contact us at{" "}
-                      <span className="font-semibold">+91-9920999100</span> for
-                      assistance with delivery arrangements.
+                      not listed above, please use the form that appears after selection to help us expand to your location.
                     </p>
                   </div>
                 </div>
@@ -3074,7 +3192,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     formErrors.pincode ||
                     formErrors.city ||
                     formErrors.state ||
-                    formErrors.label
+                    formErrors.label ||
+                    formErrors.areaMaster
                   )
                 }
               >
@@ -3124,6 +3243,15 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
           )}
         </div>
       </DialogContent>
+      
+      {/* Service Not Available Dialog */}
+      <ServiceNotAvailableDialog
+        isOpen={showServiceNotAvailableDialog}
+        onOpenChange={setShowServiceNotAvailableDialog}
+        productName={product?.name}
+        areaName={selectedAreaMaster?.name}
+        message={serviceNotAvailableMessage}
+      />
     </Dialog>
   );
 };
