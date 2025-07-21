@@ -57,6 +57,18 @@ interface DeliveryAddress {
   label?: string;
   createdAt: string;
   updatedAt: string;
+  location?: {
+    id: number;
+    name: string;
+    city?: {
+      id: number;
+      name: string;
+    };
+    agency?: {
+      id: number;
+      name: string;
+    };
+  };
 }
 
 interface Subscription {

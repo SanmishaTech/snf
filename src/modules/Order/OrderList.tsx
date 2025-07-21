@@ -58,6 +58,23 @@ interface OrderItem {
   unit?: string; // Added unit field
   depotVariantId?: string;
   depotVariantName?: string; // Added depot variant name field
+  agency?: {
+    id: number;
+    name: string;
+    user?: {
+      id: number;
+      name: string;
+      email?: string;
+      mobile?: string;
+    };
+  };
+  depot?: {
+    id: number;
+    name: string;
+    address?: string;
+    contactPerson?: string;
+    contactNumber?: string;
+  };
 }
 
 interface Order {
@@ -339,6 +356,7 @@ const OrderList = () => {
                 <TableRow>
                   <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">PO Number</TableHead>
                   <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Vendor</TableHead>
+                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Agency/Depot</TableHead>
                   <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Order Date</TableHead>
                   <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Delivery Date</TableHead>
                   <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Total Amount</TableHead>
@@ -364,6 +382,45 @@ const OrderList = () => {
                   <TableRow key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-750">
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{order.poNumber}</TableCell>
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{order.vendor.name}</TableCell>
+                    <TableCell className="px-6 py-4 text-sm text-gray-500 dark:text-gray-300">
+                      {(() => {
+                        // Get unique agencies and depots from order items
+                        const agencies = order.items?.map(item => item.agency).filter(Boolean) || [];
+                        const depots = order.items?.map(item => item.depot).filter(Boolean) || [];
+                        const uniqueAgencies = agencies.filter((agency, index, self) => 
+                          agency && self.findIndex(a => a?.id === agency.id) === index
+                        );
+                        const uniqueDepots = depots.filter((depot, index, self) => 
+                          depot && self.findIndex(d => d?.id === depot.id) === index
+                        );
+                        
+                        return (
+                          <div className="space-y-1">
+                            {uniqueAgencies.map(agency => agency && (
+                              <div key={`agency-${agency.id}`} className="text-xs">
+                                <div className="font-medium text-blue-600">{agency.name}</div>
+                                {agency.user && (
+                                  <div className="text-gray-400">
+                                    {agency.user.name} • {agency.user.mobile}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                            {uniqueDepots.map(depot => depot && (
+                              <div key={`depot-${depot.id}`} className="text-xs">
+                                <div className="font-medium text-green-600">{depot.name}</div>
+                                {depot.address && (
+                                  <div className="text-gray-400 truncate max-w-xs">{depot.address}</div>
+                                )}
+                              </div>
+                            ))}
+                            {uniqueAgencies.length === 0 && uniqueDepots.length === 0 && (
+                              <span className="text-gray-400">N/A</span>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </TableCell>
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{format(new Date(order.orderDate), "dd/MM/yyyy")}</TableCell>
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{format(new Date(order.deliveryDate), "dd/MM/yyyy")}</TableCell>
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{formatCurrency(order.totalAmount)}</TableCell>

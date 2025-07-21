@@ -31,9 +31,25 @@ interface Subscription {
     };
   };
   deliveryAddress?: {
+    recipientName?: string;
+    mobile?: string;
+    plotBuilding?: string;
+    streetArea?: string;
+    landmark?: string;
+    pincode?: string;
     city?: string;
+    state?: string;
     location?: {
+      id: number;
       name: string;
+      city?: {
+        id: number;
+        name: string;
+      };
+      agency?: {
+        id: number;
+        name: string;
+      };
     };
   };
   paymentStatus: string;
@@ -258,8 +274,26 @@ export const BulkAgencyAssignmentModal: React.FC<BulkAgencyAssignmentModalProps>
                     </TableCell>
                     <TableCell>
                       <div className="text-sm">
-                        <div>{subscription.deliveryAddress?.location?.name || 'No Location'}</div>
-                        <div className="text-gray-500">{subscription.deliveryAddress?.city || 'Unknown City'}</div>
+                        {subscription.deliveryAddress ? (
+                          <>
+                            <div className="font-medium">{subscription.deliveryAddress.recipientName || 'No Recipient'}</div>
+                            <div className="text-gray-500">{subscription.deliveryAddress.mobile}</div>
+                            <div className="text-xs text-gray-400 mt-1">
+                              {subscription.deliveryAddress.plotBuilding}, {subscription.deliveryAddress.streetArea}
+                              {subscription.deliveryAddress.landmark && `, ${subscription.deliveryAddress.landmark}`}
+                            </div>
+                            <div className="text-xs text-gray-400">
+                              {subscription.deliveryAddress.city}, {subscription.deliveryAddress.state} - {subscription.deliveryAddress.pincode}
+                            </div>
+                            {subscription.deliveryAddress.location && (
+                              <div className="text-xs text-blue-600 mt-1">
+                                📍 {subscription.deliveryAddress.location.name}
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="text-gray-400 italic">No Address</div>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
