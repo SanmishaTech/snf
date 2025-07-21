@@ -605,9 +605,17 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                   <input
                     id="mobile"
                     name="mobile"
+                    type="tel"
                     value={addressFormState.mobile}
-                    onChange={handleAddressFormChange}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      setAddressFormState(prev => ({
+                        ...prev,
+                        mobile: value
+                      }));
+                    }}
                     placeholder="Mobile number"
+                    maxLength={10}
                     className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
                   />
                   {formErrors.mobile && (

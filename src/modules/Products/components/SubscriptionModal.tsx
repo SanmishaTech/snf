@@ -1347,7 +1347,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       }}
     >
       <DialogContent
-        className="max-sm:max-w-full flex flex-col max-h-[95vh] p-0 bg-white min-w-[100vw] max-w-8xl rounded-xl overflow-hidden"
+        className="max-sm:max-w-[95vw] flex flex-col max-h-[95vh] p-0 bg-white min-w-[95vw] max-w-2xl rounded-xl overflow-hidden"
         onPointerDownOutside={(event) => {
           const target = event.target as HTMLElement;
           if (
