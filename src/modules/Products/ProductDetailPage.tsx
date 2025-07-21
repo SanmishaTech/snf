@@ -16,7 +16,7 @@ import { BuyOnceModal } from "./components/BuyOnceModal";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import PriceChart from "@/components/PriceChart";
-import LocationsDisplay from "@/components/LocationsDisplay";
+import AreaMastersDisplay from "@/components/AreaMastersDisplay";
 
 // Enhanced Star rating component
 const StarRating: React.FC<{ rating: number }> = ({ rating }) => {
@@ -54,6 +54,7 @@ interface ProductData {
   unit: string | null;
   description: string | null;
   attachmentUrl: string | null;
+  isDairyProduct?: boolean;
 }
 
 const ProductDetailPage: React.FC = () => {
@@ -632,7 +633,7 @@ const ProductDetailPage: React.FC = () => {
                 <div className="overflow-y-auto max-h-[60vh]">
                   <div className="grid gap-4">
                     {/* Home Delivery Section */}
-                    <div>
+                    {/* <div>
                       <h3 className="text-lg font-semibold mb-3 text-green-600 flex items-center gap-2">
                         <Truck className="h-4 w-4" />
                         Home Delivery Services
@@ -673,7 +674,7 @@ const ProductDetailPage: React.FC = () => {
                           </div>
                         )}
                       </div>
-                    </div>
+                    </div> */}
 
                     {/* Store Pickup Section */}
                     <div>
@@ -741,7 +742,11 @@ const ProductDetailPage: React.FC = () => {
             </DialogHeader>
             <div className="mt-4">
               <div className="overflow-y-auto max-h-[60vh]">
-                <LocationsDisplay title="Home Delivery Areas" showDeliveryInfo={true} />
+                <AreaMastersDisplay 
+                  title="Home Delivery Areas" 
+                  showDeliveryInfo={true} 
+                  showDairyOnly={product?.isDairyProduct}
+                />
               </div>
             </div>
             <div className="mt-6 flex justify-end">
