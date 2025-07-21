@@ -3078,13 +3078,13 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       {formErrors.areaMaster}
                     </p>
                   )}
-                  {product?.isDairyProduct && (
+                  {/* {product?.isDairyProduct && (
                     <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
                       <p className="text-sm text-yellow-700">
                         <span className="font-medium">Dairy Product Notice:</span> This product requires areas that support dairy delivery. Areas marked with "Dairy Available" can serve this product.
                       </p>
                     </div>
-                  )}
+                  )} */}
                   <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
                     <p className="text-sm text-blue-700">
                       <span className="font-medium">Note:</span> If your area is
