@@ -137,6 +137,12 @@ const OrderList = () => {
   useEffect(() => {
     const fetchAgencyInfo = async () => {
       if (currentUserRole === 'AGENCY') {
+        const token = localStorage.getItem("authToken");
+        if (!token) {
+          console.error("No auth token found for AGENCY user");
+          return;
+        }
+        
         setIsAgencyInfoLoading(true);
         try {
           const agencyInfo = await get("/users/me");

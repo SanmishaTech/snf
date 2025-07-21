@@ -28,6 +28,18 @@ export const isAuthenticated = (): boolean => {
 };
 
 /**
+ * Check if user is authenticated before making API calls
+ * Throws an error if not authenticated to prevent unnecessary API calls
+ * @returns True if authenticated, throws error if not
+ */
+export const requireAuth = (): boolean => {
+  if (!isAuthenticated()) {
+    throw new Error('User not authenticated');
+  }
+  return true;
+};
+
+/**
  * Clear all authentication data from localStorage
  */
 export const clearAuthData = (): void => {

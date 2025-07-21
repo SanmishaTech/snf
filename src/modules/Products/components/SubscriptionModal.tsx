@@ -509,6 +509,12 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
   useEffect(() => {
     const fetchUserProfile = async () => {
+      // Only fetch user profile if user is authenticated
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        return; // Don't make API calls for non-authenticated users
+      }
+
       try {
         const response = await get("/users/me");
         if (response && response.mobile) {

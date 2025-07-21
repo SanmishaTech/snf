@@ -64,7 +64,14 @@ const OrderReceivedPage = () => {
 
   const { data: currentUserProfile, isLoading: isLoadingUserProfile } = useQuery<UserProfile>({
     queryKey: ["currentUserProfile"],
-    queryFn: async () => get("/api/users/me"), 
+    queryFn: async () => {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        throw new Error('User not authenticated');
+      }
+      return get("/api/users/me");
+    },
+    enabled: Boolean(localStorage.getItem("authToken")), // Only run query if authenticated
   });
 
   const recordReceiptMutation = useMutation({

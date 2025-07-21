@@ -67,8 +67,15 @@ const OrderDetailsPage = () => {
 
   const { data: currentUserProfile, isLoading: isLoadingUserProfile } = useQuery<UserProfile>({
     queryKey: ["currentUserProfile"],
-    queryFn: async () => get("/api/users/me"),
-    staleTime: 5 * 60 * 1000, 
+    queryFn: async () => {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        throw new Error('User not authenticated');
+      }
+      return get("/api/users/me");
+    },
+    staleTime: 5 * 60 * 1000,
+    enabled: Boolean(localStorage.getItem("authToken")), // Only run query if authenticated
   });
 
   const { data: order, isLoading, isError } = useQuery<Order>({

@@ -23,7 +23,10 @@ api.interceptors.response.use(
                          currentPath === '/admin/login' || currentPath.includes('/forgot-password') ||
                          currentPath.includes('/reset-password') || currentPath.includes('/register');
       
-      if (!isLoginPage) {
+      // Also check if this is the landing page and the call is to /users/me
+      const isLandingPageUserCall = currentPath === '/' && error.config?.url?.includes('/users/me');
+      
+      if (!isLoginPage && !isLandingPageUserCall) {
         redirectToLogin(currentPath);
       }
       return Promise.reject(error);
@@ -77,6 +80,12 @@ const extractErrorMessage = (error: any): string => {
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("authToken");
+
+  // Block /users/me requests for non-authenticated users
+  if (config.url?.includes('/users/me') && !token) {
+    console.warn('Blocking /users/me request for non-authenticated user');
+    return Promise.reject(new Error('Authentication required for /users/me endpoint'));
+  }
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
