@@ -13,7 +13,7 @@ import {
 
 // --- Configuration ---
 // TODO: Replace with your actual API base URL and token retrieval logic
-const API_BASE_URL = "http://localhost:3000//api"; // Adjust as per your setup
+const API_BASE_URL = "https://www.indraai.in///api"; // Adjust as per your setup
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
