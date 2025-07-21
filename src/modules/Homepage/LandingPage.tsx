@@ -299,6 +299,10 @@ const LandingPage = () => {
               of Indraai.
             </p>
           </div>
+          <div id="product-detail-section">
+        <Productdetail />
+      </div>
+
           <div className="block">
             <Whychoose />
           </div>
@@ -373,10 +377,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      <div id="product-detail-section">
-        <Productdetail />
-      </div>
-
+ 
       {/* A2 Milk Demand Section */}
       <section className="py-16   ">
         <div className="container max-w-6xl mx-auto px-4">
@@ -403,9 +404,7 @@ const LandingPage = () => {
             {/* Feature 1: Native Breed */}
             <div className="group">
               <div className="bg-white rounded-2xl shadow-lg p-8 h-full hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-                <div className="flex items-center justify-center w-16 h-16 bg-orange-200 rounded-full mb-6 mx-auto group-hover:bg-primary/20 transition-colors">
-                  <FaCow className="w-8 h-8 text-primary" />
-                </div>
+                
                 <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
                   Native Heritage
                 </h3>
@@ -421,9 +420,7 @@ const LandingPage = () => {
             {/* Feature 2: Respectful Practices */}
             <div className="group">
               <div className="bg-white rounded-2xl shadow-lg p-8 h-full hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-                <div className="flex items-center justify-center w-16 h-16 bg-primary/20 rounded-full mb-6 mx-auto group-hover:bg-primary/20 transition-colors">
-                  <FaHeart className="w-8 h-8 text-primary" />
-                </div>
+               
                 <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
                   Natural Milking Cycle
                 </h3>
@@ -439,9 +436,7 @@ const LandingPage = () => {
             {/* Feature 3: Gir Bull Role */}
             <div className="group">
               <div className="bg-white rounded-2xl shadow-lg p-8 h-full hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-                <div className="flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-6 mx-auto group-hover:bg-blue-200 transition-colors">
-                  <FaShieldAlt className="w-8 h-8 text-blue-600" />
-                </div>
+                
                 <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
                   Essential Bulls
                 </h3>

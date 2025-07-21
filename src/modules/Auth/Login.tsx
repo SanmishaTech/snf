@@ -104,10 +104,8 @@ const Login: React.FC<LoginProps> = () => {
 
   useEffect(() => {
     if (location.state?.unauthorized) {
-      toast.error("You are not authorized.");
-      setTimeout(() => {
-        navigate(location.pathname, { replace: true, state: {} });
-      }, 0);
+      // Clear the state without showing a toast - the user is already on the login page
+      navigate(location.pathname, { replace: true, state: {} });
     }
   }, [location, navigate]);
 

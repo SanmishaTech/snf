@@ -31,25 +31,7 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor to catch insufficient privilege errors (403) and redirect to '/'
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    const status: number | undefined = error.response?.status;
-    const message: string | undefined =
-      error.response?.data?.error?.message || error.response?.data?.message;
-    if (
-      status === 403 &&
-      message?.toLowerCase().includes("insufficient privileges")
-    ) {
-      const role = error.response?.data?.error?.role?.toLowerCase();
-      // Optionally clear token
-      // localStorage.removeItem("authToken");
-      window.location.href = role === "MEMBER" ? "/" : "/admin/dashboard";
-    }
-    return Promise.reject(error);
-  }
-);
+// Note: Authorization error handling is now handled globally by the main API service interceptor
 
 // --- Category API --- (Needed for the PowerTeam form)
 

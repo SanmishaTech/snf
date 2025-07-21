@@ -135,14 +135,14 @@ const AreaMastersDisplay: React.FC<AreaMastersDisplayProps> = ({
                 Fresh products delivered daily to your doorstep. Select your area during checkout to confirm delivery availability.
               </p>
               <div className="flex flex-wrap gap-2 mt-3">
-                <Badge variant="secondary" className="bg-green-100 text-green-700">
+                {/* <Badge variant="secondary" className="bg-green-100 text-green-700">
                   <Package className="h-3 w-3 mr-1" />
                   {areaList.filter(am => am.isDairyProduct).length} Dairy Areas
-                </Badge>
-                <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                </Badge> */}
+                {/* <Badge variant="secondary" className="bg-blue-100 text-blue-700">
                   <Truck className="h-3 w-3 mr-1" />
                   {areaList.filter(am => am.deliveryType === 'HandDelivery').length} Hand Delivery Areas
-                </Badge>
+                </Badge> */}
               </div>
             </div>
           </div>
@@ -154,7 +154,7 @@ const AreaMastersDisplay: React.FC<AreaMastersDisplayProps> = ({
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
         <Input
           type="text"
-          placeholder="Search by area name, pincode, or depot..."
+          placeholder="Search by area name, pincode..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="pl-10 bg-white"
@@ -193,19 +193,19 @@ const AreaMastersDisplay: React.FC<AreaMastersDisplayProps> = ({
                       {areaMaster.name}
                     </CardTitle>
                     <div className="flex gap-1">
-                      <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">
+                      {/* <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">
                         Hand Delivery
-                      </Badge>
-                      {areaMaster.isDairyProduct && (
+                      </Badge> */}
+                      {/* {areaMaster.isDairyProduct && (
                         <Badge variant="secondary" className="bg-blue-100 text-blue-700 text-xs">
                           Dairy
                         </Badge>
-                      )}
+                      )} */}
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0 space-y-3">
-                  <div>
+                  {/* <div>
                     <p className="text-sm font-medium text-gray-700 mb-1">Pincodes Covered:</p>
                     <div className="flex flex-wrap gap-1">
                       {formatPincodes(areaMaster.pincodes).map((pincode, idx) => (
@@ -215,7 +215,7 @@ const AreaMastersDisplay: React.FC<AreaMastersDisplayProps> = ({
                       ))}
                     </div>
                   </div>
-                  
+                   */}
                   {/* {areaMaster.depot && (
                     <div className="bg-gray-50 rounded-lg p-3">
                       <p className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">

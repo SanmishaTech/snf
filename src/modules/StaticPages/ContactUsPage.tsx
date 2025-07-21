@@ -59,9 +59,7 @@ const ContactUsPage: React.FC = () => {
           {/* Right Column: Contact Form */}
           <div className="space-y-6">
             <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-1">Get In Touch</h2>
-            <p className="text-gray-600">Questions?</p>
-            <p className="text-gray-600 -mt-4">Suggestions?</p>
-            
+           
             <h3 className="text-xl font-medium text-gray-700 pt-2">Write Us</h3>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>

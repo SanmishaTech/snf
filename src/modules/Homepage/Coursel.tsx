@@ -74,22 +74,13 @@ const HeroSection: React.FC<HeroSectionProps> = ({
   };
 
   const handleJoinMilkClub = () => {
-    // Check if user is logged in by checking localStorage
-    const authToken = localStorage.getItem('authToken');
-    const user = localStorage.getItem('user');
-    
-    if (authToken && user) {
-      // User is logged in, scroll to product detail section
-      const productSection = document.getElementById('product-detail-section');
-      if (productSection) {
-        productSection.scrollIntoView({ 
-          behavior: 'smooth',
-          block: 'start'
-        });
-      }
-    } else {
-      // User not logged in, redirect to login page
-      navigate('/login');
+    // Always scroll to product detail section regardless of login status
+    const productSection = document.getElementById('product-detail-section');
+    if (productSection) {
+      productSection.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      });
     }
   };
 

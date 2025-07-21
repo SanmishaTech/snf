@@ -26,3 +26,27 @@ export const getCurrentUser = (): any | null => {
 export const isAuthenticated = (): boolean => {
   return Boolean(getToken());
 };
+
+/**
+ * Clear all authentication data from localStorage
+ */
+export const clearAuthData = (): void => {
+  localStorage.removeItem("authToken");
+  localStorage.removeItem("user");
+  localStorage.removeItem("refreshToken");
+};
+
+/**
+ * Redirect user to appropriate login page and clear auth data
+ * @param currentPath - Current path to determine redirect destination
+ */
+export const redirectToLogin = (currentPath?: string): void => {
+  clearAuthData();
+  
+  // Determine appropriate login page based on current path
+  if (currentPath?.startsWith("/admin")) {
+    window.location.href = "/admin";
+  } else {
+    window.location.href = "/login";
+  }
+};

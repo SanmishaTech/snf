@@ -529,12 +529,21 @@ const ProductDetailPage: React.FC = () => {
 
             <div className="mt-8 space-y-4">
               {!isLoggedIn ? (
+              <div >
+                    <Button
+                  asChild
+                  className="mb-2 w-full bg-secondary hover:bg-secondary/80 text-white py-6 rounded-lg text-lg font-semibold transition-transform duration-200 hover:scale-105"
+                >
+                  <Link to="/login">Buy Once</Link>
+                </Button>
                 <Button
                   asChild
                   className="w-full bg-primary hover:bg-primary/80 text-white py-6 rounded-lg text-lg font-semibold transition-transform duration-200 hover:scale-105"
                 >
                   <Link to="/login">Subscribe</Link>
                 </Button>
+              </div>
+                
               ) : (
                 <>
                   {/* Buttons for logged-in users */}

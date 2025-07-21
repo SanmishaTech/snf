@@ -295,14 +295,14 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
                 {link.name}
               </Link>
             ))}
-            <Link 
+            {/* <Link 
               to="/about" 
               className="block py-3 px-4 text-gray-700 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors flex items-center group"
               onClick={() => setMobileMenuOpen(false)}
             >
               <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mr-3 opacity-0 group-hover:opacity-100 transition-opacity"></span>
               About Us
-            </Link>
+            </Link> */}
             {isLoggedIn && onLogout ? (
               <button 
                 onClick={() => { onLogout(); setMobileMenuOpen(false); }}

@@ -1,6 +1,7 @@
 import axios from "axios";
 import { backendUrl } from "../config";
 import { toast } from "sonner";
+import { redirectToLogin } from "@/utils/auth";
 
 export const api = axios.create({
   baseURL: backendUrl,
@@ -14,18 +15,18 @@ api.interceptors.response.use(
     const message: string | undefined =
       error.response?.data?.error?.message || error.response?.data?.message;
 
-    // If the backend indicates the user has insufficient privileges, force logout/redirect
-    if (
-      status === 403 &&
-      message?.toLowerCase().includes("insufficient privileges")
-    ) {
-      const role = error.response?.data?.error?.role?.toLowerCase();
-      toast(
-        `Insufficient privileges detected. Redirecting user with role: ${role}`
-      );
-      // Optionally clear any auth-related storage here if needed
-      // localStorage.removeItem("authToken");
-      window.location.href = role === "MEMBER" ? "/" : "/admin/dashboard";
+    // Handle all unauthorized/forbidden scenarios, but NOT on login pages
+    // to avoid redirecting when user enters wrong credentials
+    if (status === 401 || status === 403) {
+      const currentPath = window.location.pathname;
+      const isLoginPage = currentPath === '/login' || currentPath === '/admin' || 
+                         currentPath === '/admin/login' || currentPath.includes('/forgot-password') ||
+                         currentPath.includes('/reset-password') || currentPath.includes('/register');
+      
+      if (!isLoginPage) {
+        redirectToLogin(currentPath);
+      }
+      return Promise.reject(error);
     }
 
     // Propagate the error so that individual callers can still handle it if needed
