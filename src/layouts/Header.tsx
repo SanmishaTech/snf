@@ -54,27 +54,16 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
     { name: 'Contact Us', path: '/contact' },
   ];
 
-  // Handle scroll behavior for header show/hide
+  // Handle scroll behavior for header styling only (no hide/show)
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       
-      // Always show header when at top
-      if (currentScrollY <= 10) {
-        setHeaderVisible(true);
-        setScrolled(false);
-        lastScrollY.current = currentScrollY;
-        return;
-      }
+      // Always keep header visible
+      setHeaderVisible(true);
       
-      setScrolled(true);
-      
-      // Show header when scrolling up, hide when scrolling down
-      if (currentScrollY > lastScrollY.current + 10) {
-        setHeaderVisible(false);
-      } else if (lastScrollY.current > currentScrollY + 10) {
-        setHeaderVisible(true);
-      }
+      // Only change scrolled state for styling (shadow effects)
+      setScrolled(currentScrollY > 10);
       
       lastScrollY.current = currentScrollY;
     };
@@ -102,12 +91,7 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
     };
   }, [isLoggedIn, userName, mobileMenuOpen, scrolled]); // Dependencies that might affect header height
 
-  // Close mobile menu when header hides
-  useEffect(() => {
-    if (!headerVisible && mobileMenuOpen) {
-      setMobileMenuOpen(false);
-    }
-  }, [headerVisible, mobileMenuOpen]);
+  // Mobile menu will stay open/closed based on user interaction only
 
   return (
 <header

@@ -18,7 +18,7 @@ const Header = () => {
 
         {/* Middle Section - Navigation (Desktop) */}
         <div className="hidden md:flex items-center space-x-1">
-          <NavButton icon={<Home className="h-6 w-6" />} label="Home" href="/" active />
+        <NavButton icon={<Home className="h-6 w-6" />} label="Home" href="/" active />
           <NavButton icon={<User className="h-6 w-6" />} label="Users" href="/users" />
           <NavButton icon={<Briefcase className="h-6 w-6" />} label="Vendors" href="/vendors" />
           <NavButton icon={<MessageSquare className="h-6 w-6" />} label="Messages" href="/messages" />
