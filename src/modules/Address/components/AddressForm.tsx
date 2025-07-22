@@ -320,6 +320,64 @@ const AddressForm: React.FC<AddressFormProps> = ({
     }
   }, [initialData, form]);
 
+  // Find and set area master when editing existing address
+  useEffect(() => {
+    if (initialData && areaMasters.length > 0 && cities.length > 0 && !selectedAreaMaster) {
+      console.log('Looking for matching area master for existing address:', {
+        city: initialData.city,
+        pincode: initialData.pincode
+      });
+      
+      // Find the city that matches the initial data
+      const matchingCity = cities.find(city => 
+        city.name.toLowerCase() === initialData.city.toLowerCase()
+      );
+      
+      if (matchingCity) {
+        console.log('Found matching city:', matchingCity.name);
+        setSelectedCityId(matchingCity.id);
+        
+        // Find area master that serves this pincode and city
+        const matchingAreaMaster = areaMasters.find(areaMaster => {
+          // Check if area master matches the city
+          const matchesCity = areaMaster.cityId === matchingCity.id || 
+                             areaMaster.city?.id === matchingCity.id;
+          
+          if (!matchesCity) return false;
+          
+          // Check if area master serves this pincode
+          const servesPin = validatePincodeInAreas(initialData.pincode, [areaMaster]);
+          
+          return servesPin.isValid;
+        });
+        
+        if (matchingAreaMaster) {
+          console.log('Found matching area master for editing:', matchingAreaMaster.name);
+          setSelectedAreaMaster(matchingAreaMaster);
+          
+          // Validate the pincode with the selected area master
+          if (initialData.pincode && initialData.pincode.length === 6) {
+            validatePincode(initialData.pincode, matchingAreaMaster);
+          }
+        } else {
+          console.log('No matching area master found for existing address');
+          // Try to find any area master in the same city as fallback
+          const cityAreaMaster = areaMasters.find(areaMaster => 
+            areaMaster.cityId === matchingCity.id || areaMaster.city?.id === matchingCity.id
+          );
+          if (cityAreaMaster) {
+            console.log('Using fallback area master from same city:', cityAreaMaster.name);
+            setSelectedAreaMaster(cityAreaMaster);
+            // Still validate the pincode to show if it's not served
+            if (initialData.pincode && initialData.pincode.length === 6) {
+              validatePincode(initialData.pincode, cityAreaMaster);
+            }
+          }
+        }
+      }
+    }
+  }, [initialData, areaMasters, cities, selectedAreaMaster]);
+
   const onSubmit = async (data: AddressFormData) => {
     // CRITICAL: Block submission if pincode is invalid
     if (isInvalidPincodeMode) {
@@ -553,7 +611,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
               {/* Area Master Selection */}
               <div>
                 <label className="text-sm font-medium mb-1.5 block">
-                  Our Delivery Areas* <span className="text-xs text-gray-500">(City will be auto-filled)</span>
+                  Our Delivery Areas* <span className="text-xs text-gray-500"></span>
                 </label>
                 <Select
                   onValueChange={(value) => {
@@ -582,11 +640,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
                     ))}
                   </SelectContent>
                 </Select>
-                <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
-                  <p className="text-xs text-blue-700">
-                    <span className="font-medium">Note:</span> If your area is not listed above, please contact us at <span className="font-semibold">+91-9920999100</span> for assistance with delivery arrangements.
-                  </p>
-                </div>
+            
               </div>
             </div>
 
