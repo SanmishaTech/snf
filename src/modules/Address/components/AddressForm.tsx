@@ -129,6 +129,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
   // Lead capture modal state
   const [showEnhancedLeadModal, setShowEnhancedLeadModal] = useState(false);
   const [serviceNotAvailableMessage, setServiceNotAvailableMessage] = useState<string>("");
+  const [isInvalidPincodeMode, setIsInvalidPincodeMode] = useState(false);
 
   // Fetch locations if not provided as props
   useEffect(() => {
@@ -237,13 +238,17 @@ const AddressForm: React.FC<AddressFormProps> = ({
       // Validate pincode against the selected area master immediately (no setTimeout)
       const validation = validatePincodeInAreas(pincode, [currentAreaMaster].filter(Boolean) as AreaMaster[]);
       
+      const isValid = validation.isValid;
       setPincodeValidation({
-        isValid: validation.isValid,
-        message: validation.isValid 
+        isValid: isValid,
+        message: isValid 
           ? `Great! Pincode ${pincode} is served by ${currentAreaMaster?.name}` 
           : `We currently don't serve pincode ${pincode} in ${currentAreaMaster?.name || 'this area'}.`,
         isValidating: false
       });
+      
+      // Track invalid pincode mode
+      setIsInvalidPincodeMode(!isValid && pincode.length === 6);
     }
   };
   
@@ -316,7 +321,27 @@ const AddressForm: React.FC<AddressFormProps> = ({
   }, [initialData, form]);
 
   const onSubmit = async (data: AddressFormData) => {
+    // CRITICAL: Block submission if pincode is invalid
+    if (isInvalidPincodeMode) {
+      toast.error('This address cannot be saved with an invalid pincode. Please use "Request Service in Your Area" instead.');
+      return;
+    }
+    
     try {
+      // Validate pincode before submission if area master is selected
+      if (selectedAreaMaster && data.pincode && data.pincode.length === 6) {
+        if (!pincodeValidation.isValid) {
+          toast.error(`Cannot save address: Pincode ${data.pincode} is not served by ${selectedAreaMaster.name}. Please select a different area or correct the pincode.`);
+          return;
+        }
+      }
+      
+      // Validate that an area master is selected
+      if (!selectedAreaMaster) {
+        toast.error('Please select a delivery area before saving the address.');
+        return;
+      }
+      
       let response;
       
       // Prepare payload, ensuring locationId is handled correctly
@@ -324,8 +349,8 @@ const AddressForm: React.FC<AddressFormProps> = ({
       const payload = {
         ...addressData,
         depotId,
-        // Only include locationId if it's a valid number, otherwise omit it (null)
-        locationId: locationId && !isNaN(Number(locationId)) ? Number(locationId) : null
+        // Only include locationId in payload if it's a valid number
+        ...(locationId && !isNaN(Number(locationId)) ? { locationId: Number(locationId) } : {})
       };
       
       if (isEditMode && addressId) {
@@ -357,7 +382,34 @@ const AddressForm: React.FC<AddressFormProps> = ({
         </CardHeader>
         <CardContent className="max-h-[70vh] overflow-y-auto">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form 
+            onSubmit={(e) => {
+              e.preventDefault();
+              
+              // Validate area master selection
+              if (!selectedAreaMaster) {
+                toast.error('Please select a delivery area before saving the address.');
+                return;
+              }
+              
+              // Validate pincode if entered
+              const pincode = form.getValues('pincode');
+              if (pincode && pincode.length === 6) {
+                if (pincodeValidation.isValidating) {
+                  toast.error('Please wait for pincode validation to complete.');
+                  return;
+                }
+                if (!pincodeValidation.isValid) {
+                  toast.error(`Cannot save address: Pincode ${pincode} is not served by ${selectedAreaMaster.name}. Please click "Request Service in Your Area" if you need delivery to this location.`);
+                  return;
+                }
+              }
+              
+              // Only proceed with form submission if all validations pass
+              form.handleSubmit(onSubmit)(e);
+            }} 
+            className="space-y-6"
+          >
             <FormField
               control={form.control}
               name="label"
@@ -561,6 +613,13 @@ const AddressForm: React.FC<AddressFormProps> = ({
                             setPincodeValidation({ isValid: false, message: "", isValidating: false });
                           }
                         }}
+                        onBlur={(e) => {
+                          // Re-validate on blur to ensure current state
+                          const value = e.target.value;
+                          if (value.length === 6 && /^\d{6}$/.test(value) && selectedAreaMaster) {
+                            validatePincode(value);
+                          }
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -606,6 +665,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
               />
             )}
             
+         
             {/* Hidden fields - auto-filled by area master selection */}
             <FormField
               control={form.control}
@@ -666,7 +726,22 @@ const AddressForm: React.FC<AddressFormProps> = ({
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={form.formState.isSubmitting} className="w-full md:w-auto">
+              <Button 
+                type="submit" 
+                disabled={
+                  form.formState.isSubmitting || 
+                  !selectedAreaMaster ||
+                  pincodeValidation.isValidating ||
+                  (!!selectedAreaMaster && form.watch('pincode')?.length === 6 && !pincodeValidation.isValid)
+                } 
+                className="w-full md:w-auto"
+                title={
+                  !selectedAreaMaster ? "Please select a delivery area" :
+                  (form.watch('pincode')?.length === 6 && !pincodeValidation.isValid) ? 
+                    `Pincode ${form.watch('pincode')} is not served in this area` : 
+                    undefined
+                }
+              >
                 {form.formState.isSubmitting ? (isEditMode ? 'Saving...' : 'Adding...') : (isEditMode ? 'Save Changes' : 'Add Address')}
               </Button>
             </div>

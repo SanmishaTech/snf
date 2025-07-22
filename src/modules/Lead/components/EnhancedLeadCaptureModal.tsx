@@ -372,6 +372,7 @@ export const EnhancedLeadCaptureModal: React.FC<EnhancedLeadCaptureModalProps> =
               Cancel
             </Button>
             <Button
+              type="button"
               onClick={handleSubmit}
               disabled={isSubmitting}
               className="flex-1 bg-blue-600 hover:bg-blue-700"

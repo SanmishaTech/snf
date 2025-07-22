@@ -54,6 +54,7 @@ export const PincodeValidator: React.FC<PincodeValidatorProps> = ({
       </div>
       {showServiceRequest && onRequestService && (
         <Button
+          type="button"
           variant="outline" 
           size="sm"
           onClick={onRequestService}
