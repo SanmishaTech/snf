@@ -169,8 +169,8 @@ export const EnhancedLeadCaptureModal: React.FC<EnhancedLeadCaptureModalProps> =
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-2xl mx-auto p-0 max-h-[90vh] overflow-hidden">
-        <DialogHeader className="px-6 py-4 border-b bg-gradient-to-r from-blue-50 to-green-50">
+      <DialogContent className="w-full max-w-2xl mx-auto p-0 max-h-[90vh] flex flex-col overflow-hidden">
+        <DialogHeader className="px-6 py-4 border-b bg-gradient-to-r from-blue-50 to-green-50 flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 rounded-full">
               <MapPin className="h-5 w-5 text-blue-600" />
@@ -186,7 +186,8 @@ export const EnhancedLeadCaptureModal: React.FC<EnhancedLeadCaptureModalProps> =
           </div>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
+        <div className="p-6 space-y-4 overflow-y-auto flex-1">
+          <form onSubmit={handleSubmit} className="space-y-4">
           {/* Product Information */}
           {productName && (
             <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
@@ -358,9 +359,10 @@ export const EnhancedLeadCaptureModal: React.FC<EnhancedLeadCaptureModalProps> =
               <strong>What happens next?</strong> We'll review your request and contact you as soon as we expand our delivery services to your area. You'll be among the first customers we serve!
             </p>
           </div>
-        </form>
+          </form>
+        </div>
 
-        <DialogFooter className="p-6 border-t bg-gray-50">
+        <DialogFooter className="p-6 border-t bg-gray-50 flex-shrink-0">
           <div className="flex gap-3 w-full">
             <Button
               type="button"

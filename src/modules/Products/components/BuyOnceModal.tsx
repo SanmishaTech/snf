@@ -670,7 +670,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
         <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto flex-grow pb-8">
           {showAddressFormView ? (
             /* Inline Address Form - matching SubscriptionModal - Made scrollable */
-            <div className="bg-white rounded-md max-h-[60vh] overflow-y-auto">
+            <div className="bg-white rounded-md">
               <div className="p-4 border-b bg-white sticky top-0 z-10">
                 <h3 className="text-lg font-semibold">Add New Address</h3>
               </div>
@@ -704,248 +704,254 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                   )}
                 </div>
                 
-                <div>
-                  <Label htmlFor="recipientName" className="text-sm font-medium mb-1.5 block">
-                    Delivery To*
-                  </Label>
-                  <input
-                    id="recipientName"
-                    name="recipientName"
-                    value={addressFormState.recipientName}
-                    onChange={handleAddressFormChange}
-                    placeholder="Full name of recipient"
-                    className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
-                  />
-                  {formErrors.recipientName && (
-                    <p className="text-red-500 text-sm mt-1">{formErrors.recipientName}</p>
-                  )}
+                {/* Row 1: Delivery To + Mobile */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="recipientName" className="text-sm font-medium mb-1.5 block">
+                      Delivery To*
+                    </Label>
+                    <input
+                      id="recipientName"
+                      name="recipientName"
+                      value={addressFormState.recipientName}
+                      onChange={handleAddressFormChange}
+                      placeholder="Full name of recipient"
+                      className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
+                    />
+                    {formErrors.recipientName && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors.recipientName}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="mobile" className="text-sm font-medium mb-1.5 block">
+                      Mobile*
+                    </Label>
+                    <input
+                      id="mobile"
+                      name="mobile"
+                      type="tel"
+                      value={addressFormState.mobile}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                        setAddressFormState(prev => ({
+                          ...prev,
+                          mobile: value
+                        }));
+                      }}
+                      placeholder="Mobile number"
+                      maxLength={10}
+                      className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
+                    />
+                    {formErrors.mobile && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors.mobile}</p>
+                    )}
+                  </div>
                 </div>
                 
-                <div>
-                  <Label htmlFor="mobile" className="text-sm font-medium mb-1.5 block">
-                    Mobile*
-                  </Label>
-                  <input
-                    id="mobile"
-                    name="mobile"
-                    type="tel"
-                    value={addressFormState.mobile}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, '').slice(0, 10);
-                      setAddressFormState(prev => ({
-                        ...prev,
-                        mobile: value
-                      }));
-                    }}
-                    placeholder="Mobile number"
-                    maxLength={10}
-                    className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
-                  />
-                  {formErrors.mobile && (
-                    <p className="text-red-500 text-sm mt-1">{formErrors.mobile}</p>
-                  )}
+                {/* Row 2: Plot/Building + Street/Area + Landmark */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="plotBuilding" className="text-sm font-medium mb-1.5 block">
+                      Plot/Building*
+                    </Label>
+                    <input
+                      id="plotBuilding"
+                      name="plotBuilding"
+                      value={addressFormState.plotBuilding}
+                      onChange={handleAddressFormChange}
+                      placeholder="Plot number, building name"
+                      className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
+                    />
+                    {formErrors.plotBuilding && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors.plotBuilding}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="streetArea" className="text-sm font-medium mb-1.5 block">
+                      Street/Area*
+                    </Label>
+                    <input
+                      id="streetArea"
+                      name="streetArea"
+                      value={addressFormState.streetArea}
+                      onChange={handleAddressFormChange}
+                      placeholder="Street, area"
+                      className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
+                    />
+                    {formErrors.streetArea && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors.streetArea}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="landmark" className="text-sm font-medium mb-1.5 block">
+                      Landmark (Optional)
+                    </Label>
+                    <input
+                      id="landmark"
+                      name="landmark"
+                      value={addressFormState.landmark}
+                      onChange={handleAddressFormChange}
+                      placeholder="Nearby landmark"
+                      className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
+                    />
+                  </div>
                 </div>
                 
-                <div>
-                  <Label htmlFor="plotBuilding" className="text-sm font-medium mb-1.5 block">
-                    Plot/Building*
-                  </Label>
-                  <input
-                    id="plotBuilding"
-                    name="plotBuilding"
-                    value={addressFormState.plotBuilding}
-                    onChange={handleAddressFormChange}
-                    placeholder="Plot number, building name"
-                    className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
-                  />
-                  {formErrors.plotBuilding && (
-                    <p className="text-red-500 text-sm mt-1">{formErrors.plotBuilding}</p>
-                  )}
-                </div>
-                
-                <div>
-                  <Label htmlFor="streetArea" className="text-sm font-medium mb-1.5 block">
-                    Street/Area*
-                  </Label>
-                  <input
-                    id="streetArea"
-                    name="streetArea"
-                    value={addressFormState.streetArea}
-                    onChange={handleAddressFormChange}
-                    placeholder="Street, area"
-                    className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
-                  />
-                  {formErrors.streetArea && (
-                    <p className="text-red-500 text-sm mt-1">{formErrors.streetArea}</p>
-                  )}
-                </div>
-                
-                <div>
-                  <Label htmlFor="landmark" className="text-sm font-medium mb-1.5 block">
-                    Landmark (Optional)
-                  </Label>
-                  <input
-                    id="landmark"
-                    name="landmark"
-                    value={addressFormState.landmark}
-                    onChange={handleAddressFormChange}
-                    placeholder="Nearby landmark"
-                    className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
-                  />
-                </div>
-                
-                {/* City Filter for Area Master Selection */}
-                <div>
-                  <Label
-                    htmlFor="deliveryCity"
-                    className="text-sm font-medium mb-1.5 block"
-                  >
-                    Filter by City
-                  </Label>
-                  <Select
-                    onValueChange={(value) => {
-                      const cityId = value === "all" ? null : parseInt(value);
-                      setSelectedCityId(cityId);
-                      // Clear area master selection when city changes
-                      setSelectedAreaMaster(null);
-                    }}
-                    value={selectedCityId?.toString() || "all"}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Filter by city" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-60 overflow-y-auto">
-                      <SelectItem value="all">All Cities</SelectItem>
-                      {cities
-                        .sort((a, b) => a.name.localeCompare(b.name))
-                        .map((city) => (
-                          <SelectItem key={city.id} value={city.id.toString()}>
-                            {city.name}
+                {/* Row 3: Filter by City + Delivery Area */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label
+                      htmlFor="deliveryCity"
+                      className="text-sm font-medium mb-1.5 block"
+                    >
+                      Filter by City
+                    </Label>
+                    <Select
+                      onValueChange={(value) => {
+                        const cityId = value === "all" ? null : parseInt(value);
+                        setSelectedCityId(cityId);
+                        // Clear area master selection when city changes
+                        setSelectedAreaMaster(null);
+                      }}
+                      value={selectedCityId?.toString() || "all"}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Filter by city" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60 overflow-y-auto">
+                        <SelectItem value="all">All Cities</SelectItem>
+                        {cities
+                          .sort((a, b) => a.name.localeCompare(b.name))
+                          .map((city) => (
+                            <SelectItem key={city.id} value={city.id.toString()}>
+                              {city.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="areaMaster" className="text-sm font-medium mb-1.5 block">
+                      Our Delivery Areas* <span className="text-xs text-gray-500"></span>
+                      {product?.isDairyProduct && (
+                        <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                          Dairy Product
+                        </span>
+                      )}
+                    </Label>
+                    <Select
+                      onValueChange={(value) => {
+                        const areaMaster = filteredAreaMasters.find(am => am.id === parseInt(value));
+                        if (areaMaster) {
+                          handleAreaMasterSelection(areaMaster);
+                        }
+                      }}
+                      value={selectedAreaMaster?.id?.toString() || ""}
+                    >
+                      <SelectTrigger className={formErrors.areaMaster ? "border-red-500 w-full" : "w-full"}>
+                        <SelectValue placeholder="Select your delivery area" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60 overflow-y-auto">
+                        {filteredAreaMasters
+                          .sort((a, b) => a.name.localeCompare(b.name))
+                          .map((areaMaster) => (
+                          <SelectItem
+                            key={areaMaster.id}
+                            value={areaMaster.id.toString()}
+                          >
+                            <div className="flex items-center justify-between w-full">
+                              <span>{areaMaster.name}</span>
+                              <div className="flex gap-1 ml-2">
+                                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                  areaMaster.deliveryType === 'HandDelivery' 
+                                    ? 'bg-green-100 text-green-800' 
+                                    : 'bg-blue-100 text-blue-800'
+                                }`}>
+                                  {areaMaster.deliveryType === 'HandDelivery' ? 'Hand Delivery' : 'Courier'}
+                                </span>
+                                {areaMaster.isDairyProduct && (
+                                  <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">
+                                    Dairy Available
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           </SelectItem>
                         ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                {/* Area Master Selection */}
-                <div>
-                  <Label htmlFor="areaMaster" className="text-sm font-medium mb-1.5 block">
-                    Our Delivery Areas* <span className="text-xs text-gray-500"></span>
-                    {product?.isDairyProduct && (
-                      <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
-                        Dairy Product
-                      </span>
+                      </SelectContent>
+                    </Select>
+                    {formErrors.areaMaster && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors.areaMaster}</p>
                     )}
-                  </Label>
-                  <Select
-                    onValueChange={(value) => {
-                      const areaMaster = filteredAreaMasters.find(am => am.id === parseInt(value));
-                      if (areaMaster) {
-                        handleAreaMasterSelection(areaMaster);
-                      }
-                    }}
-                    value={selectedAreaMaster?.id?.toString() || ""}
-                  >
-                    <SelectTrigger className={formErrors.areaMaster ? "border-red-500" : ""}>
-                      <SelectValue placeholder="Select your delivery area" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-60 overflow-y-auto">
-                      {filteredAreaMasters
-                        .sort((a, b) => a.name.localeCompare(b.name))
-                        .map((areaMaster) => (
-                        <SelectItem
-                          key={areaMaster.id}
-                          value={areaMaster.id.toString()}
-                        >
-                          <div className="flex items-center justify-between w-full">
-                            <span>{areaMaster.name}</span>
-                            <div className="flex gap-1 ml-2">
-                              <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                areaMaster.deliveryType === 'HandDelivery' 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : 'bg-blue-100 text-blue-800'
-                              }`}>
-                                {areaMaster.deliveryType === 'HandDelivery' ? 'Hand Delivery' : 'Courier'}
-                              </span>
-                              {areaMaster.isDairyProduct && (
-                                <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">
-                                  Dairy Available
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {formErrors.areaMaster && (
-                    <p className="text-red-500 text-sm mt-1">{formErrors.areaMaster}</p>
-                  )}
-                  {/* {product?.isDairyProduct && (
-                    <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
-                      <p className="text-sm text-yellow-700">
-                        <span className="font-medium">Dairy Product Notice:</span> This product requires areas that support dairy delivery. Areas marked with "Dairy Available" can serve this product.
-                      </p>
-                    </div>
-                  )} */}
+                    {/* {product?.isDairyProduct && (
+                      <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
+                        <p className="text-sm text-yellow-700">
+                          <span className="font-medium">Dairy Product Notice:</span> This product requires areas that support dairy delivery. Areas marked with "Dairy Available" can serve this product.
+                        </p>
+                      </div>
+                    )} */}
+                  </div>
+                  <div>
+                    <Label
+                      htmlFor="state"
+                      className="text-sm font-medium mb-1.5 block"
+                    >
+                      State*
+                    </Label>
+                    <Select
+                      onValueChange={(val) => handleAddressChange("state", val)}
+                      value={addressFormState.state}
+                      disabled={true}
+                    >
+                      <SelectTrigger className={formErrors.state ? "border-red-500 w-full" : "w-full"}>
+                        <SelectValue placeholder="Select a state" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60 overflow-y-auto">
+                        {INDIAN_STATES.filter(st => st && typeof st.label === 'string').map((st) => (
+                          <SelectItem key={st.value} value={st.label}>
+                            {st.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {formErrors.state && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors.state}</p>
+                    )}
+                  </div>
                 </div>
                 
-                <div>
-                  <Label
-                    htmlFor="state"
-                    className="text-sm font-medium mb-1.5 block"
-                  >
-                    State*
-                  </Label>
-                  <Select
-                    onValueChange={(val) => handleAddressChange("state", val)}
-                    value={addressFormState.state}
-                    disabled={true}
-                  >
-                    <SelectTrigger className={formErrors.state ? "border-red-500" : ""}>
-                      <SelectValue placeholder="Select a state" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-60 overflow-y-auto">
-                      {INDIAN_STATES.filter(st => st && typeof st.label === 'string').map((st) => (
-                        <SelectItem key={st.value} value={st.label}>
-                          {st.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {formErrors.state && (
-                    <p className="text-red-500 text-sm mt-1">{formErrors.state}</p>
-                  )}
-                </div>
-                
-                <div>
-                  <Label htmlFor="pincode" className="text-sm font-medium mb-1.5 block">
-                    Pincode*
-                  </Label>
-                  <input
-                    id="pincode"
-                    name="pincode"
-                    type="text"
-                    value={addressFormState.pincode}
-                    onChange={handleAddressFormChange}
-                    placeholder="Pincode"
-                    className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
-                  />
-                  {formErrors.pincode && (
-                    <p className="text-red-500 text-sm mt-1">{formErrors.pincode}</p>
-                  )}
+                {/* Row 4: State + Pincode */}
+                <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
                   
-                  {/* Pincode Validation */}
-                  {selectedAreaMaster && (
-                    <PincodeValidator
-                      pincode={addressFormState.pincode}
-                      isValid={pincodeValidation.isValid}
-                      message={pincodeValidation.message}
-                      isValidating={pincodeValidation.isValidating}
-                      showServiceRequest={!pincodeValidation.isValid && !pincodeValidation.isValidating && addressFormState.pincode.length === 6}
-                      onRequestService={handleRequestService}
+                  <div>
+                    <Label htmlFor="pincode" className="text-sm font-medium mb-1.5 block">
+                      Pincode*
+                    </Label>
+                    <input
+                      id="pincode"
+                      name="pincode"
+                      type="text"
+                      value={addressFormState.pincode}
+                      onChange={handleAddressFormChange}
+                      placeholder="Pincode"
+                      className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
                     />
-                  )}
+                    {formErrors.pincode && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors.pincode}</p>
+                    )}
+                    
+                    {/* Pincode Validation */}
+                    {selectedAreaMaster && (
+                      <PincodeValidator
+                        pincode={addressFormState.pincode}
+                        isValid={pincodeValidation.isValid}
+                        message={pincodeValidation.message}
+                        isValidating={pincodeValidation.isValidating}
+                        showServiceRequest={!pincodeValidation.isValid && !pincodeValidation.isValidating && addressFormState.pincode.length === 6}
+                        onRequestService={handleRequestService}
+                      />
+                    )}
+                  </div>
                 </div>
                 
                 <div className="flex items-center space-x-2">
