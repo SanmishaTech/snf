@@ -29,9 +29,12 @@ import {
 } from '@/components/ui/select';
 import {
   getPublicAreaMasters,
+  validatePincodeInAreas,
   type AreaMaster,
 } from '@/services/areaMasterService';
 import { getCitiesList, type City } from '@/services/cityMasterService';
+import { EnhancedLeadCaptureModal } from '@/modules/Lead';
+import { PincodeValidator } from '@/components/ui/PincodeValidator';
 
 export interface DeliveryAddress {
   id: string;
@@ -115,6 +118,17 @@ const AddressForm: React.FC<AddressFormProps> = ({
   const [cities, setCities] = useState<City[]>([]);
   const [selectedCityId, setSelectedCityId] = useState<number | null>(null);
   const [selectedAreaMaster, setSelectedAreaMaster] = useState<AreaMaster | null>(null);
+  
+  // Pincode validation state
+  const [pincodeValidation, setPincodeValidation] = useState<{
+    isValid: boolean;
+    message: string;
+    isValidating: boolean;
+  }>({ isValid: false, message: "", isValidating: false });
+
+  // Lead capture modal state
+  const [showEnhancedLeadModal, setShowEnhancedLeadModal] = useState(false);
+  const [serviceNotAvailableMessage, setServiceNotAvailableMessage] = useState<string>("");
 
   // Fetch locations if not provided as props
   useEffect(() => {
@@ -204,6 +218,45 @@ const AddressForm: React.FC<AddressFormProps> = ({
     if (areaMaster.city?.name) {
       form.setValue('city', areaMaster.city.name);
     }
+    
+    // Validate existing pincode against new area master if pincode exists
+    const currentPincode = form.getValues('pincode');
+    if (currentPincode && currentPincode.length === 6) {
+      validatePincode(currentPincode, areaMaster);
+    }
+  };
+  
+  // Pincode validation function
+  const validatePincode = (pincode: string, areaMaster?: AreaMaster | null) => {
+    const currentAreaMaster = areaMaster || selectedAreaMaster;
+    console.log('validatePincode called with:', { pincode, currentAreaMaster: currentAreaMaster?.name });
+    
+    if (pincode.length === 6 && /^\d{6}$/.test(pincode)) {
+      setPincodeValidation({ isValid: false, message: "", isValidating: true });
+      
+      // Validate pincode against the selected area master immediately (no setTimeout)
+      const validation = validatePincodeInAreas(pincode, [currentAreaMaster].filter(Boolean) as AreaMaster[]);
+      
+      setPincodeValidation({
+        isValid: validation.isValid,
+        message: validation.isValid 
+          ? `Great! Pincode ${pincode} is served by ${currentAreaMaster?.name}` 
+          : `We currently don't serve pincode ${pincode} in ${currentAreaMaster?.name || 'this area'}.`,
+        isValidating: false
+      });
+    }
+  };
+  
+  
+  // Handle request service button click
+  const handleRequestService = () => {
+    const formValues = form.getValues();
+    const message = selectedAreaMaster 
+      ? `We currently don't serve pincode ${formValues.pincode} in ${selectedAreaMaster.name}. Help us prioritize expanding to your area!`
+      : `We currently don't serve pincode ${formValues.pincode}. Help us prioritize expanding to your area!`;
+    
+    setServiceNotAvailableMessage(message);
+    setShowEnhancedLeadModal(true);
   };
 
   const form = useForm<AddressFormData>({
@@ -266,11 +319,19 @@ const AddressForm: React.FC<AddressFormProps> = ({
     try {
       let response;
       
+      // Prepare payload, ensuring locationId is handled correctly
+      const { locationId, ...addressData } = data;
+      const payload = {
+        ...addressData,
+        depotId,
+        // Only include locationId if it's a valid number, otherwise omit it (null)
+        locationId: locationId && !isNaN(Number(locationId)) ? Number(locationId) : null
+      };
+      
       if (isEditMode && addressId) {
-        response = await apiService.put(`/delivery-addresses/${addressId}`, data);
+        response = await apiService.put(`/delivery-addresses/${addressId}`, payload);
         toast.success('Address updated successfully');
       } else {
-        const payload = { ...data, depotId };
         response = await apiService.post('/delivery-addresses', payload);
         toast.success('Address created successfully');
       }
@@ -289,13 +350,14 @@ const AddressForm: React.FC<AddressFormProps> = ({
   
 
   return (
-    <Card className="w-full  mx-auto">
-      <CardHeader>
-        <CardTitle>{isEditMode ? 'Edit Address' : 'Add New Delivery Address'}</CardTitle>
-      </CardHeader>
-      <CardContent className="max-h-[70vh] overflow-y-auto">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+    <>
+      <Card className="w-full  mx-auto">
+        <CardHeader>
+          <CardTitle>{isEditMode ? 'Edit Address' : 'Add New Delivery Address'}</CardTitle>
+        </CardHeader>
+        <CardContent className="max-h-[70vh] overflow-y-auto">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
               name="label"
@@ -446,8 +508,8 @@ const AddressForm: React.FC<AddressFormProps> = ({
                     const areaMaster = filteredAreaMasters.find(am => am.id === parseInt(value));
                     if (areaMaster) {
                       handleAreaMasterSelection(areaMaster);
-                      // Update the form's locationId field if needed
-                      form.setValue('locationId', value);
+                      // Don't set locationId as AreaMaster.id doesn't map to Location.id
+                      // locationId should remain null/undefined
                     }
                   }}
                   value={selectedAreaMaster?.id?.toString() || ""}
@@ -485,8 +547,21 @@ const AddressForm: React.FC<AddressFormProps> = ({
                     <FormLabel>Pincode*</FormLabel>
                     <FormControl>
                       <Input 
-                        type="number"
-                      placeholder="Enter pincode" {...field} />
+                        type="text"
+                        placeholder="Enter pincode" 
+                        {...field} 
+                        onChange={(e) => {
+                          field.onChange(e);
+                          const value = e.target.value;
+                          // Validate pincode when it changes
+                          if (value.length === 6 && /^\d{6}$/.test(value)) {
+                            validatePincode(value);
+                          } else {
+                            // Clear validation when pincode is incomplete
+                            setPincodeValidation({ isValid: false, message: "", isValidating: false });
+                          }
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -518,6 +593,18 @@ const AddressForm: React.FC<AddressFormProps> = ({
                 )}
               />
             </div>
+            
+            {/* PincodeValidator Component */}
+            {selectedAreaMaster && (
+              <PincodeValidator
+                pincode={form.watch('pincode') || ''}
+                isValid={pincodeValidation.isValid}
+                message={pincodeValidation.message}
+                isValidating={pincodeValidation.isValidating}
+                showServiceRequest={!pincodeValidation.isValid && !pincodeValidation.isValidating && (form.watch('pincode')?.length === 6)}
+                onRequestService={handleRequestService}
+              />
+            )}
             
             {/* Hidden fields - auto-filled by area master selection */}
             <FormField
@@ -561,6 +648,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
                 </FormItem>
               )}
             />
+            
 
             <div className="flex justify-end gap-2">
               <Button
@@ -578,14 +666,36 @@ const AddressForm: React.FC<AddressFormProps> = ({
               >
                 Cancel
               </Button>
-            <Button type="submit" disabled={form.formState.isSubmitting} className="w-full md:w-auto">
-              {form.formState.isSubmitting ? (isEditMode ? 'Saving...' : 'Adding...') : (isEditMode ? 'Save Changes' : 'Add Address')}
-            </Button>
-          </div>
+              <Button type="submit" disabled={form.formState.isSubmitting} className="w-full md:w-auto">
+                {form.formState.isSubmitting ? (isEditMode ? 'Saving...' : 'Adding...') : (isEditMode ? 'Save Changes' : 'Add Address')}
+              </Button>
+            </div>
         </form>
         </Form>
       </CardContent>
     </Card>
+
+    {/* EnhancedLeadCaptureModal */}
+    <EnhancedLeadCaptureModal
+      isOpen={showEnhancedLeadModal}
+      onOpenChange={setShowEnhancedLeadModal}
+      message={serviceNotAvailableMessage || `We currently do not serve this area, but we're expanding!`}
+      prefilledData={{
+        recipientName: form.watch('recipientName') || '',
+        mobile: form.watch('mobile') || '',
+        plotBuilding: form.watch('plotBuilding') || '',
+        streetArea: form.watch('streetArea') || '',
+        landmark: form.watch('landmark') || '',
+        pincode: form.watch('pincode') || '',
+        city: form.watch('city') || selectedAreaMaster?.city?.name || '',
+        state: form.watch('state') || ''
+      }}
+      onSuccess={() => {
+        setShowEnhancedLeadModal(false);
+        toast.success("Thank you for your interest! We've saved your details and will contact you when we expand to your area.");
+      }}
+    />
+    </>
   );
 };
 

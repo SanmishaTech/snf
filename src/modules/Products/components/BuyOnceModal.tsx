@@ -16,11 +16,13 @@ import { INDIAN_STATES } from "@/config/states";
 import {
   getPublicAreaMasters,
   validateDairySupport,
+  validatePincodeInAreas,
   type AreaMaster,
 } from "@/services/areaMasterService";
 import { getCitiesList, type City } from "@/services/cityMasterService";
 import { createLead } from "@/services/leadService";
-import { ServiceNotAvailableDialog } from "@/modules/Lead";
+import { ServiceNotAvailableDialog, EnhancedLeadCaptureModal } from "@/modules/Lead";
+import { PincodeValidator } from "@/components/ui/PincodeValidator";
 
 interface ProductData {
   id: number;
@@ -56,11 +58,6 @@ interface DepotVariant {
   minimumQty: number;
 }
 
-interface DepotVariantPricingResponse {
-  productId: number;
-  variants: DepotVariant[];
-  buyOncePrice: number;
-}
 
 interface LocationData {
   id: number;
@@ -134,7 +131,6 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
   const [isLoadingPrice, setIsLoadingPrice] = useState(false);
   const [depotVariants, setDepotVariants] = useState<DepotVariant[]>([]);
   const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
-  const [locations, setLocations] = useState<LocationData[]>([]);
   const [areaMasters, setAreaMasters] = useState<AreaMaster[]>([]);
   const [filteredAreaMasters, setFilteredAreaMasters] = useState<AreaMaster[]>([]);
   const [cities, setCities] = useState<City[]>([]);
@@ -142,6 +138,14 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
   const [selectedAreaMaster, setSelectedAreaMaster] = useState<AreaMaster | null>(null);
   const [showServiceNotAvailableDialog, setShowServiceNotAvailableDialog] = useState(false);
   const [serviceNotAvailableMessage, setServiceNotAvailableMessage] = useState<string>("");
+  const [showEnhancedLeadModal, setShowEnhancedLeadModal] = useState(false);
+  
+  // Pincode validation state
+  const [pincodeValidation, setPincodeValidation] = useState<{
+    isValid: boolean;
+    message: string;
+    isValidating: boolean;
+  }>({ isValid: false, message: "", isValidating: false });
   
   // Address form state (matching SubscriptionModal)
   const [addressFormState, setAddressFormState] = useState({
@@ -216,6 +220,8 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
 
   // Handle area master selection and dairy validation
   const handleAreaMasterSelection = async (areaMaster: AreaMaster) => {
+    console.log('handleAreaMasterSelection called with:', areaMaster.name);
+    
     setSelectedAreaMaster(areaMaster);
     
     // Auto-fill city from selected area master
@@ -230,6 +236,15 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
     } else {
       // Area is valid for this product type
       setServiceNotAvailableMessage("");
+    }
+    
+    // If pincode is already filled, revalidate it against the newly selected area
+    if (addressFormState.pincode && addressFormState.pincode.length === 6) {
+      console.log('Revalidating pincode against newly selected area:', {
+        pincode: addressFormState.pincode,
+        areaMaster: areaMaster.name
+      });
+      validatePincode(addressFormState.pincode, areaMaster);
     }
   };
 
@@ -247,6 +262,14 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+    
+    // Validate pincode when it changes
+    if (name === 'pincode' && value.length === 6 && /^\d{6}$/.test(value)) {
+      validatePincode(value);
+    } else if (name === 'pincode') {
+      // Clear validation when pincode is incomplete
+      setPincodeValidation({ isValid: false, message: "", isValidating: false });
+    }
   };
 
   const handleAddressLabelChange = (value: string) => {
@@ -254,6 +277,45 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
       ...prev,
       label: value
     }));
+  };
+  
+  // Pincode validation function
+  const validatePincode = (pincode: string, areaMaster?: AreaMaster | null) => {
+    const currentAreaMaster = areaMaster || selectedAreaMaster;
+    console.log('validatePincode called with:', { pincode, currentAreaMaster: currentAreaMaster?.name });
+    
+    if (pincode.length === 6 && /^\d{6}$/.test(pincode)) {
+      setPincodeValidation({ isValid: false, message: "", isValidating: true });
+      
+      // Validate pincode against the selected area master immediately (no setTimeout)
+      const validation = validatePincodeInAreas(pincode, [currentAreaMaster].filter(Boolean) as AreaMaster[]);
+      
+      setPincodeValidation({
+        isValid: validation.isValid,
+        message: validation.isValid 
+          ? `Great! Pincode ${pincode} is served by ${currentAreaMaster?.name}` 
+          : `We currently don't serve pincode ${pincode} in ${currentAreaMaster?.name || 'this area'}.`,
+        isValidating: false
+      });
+    }
+  };
+  
+  
+  // Handle request service button click
+  const handleRequestService = () => {
+    console.log('handleRequestService called with form state:', {
+      pincode: addressFormState.pincode,
+      selectedArea: selectedAreaMaster?.name,
+      city: addressFormState.city
+    });
+    
+    // Pre-fill service not available message
+    const message = selectedAreaMaster 
+      ? `We currently don't serve pincode ${addressFormState.pincode} in ${selectedAreaMaster.name}. Help us prioritize expanding to your area!`
+      : `We currently don't serve pincode ${addressFormState.pincode}. Help us prioritize expanding to your area!`;
+    
+    setServiceNotAvailableMessage(message);
+    setShowEnhancedLeadModal(true);
   };
 
   const validateAddressForm = (): boolean => {
@@ -294,7 +356,14 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
       selectedAreaMaster && 
       !selectedAreaMaster.isDairyProduct;
     
-    if (isDairyProductInNonDairyArea) {
+    // Check if pincode is not serviceable in the selected area
+    const pincodeValidationResult = selectedAreaMaster ? 
+      validatePincodeInAreas(addressFormState.pincode, [selectedAreaMaster]) : 
+      { isValid: false, matchedAreas: [], message: "No area selected" };
+    
+    const isAreaNotServiceable = !pincodeValidationResult.isValid;
+    
+    if (isDairyProductInNonDairyArea || isAreaNotServiceable) {
       // Create lead instead of address
       const leadData = {
         name: addressFormState.recipientName,
@@ -306,9 +375,11 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
         pincode: addressFormState.pincode,
         city: addressFormState.city,
         state: addressFormState.state,
-        productId: product.id,
-        isDairyProduct: true,
-        notes: `Lead captured from buy-once modal for area: ${selectedAreaMaster.name}`
+        productId: product?.id,
+        isDairyProduct: product?.isDairyProduct || false,
+        notes: isDairyProductInNonDairyArea ? 
+          `Lead captured from buy-once modal - Dairy product not available in area: ${selectedAreaMaster?.name}` :
+          `Lead captured from buy-once modal - Pincode ${addressFormState.pincode} not serviceable in area: ${selectedAreaMaster?.name}`
       };
 
       try {
@@ -316,7 +387,11 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
         toast.success("Thank you for your interest! We've noted your details and will contact you when we expand dairy delivery to your area.");
         
         // Show area not served message
-        setServiceNotAvailableMessage(`We don't currently serve dairy products in ${selectedAreaMaster.name}. However, we've saved your details and will notify you when service becomes available in your area!`);
+        const message = isDairyProductInNonDairyArea ? 
+          `We don't currently serve dairy products in ${selectedAreaMaster?.name}. However, we'd love to expand our dairy delivery services to your area! We've saved your details and will notify you when service becomes available.` :
+          `We don't currently serve pincode ${addressFormState.pincode} in ${selectedAreaMaster?.name}. However, we're expanding! We've saved your details and will notify you when service becomes available in your area.`;
+        
+        setServiceNotAvailableMessage(message);
         setShowServiceNotAvailableDialog(true);
         
         // Reset form
@@ -368,7 +443,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
   };
 
   const getBuyOncePrice = () => {
-    return product?.depotVariantPricing?.buyOncePrice || product?.buyOncePrice || product?.mrp || 0;
+    return product?.depotVariantPricing?.buyOncePrice || product?.price || 0;
   };
 
   useEffect(() => {
@@ -485,7 +560,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
     return format(date, 'yyyy-MM-dd');
   };
 
-  const [useWallet, setUseWallet] = useState(true);
+  const [useWallet] = useState(true);
   const productTotal = useMemo(() => quantity * buyOncePrice, [quantity, buyOncePrice]);
   const walletDeduction = useMemo(() => (useWallet ? Math.min(walletBalance || 0, productTotal) : 0), [walletBalance, productTotal, useWallet]);
   const payableAmount = useMemo(() => productTotal - walletDeduction, [productTotal, walletDeduction]);
@@ -825,6 +900,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                   <Select
                     onValueChange={(val) => handleAddressChange("state", val)}
                     value={addressFormState.state}
+                    disabled={true}
                   >
                     <SelectTrigger className={formErrors.state ? "border-red-500" : ""}>
                       <SelectValue placeholder="Select a state" />
@@ -858,6 +934,18 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                   {formErrors.pincode && (
                     <p className="text-red-500 text-sm mt-1">{formErrors.pincode}</p>
                   )}
+                  
+                  {/* Pincode Validation */}
+                  {selectedAreaMaster && (
+                    <PincodeValidator
+                      pincode={addressFormState.pincode}
+                      isValid={pincodeValidation.isValid}
+                      message={pincodeValidation.message}
+                      isValidating={pincodeValidation.isValidating}
+                      showServiceRequest={!pincodeValidation.isValid && !pincodeValidation.isValidating && addressFormState.pincode.length === 6}
+                      onRequestService={handleRequestService}
+                    />
+                  )}
                 </div>
                 
                 <div className="flex items-center space-x-2">
@@ -878,6 +966,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                     Set as default address
                   </Label>
                 </div>
+                
               </div>
             </div>
           ) : (
@@ -1312,6 +1401,30 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
         productName={product?.name}
         areaName={selectedAreaMaster?.name}
         message={serviceNotAvailableMessage}
+      />
+      
+      {/* Enhanced Lead Capture Modal for unserved pincodes */}
+      <EnhancedLeadCaptureModal
+        isOpen={showEnhancedLeadModal}
+        onOpenChange={setShowEnhancedLeadModal}
+        productId={product?.id}
+        productName={product?.name}
+        isDairyProduct={product?.isDairyProduct}
+        message={serviceNotAvailableMessage || `We currently do not serve pincode ${addressFormState.pincode}, but we're expanding!`}
+        prefilledData={{
+          recipientName: addressFormState.recipientName,
+          mobile: addressFormState.mobile,
+          plotBuilding: addressFormState.plotBuilding,
+          streetArea: addressFormState.streetArea,
+          landmark: addressFormState.landmark,
+          pincode: addressFormState.pincode,
+          city: addressFormState.city || selectedAreaMaster?.city?.name || '',
+          state: addressFormState.state
+        }}
+        onSuccess={() => {
+          setShowEnhancedLeadModal(false);
+          toast.success("Thank you for your interest! We've saved your details and will contact you when we expand to your area.");
+        }}
       />
     </Dialog>
   );

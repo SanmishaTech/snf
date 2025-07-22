@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -66,6 +66,24 @@ export const EnhancedLeadCaptureModal: React.FC<EnhancedLeadCaptureModalProps> =
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  // Update form data when prefilledData changes
+  useEffect(() => {
+    setFormData({
+      name: prefilledData.recipientName || '',
+      mobile: prefilledData.mobile || '',
+      email: '',
+      plotBuilding: prefilledData.plotBuilding || '',
+      streetArea: prefilledData.streetArea || '',
+      landmark: prefilledData.landmark || '',
+      pincode: prefilledData.pincode || '',
+      city: prefilledData.city || 'Dombivli',
+      state: prefilledData.state || 'Maharashtra',
+      productId,
+      isDairyProduct,
+      notes: `Service request for ${productName || 'product'} in ${prefilledData.pincode || 'unspecified area'}`
+    });
+  }, [prefilledData, productId, productName, isDairyProduct]);
 
   const handleInputChange = (field: keyof CreateLeadData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
