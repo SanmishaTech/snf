@@ -18,6 +18,7 @@ import {
   validateDairySupport,
   type AreaMaster,
 } from "@/services/areaMasterService";
+import { getCitiesList, type City } from "@/services/cityMasterService";
 import { createLead } from "@/services/leadService";
 import { ServiceNotAvailableDialog } from "@/modules/Lead";
 
@@ -135,6 +136,9 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
   const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
   const [locations, setLocations] = useState<LocationData[]>([]);
   const [areaMasters, setAreaMasters] = useState<AreaMaster[]>([]);
+  const [filteredAreaMasters, setFilteredAreaMasters] = useState<AreaMaster[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
+  const [selectedCityId, setSelectedCityId] = useState<number | null>(null);
   const [selectedAreaMaster, setSelectedAreaMaster] = useState<AreaMaster | null>(null);
   const [showServiceNotAvailableDialog, setShowServiceNotAvailableDialog] = useState(false);
   const [serviceNotAvailableMessage, setServiceNotAvailableMessage] = useState<string>("");
@@ -154,10 +158,14 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  // Fetch area masters list when modal opens
+  // Fetch area masters and cities when modal opens
   useEffect(() => {
     if (isOpen) {
       fetchAreaMasters();
+      fetchCities();
+      // Reset selections when modal opens
+      setSelectedCityId(null);
+      setSelectedAreaMaster(null);
     }
   }, [isOpen]);
 
@@ -172,9 +180,48 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
     }
   };
 
+  // Fetch list of cities
+  const fetchCities = async () => {
+    try {
+      const citiesList = await getCitiesList();
+      setCities(citiesList);
+    } catch (error) {
+      console.error("Failed to fetch cities:", error);
+      toast.error("Could not load cities.");
+    }
+  };
+
+  // Filter areas based on selected city
+  useEffect(() => {
+    if (selectedCityId && areaMasters.length > 0) {
+      // Filter areas by cityId - more strict filtering
+      const filtered = areaMasters.filter(area => {
+        // Check cityId first (primary association)
+        if (area.cityId) {
+          return area.cityId === selectedCityId;
+        }
+        // Fallback to city object id if cityId is not available
+        if (area.city?.id) {
+          return area.city.id === selectedCityId;
+        }
+        // Don't show areas without city association when a city is selected
+        return false;
+      });
+      setFilteredAreaMasters(filtered);
+    } else {
+      // When no city is selected, show all areas
+      setFilteredAreaMasters(areaMasters);
+    }
+  }, [selectedCityId, areaMasters]);
+
   // Handle area master selection and dairy validation
   const handleAreaMasterSelection = async (areaMaster: AreaMaster) => {
     setSelectedAreaMaster(areaMaster);
+    
+    // Auto-fill city from selected area master
+    if (areaMaster.city?.name) {
+      handleAddressChange("city", areaMaster.city.name);
+    }
     
     // Store dairy validation message for later use during save, but don't show dialog immediately
     if (product?.isDairyProduct && !areaMaster.isDairyProduct) {
@@ -261,8 +308,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
         state: addressFormState.state,
         productId: product.id,
         isDairyProduct: true,
-        notes: `Lead captured from buy-once modal for area: ${selectedAreaMaster.name}`,
-        status: "NEW"
+        notes: `Lead captured from buy-once modal for area: ${selectedAreaMaster.name}`
       };
 
       try {
@@ -548,10 +594,12 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
 
         <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto flex-grow pb-8">
           {showAddressFormView ? (
-            /* Inline Address Form - matching SubscriptionModal */
-            <div className="bg-white p-4 rounded-md space-y-4">
-              <h3 className="text-lg font-semibold">Add New Address</h3>
-              <div className="space-y-5">
+            /* Inline Address Form - matching SubscriptionModal - Made scrollable */
+            <div className="bg-white rounded-md max-h-[60vh] overflow-y-auto">
+              <div className="p-4 border-b bg-white sticky top-0 z-10">
+                <h3 className="text-lg font-semibold">Add New Address</h3>
+              </div>
+              <div className="p-4 space-y-5">
                 <div>
                   <Label htmlFor="address-label" className="text-sm font-medium mb-2 block">
                     Address Label
@@ -671,51 +719,43 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                   />
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="city" className="text-sm font-medium mb-1.5 block">
-                      City*
-                    </Label>
-                    <Input
-                      id="city"
-                      value={addressFormState.city}
-                      onChange={(e) => handleAddressChange("city", e.target.value)}
-                      placeholder="e.g., Metropolis"
-                      className={formErrors.city ? "border-red-500" : ""}
-                    />
-                    {formErrors.city && (
-                      <p className="text-red-500 text-sm mt-1">{formErrors.city}</p>
-                    )}
-                  </div>
-                  <div>
-                    <Label htmlFor="state" className="text-sm font-medium mb-1.5 block">
-                      State*
-                    </Label>
-                    <Select
-                      onValueChange={(val) => handleAddressChange("state", val)}
-                      value={addressFormState.state}
-                    >
-                      <SelectTrigger className={formErrors.state ? "border-red-500" : ""}>
-                        <SelectValue placeholder="Select a state" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-60 overflow-y-auto">
-                        {INDIAN_STATES.filter(st => st && typeof st.label === 'string').map((st) => (
-                          <SelectItem key={st.value} value={st.label}>
-                            {st.label}
+                {/* City Filter for Area Master Selection */}
+                <div>
+                  <Label
+                    htmlFor="deliveryCity"
+                    className="text-sm font-medium mb-1.5 block"
+                  >
+                    Filter by City
+                  </Label>
+                  <Select
+                    onValueChange={(value) => {
+                      const cityId = value === "all" ? null : parseInt(value);
+                      setSelectedCityId(cityId);
+                      // Clear area master selection when city changes
+                      setSelectedAreaMaster(null);
+                    }}
+                    value={selectedCityId?.toString() || "all"}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Filter by city" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60 overflow-y-auto">
+                      <SelectItem value="all">All Cities</SelectItem>
+                      {cities
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .map((city) => (
+                          <SelectItem key={city.id} value={city.id.toString()}>
+                            {city.name}
                           </SelectItem>
                         ))}
-                      </SelectContent>
-                    </Select>
-                    {formErrors.state && (
-                      <p className="text-red-500 text-sm mt-1">{formErrors.state}</p>
-                    )}
-                  </div>
+                    </SelectContent>
+                  </Select>
                 </div>
                 
                 {/* Area Master Selection */}
                 <div>
                   <Label htmlFor="areaMaster" className="text-sm font-medium mb-1.5 block">
-                    Our Delivery Areas*
+                    Our Delivery Areas* <span className="text-xs text-gray-500"></span>
                     {product?.isDairyProduct && (
                       <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
                         Dairy Product
@@ -724,7 +764,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                   </Label>
                   <Select
                     onValueChange={(value) => {
-                      const areaMaster = areaMasters.find(am => am.id === parseInt(value));
+                      const areaMaster = filteredAreaMasters.find(am => am.id === parseInt(value));
                       if (areaMaster) {
                         handleAreaMasterSelection(areaMaster);
                       }
@@ -735,7 +775,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                       <SelectValue placeholder="Select your delivery area" />
                     </SelectTrigger>
                     <SelectContent className="max-h-60 overflow-y-auto">
-                      {areaMasters
+                      {filteredAreaMasters
                         .sort((a, b) => a.name.localeCompare(b.name))
                         .map((areaMaster) => (
                         <SelectItem
@@ -773,6 +813,33 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                       </p>
                     </div>
                   )} */}
+                </div>
+                
+                <div>
+                  <Label
+                    htmlFor="state"
+                    className="text-sm font-medium mb-1.5 block"
+                  >
+                    State*
+                  </Label>
+                  <Select
+                    onValueChange={(val) => handleAddressChange("state", val)}
+                    value={addressFormState.state}
+                  >
+                    <SelectTrigger className={formErrors.state ? "border-red-500" : ""}>
+                      <SelectValue placeholder="Select a state" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60 overflow-y-auto">
+                      {INDIAN_STATES.filter(st => st && typeof st.label === 'string').map((st) => (
+                        <SelectItem key={st.value} value={st.label}>
+                          {st.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {formErrors.state && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.state}</p>
+                  )}
                 </div>
                 
                 <div>

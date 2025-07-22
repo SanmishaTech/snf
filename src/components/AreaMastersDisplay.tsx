@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { MapPin, Truck, Search, Package, Phone, Building2, Clock } from 'lucide-react';
+import { MapPin, Truck, Search } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { useAreaMasters, type AreaMaster } from '@/hooks/useAreaMasters';
 
 interface AreaMastersDisplayProps {
@@ -13,72 +13,46 @@ interface AreaMastersDisplayProps {
 }
 
 const AreaMastersDisplay: React.FC<AreaMastersDisplayProps> = ({ 
-  title = "Home Delivery Areas", 
   showDeliveryInfo = true,
   showDairyOnly = false
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const { data: areaMasters = [], isLoading, isError } = useAreaMasters();
-  const areaList = Array.isArray(areaMasters) ? areaMasters : [];
-
+  
   // Filter area masters based on search and dairy filter
   const filteredAreaMasters = useMemo(() => {
-    let filtered = areaList;
+    const areaList = Array.isArray(areaMasters) ? areaMasters : [];
+    let filtered: AreaMaster[] = areaList;
     
     // Only show Hand Delivery areas (filter out Courier)
-    filtered = filtered.filter(am => am.deliveryType === 'HandDelivery');
+    filtered = filtered.filter((am): am is AreaMaster => 
+      am && am.deliveryType === 'HandDelivery'
+    );
     
     // Filter by dairy products if needed
     if (showDairyOnly) {
-      filtered = filtered.filter(am => am.isDairyProduct);
+      filtered = filtered.filter((am): am is AreaMaster => 
+        am && am.isDairyProduct
+      );
     }
     
     // Filter by search term
     if (searchTerm) {
-      filtered = filtered.filter(areaMaster =>
-        areaMaster.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        areaMaster.pincodes.includes(searchTerm) ||
-        areaMaster.depot?.name.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter((areaMaster): areaMaster is AreaMaster =>
+        areaMaster && (
+          areaMaster.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          areaMaster.pincodes.includes(searchTerm) ||
+          Boolean(areaMaster.depot?.name?.toLowerCase().includes(searchTerm.toLowerCase()))
+        )
       );
     }
     
     return filtered;
-  }, [areaList, searchTerm, showDairyOnly]);
+  }, [areaMasters, searchTerm, showDairyOnly]);
 
   // Since we're only showing Hand Delivery areas, no need to group
   const handDeliveryAreas = filteredAreaMasters;
 
-  // Parse pincodes for display
-  const formatPincodes = (pincodes: string) => {
-    if (!pincodes || pincodes.trim() === '') return [];
-    
-    // Try to parse as JSON array first
-    try {
-      const parsed = JSON.parse(pincodes);
-      if (Array.isArray(parsed)) {
-        return parsed.slice(0, 5).map(p => String(p).trim()).filter(Boolean);
-      }
-    } catch {
-      // Not JSON, continue with string processing
-    }
-    
-    // Check if it contains commas or other separators
-    if (pincodes.includes(',')) {
-      return pincodes.split(',').slice(0, 5).map(p => p.trim()).filter(Boolean);
-    } else if (pincodes.includes(';')) {
-      return pincodes.split(';').slice(0, 5).map(p => p.trim()).filter(Boolean);
-    } else if (pincodes.includes('|')) {
-      return pincodes.split('|').slice(0, 5).map(p => p.trim()).filter(Boolean);
-    } else {
-      // Single pincode or space-separated
-      const spaceSeparated = pincodes.trim().split(/\s+/);
-      if (spaceSeparated.length > 1) {
-        return spaceSeparated.slice(0, 5).filter(Boolean);
-      }
-      // Single pincode
-      return [pincodes.trim()];
-    }
-  };
 
   if (isLoading) {
     return (
@@ -111,7 +85,7 @@ const AreaMastersDisplay: React.FC<AreaMastersDisplayProps> = ({
     );
   }
 
-  if (areaList.length === 0) {
+  if (Array.isArray(areaMasters) && areaMasters.length === 0) {
     return (
       <div className="text-center py-8">
         <MapPin className="mx-auto h-12 w-12 mb-4 text-gray-400" />
@@ -177,62 +151,23 @@ const AreaMastersDisplay: React.FC<AreaMastersDisplayProps> = ({
             <div className="bg-green-100 p-2 rounded-lg">
               <Truck className="h-5 w-5 text-green-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900">Hand Delivery Areas</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Home Delivery Areas</h3>
             <Badge variant="secondary" className="bg-green-100 text-green-700">
               {handDeliveryAreas.length} areas
             </Badge>
           </div>
           
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
             {handDeliveryAreas.map((areaMaster) => (
-              <Card key={areaMaster.id} className="hover:shadow-md transition-shadow border-green-100">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <CardTitle className="text-base font-semibold text-gray-900 flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-green-600" />
-                      {areaMaster.name}
-                    </CardTitle>
-                    <div className="flex gap-1">
-                      {/* <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">
-                        Hand Delivery
-                      </Badge> */}
-                      {/* {areaMaster.isDairyProduct && (
-                        <Badge variant="secondary" className="bg-blue-100 text-blue-700 text-xs">
-                          Dairy
-                        </Badge>
-                      )} */}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0 space-y-3">
-                  {/* <div>
-                    <p className="text-sm font-medium text-gray-700 mb-1">Pincodes Covered:</p>
-                    <div className="flex flex-wrap gap-1">
-                      {formatPincodes(areaMaster.pincodes).map((pincode, idx) => (
-                        <span key={idx} className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
-                          {pincode}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                   */}
-                  {/* {areaMaster.depot && (
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <p className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
-                        <Building2 className="h-3 w-3" />
-                        Serviced by: {areaMaster.depot.name}
-                      </p>
-                      <p className="text-xs text-gray-600">{areaMaster.depot.address}</p>
-                      <Badge 
-                        variant="outline" 
-                        className={`mt-1 text-xs ${areaMaster.depot.isOnline ? 'border-green-300 text-green-700' : 'border-gray-300 text-gray-700'}`}
-                      >
-                        {areaMaster.depot.isOnline ? 'Online Depot' : 'Offline Depot'}
-                      </Badge>
-                    </div>
-                  )} */}
-                </CardContent>
-              </Card>
+              <div 
+                key={areaMaster.id} 
+                className="flex items-center gap-2 p-2 rounded-lg border border-green-100 bg-green-50/50 hover:bg-green-50 transition-colors"
+              >
+                <MapPin className="h-3 w-3 text-green-600 flex-shrink-0" />
+                <span className="text-sm font-medium text-gray-700 truncate">
+                  {areaMaster.name}
+                </span>
+              </div>
             ))}
           </div>
         </div>

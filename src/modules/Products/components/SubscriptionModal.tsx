@@ -15,6 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -51,10 +52,15 @@ import {
 import {
   getPublicAreaMasters,
   validateDairySupport,
+  filterAreaMastersByCity,
+  validatePincodeInAreas,
+  canAreaServeProduct,
   type AreaMaster,
 } from "@/services/areaMasterService";
+import { getCitiesList, type City } from "@/services/cityMasterService";
 import { createLead } from "@/services/leadService";
-import { ServiceNotAvailableDialog } from "@/modules/Lead";
+import { ServiceNotAvailableDialog, EnhancedLeadCaptureModal } from "@/modules/Lead";
+import { PincodeValidator } from "@/components/ui/PincodeValidator";
 
 // Enhanced interfaces to support variants with individual delivery schedules
 interface ProductVariant {
@@ -66,7 +72,7 @@ interface ProductVariant {
   price7Day?: number;
   price15Day?: number;
   price1Month?: number;
-  name?: string;
+  unit?: string;
   description?: string;
   isAvailable?: boolean;
 }
@@ -106,7 +112,7 @@ interface ProductData {
   price7Day?: number;
   price15Day?: number;
   price1Month?: number;
-  name?: string;
+  unit?: string;
   isDairyProduct?: boolean; // Flag to indicate if product is dairy
   variants?: ProductVariant[];
 }
@@ -201,10 +207,19 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [useWallet, setUseWallet] = useState(true);
   const [locations, setLocations] = useState<LocationData[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
+  const [selectedCityId, setSelectedCityId] = useState<number | null>(null);
   const [areaMasters, setAreaMasters] = useState<AreaMaster[]>([]);
   const [selectedAreaMaster, setSelectedAreaMaster] = useState<AreaMaster | null>(null);
+  const [filteredAreaMasters, setFilteredAreaMasters] = useState<AreaMaster[]>([]);
   const [showServiceNotAvailableDialog, setShowServiceNotAvailableDialog] = useState(false);
   const [serviceNotAvailableMessage, setServiceNotAvailableMessage] = useState<string>("");
+  const [pincodeValidation, setPincodeValidation] = useState<{
+    isValid: boolean;
+    message: string;
+    isValidating: boolean;
+  }>({ isValid: false, message: "", isValidating: false });
+  const [showEnhancedLeadModal, setShowEnhancedLeadModal] = useState(false);
 
   useEffect(() => {
     const resetOptionIfNeeded = (option: string) => {
@@ -258,6 +273,74 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     if (formErrors[field as string]) {
       setFormErrors((prev) => ({ ...prev, [field as string]: "" }));
     }
+    
+    // Real-time pincode validation - only validate if area master is selected
+    if (field === "pincode" && typeof value === "string" && selectedAreaMaster) {
+      validatePincode(value);
+    } else if (field === "pincode" && typeof value === "string" && !selectedAreaMaster) {
+      // Clear validation state if no area master selected
+      setPincodeValidation({ isValid: false, message: "", isValidating: false });
+    }
+  };
+
+  // Pincode validation function
+  const validatePincode = (pincode: string, areaMaster?: AreaMaster | null) => {
+    const currentAreaMaster = areaMaster || selectedAreaMaster;
+    console.log('validatePincode called with:', { pincode, currentAreaMaster: currentAreaMaster?.name });
+    
+    if (!pincode || pincode.length < 6) {
+      setPincodeValidation({ isValid: false, message: "", isValidating: false });
+      return;
+    }
+
+    if (!currentAreaMaster) {
+      setPincodeValidation({ 
+        isValid: false, 
+        message: "Please select a delivery area first to validate your pincode", 
+        isValidating: false 
+      });
+      return;
+    }
+
+    if (pincode.length === 6 && /^\d{6}$/.test(pincode)) {
+      setPincodeValidation({ isValid: false, message: "", isValidating: true });
+      
+      // Validate pincode against the selected area master immediately (no setTimeout)
+      console.log('Selected area master pincodes:', currentAreaMaster.pincodes);
+      const validation = validatePincodeInAreas(pincode, [currentAreaMaster]);
+      console.log('Pincode validation result:', validation);
+      
+      setPincodeValidation({
+        isValid: validation.isValid,
+        message: validation.isValid 
+          ? `Great! Pincode ${pincode} is served by ${currentAreaMaster.name}` 
+          : `Pincode ${pincode} is not served by ${currentAreaMaster.name}. Please check your pincode or select a different area.`,
+        isValidating: false
+      });
+    } else {
+      setPincodeValidation({
+        isValid: false,
+        message: "Please enter a valid 6-digit pincode",
+        isValidating: false
+      });
+    }
+  };
+
+  // Handle request service for unserved pincode
+  const handleRequestService = () => {
+    console.log('handleRequestService called with form state:', {
+      pincode: addressFormState.pincode,
+      selectedArea: selectedAreaMaster?.name,
+      city: addressFormState.city
+    });
+    
+    // Pre-fill service not available message
+    const message = selectedAreaMaster 
+      ? `We currently don't serve pincode ${addressFormState.pincode} in ${selectedAreaMaster.name}. Help us prioritize expanding to your area!`
+      : `We currently don't serve pincode ${addressFormState.pincode}. Help us prioritize expanding to your area!`;
+    
+    setServiceNotAvailableMessage(message);
+    setShowEnhancedLeadModal(true);
   };
 
   const handleAddressFormChange = (
@@ -366,9 +449,20 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     try {
       const areaMastersList = await getPublicAreaMasters();
       setAreaMasters(areaMastersList);
+      setFilteredAreaMasters(areaMastersList);
     } catch (error) {
       console.error("Failed to fetch area masters:", error);
       toast.error("Could not load delivery areas.");
+    }
+  };
+
+  const fetchCities = async () => {
+    try {
+      const citiesList = await getCitiesList();
+      setCities(citiesList);
+    } catch (error) {
+      console.error("Failed to fetch cities:", error);
+      toast.error("Could not load cities.");
     }
   };
 
@@ -377,14 +471,59 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         fetchVariants(productId, depotId);
       }
       fetchAreaMasters();
+      fetchCities();
     } else {
       // Reset on close
       setProductVariants([]);
       setHasVariants(false);
       setSelectedVariants([]);
+      setSelectedCityId(null);
+      setSelectedAreaMaster(null);
       setModalView("subscriptionDetails");
     }
   }, [isOpen, productId, depotId, fetchVariants]);
+
+  // Filter areas based on selected city
+  useEffect(() => {
+    if (selectedCityId && areaMasters.length > 0) {
+      // Filter areas by cityId - more strict filtering
+      const filtered = areaMasters.filter(area => {
+        // Check cityId first (primary association)
+        if (area.cityId) {
+          return area.cityId === selectedCityId;
+        }
+        // Fallback to city object id if cityId is not available
+        if (area.city?.id) {
+          return area.city.id === selectedCityId;
+        }
+        // Don't show areas without city association when a city is selected
+        return false;
+      });
+      setFilteredAreaMasters(filtered);
+    } else {
+      // When no city is selected, show all areas
+      setFilteredAreaMasters(areaMasters);
+    }
+  }, [selectedCityId, areaMasters]);
+
+  // Reset selected area when filtered areas change and current area is not in the list
+  useEffect(() => {
+    if (selectedAreaMaster && selectedCityId && filteredAreaMasters.length > 0) {
+      const isAreaInCity = filteredAreaMasters.some(area => area.id === selectedAreaMaster.id);
+      if (!isAreaInCity) {
+        setSelectedAreaMaster(null);
+        // Clear pincode validation when area is reset
+        setPincodeValidation({ isValid: false, message: "", isValidating: false });
+      }
+    }
+  }, [filteredAreaMasters, selectedAreaMaster, selectedCityId]);
+
+  // Clear pincode validation when no area master is selected
+  useEffect(() => {
+    if (!selectedAreaMaster) {
+      setPincodeValidation({ isValid: false, message: "", isValidating: false });
+    }
+  }, [selectedAreaMaster]);
 
   // Helper functions for variant management
   const updateVariantDeliveryOption = (
@@ -578,8 +717,36 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     
     // Area master selection is required
     if (!selectedAreaMaster) {
-      errors.areaMaster = "Please select a delivery area.";
+      errors.areaMaster = "Please select a delivery area from our service locations.";
     }
+
+    // Validate pincode against selected area master
+    if (addressFormState?.pincode?.trim() && selectedAreaMaster) {
+      const validation = validatePincodeInAreas(addressFormState.pincode.trim(), [selectedAreaMaster]);
+      console.log('Form validation - pincode check:', {
+        pincode: addressFormState.pincode,
+        areaMaster: selectedAreaMaster.name,
+        isValid: validation.isValid,
+        message: validation.message
+      });
+      
+      if (!validation.isValid) {
+        errors.pincode = `Pincode ${addressFormState.pincode} is not served by ${selectedAreaMaster.name}. Please select a different area or request service.`;
+      }
+    }
+
+    // If no area master is selected but pincode is entered, show helpful message
+    if (addressFormState?.pincode?.trim() && !selectedAreaMaster && areaMasters.length > 0) {
+      errors.areaMaster = "Please select a delivery area first, then enter your pincode to validate coverage.";
+    }
+
+    console.log('Address validation:', {
+      selectedAreaMaster: selectedAreaMaster?.name,
+      pincode: addressFormState?.pincode,
+      areaMastersCount: areaMasters.length,
+      filteredAreaMastersCount: filteredAreaMasters.length,
+      errors
+    });
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -778,8 +945,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         state: addressFormState.state,
         productId: product.id,
         isDairyProduct: true,
-        notes: `Lead captured from subscription modal for area: ${selectedAreaMaster.name}`,
-        status: "NEW"
+        notes: `Lead captured from subscription modal for area: ${selectedAreaMaster.name}`
       };
 
       try {
@@ -797,6 +963,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
           plotBuilding: "",
           streetArea: "",
           landmark: "",
+          pincode: "",
           city: "",
           state: "",
           isDefault: false,
@@ -824,6 +991,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
           plotBuilding: "",
           streetArea: "",
           landmark: "",
+          pincode: "",
           city: "",
           state: "",
           isDefault: false,
@@ -840,6 +1008,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
   // Handle area master selection 
   const handleAreaMasterSelection = async (areaMaster: AreaMaster) => {
+    console.log('handleAreaMasterSelection called with:', areaMaster.name);
+    
     setSelectedAreaMaster(areaMaster);
     
     // Store dairy validation message for later use during save, but don't show dialog immediately
@@ -849,6 +1019,15 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     } else {
       // Area is valid for this product type
       setServiceNotAvailableMessage("");
+    }
+    
+    // If pincode is already filled, revalidate it against the newly selected area
+    if (addressFormState.pincode && addressFormState.pincode.length === 6) {
+      console.log('Revalidating pincode against newly selected area:', {
+        pincode: addressFormState.pincode,
+        areaMaster: areaMaster.name
+      });
+      validatePincode(addressFormState.pincode, areaMaster);
     }
   };
 
@@ -1131,7 +1310,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
     const payload: OrderWithSubscriptionsRequest = {
       subscriptions,
-      deliveryAddressId: parseInt(String(deliveryAddressIdForPayload), 10),
+      deliveryAddressId: String(deliveryAddressIdForPayload),
       walletamt: useWallet ? walletDeduction : 0, // Wallet amount not handled in this form
     };
 
@@ -1370,10 +1549,14 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
           <DialogTitle className="text-lg font-semibold text-gray-800">
             Create Subscription for {product?.name}
           </DialogTitle>
+          <DialogDescription className="text-sm text-gray-600 mt-1">
+            Set up your subscription preferences and delivery details.
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-grow overflow-y-auto px-4 py-3 space-y-4 bg-gray-50">
-          {modalView === "subscriptionDetails" ? (
+        <div className="flex flex-col h-full">
+          <div className="flex-grow overflow-y-auto px-4 py-3 space-y-4 bg-gray-50">
+            {modalView === "subscriptionDetails" ? (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Left Column */}
@@ -2821,10 +3004,12 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               )}
             </div>
           ) : (
-            // Address Form View
-            <div className="bg-white p-4 rounded-md space-y-4">
-              <h3 className="text-lg font-semibold">Add New Address</h3>
-              <div className="space-y-5">
+            // Address Form View - Made scrollable
+            <div className="bg-white rounded-md max-h-[60vh] overflow-y-auto">
+              <div className="p-4 border-b bg-white sticky top-0 z-10">
+                <h3 className="text-lg font-semibold">Add New Address</h3>
+              </div>
+              <div className="p-4 space-y-5">
                 <div>
                   <Label
                     htmlFor="address-label"
@@ -2970,77 +3155,53 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label
-                      htmlFor="city"
-                      className="text-sm font-medium mb-1.5 block"
-                    >
-                      City*
-                    </Label>
-                    <Input
-                      id="city"
-                      value={addressFormState.city}
-                      onChange={(e) =>
-                        handleAddressChange("city", e.target.value)
-                      }
-                      placeholder="e.g., Metropolis"
-                      className={formErrors.city ? "border-red-500" : ""}
-                    />
-                    {formErrors.city && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {formErrors.city}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <Label
-                      htmlFor="state"
-                      className="text-sm font-medium mb-1.5 block"
-                    >
-                      State*
-                    </Label>
-                    <Select
-                      onValueChange={(val) => handleAddressChange("state", val)}
-                      defaultValue={addressFormState.state}
-                    >
-                      <SelectTrigger
-                        className={formErrors.state ? "border-red-500" : ""}
-                      >
-                        <SelectValue placeholder="Select a state" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-60 overflow-y-auto">
-                        {INDIAN_STATES.filter(st => st && typeof st.label === 'string').map((st) => (
-                          <SelectItem key={st.value} value={st.label}>
-                            {st.label}
+                <div>
+                  <Label
+                    htmlFor="deliveryCity"
+                    className="text-sm font-medium mb-1.5 block"
+                  >
+                    Filter by City
+                  </Label>
+                  <Select
+                    onValueChange={(value) => {
+                      const cityId = value === "all" ? null : parseInt(value);
+                      setSelectedCityId(cityId);
+                      // Clear area master selection when city changes
+                      setSelectedAreaMaster(null);
+                    }}
+                    value={selectedCityId?.toString() || "all"}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Filter by city (optional)" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60 overflow-y-auto">
+                      <SelectItem value="all">All Cities</SelectItem>
+                      {cities
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .map((city) => (
+                          <SelectItem key={city.id} value={city.id.toString()}>
+                            {city.name}
                           </SelectItem>
                         ))}
-                      </SelectContent>
-                    </Select>
-                    {formErrors.state && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {formErrors.state}
-                      </p>
-                    )}
-                  </div>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label
                     htmlFor="areaMaster"
                     className="text-sm font-medium mb-1.5 block"
                   >
-                    Our Delivery Areas*
-                    {product?.isDairyProduct && (
-                      <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
-                        Dairy Product
-                      </span>
-                    )}
+                    Delivery Area* <span className="text-xs text-gray-500"></span>
                   </Label>
                   <Select
                     onValueChange={(value) => {
-                      const areaMaster = areaMasters.find(am => am.id === parseInt(value));
+                      const areaMaster = filteredAreaMasters.find(am => am.id === parseInt(value));
                       if (areaMaster) {
                         handleAreaMasterSelection(areaMaster);
+                        // Auto-fill city from selected area master
+                        if (areaMaster.city?.name) {
+                          handleAddressChange("city", areaMaster.city.name);
+                        }
                       }
                     }}
                     value={selectedAreaMaster?.id?.toString() || ""}
@@ -3051,30 +3212,14 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       <SelectValue placeholder="Select your delivery area" />
                     </SelectTrigger>
                     <SelectContent className="max-h-60 overflow-y-auto">
-                      {areaMasters
+                      {filteredAreaMasters
                         .sort((a, b) => a.name.localeCompare(b.name))
                         .map((areaMaster) => (
                         <SelectItem
                           key={areaMaster.id}
                           value={areaMaster.id.toString()}
                         >
-                          <div className="flex items-center justify-between w-full">
-                            <span>{areaMaster.name}</span>
-                            <div className="flex gap-1 ml-2">
-                              <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                areaMaster.deliveryType === 'HandDelivery' 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : 'bg-blue-100 text-blue-800'
-                              }`}>
-                                {areaMaster.deliveryType === 'HandDelivery' ? 'Hand Delivery' : 'Courier'}
-                              </span>
-                              {areaMaster.isDairyProduct && (
-                                <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">
-                                  Dairy Available
-                                </span>
-                              )}
-                            </div>
-                          </div>
+                          {areaMaster.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -3084,19 +3229,38 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       {formErrors.areaMaster}
                     </p>
                   )}
-                  {/* {product?.isDairyProduct && (
-                    <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
-                      <p className="text-sm text-yellow-700">
-                        <span className="font-medium">Dairy Product Notice:</span> This product requires areas that support dairy delivery. Areas marked with "Dairy Available" can serve this product.
-                      </p>
-                    </div>
-                  )} */}
-                  <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
-                    <p className="text-sm text-blue-700">
-                      <span className="font-medium">Note:</span> If your area is
-                      not listed above, please use the form that appears after selection to help us expand to your location.
+                </div>
+                
+                <div>
+                  <Label
+                    htmlFor="state"
+                    className="text-sm font-medium mb-1.5 block"
+                  >
+                    State*
+                  </Label>
+                  <Select
+                    onValueChange={(val) => handleAddressChange("state", val)}
+                    value={addressFormState.state}
+                    disabled={true}
+                  >
+                    <SelectTrigger
+                      className={formErrors.state ? "border-red-500" : ""}
+                    >
+                      <SelectValue placeholder="Select a state" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60 overflow-y-auto">
+                      {INDIAN_STATES.filter(st => st && typeof st.label === 'string').map((st) => (
+                        <SelectItem key={st.value} value={st.label}>
+                          {st.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {formErrors.state && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {formErrors.state}
                     </p>
-                  </div>
+                  )}
                 </div>
                 <div>
                   <Label
@@ -3111,13 +3275,26 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     type="text"
                     value={addressFormState.pincode}
                     onChange={handleAddressFormChange}
-                    placeholder="Pincode"
+                    placeholder="Enter your 6-digit pincode"
                     className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
+                    maxLength={6}
                   />
                   {formErrors.pincode && (
                     <p className="text-red-500 text-sm mt-1">
                       {formErrors.pincode}
                     </p>
+                  )}
+                  
+                  {/* Real-time pincode validation */}
+                  {selectedAreaMaster && (
+                    <PincodeValidator
+                      pincode={addressFormState.pincode}
+                      isValid={pincodeValidation.isValid}
+                      message={pincodeValidation.message}
+                      isValidating={pincodeValidation.isValidating}
+                      showServiceRequest={!pincodeValidation.isValid && !pincodeValidation.isValidating && addressFormState.pincode.length === 6}
+                      onRequestService={handleRequestService}
+                    />
                   )}
                 </div>
                 <div className="flex items-center space-x-2">
@@ -3141,10 +3318,10 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               </div>
             </div>
           )}
-        </div>
+          </div>
 
-        <div className="p-4 border-t bg-white">
-          {modalView === "subscriptionDetails" ? (
+          <div className="p-4 border-t bg-white">
+            {modalView === "subscriptionDetails" ? (
             <div className="space-y-3">
               {/* Savings indicator */}
               {calculateSavings() > 0 && (
@@ -3246,7 +3423,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 </Button>
               </div>
             </div>
-          )}
+            )}
+          </div>
         </div>
       </DialogContent>
       
@@ -3257,6 +3435,46 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         productName={product?.name}
         areaName={selectedAreaMaster?.name}
         message={serviceNotAvailableMessage}
+      />
+
+      {/* Enhanced Lead Capture Modal for unserved pincodes */}
+      <EnhancedLeadCaptureModal
+        isOpen={showEnhancedLeadModal}
+        onOpenChange={setShowEnhancedLeadModal}
+        productId={product?.id}
+        productName={product?.name}
+        isDairyProduct={product?.isDairyProduct}
+        message={serviceNotAvailableMessage || `We currently do not serve pincode ${addressFormState.pincode}, but we're expanding!`}
+        prefilledData={{
+          recipientName: addressFormState.recipientName,
+          mobile: addressFormState.mobile,
+          plotBuilding: addressFormState.plotBuilding,
+          streetArea: addressFormState.streetArea,
+          landmark: addressFormState.landmark,
+          pincode: addressFormState.pincode,
+          city: addressFormState.city || selectedAreaMaster?.city?.name || '',
+          state: addressFormState.state
+        }}
+        onSuccess={() => {
+          setShowEnhancedLeadModal(false);
+          // Reset form after successful lead capture
+          setAddressFormState({
+            recipientName: "",
+            mobile: "",
+            plotBuilding: "",
+            streetArea: "",
+            landmark: "",
+            pincode: "",
+            city: "",
+            state: "Maharashtra",
+            isDefault: false,
+            label: "Home",
+          });
+          setSelectedAreaMaster(null);
+          setSelectedCityId(null);
+          setPincodeValidation({ isValid: false, message: "", isValidating: false });
+          setModalView("subscriptionDetails");
+        }}
       />
     </Dialog>
   );

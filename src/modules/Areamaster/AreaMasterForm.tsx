@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AreaMaster, AreaMasterFormData, DeliveryType, createAreaMaster, updateAreaMaster } from '../../services/areaMasterService'; // Adjusted path
 import { getAllDepotsList, DepotListItem } from '../../services/depotService';
+import { getCitiesList, City } from '../../services/cityMasterService';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,21 +25,24 @@ const AreaMasterForm: React.FC<AreaMasterFormProps> = ({ initialData, onClose, o
   const [formData, setFormData] = useState<AreaMasterFormData>({
     name: '',
     pincodes: '',
-    depotId: '', // depotId is now required
+    depotId: '', // depotId is now optional
+    cityId: null, // cityId added
     deliveryType: DeliveryType.HandDelivery,
     isDairyProduct: false,
   });
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [depots, setDepots] = useState<DepotListItem[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pincodeTags, setPincodeTags] = useState<string[]>([]);
 
   useEffect(() => {
-    if (initialData && depots.length > 0) {
+    if (initialData && depots.length > 0 && cities.length > 0) {
       setFormData({
         name: initialData.name,
         pincodes: initialData.pincodes,
-        depotId: initialData.depotId ? String(initialData.depotId) : '', // Always string for Select
+        depotId: initialData.depotId ? String(initialData.depotId) : '', // Optional depot
+        cityId: initialData.cityId || null, // City association
         deliveryType: initialData.deliveryType || DeliveryType.HandDelivery, // Ensure valid DeliveryType
         isDairyProduct: initialData.isDairyProduct || false,
       });
@@ -48,11 +52,12 @@ const AreaMasterForm: React.FC<AreaMasterFormProps> = ({ initialData, onClose, o
         name: '',
         pincodes: '',
         depotId: '',
+        cityId: null,
         deliveryType: DeliveryType.HandDelivery,
         isDairyProduct: false,
       });
     }
-  }, [initialData, depots]);
+  }, [initialData, depots, cities]);
 
   useEffect(() => {
     const fetchDepots = async () => {
@@ -64,7 +69,19 @@ const AreaMasterForm: React.FC<AreaMasterFormProps> = ({ initialData, onClose, o
         toast.error('Failed to load depots for selection.');
       }
     };
+
+    const fetchCities = async () => {
+      try {
+        const citiesData = await getCitiesList();
+        setCities(citiesData);
+      } catch (error) {
+        console.error('Failed to fetch cities', error);
+        toast.error('Failed to load cities for selection.');
+      }
+    };
+
     fetchDepots();
+    fetchCities();
   }, []);
 
   useEffect(() => {
@@ -117,9 +134,8 @@ const AreaMasterForm: React.FC<AreaMasterFormProps> = ({ initialData, onClose, o
     if (!formData.deliveryType) {
       newErrors.deliveryType = 'Delivery type is required';
     }
-    if (!formData.depotId) {
-      newErrors.depotId = 'Depot is required';
-    }
+    // Depot is now optional, no validation required
+    // City is optional too, no validation required
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -143,7 +159,7 @@ const AreaMasterForm: React.FC<AreaMasterFormProps> = ({ initialData, onClose, o
   const handleSelectChange = (name: string, value: string | null) => { // value can now be string | null
     setFormData(prevFormData => ({
       ...prevFormData,
-      [name]: name === 'depotId' ? value : String(value), // For depotId, allow null. Coerce to string for others.
+      [name]: name === 'depotId' ? value : name === 'cityId' ? (value ? parseInt(value) : null) : String(value), // Handle cityId as number, depotId as string, others as string
     }));
     if (name === 'deliveryType' && !value) {
         setErrors(prevErrors => ({ ...prevErrors, deliveryType: 'Delivery type is required' }));
@@ -249,18 +265,45 @@ const AreaMasterForm: React.FC<AreaMasterFormProps> = ({ initialData, onClose, o
       </div>
 
       <div className="space-y-2">
+        <Label htmlFor="cityId">
+          Associated City (Optional)
+        </Label>
+        <Select
+          name="cityId"
+          value={formData.cityId?.toString() || "none"}
+          onValueChange={(value) => handleSelectChange('cityId', value === "none" ? null : value)}
+        >
+          <SelectTrigger id="cityId">
+            <SelectValue placeholder="Select a city (optional)" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">No City Association</SelectItem>
+            {cities.map(city => (
+              <SelectItem key={city.id} value={String(city.id)}>
+                {city.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-gray-600">
+          Associate this area with a specific city to help users filter delivery areas.
+        </p>
+      </div>
+
+      <div className="space-y-2">
         <Label htmlFor="depotId">
-          Depot <span className="text-red-500">*</span>
+          Depot (Optional)
         </Label>
         <Select
           name="depotId"
-          value={formData.depotId}
-          onValueChange={(value) => handleSelectChange('depotId', value)}
+          value={formData.depotId || "none"}
+          onValueChange={(value) => handleSelectChange('depotId', value === "none" ? null : value)}
         >
-          <SelectTrigger id="depotId" className={`${errors.depotId ? 'border-red-500' : ''}`}>
-            <SelectValue placeholder="Select a depot" />
+          <SelectTrigger id="depotId">
+            <SelectValue placeholder="Select a depot (optional)" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="none">No Depot Assignment</SelectItem>
             {depots.map(depot => (
               <SelectItem key={depot.id} value={String(depot.id)}>
                 {depot.name}
@@ -268,7 +311,9 @@ const AreaMasterForm: React.FC<AreaMasterFormProps> = ({ initialData, onClose, o
             ))}
           </SelectContent>
         </Select>
-        {errors.depotId && <p className="mt-1 text-xs text-red-500">{errors.depotId}</p>}
+        <p className="text-xs text-gray-600">
+          Optionally assign this area to a specific depot for inventory management.
+        </p>
       </div>
 
       <div className="space-y-2">

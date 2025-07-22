@@ -3,20 +3,20 @@ import { Badge } from "@/components/ui/badge";
 function Whychoose() {
   return (
     <div className="w-full ">
-              <div className="container mx-auto" style={{ textAlign: "justify" }}>
-        <div className="flex gap-4 py-10 mb-10 lg:py-10 flex-col items-start">
+              <div className="container mx-auto" >
+        <div className="flex  py-2 mb-2  flex-col items-start">
           {/* <div>
             <Badge>Platform</Badge>
           </div> */}
-          <div className="flex gap-2 flex-col">
+          <div className="flex flex-col">
             <h2 className="text-primary text-xl md:text-3xl tracking-tighter lg:max-w-xl font-regular">
              Why choose Indraai 
             </h2>
           
           </div>
-          <div className="flex gap-10 pt-12 flex-col w-full">
-            <div className="grid grid-cols-2 items-start lg:grid-cols-3 gap-10 ">
-              <div className="flex flex-row gap-6 w-full items-start">
+          <div className="flex gap-2 pt-6 flex-col w-full">
+            <div className="grid grid-cols-2 items-start lg:grid-cols-4 gap-4 ">
+              <div className="flex flex-row gap-4 w-full items-start">
                 <Check className="w-4 h-4 mt-2 text-primary" />
                 <div className="flex flex-col gap-1 text-primary">
                   <p>100% Pure A2 Gir Cow Milk</p>
@@ -24,7 +24,7 @@ function Whychoose() {
                   Naturally nutritious and easy to digest                  </p>
                 </div>
               </div>
-              <div className="flex flex-row gap-6 items-start">
+              <div className="flex flex-row gap-4 items-start">
                 <Check className="w-4 h-4 mt-2 text-primary" />
                 <div className="flex flex-col gap-1 text-primary">
                   <p>Absolutely No Adulteration</p>
@@ -33,7 +33,7 @@ function Whychoose() {
                   </p>
                 </div>
               </div>
-              <div className="flex flex-row gap-6 items-start">
+              <div className="flex flex-row gap-4 items-start">
                 <Check className="w-4 h-4 mt-2 text-primary" />
                 <div className="flex flex-col gap-1 text-primary">
                   <p>Free from Antibiotics</p>
@@ -42,7 +42,7 @@ function Whychoose() {
                   </p>
                 </div>
               </div>
-              <div className="flex flex-row gap-6 w-full items-start">
+              <div className="flex flex-row gap-4 w-full items-start">
                 <Check className="w-4 h-4 mt-2 text-primary" />
                 <div className="flex flex-col gap-1 text-primary">
                   <p>No Artificial Insemination</p>
@@ -50,7 +50,7 @@ function Whychoose() {
                   Ethical, traditional breeding practices                  </p>
                 </div>
               </div>
-              <div className="flex flex-row gap-6 items-start">
+              <div className="flex flex-row gap-4 items-start">
                 <Check className="w-4 h-4 mt-2 text-primary" />
                 <div className="flex flex-col gap-1 text-primary">
                   <p>Cruelty-Free</p>
@@ -58,7 +58,7 @@ function Whychoose() {
                   Respectful, humane treatment of animals                  </p>
                 </div>
               </div>
-              <div className="flex flex-row gap-6 items-start">
+              <div className="flex flex-row gap-4 items-start">
                 <Check className="w-4 h-4 mt-2 text-primary" />
                 <div className="flex flex-col gap-1 text-primary">
                   <p>Hormone-Free</p>
@@ -66,7 +66,7 @@ function Whychoose() {
                   No growth hormones or unnatural additives                  </p>
                 </div>
               </div>
-              <div className="flex flex-row gap-6 items-start">
+              <div className="flex flex-row gap-4 items-start">
                 <Check className="w-4 h-4 mt-2 text-primary" />
                 <div className="flex flex-col gap-1 text-primary">
                   <p>Chemical-Free</p>
@@ -75,7 +75,7 @@ function Whychoose() {
                   </p>
                 </div>
               </div>
-              <div className="flex flex-row gap-6 items-start">
+              <div className="flex flex-row gap-4 items-start">
                 <Check className="w-4 h-4 mt-2 text-primary" />
                 <div className="flex flex-col gap-1 text-primary">
                   <p>No Steroids</p>
@@ -83,7 +83,7 @@ function Whychoose() {
                   Clean, unmodified milk                  </p>
                 </div>
               </div>
-              <div className="flex flex-row gap-6 items-start">
+              <div className="flex flex-row gap-4 items-start">
                 <Check className="w-4 h-4 mt-2 text-primary" />
                 <div className="flex flex-col gap-1 text-primary">
                   <p>Free-Grazing Cows</p>

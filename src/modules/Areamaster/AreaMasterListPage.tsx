@@ -115,8 +115,16 @@ const AreaMasterListPage: React.FC = () => {
 
   const handleSort = (column: string) => {
     // Map display column to API sort key if necessary
-    // Example: if display 'Depot Name' maps to 'depot.name' or 'depotName' for API
-    const apiSortKey = column === 'Depot' ? 'depot.name' : column.toLowerCase().replace(/\s+/g, '');
+    // Handle special cases for nested properties
+    let apiSortKey = column;
+    if (column === 'Depot') {
+      apiSortKey = 'depot.name';
+    } else if (column === 'city.name') {
+      apiSortKey = 'city.name';
+    } else {
+      apiSortKey = column.toLowerCase().replace(/\s+/g, '');
+    }
+    
     if (sortColumn === apiSortKey) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
@@ -127,7 +135,16 @@ const AreaMasterListPage: React.FC = () => {
   };
 
   const SortIndicator = ({ column }: { column: string }) => {
-    const apiSortKey = column === 'Depot' ? 'depot.name' : column.toLowerCase().replace(/\s+/g, '');
+    // Handle special cases for nested properties
+    let apiSortKey = column;
+    if (column === 'Depot') {
+      apiSortKey = 'depot.name';
+    } else if (column === 'city.name') {
+      apiSortKey = 'city.name';
+    } else {
+      apiSortKey = column.toLowerCase().replace(/\s+/g, '');
+    }
+    
     if (sortColumn !== apiSortKey) return <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />;
     return sortOrder === 'asc' ? <ArrowUp className="ml-2 h-4 w-4 text-blue-600" /> : <ArrowDown className="ml-2 h-4 w-4 text-blue-600" />;
   };
@@ -318,6 +335,9 @@ const AreaMasterListPage: React.FC = () => {
                         <TableHead onClick={() => handleSort('name')} className="px-4 py-3 whitespace-nowrap cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50">
                           <div className="flex items-center font-semibold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-300">Name <SortIndicator column='name' /></div>
                         </TableHead>
+                        <TableHead onClick={() => handleSort('city.name')} className="px-4 py-3 whitespace-nowrap cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50">
+                          <div className="flex items-center font-semibold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-300">City <SortIndicator column='city.name' /></div>
+                        </TableHead>
                         <TableHead className="px-4 py-3 whitespace-nowrap font-semibold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-300">Pincodes</TableHead>
                         <TableHead onClick={() => handleSort('depot.name')} className="px-4 py-3 whitespace-nowrap cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50">
                           <div className="flex items-center font-semibold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-300">Depot <SortIndicator column='depot.name' /></div>
@@ -334,7 +354,7 @@ const AreaMasterListPage: React.FC = () => {
                     <TableBody className="divide-y divide-slate-200 dark:divide-slate-700">
                       {areaMasters.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center py-10 text-slate-500 dark:text-slate-400">
+                          <TableCell colSpan={7} className="text-center py-10 text-slate-500 dark:text-slate-400">
                             No area masters found. {searchTerm ? "Try adjusting your search." : "Click 'Add New Area' to create one."}
                           </TableCell>
                         </TableRow>
@@ -342,6 +362,7 @@ const AreaMasterListPage: React.FC = () => {
                         areaMasters.map(am => (
                           <TableRow key={am.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 border-b last:border-b-0">
                             <TableCell className="font-medium px-4 py-3 whitespace-nowrap text-sm text-slate-700 dark:text-slate-200">{am.name}</TableCell>
+                            <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300">{am.city?.name ?? <span className="text-slate-400">No City</span>}</TableCell>
                             <TableCell className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300 max-w-xs">{truncatePincodes(am.pincodes)}</TableCell>
                             <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300">{am.depot?.name ?? <span className="text-slate-400">N/A</span>}</TableCell>
                             <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300">

@@ -27,6 +27,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  getPublicAreaMasters,
+  type AreaMaster,
+} from '@/services/areaMasterService';
+import { getCitiesList, type City } from '@/services/cityMasterService';
 
 export interface DeliveryAddress {
   id: string;
@@ -103,6 +108,13 @@ const AddressForm: React.FC<AddressFormProps> = ({
   const isEditMode = mode === 'edit';
   const [locations, setLocations] = useState<Location[]>(propLocations || []);
   const [isLoadingLocations, setIsLoadingLocations] = useState(false);
+  
+  // Area master and city filtering states
+  const [areaMasters, setAreaMasters] = useState<AreaMaster[]>([]);
+  const [filteredAreaMasters, setFilteredAreaMasters] = useState<AreaMaster[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
+  const [selectedCityId, setSelectedCityId] = useState<number | null>(null);
+  const [selectedAreaMaster, setSelectedAreaMaster] = useState<AreaMaster | null>(null);
 
   // Fetch locations if not provided as props
   useEffect(() => {
@@ -132,6 +144,67 @@ const AddressForm: React.FC<AddressFormProps> = ({
 
     fetchLocations();
   }, [propLocations]);
+
+  // Fetch area masters and cities on component mount
+  useEffect(() => {
+    fetchAreaMasters();
+    fetchCities();
+  }, []);
+
+  // Fetch area masters
+  const fetchAreaMasters = async () => {
+    try {
+      const areaMastersList = await getPublicAreaMasters();
+      setAreaMasters(areaMastersList);
+    } catch (error) {
+      console.error('Failed to fetch area masters:', error);
+      toast.error('Could not load delivery areas.');
+    }
+  };
+
+  // Fetch cities
+  const fetchCities = async () => {
+    try {
+      const citiesList = await getCitiesList();
+      setCities(citiesList);
+    } catch (error) {
+      console.error('Failed to fetch cities:', error);
+      toast.error('Could not load cities.');
+    }
+  };
+
+  // Filter areas based on selected city
+  useEffect(() => {
+    if (selectedCityId && areaMasters.length > 0) {
+      // Filter areas by cityId - more strict filtering
+      const filtered = areaMasters.filter(area => {
+        // Check cityId first (primary association)
+        if (area.cityId) {
+          return area.cityId === selectedCityId;
+        }
+        // Fallback to city object id if cityId is not available
+        if (area.city?.id) {
+          return area.city.id === selectedCityId;
+        }
+        // Don't show areas without city association when a city is selected
+        return false;
+      });
+      setFilteredAreaMasters(filtered);
+    } else {
+      // When no city is selected, show all areas
+      setFilteredAreaMasters(areaMasters);
+    }
+  }, [selectedCityId, areaMasters]);
+
+  // Handle area master selection and auto-fill city
+  const handleAreaMasterSelection = (areaMaster: AreaMaster) => {
+    setSelectedAreaMaster(areaMaster);
+    
+    // Auto-fill city from selected area master
+    if (areaMaster.city?.name) {
+      form.setValue('city', areaMaster.city.name);
+    }
+  };
 
   const form = useForm<AddressFormData>({
     resolver: zodResolver(addressSchema),
@@ -220,7 +293,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
       <CardHeader>
         <CardTitle>{isEditMode ? 'Edit Address' : 'Add New Delivery Address'}</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="max-h-[70vh] overflow-y-auto">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
@@ -332,57 +405,78 @@ const AddressForm: React.FC<AddressFormProps> = ({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="locationId"
-              render={({ field }) => {
-                console.log('Location field value:', field.value);
-                console.log('Available locations:', locations);
-                return (
-                <FormItem>
-                  <FormLabel>Our Delivery Areas*</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingLocations}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={isLoadingLocations ? "Loading locations..." : "Select a location"} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent className="max-h-60 overflow-y-auto">
-                      {isLoadingLocations ? (
-                        <SelectItem value="loading" disabled>
-                          Loading locations...
+            {/* City Filter for Area Master Selection */}
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">
+                  Filter by City
+                </label>
+                <Select
+                  onValueChange={(value) => {
+                    const cityId = value === "all" ? null : parseInt(value);
+                    setSelectedCityId(cityId);
+                    // Clear area master selection when city changes
+                    setSelectedAreaMaster(null);
+                  }}
+                  value={selectedCityId?.toString() || "all"}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Filter by city" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60 overflow-y-auto">
+                    <SelectItem value="all">All Cities</SelectItem>
+                    {cities
+                      .sort((a, b) => a.name.localeCompare(b.name))
+                      .map((city) => (
+                        <SelectItem key={city.id} value={city.id.toString()}>
+                          {city.name}
                         </SelectItem>
-                      ) : locations.length > 0 ? (
-                        locations
-                          .sort((a, b) => {
-                            // Sort by city name first, then by location name
-                            const cityComparison = (a.city?.name || '').localeCompare(b.city?.name || '');
-                            if (cityComparison !== 0) return cityComparison;
-                            return a.name.localeCompare(b.name);
-                          })
-                          .map(location => (
-                          <SelectItem key={location.id} value={String(location.id)}>
-                            {location.name} - {location.city?.name || 'Unknown City'}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="no-locations" disabled>
-                          No locations available
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                  <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
-                    <p className="text-xs text-blue-700">
-                      <span className="font-medium">Note:</span> If your area is not listed above, please contact us at <span className="font-semibold">+91-9920999100</span> for assistance with delivery arrangements.
-                    </p>
-                  </div>
-                </FormItem>
-              )}}
-            />
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Area Master Selection */}
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">
+                  Our Delivery Areas* <span className="text-xs text-gray-500">(City will be auto-filled)</span>
+                </label>
+                <Select
+                  onValueChange={(value) => {
+                    const areaMaster = filteredAreaMasters.find(am => am.id === parseInt(value));
+                    if (areaMaster) {
+                      handleAreaMasterSelection(areaMaster);
+                      // Update the form's locationId field if needed
+                      form.setValue('locationId', value);
+                    }
+                  }}
+                  value={selectedAreaMaster?.id?.toString() || ""}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your delivery area" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60 overflow-y-auto">
+                    {filteredAreaMasters
+                      .sort((a, b) => a.name.localeCompare(b.name))
+                      .map((areaMaster) => (
+                      <SelectItem
+                        key={areaMaster.id}
+                        value={areaMaster.id.toString()}
+                      >
+                        {areaMaster.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
+                  <p className="text-xs text-blue-700">
+                    <span className="font-medium">Note:</span> If your area is not listed above, please contact us at <span className="font-semibold">+91-9920999100</span> for assistance with delivery arrangements.
+                  </p>
+                </div>
+              </div>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="pincode"
@@ -393,20 +487,6 @@ const AddressForm: React.FC<AddressFormProps> = ({
                       <Input 
                         type="number"
                       placeholder="Enter pincode" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="city"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>City*</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter city" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -438,6 +518,31 @@ const AddressForm: React.FC<AddressFormProps> = ({
                 )}
               />
             </div>
+            
+            {/* Hidden fields - auto-filled by area master selection */}
+            <FormField
+              control={form.control}
+              name="city"
+              render={({ field }) => (
+                <FormItem className="hidden">
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="locationId"
+              render={({ field }) => (
+                <FormItem className="hidden">
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}

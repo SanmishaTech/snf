@@ -323,27 +323,21 @@ const ProductDetailPage: React.FC = () => {
   ];
 
   return (
-    <div className="container min-w-full px-4 py-8 bg-white">
-      {/* Depot Selector */}
-
-
-
+    <div className="container min-w-full px-4 py-8 max-sm:py-2 bg-white">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
         className="max-w-6xl mx-auto"
       >
-
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
           {/* Product Image */}
-          <div className="bg-muted/10 rounded-2xl flex items-center justify-center  border border-muted/20">
+          <div className="bg-muted/10 rounded-2xl flex items-center justify-center  border border-muted/20 max-h-[558px] max-sm:max-h-[380px]">
             {product.attachmentUrl ? (
               <motion.img
                 src={`${import.meta.env.VITE_BACKEND_URL}${product.attachmentUrl}`}
                 alt={product.name}
-                className="object-cover max-md:object-fit max-sm:object-contain rounded-2xl max-h-[900px] min-h-[600px]"
+                className="object-cover max-md:object-fit max-sm:object-contain rounded-2xl w-full h-full"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5 }}
@@ -360,23 +354,14 @@ const ProductDetailPage: React.FC = () => {
 
           {/* Product Details */}
           <div className="py-4">
-            <h1 className="text-3xl md:text-4xl font-bold mb-3">{product.name}</h1>
+            <h1 className="text-3xl md:text-4xl font-bold mb-1">{product.name}</h1>
 
             {/* <StarRating rating={5} /> */}
 
-            <div className="mt-6">
-              <div className="flex items-baseline gap-3">
-                {/* <p className="text-4xl font-bold text-primary">₹{product?.rate}</p> */}
-                {/* <p className="text-gray-700 line-through">₹{product.rate + 5}</p> */}
-                {/* <span className="bg-green-100 text-green-800 text-sm px-2 py-1 rounded-full ml-2">
-                  5% OFF
-                </span> */}
-              </div>
-              {/* <p className="text-sm text-gray-700 mt-1">per {product.unit || 'unit'}</p> */}
-            </div>
+            
 
             <div className="mt-8">
-              <h2 className="text-xl font-semibold mb-3">Description</h2>
+              <h2 className="text-xl font-semibold mb-1">Description</h2>
               <div
                 style={{textAlign: "justify"}}
               className="text-gray-700 leading-relaxed prose">
@@ -402,9 +387,9 @@ const ProductDetailPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="border-t border-muted/20 my-4"></div>
-            <h1 className="text-xl font-semibold mb-4">Subscribe by making an online payment or by paying in advance.</h1>
-            <div className="border-t border-muted/20 my-4"></div>
+            <div className="border-t border-muted/20 my-2"></div>
+            <h1 className="text-xl font-semibold mb-1">Subscribe by making an online payment or by paying in advance.</h1>
+            <div className="border-t border-muted/20 my-2"></div>
 
             {/* Delivery Preference and Depot Selection - Only show for logged-in users */}
             {true&& (
@@ -503,12 +488,12 @@ const ProductDetailPage: React.FC = () => {
             )}
 
 
-            <div className="border-t border-muted/20 my-4"></div>
+            <div className="border-t border-muted/20 my-2"></div>
 
             {/* Benefits */}
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold mb-4">Benefits</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="mb-2">
+              <h2 className="text-xl font-semibold mb-2">Benefits</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {benefits.map((benefit, index) => (
                   <motion.div
                     key={index}
@@ -580,10 +565,6 @@ const ProductDetailPage: React.FC = () => {
             </div>
           </div>
         </div>
-
-
-
-
 
         <SubscriptionModal
           depotId={selectedDepotId}

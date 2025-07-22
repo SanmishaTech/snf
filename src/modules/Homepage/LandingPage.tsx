@@ -76,6 +76,7 @@ const LandingPage = () => {
 
   const BACKEND_URL =
     import.meta.env.VITE_BACKEND_URL || "https://www.indraai.in//";
+    
   useEffect(() => {
     const fetchProducts = async () => {
       setIsLoading(true);
@@ -239,13 +240,11 @@ const LandingPage = () => {
         showWallet={showWallet}
       />
 
-      {/*  Hero Section */}
       <section className="relative mt-25">
-        {/* Hero Section Container */}
         <div className="relative w-full">
           {isLoadingBanners && (
             <div className="absolute inset-0 flex items-center justify-center ">
-              <p>Loading images...</p> {/* Or a spinner component */}
+              <p>Loading images...</p>
             </div>
           )}
           {!isLoadingBanners && bannerError && (
@@ -258,19 +257,10 @@ const LandingPage = () => {
           {!isLoadingBanners && !bannerError && heroBanners.length > 0 && (
             <HeroSection images={heroBanners} />
           )}
-          {/* {!isLoadingBanners && !bannerError && heroBanners.length === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-200">
-              <p>No banner images available.</p>
-            </div>
-          )} */}
-          {/* Dark overlay for text contrast */}
-          {/* <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-background/0"></div> */}
-          {/* The above gradient was removed to reduce 'white aura'. If text legibility on carousel is an issue, consider a darker, simpler overlay e.g., bg-black/30 */}
         </div>
       </section>
 
-      {/* Benefits Section */}
-      <section id="benefits" className="py-16 bg-white">
+      <section id="benefits" className="py-8 bg-white">
         <div className="container max-w-6xl mx-auto px-4">
           <div className="text-center text-primary mb-16">
             <h2 className="text-3xl font-bold tracking-tight mb-3 text-primary">Indraai</h2>
@@ -300,8 +290,8 @@ const LandingPage = () => {
             </p>
           </div>
           <div id="product-detail-section">
-        <Productdetail />
-      </div>
+            <Productdetail />
+          </div>
 
           <div className="block">
             <Whychoose />
@@ -377,12 +367,9 @@ const LandingPage = () => {
         </div>
       </section>
 
- 
-      {/* A2 Milk Demand Section */}
-      <section className="py-16   ">
-        <div className="container max-w-6xl mx-auto px-4">
-          {/* Section Header */}
-          <div className="text-center mb-16">
+      <section className="py-2 bg-white  ">
+        <div className="container max-w-6xl mx-auto px-4 bg-white">
+          <div className="text-center mb-10">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
               The way we satisfy the demand of A2 Milk
             </h2>
@@ -399,12 +386,9 @@ const LandingPage = () => {
             </p>
           </div>
 
-          {/* Features Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-            {/* Feature 1: Native Breed */}
             <div className="group">
               <div className="bg-white rounded-2xl shadow-lg p-8 h-full hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-                
                 <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
                   Native Heritage
                 </h3>
@@ -417,10 +401,8 @@ const LandingPage = () => {
               </div>
             </div>
 
-            {/* Feature 2: Respectful Practices */}
             <div className="group">
               <div className="bg-white rounded-2xl shadow-lg p-8 h-full hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-               
                 <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
                   Natural Milking Cycle
                 </h3>
@@ -433,10 +415,8 @@ const LandingPage = () => {
               </div>
             </div>
 
-            {/* Feature 3: Gir Bull Role */}
             <div className="group">
               <div className="bg-white rounded-2xl shadow-lg p-8 h-full hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-                
                 <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
                   Essential Bulls
                 </h3>
@@ -450,20 +430,17 @@ const LandingPage = () => {
           </div>
         </div>
       </section>
-      {/* Footer */}
+      
       <AppFooter />
     </div>
   );
 };
 
-// New AppFooter component
 const AppFooter = () => {
   return (
     <footer className="bg-slate-50 dark:bg-gray-900 text-gray-700 dark:text-gray-300 border-t border-gray-200 dark:border-gray-700">
-      {/* Main Footer Content */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-x-8 gap-y-10">
-          {/* Column 1: Logo, Description, Payment */}
           <div className="md:col-span-12 lg:col-span-4">
             <div className="mb-6 flex items-center">
               <Leaf className="h-10 w-10 text-green-600 mr-3" />
@@ -502,10 +479,8 @@ const AppFooter = () => {
             </div>
           </div>
 
-          {/* Spacer for large screens to push link columns to the right */}
           <div className="hidden lg:block lg:col-span-1"></div>
 
-          {/* Column 2: Policies */}
           <div className="md:col-span-4 lg:col-span-2">
             <h3 className="text-md font-semibold mb-4    border-b-2 border-primary pb-1 inline-block">
               Policies
@@ -546,7 +521,6 @@ const AppFooter = () => {
             </ul>
           </div>
 
-          {/* Column 3: Useful Links */}
           <div className="md:col-span-4 lg:col-span-2">
             <h3 className="text-md font-semibold mb-4    border-b-2 border-primary pb-1 inline-block">
               Useful Links
@@ -587,7 +561,6 @@ const AppFooter = () => {
             </ul>
           </div>
 
-          {/* Column 4: Contact */}
           <div className="md:col-span-4 lg:col-span-3">
             <h3 className="text-md font-semibold mb-4  dark  border-b-2 border-primary pb-1 inline-block">
               Store Location
@@ -630,7 +603,6 @@ const AppFooter = () => {
         </div>
       </div>
 
-      {/* Sub-Footer */}
       <div className="bg-gray-200 dark:bg-gray-800 py-4 border-t border-gray-300 dark:border-gray-700">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-xs text-gray-600 dark:text-gray-400">
           <p className="mb-2 md:mb-0 text-center md:text-left">

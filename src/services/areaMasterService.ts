@@ -11,8 +11,10 @@ export interface AreaMaster {
   id: number;
   name: string;
   pincodes: string; // Comma-separated string
-  depotId?: string | null; // Changed to string
-  depot?: { id: string; name: string; } | null; // Added depot object
+  depotId?: string | null; // Optional - depot is now optional
+  depot?: { id: string; name: string; } | null; // Optional depot object
+  cityId?: number | null; // Added city association
+  city?: { id: number; name: string; } | null; // Added city object
   deliveryType: DeliveryType;
   isDairyProduct: boolean; // Flag to indicate if area supports dairy products
   createdAt: string; // ISO date string
@@ -23,7 +25,8 @@ export interface AreaMaster {
 export interface AreaMasterFormData {
   name: string;
   pincodes: string;
-  depotId?: string | null; // Changed to string
+  depotId?: string | null; // Optional depot
+  cityId?: number | null; // Added city association
   deliveryType: DeliveryType;
   isDairyProduct: boolean;
 }
@@ -148,4 +151,108 @@ export const validateDairySupport = async (pincode: string): Promise<{
 export const getAreaMastersByPincode = async (pincode: string): Promise<AreaMaster[]> => {
   const response = await get<{ success: boolean; data: AreaMaster[]; count: number }>(`/api/public/area-masters/by-pincode/${pincode}`);
   return response.data;
+};
+
+/**
+ * Filter area masters by city ID
+ * @param areas - Array of area masters to filter
+ * @param cityId - City ID to filter by
+ * @returns Area masters that belong to the specified city
+ */
+export const filterAreaMastersByCity = (areas: AreaMaster[], cityId: number | null): AreaMaster[] => {
+  if (!cityId) return areas;
+  return areas.filter(area => area.cityId === cityId);
+};
+
+/**
+ * Validate if a pincode is served by any of the provided area masters
+ * @param pincode - The pincode to validate
+ * @param areas - Array of area masters to check against
+ * @returns Validation result with details
+ */
+/**
+ * Parse pincodes from various formats (JSON array, comma-separated, semicolon-separated, pipe-separated, space-separated)
+ */
+const parsePincodes = (pincodes: string): string[] => {
+  if (!pincodes || pincodes.trim() === '') return [];
+  
+  // Try to parse as JSON array first
+  try {
+    const parsed = JSON.parse(pincodes);
+    if (Array.isArray(parsed)) {
+      return parsed.map(p => String(p).trim()).filter(Boolean);
+    }
+  } catch {
+    // Not JSON, continue with string processing
+  }
+  
+  // Check if it contains commas or other separators
+  if (pincodes.includes(',')) {
+    return pincodes.split(',').map(p => p.trim()).filter(Boolean);
+  } else if (pincodes.includes(';')) {
+    return pincodes.split(';').map(p => p.trim()).filter(Boolean);
+  } else if (pincodes.includes('|')) {
+    return pincodes.split('|').map(p => p.trim()).filter(Boolean);
+  } else {
+    // Single pincode or space-separated
+    const spaceSeparated = pincodes.trim().split(/\s+/);
+    if (spaceSeparated.length > 1) {
+      return spaceSeparated.filter(Boolean);
+    }
+    // Single pincode
+    return [pincodes.trim()];
+  }
+};
+
+export const validatePincodeInAreas = (pincode: string, areas: AreaMaster[]): {
+  isValid: boolean;
+  matchedAreas: AreaMaster[];
+  message: string;
+} => {
+  if (!pincode || pincode.length !== 6 || !/^\d{6}$/.test(pincode)) {
+    return {
+      isValid: false,
+      matchedAreas: [],
+      message: 'Please enter a valid 6-digit pincode'
+    };
+  }
+
+  const matchedAreas = areas.filter(area => {
+    const areaPincodes = parsePincodes(area.pincodes);
+    return areaPincodes.includes(pincode);
+  });
+
+  if (matchedAreas.length > 0) {
+    return {
+      isValid: true,
+      matchedAreas,
+      message: `Great! We deliver to ${pincode}`
+    };
+  } else {
+    return {
+      isValid: false,
+      matchedAreas: [],
+      message: `We currently do not serve ${pincode}, but we're expanding!`
+    };
+  }
+};
+
+/**
+ * Check if an area master supports dairy products for a given product type
+ * @param areaMaster - The area master to check
+ * @param isDairyProduct - Whether the product is a dairy product
+ * @returns Whether the area can serve this product type
+ */
+export const canAreaServeProduct = (areaMaster: AreaMaster, isDairyProduct: boolean): {
+  canServe: boolean;
+  reason?: string;
+} => {
+  if (isDairyProduct && !areaMaster.isDairyProduct) {
+    return {
+      canServe: false,
+      reason: `${areaMaster.name} does not currently support dairy product deliveries`
+    };
+  }
+  
+  return { canServe: true };
 };
