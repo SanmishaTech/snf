@@ -367,32 +367,32 @@ const LandingPage = () => {
         </div>
       </section>
 
-      <section className="py-2 bg-white  ">
+      <section className="py-6 bg-white">
         <div className="container max-w-6xl mx-auto px-4 bg-white">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
               The way we satisfy the demand of A2 Milk
             </h2>
-            <div className="w-[46rem] max-md:w-36 h-1 bg-primary rounded-full mx-auto mb-6"></div>
-            <p className="text-lg text-gray-700 max-w-4xl mx-auto leading-relaxed text-justify">
+            <div className="w-32 md:w-48 h-1 bg-primary rounded-full mx-auto mb-4"></div>
+            <p className="text-sm md:text-base text-gray-700 max-w-4xl mx-auto leading-relaxed text-justify">
               Absolutely nothing—we don't regulate milk supply based on demand.
               Our milk comes directly from the Bharwad community, who have been
               rearing Gir cows for generations, without any external chemicals
               or additives to boost production.
             </p>
-            <p className="text-lg text-gray-700 max-w-4xl mx-auto leading-relaxed mt-4 text-justify">
+            <p className="text-sm md:text-base text-gray-700 max-w-4xl mx-auto leading-relaxed mt-2 text-justify">
               Instead, the Bharwad community's relationship with Desi Gir cows
               transcends today's commercial mindset:
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             <div className="group">
-              <div className="bg-white rounded-2xl shadow-lg p-8 h-full hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-                <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
+              <div className="bg-white rounded-xl shadow-md p-4 h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                <h3 className="text-lg font-bold text-gray-900 mb-2 text-center">
                   Native Heritage
                 </h3>
-                <p className="text-gray-600 leading-relaxed text-center">
+                <p className="text-sm text-gray-600 leading-relaxed text-center">
                   The Desi Gir cow originates in the Gir Forest of Gujarat,
                   India. She's distinguished by a pronounced hump and loose skin
                   around her neck, celebrated for her gentle disposition and
@@ -402,11 +402,11 @@ const LandingPage = () => {
             </div>
 
             <div className="group">
-              <div className="bg-white rounded-2xl shadow-lg p-8 h-full hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-                <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
+              <div className="bg-white rounded-xl shadow-md p-4 h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                <h3 className="text-lg font-bold text-gray-900 mb-2 text-center">
                   Natural Milking Cycle
                 </h3>
-                <p className="text-gray-600 leading-relaxed text-center">
+                <p className="text-sm text-gray-600 leading-relaxed text-center">
                   On each farm, some Gir cows are in their milking phase while
                   others rest. Calves always feed first; any remaining milk is
                   then collected by the farmer. Cows not lactating receive the
@@ -416,11 +416,11 @@ const LandingPage = () => {
             </div>
 
             <div className="group">
-              <div className="bg-white rounded-2xl shadow-lg p-8 h-full hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-                <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
+              <div className="bg-white rounded-xl shadow-md p-4 h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                <h3 className="text-lg font-bold text-gray-900 mb-2 text-center">
                   Essential Bulls
                 </h3>
-                <p className="text-gray-600 leading-relaxed text-center">
+                <p className="text-sm text-gray-600 leading-relaxed text-center">
                   Gir bulls assist with agricultural work and help sustain the
                   herd through natural breeding, ensuring the continuation of
                   the breed's legacy.

@@ -1627,8 +1627,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                    
                       </div>
 
-                      {/* Variant Grid Selection with Individual Delivery Schedules - Horizontal Layout */}
-                      <div className="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2">
+                      {/* Variant Grid Selection with Individual Delivery Schedules - Responsive Layout */}
+                      <div className="flex flex-col sm:flex-row gap-3 sm:overflow-x-auto sm:pb-2 sm:-mx-2 sm:px-2">
                         {productVariants.map((variant) => {
                           const isSelected = selectedVariants.some(
                             (sv) => sv.variantId === variant.id
@@ -1640,7 +1640,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                           return (
                             <div
                               key={variant.id}
-                              className={`flex-shrink-0 w-72 border rounded-lg p-3 transition-all ${
+                              className={`w-full sm:flex-shrink-0 sm:w-72 border rounded-lg p-3 transition-all ${
                                 isSelected
                                   ? "border-red-500 bg-red-50 shadow-md"
                                   : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"

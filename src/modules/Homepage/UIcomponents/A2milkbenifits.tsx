@@ -160,48 +160,50 @@ const A2MilkSection: React.FC<A2MilkSectionProps> = ({ className = "" }) => {
 
         {/* Benefits Section */}
         <motion.div
-          className="space-y-4"
+          className="space-y-3"
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.2 }}
         >
           <motion.div
-            className="text-center space-y-4"
+            className="text-center space-y-2"
             variants={itemVariants}
           >
-            <h2 className="text-3xl lg:text-4xl font-bold text-foreground">
+            <h2 className="text-2xl lg:text-3xl font-bold text-foreground">
               A2 Milk Benefits
             </h2>
-            <p className="text-gray-700 max-w-2xl mx-auto">
+            <p className="text-sm text-gray-700 max-w-2xl mx-auto">
               Discover the numerous health advantages of choosing A2 milk for you and your family
             </p>
           </motion.div>
 
           <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2"
             variants={containerVariants}
           >
             {benefits.map((benefit, index) => (
               <motion.div
                 key={index}
                 variants={itemVariants}
-                whileHover={{ y: -5 }}
+                whileHover={{ y: -3 }}
                 transition={{ duration: 0.2 }}
               >
-                <Card className="max-h-xs hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/20">
-                  <CardHeader className="pb-1">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-1 bg-primary/10 rounded-lg">
-                        <benefit.icon className="w-6 h-6 text-primary" />
+                <Card className="h-fit hover:shadow-md transition-all duration-300 border-border/50 hover:border-primary/20">
+                  <CardContent className="p-3">
+                    <div className="flex items-start space-x-2">
+                      <div className="p-1.5 bg-primary/10 rounded-lg flex-shrink-0">
+                        <benefit.icon className="w-4 h-4 text-primary" />
                       </div>
-                      <CardTitle className="text-lg">{benefit.title}</CardTitle>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-sm font-semibold text-foreground mb-1 leading-snug">
+                          {benefit.title}
+                        </h3>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {benefit.description}
+                        </p>
+                      </div>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    <CardDescription className="text-sm leading-relaxed">
-                      {benefit.description}
-                    </CardDescription>
                   </CardContent>
                 </Card>
               </motion.div>
