@@ -9,8 +9,8 @@ const AddressListPage: React.FC = () => {
 
   return (
     <div className="container py-8">
-      <div className="flex justify-between items-center mb-6">
-        <div>
+      <div className="flex justify-between items-center mb-6 max-sm:flex-col">
+        <div className=''>
           <h1 className="text-2xl font-bold">My Delivery Addresses</h1>
           <p className="text-muted-foreground">Manage your delivery addresses</p>
         </div>

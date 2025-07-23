@@ -119,7 +119,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                 <img
                   src={isMobile ? Mobilesrcimage : image.src}
                   alt={image.alt}
-                  className="w-full h-full object-cover max-sm:object-fit max-[380px]:object-contain "
+                  className="w-full h-full object-cover max-sm:object-fit max-[380px]:object-fit "
                   onLoad={() => handleImageLoad(index)}
                   loading={index === 0 ? "eager" : "lazy"}
                 />

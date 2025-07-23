@@ -10,7 +10,7 @@ const CreateAddressPage: React.FC = () => {
   };
 
   return (
-    <div className="container py-8">
+    <div className="container py-8 flex max-sm:flex-col">
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Add New Delivery Address</h1>
         <p className="text-muted-foreground">Create a new delivery address for your account</p>

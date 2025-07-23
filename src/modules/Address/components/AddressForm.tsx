@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import * as apiService from '@/services/apiService';
+import { ArrowLeft } from 'lucide-react';
 
 import {
   Form,
@@ -94,6 +95,7 @@ interface AddressFormProps {
   initialData?: DeliveryAddress;
   onSuccess?: (data: DeliveryAddress) => void;
   onCancel?: () => void; // Added for modal integration
+  onBack?: () => void; // Added for back navigation
   depotId?: number;
   locations?: Location[];
 }
@@ -104,6 +106,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
   initialData,
   onSuccess,
   onCancel, // Added for modal integration
+  onBack, // Added for back navigation
   depotId,
   locations: propLocations,
 }) => {
@@ -434,11 +437,31 @@ const AddressForm: React.FC<AddressFormProps> = ({
 
   return (
     <>
-      <Card className="w-full  mx-auto">
-        <CardHeader>
-          <CardTitle>{isEditMode ? 'Edit Address' : 'Add New Delivery Address'}</CardTitle>
+      <Card className="w-full mx-auto">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            {(onBack || onCancel) && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => {
+                  if (onBack) {
+                    onBack();
+                  } else if (onCancel) {
+                    onCancel();
+                  } else {
+                    navigate(-1);
+                  }
+                }}
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            )}
+            <CardTitle className="text-lg sm:text-xl">{isEditMode ? 'Edit Address' : 'Add New Delivery Address'}</CardTitle>
+          </div>
         </CardHeader>
-        <CardContent className="max-h-[70vh] overflow-y-auto">
+        <CardContent className="px-4 sm:px-6 max-h-[70vh] overflow-y-auto">
           <Form {...form}>
             <form 
             onSubmit={(e) => {
@@ -478,7 +501,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
                     <RadioGroup
                       onValueChange={field.onChange}
                       defaultValue={field.value}
-                      className="flex space-x-4 pt-2"
+                      className="flex flex-wrap gap-3 sm:gap-4 pt-2"
                     >
                       <FormItem className="flex items-center space-x-2 space-y-0">
                         <FormControl>
@@ -505,7 +528,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
               )}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="recipientName"
@@ -644,7 +667,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="pincode"
@@ -764,7 +787,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
             />
             
 
-            <div className="flex justify-end gap-2">
+            <div className="flex flex-col sm:flex-row justify-end gap-2 mt-6">
               <Button
                 type="button"
                 variant="outline"
@@ -776,7 +799,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
                   }
                 }}
                 disabled={form.formState.isSubmitting}
-                className="w-full md:w-auto mr-2"
+                className="w-full sm:w-auto order-2 sm:order-1"
               >
                 Cancel
               </Button>
@@ -788,7 +811,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
                   pincodeValidation.isValidating ||
                   (!!selectedAreaMaster && form.watch('pincode')?.length === 6 && !pincodeValidation.isValid)
                 } 
-                className="w-full md:w-auto"
+                className="w-full sm:w-auto order-1 sm:order-2"
                 title={
                   !selectedAreaMaster ? "Please select a delivery area" :
                   (form.watch('pincode')?.length === 6 && !pincodeValidation.isValid) ? 

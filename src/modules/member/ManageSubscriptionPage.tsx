@@ -190,7 +190,6 @@ const ManageSubscriptionPage: React.FC = () => {
 
       switch (entry.status) {
         case 'SKIPPED':
-        case 'SKIPPED':
           uiStatus = 'SKIPPED';
           break;
         case 'PENDING':

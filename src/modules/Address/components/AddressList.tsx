@@ -164,12 +164,12 @@ const AddressList: React.FC<AddressListProps> = ({
           onClick={() => selectable && handleSelect(address)}
         >
           <CardContent className="p-4">
-            <div className="flex justify-between items-start">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
               <div className="flex-1">
-                <div className="flex items-center mb-2">
-                  <h3 className="font-medium text-lg mr-2">{address.recipientName}</h3>
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <h3 className="font-medium text-base sm:text-lg truncate">{address.recipientName}</h3>
                   {address.label && (
-                    <Badge variant="secondary" className="mr-2 font-normal">
+                    <Badge variant="secondary" className="mr-2 font-normal ">
                       {address.label}
                     </Badge>
                   )}
@@ -190,28 +190,33 @@ const AddressList: React.FC<AddressListProps> = ({
               </div>
 
               {!selectable && (
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2 mt-3 sm:mt-0">
                   {!address.isDefault && (
                     <Button
                       variant="outline"
                       size="sm"
+                      className="text-xs sm:text-sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleSetDefault(address.id);
                       }}
                     >
-                      <CheckCircle className="h-4 w-4 mr-1" /> Set Default
+                      <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" /> 
+                      <span className="hidden sm:inline">Set Default</span>
+                      <span className="sm:hidden">Default</span>
                     </Button>
                   )}
                   <Button
                     variant="outline"
                     size="sm"
+                    className="text-xs sm:text-sm"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleEdit(address.id);
                     }}
                   >
-                    <Edit className="h-4 w-4" />
+                    <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="ml-1 hidden sm:inline">Edit</span>
                   </Button>
                   {/* <Button
                     variant="outline"

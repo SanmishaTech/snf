@@ -21,47 +21,45 @@ const ContactUsPage: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 md:py-12 lg:py-16 bg-gray-50 min-h-screen">
-      <div className="max-w-5xl mx-auto bg-white p-6 md:p-10 shadow-xl rounded-xl border border-gray-200">
-        <div className="grid md:grid-cols-2 gap-8 md:gap-12">
+    <div className="container mx-auto px-2 sm:px-4 py-6 sm:py-8 md:py-12 lg:py-16 bg-gray-50 min-h-screen">
+      <div className="max-w-5xl mx-auto bg-white p-3 sm:p-6 md:p-10 shadow-xl rounded-xl border border-gray-200">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 md:gap-12">
           {/* Left Column: Shop Info */}
-          <div className="space-y-8">
+          <div className="space-y-6 sm:space-y-8">
             <div>
-              <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-4">Our Shop</h2>
-              <div className="space-y-3 text-gray-700">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-gray-800 mb-2 sm:mb-4">Our Shop</h2>
+              <div className="space-y-2 sm:space-y-3 text-gray-700 text-sm sm:text-base">
                 <div className="flex items-start">
-                  <MapPin className="w-5 h-5 mr-3 mt-1 text-green-600 flex-shrink-0" />
+                  <MapPin className="w-5 h-5 mr-2 sm:mr-3 mt-1 text-green-600 flex-shrink-0" />
                   <span>
                     Sarkhot Natural Farms, Shop no 3, Chidghan society, Opp. Maharashtra Steel, Tilak cross Phadke Road, Dombivli East : 421201
                     <br />
-                    <span className="text-sm text-gray-500">Landmark - Near Brahman Sabha hall.</span>
+                    <span className="text-xs sm:text-sm text-gray-500">Landmark - Near Brahman Sabha hall.</span>
                   </span>
                 </div>
                 <div className="flex items-center">
-                  <Phone className="w-5 h-5 mr-3 text-green-600 flex-shrink-0" />
-                  <a href="tel:+919920999100" className="hover:text-green-700">+91 9920999100</a>
+                  <Phone className="w-5 h-5 mr-2 sm:mr-3 text-green-600 flex-shrink-0" />
+                  <a href="tel:+919920999100" className="hover:text-green-700 break-all">+91 9920999100</a>
                 </div>
                 <div className="flex items-center">
-                  <Mail className="w-5 h-5 mr-3 text-green-600 flex-shrink-0" />
-                  <a href="mailto:sarkhotnaturalfarms@gmail.com" className="hover:text-green-700">sarkhotnaturalfarms@gmail.com</a>
+                  <Mail className="w-5 h-5 mr-2 sm:mr-3 text-green-600 flex-shrink-0" />
+                  <a href="mailto:sarkhotnaturalfarms@gmail.com" className="hover:text-green-700 break-all">sarkhotnaturalfarms@gmail.com</a>
                 </div>
               </div>
             </div>
             <div>
-              <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-4">Opening Time</h2>
-              <div className="space-y-1 text-gray-700">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-gray-800 mb-2 sm:mb-4">Opening Time</h2>
+              <div className="space-y-1 text-gray-700 text-sm sm:text-base">
                 <p>Store time : 7 am - 9 pm (Monday - Sunday)</p>
-      
               </div>
             </div>
           </div>
 
           {/* Right Column: Contact Form */}
-          <div className="space-y-6">
-            <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-1">Get In Touch</h2>
-           
-            <h3 className="text-xl font-medium text-gray-700 pt-2">Write Us</h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-4 sm:space-y-6">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-gray-800 mb-1">Get In Touch</h2>
+            <h3 className="text-lg sm:text-xl font-medium text-gray-700 pt-1 sm:pt-2">Write Us</h3>
+            <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
               <div>
                 <label htmlFor="name" className="sr-only">Name</label>
                 <input 
@@ -72,7 +70,7 @@ const ContactUsPage: React.FC = () => {
                   onChange={handleChange} 
                   placeholder="Name" 
                   required 
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 shadow-sm"
+                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 shadow-sm text-sm sm:text-base"
                 />
               </div>
               <div>
@@ -85,7 +83,7 @@ const ContactUsPage: React.FC = () => {
                   onChange={handleChange} 
                   placeholder="Email" 
                   required 
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 shadow-sm"
+                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 shadow-sm text-sm sm:text-base"
                 />
               </div>
               <div>
@@ -98,7 +96,7 @@ const ContactUsPage: React.FC = () => {
                   onChange={handleChange} 
                   placeholder="Message" 
                   required 
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 shadow-sm"
+                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 shadow-sm text-sm sm:text-base"
                 />
               </div>
               {/* Placeholder for reCAPTCHA */}
@@ -109,7 +107,7 @@ const ContactUsPage: React.FC = () => {
               <div>
                 <button 
                   type="submit" 
-                  className="w-full flex items-center justify-center px-6 py-3 bg-primary text-white font-semibold rounded-md hover:bg-primary focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 shadow-md transition duration-150 ease-in-out"
+                  className="w-full flex items-center justify-center px-4 sm:px-6 py-3 bg-primary text-white font-semibold rounded-md hover:bg-primary focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 shadow-md transition duration-150 ease-in-out text-base"
                 >
                   <Send className="w-5 h-5 mr-2" /> Send
                 </button>

@@ -35,6 +35,7 @@ import {
   Star,
   Zap,
   Wallet,
+  ArrowLeft,
 } from "lucide-react";
 import {
   Popover,
@@ -1532,7 +1533,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       }}
     >
       <DialogContent
-        className="max-sm:max-w-[95vw] flex flex-col max-h-[95vh] p-0 bg-white min-w-[95vw] max-w-2xl rounded-xl overflow-hidden"
+        className="max-sm:max-w-[95vw] !flex flex-col h-[95vh] p-0 bg-white min-w-[95vw] max-w-2xl rounded-xl gap-0"
         onPointerDownOutside={(event) => {
           const target = event.target as HTMLElement;
           if (
@@ -1554,8 +1555,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col h-full">
-          <div className="flex-grow overflow-y-auto px-4 py-3 space-y-4 bg-gray-50">
+        <div className="flex flex-col h-full overflow-hidden">
+          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4 bg-gray-50 min-h-0">
             {modalView === "subscriptionDetails" ? (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -3007,7 +3008,17 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
             // Address Form View - Made scrollable
             <div className="bg-white rounded-md">
               <div className="p-4 border-b bg-white sticky top-0 z-10">
-                <h3 className="text-lg font-semibold">Add New Address</h3>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setModalView("subscriptionDetails")}
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                  <h3 className="text-lg font-semibold">Add New Address</h3>
+                </div>
               </div>
               <div className="p-4 space-y-5">
                 <div>
