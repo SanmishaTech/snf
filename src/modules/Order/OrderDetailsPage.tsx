@@ -175,23 +175,22 @@ const OrderDetailsPage = () => {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6 px-4 sm:px-6 lg:px-8">
+    <div className="container mx-auto py-4 md:py-6 space-y-4 md:space-y-6 px-4 sm:px-6 lg:px-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-           
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold tracking-tight">Order #{order.poNumber}</h1>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight">Order #{order.poNumber}</h1>
           </div>
         </div>
       </div>
 
       {/* Tabs for Details and Timeline */}
       <div className="border-b border-gray-200 dark:border-gray-700">
-        <nav className="-mb-px flex space-x-6" aria-label="Tabs">
+        <nav className="-mb-px flex flex-wrap space-x-4 sm:space-x-6" aria-label="Tabs">
           <button
             onClick={() => setActiveTab("details")}
             className={cn(
-              "whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm",
+              "whitespace-nowrap py-2 md:py-3 px-1 border-b-2 font-medium text-sm",
               activeTab === "details"
                 ? "border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-300"
                 : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-500"
@@ -203,7 +202,7 @@ const OrderDetailsPage = () => {
             <button
               onClick={() => setActiveTab("timeline")}
               className={cn(
-                "whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm",
+                "whitespace-nowrap py-2 md:py-3 px-1 border-b-2 font-medium text-sm",
                 activeTab === "timeline"
                   ? "border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-300"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-500"
@@ -217,24 +216,24 @@ const OrderDetailsPage = () => {
 
       {/* Tab Content */}
       {activeTab === "details" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mt-4 md:mt-6">
           {/* Main Order Details */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4 md:space-y-6">
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-xl flex items-center gap-2">
-                  <ShoppingCart className="h-5 w-5 text-secondary" />
+                <CardTitle className="text-base sm:text-lg md:text-xl flex items-center gap-2">
+                  <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 text-secondary" />
                   Order Information
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                   <div>
-                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Order Number</h3>
-                    <p className="mt-1 text-lg font-semibold">{order.poNumber}</p>
+                    <h3 className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">Order Number</h3>
+                    <p className="mt-1 text-base sm:text-lg font-semibold truncate">{order.poNumber}</p>
                   </div>
                   <div>
-                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</h3>
+                    <h3 className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">Status</h3>
                     <p className="mt-1">
                       <Badge 
                         className={cn(
@@ -247,20 +246,20 @@ const OrderDetailsPage = () => {
                     </p>
                   </div>
                   <div>
-                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Order Date</h3>
-                    <p className="mt-1 text-gray-900 dark:text-gray-100">
+                    <h3 className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">Order Date</h3>
+                    <p className="mt-1 text-sm sm:text-base text-gray-900 dark:text-gray-100">
                       {format(new Date(order.orderDate), "dd/MM/yyyy")}
                     </p>
                   </div>
                   <div>
-                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Delivery Date</h3>
-                    <p className="mt-1 text-gray-900 dark:text-gray-100">
+                    <h3 className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">Delivery Date</h3>
+                    <p className="mt-1 text-sm sm:text-base text-gray-900 dark:text-gray-100">
                       {format(new Date(order.deliveryDate), "dd/MM/yyyy")}
                     </p>
                   </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Contact Person</h3>
-                    <p className="mt-1 text-gray-900 dark:text-gray-100">{order.contactPersonName}</p>
+                  <div className="sm:col-span-2">
+                    <h3 className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">Contact Person</h3>
+                    <p className="mt-1 text-sm sm:text-base text-gray-900 dark:text-gray-100 break-words">{order.contactPersonName}</p>
                   </div>
                 </div>
               </CardContent>
@@ -269,56 +268,62 @@ const OrderDetailsPage = () => {
             {/* Order Items */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-xl flex items-center gap-2">
-                  <Package className="h-5 w-5 text-secondary" />
+                <CardTitle className="text-base sm:text-lg md:text-xl flex items-center gap-2">
+                  <Package className="h-4 w-4 sm:h-5 sm:w-5 text-secondary" />
                   Order Items
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-800">
-                  <div className="bg-gray-50 dark:bg-gray-900 px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 grid grid-cols-12">
-                    <div className="col-span-6">Product</div> 
-                    <div className="col-span-2 text-right">Ordered</div>
-                    <div className="col-span-2 text-right">Delivered</div>
-                    <div className="col-span-2 text-right">Received</div> 
-                  </div>
-                  <div className="divide-y divide-gray-200 dark:divide-gray-800 mb-2">
-                    {itemsToDisplay.map((item) => (
-                      <div key={item.id} className="mb-2 px-4 py-4 grid grid-cols-12 items-center">
-                        <div className="col-span-6"> 
-                          <div className="flex items-center">
-                            <div className="h-10 w-10 flex-shrink-0 rounded-md bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                              <Package className="h-5 w-5 text-gray-500" />
-                            </div>
-                            <div className="ml-4">
-                              <p className="font-medium text-gray-900 dark:text-gray-100">{item.productName } {`(${item.depotVariantName})`}</p>
-                              <div className="text-xs text-gray-500 dark:text-gray-400">
-                                {item.depotName && <span>Depot: {item.depotName}</span>}
+                <div className="overflow-x-auto border rounded-lg">
+                  <div className="min-w-[600px]">
+                    <div className="bg-gray-50 dark:bg-gray-900 px-2 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 grid grid-cols-12">
+                      <div className="col-span-6">Product</div> 
+                      <div className="col-span-2 text-right text-xs sm:text-sm">Ordered</div>
+                      <div className="col-span-2 text-right text-xs sm:text-sm">Delivered</div>
+                      <div className="col-span-2 text-right text-xs sm:text-sm">Received</div> 
+                    </div>
+                    <div className="divide-y divide-gray-200 dark:divide-gray-800">
+                      {itemsToDisplay.map((item) => (
+                        <div key={item.id} className="px-2 sm:px-4 py-3 sm:py-4 grid grid-cols-12 items-center">
+                          <div className="col-span-6"> 
+                            <div className="flex items-center">
+                              <div className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 rounded-md bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                                <Package className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
                               </div>
-                              {item.agencyName && <p className="text-xs text-secondary dark:text-blue-400">Agency: {item.agencyName}</p>}
+                              <div className="ml-2 sm:ml-4 min-w-0 flex-1">
+                                <p className="font-medium text-xs sm:text-sm text-gray-900 dark:text-gray-100 truncate">
+                                  {item.productName} {item.depotVariantName && `(${item.depotVariantName})`}
+                                </p>
+                                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                  {item.depotName && <div className="truncate">Depot: {item.depotName}</div>}
+                                  {item.agencyName && <div className="truncate text-secondary dark:text-blue-400">Agency: {item.agencyName}</div>}
+                                </div>
+                              </div>
                             </div>
                           </div>
+                          <div className="col-span-2 text-right text-xs sm:text-sm">
+                            <div className="font-medium">{item.quantity}</div>
+                            {item.depotVariantName && <div className="text-xs text-gray-500 dark:text-gray-400 truncate">({item.depotVariantName})</div>}
+                          </div>
+                          <div className="col-span-2 text-right text-xs sm:text-sm">
+                            {typeof item.deliveredQuantity === 'number' ? (
+                              <>
+                                <div className="font-medium">{item.deliveredQuantity}</div>
+                                {item.depotVariantName && <div className="text-xs text-gray-500 dark:text-gray-400 truncate">({item.depotVariantName})</div>}
+                              </>
+                            ) : <span className="text-gray-400">-</span>}
+                          </div>
+                          <div className="col-span-2 text-right text-xs sm:text-sm"> 
+                            {typeof item.receivedQuantity === 'number' ? (
+                              <>
+                                <div className="font-medium">{item.receivedQuantity}</div>
+                                {item.depotVariantName && <div className="text-xs text-gray-500 dark:text-gray-400 truncate">({item.depotVariantName})</div>}
+                              </>
+                            ) : <span className="text-gray-400">-</span>}
+                          </div>
                         </div>
-                        <div className="col-span-2 text-right">
-                          {item.quantity} {item.depotVariantName && <span className="text-xs text-gray-500 dark:text-gray-400">{`(${item.depotVariantName})`}</span>}
-                        </div>
-                        
-                        <div className="col-span-2 text-right">
-                          {typeof item.deliveredQuantity === 'number' ? (
-                            <>
-                              {item.deliveredQuantity} {item.depotVariantName && <span className="text-xs text-gray-500 dark:text-gray-400">{`(${item.depotVariantName})`}</span>}
-                            </>
-                          ) : '-'}
-                        </div>
-                        <div className="col-span-2 text-right"> 
-                          {typeof item.receivedQuantity === 'number' ? (
-                            <>
-                              {item.receivedQuantity} {item.depotVariantName && <span className="text-xs text-gray-500 dark:text-gray-400">{`(${item.depotVariantName})`}</span>}
-                            </>
-                          ) : '-'}
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -326,37 +331,39 @@ const OrderDetailsPage = () => {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-4 md:space-y-6">
             {/* Vendor Info */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-xl flex items-center gap-2">
-                  <Truck className="h-5 w-5 text-secondary" />
+                <CardTitle className="text-base sm:text-lg md:text-xl flex items-center gap-2">
+                  <Truck className="h-4 w-4 sm:h-5 sm:w-5 text-secondary" />
                   Vendor Information
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center mb-4">
-                  <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg">
+                  <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm sm:text-lg flex-shrink-0">
                     {order?.vendor?.name.substring(0, 2).toUpperCase()}
                   </div>
-                  <div className="ml-4">
-                    <h3 className="font-semibold text-lg">{order?.vendor?.name}</h3>
+                  <div className="ml-3 sm:ml-4 min-w-0 flex-1">
+                    <h3 className="font-semibold text-sm sm:text-lg truncate">{order?.vendor?.name}</h3>
                   </div>
                 </div>
                  
-                <div className="space-y-3 text-sm">
-                  <div className="flex">
-                    <span className="text-gray-500 dark:text-gray-400 w-20">Email:</span>
-                    <span className="font-medium">{order?.vendor?.email}</span>
-                  </div>
-                  <div className="flex">
-                    <span className="text-gray-500 dark:text-gray-400 w-20">Phone:</span>
-                    <span className="font-medium">{order?.vendor?.mobile}</span>
-                  </div>
-                  <div className="flex">
-                    <span className="text-gray-500 dark:text-gray-400 w-20">Address:</span>
-                    <span className="font-medium">{order?.vendor?.address}</span>
+                <div className="space-y-3 text-xs sm:text-sm">
+                  <div className="grid grid-cols-1 gap-2">
+                    <div>
+                      <span className="text-gray-500 dark:text-gray-400 block">Email:</span>
+                      <span className="font-medium break-all">{order?.vendor?.email}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 dark:text-gray-400 block">Phone:</span>
+                      <span className="font-medium">{order?.vendor?.mobile}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 dark:text-gray-400 block">Address:</span>
+                      <span className="font-medium break-words">{order?.vendor?.address}</span>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -365,15 +372,15 @@ const OrderDetailsPage = () => {
             {/* Status Update */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-xl flex items-center gap-2">
-                  <ClipboardCheck className="h-5 w-5 text-secondary" />
+                <CardTitle className="text-base sm:text-lg md:text-xl flex items-center gap-2">
+                  <ClipboardCheck className="h-4 w-4 sm:h-5 sm:w-5 text-secondary" />
                   Status Update
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-900">
-                    <h3 className="font-medium mb-2">Current Status</h3>
+                  <div className="p-3 sm:p-4 rounded-lg bg-gray-50 dark:bg-gray-900">
+                    <h3 className="font-medium mb-2 text-sm sm:text-base">Current Status</h3>
                     <Badge 
                       className={cn(
                         "font-medium border text-xs px-2.5 py-0.5",
@@ -383,11 +390,10 @@ const OrderDetailsPage = () => {
                       {getDisplayStatusText(order.status)}
                     </Badge>
                     
-                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                    <p className="mt-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
                       {getStatusDescriptionText(order.status)}
                     </p>
                   </div>
-
                 </div>
               </CardContent>
             </Card>
@@ -396,12 +402,12 @@ const OrderDetailsPage = () => {
       )}
 
       {activeTab === "timeline" && currentUserProfile?.role !== 'AGENCY' && (
-        <Card className="mt-6">
+        <Card className="mt-4 md:mt-6">
           <CardHeader>
-            <CardTitle className="text-xl font-semibold text-gray-800 dark:text-gray-100">Order Progress Timeline</CardTitle>
+            <CardTitle className="text-base sm:text-lg md:text-xl font-semibold text-gray-800 dark:text-gray-100">Order Progress Timeline</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="relative pl-6 space-y-4 before:absolute before:inset-y-0 before:left-6 before:w-0.5 before:bg-gray-300 dark:before:bg-gray-700">
+            <div className="relative pl-4 sm:pl-6 space-y-4 before:absolute before:inset-y-0 before:left-4 sm:before:left-6 before:w-0.5 before:bg-gray-300 dark:before:bg-gray-700">
               {(() => {
                 const orderStatusHierarchy = ["PENDING", "DELIVERED", "RECEIVED"];
                 const currentStatusIndex = orderStatusHierarchy.indexOf(order.status);
@@ -460,15 +466,15 @@ const OrderDetailsPage = () => {
 
                   return (
                     <div key={step.title} className="relative">
-                      <div className={`absolute left-0 top-2 -ml-6 h-10 w-10 rounded-full flex items-center justify-center border-4 border-white dark:border-gray-900 ${displayIconBg}`}>
-                        {displayIcon}
+                      <div className={`absolute left-0 top-2 -ml-4 sm:-ml-6 h-8 w-8 sm:h-10 sm:w-10 rounded-full flex items-center justify-center border-2 sm:border-4 border-white dark:border-gray-900 ${displayIconBg}`}>
+                        <div className="h-4 w-4 sm:h-5 sm:w-5">{displayIcon}</div>
                       </div>
-                      <div className={`p-4 rounded-lg border shadow-sm ml-8 ${itemStyle}`}>
-                        <h3 className={`${titleStyle} flex items-center`}>{step.title}</h3>
+                      <div className={`p-3 sm:p-4 rounded-lg border shadow-sm ml-6 sm:ml-8 ${itemStyle}`}>
+                        <h3 className={`${titleStyle} flex items-center text-sm sm:text-base`}>{step.title}</h3>
                         <time className="block text-xs font-medium text-gray-500 dark:text-gray-400 mt-1 mb-2">
                           {step.time}
                         </time>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
                           {step.description}
                         </p>
                       </div>

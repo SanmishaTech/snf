@@ -860,7 +860,7 @@ const AdminSubscriptionList: React.FC = () => {
   return (
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
       
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-6 max-sm:flex-col">
         <h1 className="text-2xl font-bold">Admin - Subscriptions Management</h1>
         <div className="flex gap-2">
           <Button 

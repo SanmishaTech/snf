@@ -602,9 +602,9 @@ const ProductDetailPage: React.FC = () => {
 
         {/* Delivery Locations Modal */}
         <Dialog open={isDeliveryLocationsModalOpen} onOpenChange={setIsDeliveryLocationsModalOpen}>
-          <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-hidden">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-bold flex items-center gap-2">
+          <DialogContent className="w-full max-w-full h-full max-h-full sm:max-w-4xl sm:max-h-[80vh] p-0 sm:p-6 flex flex-col">
+            <DialogHeader className="px-4 pt-4 sm:px-0 sm:pt-0">
+              <DialogTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
                 <Truck className="h-5 w-5 text-blue-600" />
                 All Delivery Locations
               </DialogTitle>
@@ -612,7 +612,7 @@ const ProductDetailPage: React.FC = () => {
                 <X className="h-4 w-4" />
               </DialogClose>
             </DialogHeader>
-            <div className="mt-4">
+            <div className="mt-4 flex-1 overflow-y-auto px-4 sm:px-0">
               {depotsLoading ? (
                 <div className="space-y-3">
                   {[...Array(5)].map((_, i) => (
@@ -620,66 +620,22 @@ const ProductDetailPage: React.FC = () => {
                   ))}
                 </div>
               ) : (
-                <div className="overflow-y-auto max-h-[60vh]">
+                <div className="overflow-y-auto max-h-[60vh] sm:max-h-[60vh]">
                   <div className="grid gap-4">
-                    {/* Home Delivery Section */}
-                    {/* <div>
-                      <h3 className="text-lg font-semibold mb-3 text-green-600 flex items-center gap-2">
-                        <Truck className="h-4 w-4" />
-                        Home Delivery Services
-                      </h3>
-                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                        <div className="mb-3">
-                          <p className="text-sm text-green-700 mb-2">
-                            <strong>Available Home Delivery Services:</strong>
-                          </p>
-                          <p className="text-xs text-green-600 mb-4">
-                            Delivery areas are determined by your address. You can select your delivery address during checkout.
-                          </p>
-                        </div>
-
-                        {depots.filter(depot => depot.isOnline).length > 0 ? (
-                          <div className="grid gap-2">
-                            {depots
-                              .filter(depot => depot.isOnline)
-                              .map((depot, index) => (
-                                <div
-                                  key={depot.id}
-                                  className={`px-4 py-3 rounded-lg border ${index % 2 === 0 ? 'bg-white border-green-200' : 'bg-green-25 border-green-200'}`}
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-2 h-2 bg-primary rounded-full"></div>
-                                    <span className="text-sm font-medium text-gray-900">{depot.name}</span>
-                                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full ml-auto">
-                                      Home Delivery
-                                    </span>
-                                  </div>
-                                </div>
-                              ))}
-                          </div>
-                        ) : (
-                          <div className="text-center py-6">
-                            <Truck className="mx-auto h-8 w-8 mb-2 text-gray-400" />
-                            <p className="text-gray-500">No home delivery services available</p>
-                          </div>
-                        )}
-                      </div>
-                    </div> */}
-
                     {/* Store Pickup Section */}
                     <div>
-                      <h3 className="text-lg font-semibold mb-3 text-orange-600 flex items-center gap-2">
+                      <h3 className="text-base sm:text-lg font-semibold mb-3 text-orange-600 flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
                         Store Pickup Locations
                       </h3>
-                      <div className="bg-orange-50 border border-orange-200 rounded-lg overflow-hidden">
-                        <table className="w-full">
-                          <thead className="bg-orange-100">
+                      <div className="bg-orange-50 border border-orange-200 rounded-lg overflow-x-auto">
+                        <table className="w-full min-w-[600px]">
+                          <thead className="bg-orange-100 sticky top-0 z-10">
                             <tr>
-                              <th className="px-4 py-3 text-left text-sm font-medium text-orange-800">Store Name</th>
-                              <th className="px-4 py-3 text-left text-sm font-medium text-orange-800">Address</th>
-                              <th className="px-4 py-3 text-left text-sm font-medium text-orange-800">Contact Person</th>
-                              <th className="px-4 py-3 text-left text-sm font-medium text-orange-800">Contact Number</th>
+                              <th className="px-2 py-2 sm:px-4 sm:py-3 text-left text-xs sm:text-sm font-medium text-orange-800">Store Name</th>
+                              <th className="px-2 py-2 sm:px-4 sm:py-3 text-left text-xs sm:text-sm font-medium text-orange-800">Address</th>
+                              <th className="px-2 py-2 sm:px-4 sm:py-3 text-left text-xs sm:text-sm font-medium text-orange-800">Contact Person</th>
+                              <th className="px-2 py-2 sm:px-4 sm:py-3 text-left text-xs sm:text-sm font-medium text-orange-800">Contact Number</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -687,16 +643,16 @@ const ProductDetailPage: React.FC = () => {
                               .filter(depot => !depot.isOnline)
                               .map((depot, index) => (
                                 <tr key={depot.id} className={index % 2 === 0 ? 'bg-white' : 'bg-orange-25'}>
-                                  <td className="px-4 py-3 text-sm font-medium text-gray-900">{depot.name}</td>
-                                  <td className="px-4 py-3 text-sm text-gray-600">{depot.address}</td>
-                                  <td className="px-4 py-3 text-sm text-gray-600">{depot.contactPerson}</td>
-                                  <td className="px-4 py-3 text-sm text-gray-600">{depot.contactNumber}</td>
+                                  <td className="px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm font-medium text-gray-900">{depot.name}</td>
+                                  <td className="px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm text-gray-600">{depot.address}</td>
+                                  <td className="px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm text-gray-600">{depot.contactPerson}</td>
+                                  <td className="px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm text-gray-600">{depot.contactNumber}</td>
                                 </tr>
                               ))}
                           </tbody>
                         </table>
                         {depots.filter(depot => !depot.isOnline).length === 0 && (
-                          <div className="p-8 text-center text-gray-500">
+                          <div className="p-4 sm:p-8 text-center text-gray-500">
                             <Calendar className="mx-auto h-8 w-8 mb-2 text-gray-400" />
                             <p>No store pickup locations available</p>
                           </div>
@@ -707,10 +663,11 @@ const ProductDetailPage: React.FC = () => {
                 </div>
               )}
             </div>
-            <div className="mt-6 flex justify-end">
+            <div className="mt-6 flex justify-end px-4 sm:px-0 pb-4 sm:pb-0">
               <Button
                 variant="outline"
                 onClick={() => setIsDeliveryLocationsModalOpen(false)}
+                className="w-full sm:w-auto"
               >
                 Close
               </Button>

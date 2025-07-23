@@ -219,15 +219,15 @@ const OrderReceivedPage = () => {
   if (isError || !order) return <div className="p-6 text-red-500">Error loading order details. Please try again.</div>;
 
   return (
-    <div className="p-4 md:p-6 space-y-6 bg-gray-50 dark:bg-gray-950 min-h-screen">
-      <div className="flex flex-col lg:flex-row gap-6">
-        <div className="lg:w-2/3 space-y-6">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6 bg-gray-50 dark:bg-gray-950 min-h-screen">
+      <div className="flex flex-col lg:flex-row gap-4 md:gap-6">
+        <div className="lg:w-2/3 space-y-4 md:space-y-6">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-4">
-              <CardTitle className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Record Receipt for Order #{order.poNumber}</CardTitle>
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 space-y-2 sm:space-y-0">
+              <CardTitle className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-800 dark:text-gray-100 leading-tight">Record Receipt for Order #{order.poNumber}</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
+            <CardContent className="space-y-4 md:space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 md:gap-x-6 gap-y-3 md:gap-y-4 text-sm">
                 <div>
                   <p className="text-gray-500 dark:text-gray-400">PO Number</p>
                   <p className="font-medium text-gray-800 dark:text-gray-200">{order.poNumber}</p>
@@ -252,19 +252,19 @@ const OrderReceivedPage = () => {
                 </div>
               </div>
 
-              <div className="space-y-1 pt-4">
-                <h3 className="text-lg font-medium text-gray-800 dark:text-gray-100">Order Items</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Enter the quantity received for each item.</p>
+              <div className="space-y-2 pt-4">
+                <h3 className="text-base md:text-lg font-medium text-gray-800 dark:text-gray-100">Order Items</h3>
+                <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">Enter the quantity received for each item.</p>
               </div>
               
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+              <div className="overflow-x-auto border rounded-lg">
+                <table className="w-full text-sm min-w-[600px]">
                   <thead className="bg-gray-100 dark:bg-gray-800">
                     <tr>
-                      <th className="px-4 py-2 text-left font-medium text-gray-600 dark:text-gray-300">Product</th>
-                      <th className="px-4 py-2 text-right font-medium text-gray-600 dark:text-gray-300">Ordered</th>
-                      <th className="px-4 py-2 text-right font-medium text-gray-600 dark:text-gray-300">Delivered</th>
-                      <th className="px-4 py-2 text-right font-medium text-gray-600 dark:text-gray-300 w-32">Received Qty</th>
+                      <th className="px-2 sm:px-4 py-2 text-left font-medium text-gray-600 dark:text-gray-300 text-xs sm:text-sm min-w-[140px]">Product</th>
+                      <th className="px-2 sm:px-4 py-2 text-right font-medium text-gray-600 dark:text-gray-300 text-xs sm:text-sm min-w-[80px]">Ordered</th>
+                      <th className="px-2 sm:px-4 py-2 text-right font-medium text-gray-600 dark:text-gray-300 text-xs sm:text-sm min-w-[80px]">Delivered</th>
+                      <th className="px-2 sm:px-4 py-2 text-right font-medium text-gray-600 dark:text-gray-300 text-xs sm:text-sm min-w-[120px]">Received Qty</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -275,26 +275,32 @@ const OrderReceivedPage = () => {
                       : (order?.items || [])
                     ).map(item => (
                       <tr key={item.id}>
-                        <td className="px-4 py-3 text-gray-800 dark:text-gray-200">
-                          {item.productName}
-                          <div className="text-xs text-gray-500 dark:text-gray-400">
-                            {item.depotName && <span>Depot: {item.depotName}</span>}
-                            {item.depotVariantName && <span> ({item.depotVariantName})</span>}
+                        <td className="px-2 sm:px-4 py-3 text-gray-800 dark:text-gray-200">
+                          <div className="font-medium text-xs sm:text-sm truncate">{item.productName}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            {item.depotName && <div className="truncate">Depot: {item.depotName}</div>}
+                            {item.depotVariantName && <div className="truncate">Variant: {item.depotVariantName}</div>}
+                            {item.agencyName && <div className="truncate">Agency: {item.agencyName}</div>}
                           </div>
-                          {item.agencyName && <span className="block text-xs text-gray-500 dark:text-gray-400">Agency: {item.agencyName}</span>}
                         </td>
-                        <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-300">{item.quantity} {item.depotVariantName && `(${item.depotVariantName})`}</td>
-                        <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-300">{item.deliveredQuantity != null ? `${item.deliveredQuantity} (${item.depotVariantName})` : 'N/A'}</td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-end space-x-2">
+                        <td className="px-2 sm:px-4 py-3 text-right text-gray-600 dark:text-gray-300 text-xs sm:text-sm">
+                          <div className="font-medium">{item.quantity}</div>
+                          {item.depotVariantName && <div className="text-xs text-gray-500 truncate">({item.depotVariantName})</div>}
+                        </td>
+                        <td className="px-2 sm:px-4 py-3 text-right text-gray-600 dark:text-gray-300 text-xs sm:text-sm">
+                          <div className="font-medium">{item.deliveredQuantity != null ? item.deliveredQuantity : 'N/A'}</div>
+                          {item.deliveredQuantity != null && item.depotVariantName && <div className="text-xs text-gray-500 truncate">({item.depotVariantName})</div>}
+                        </td>
+                        <td className="px-2 sm:px-4 py-3">
+                          <div className="flex flex-col sm:flex-row items-end sm:items-center justify-end space-y-1 sm:space-y-0 sm:space-x-2">
                             <Input
                               type="number"
                               value={receivedQuantities[item.id] || ''}
                               onChange={(e) => handleReceivedQuantityChange(item.id, e.target.value)}
-                              className="w-24 text-right dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 pr-1"
+                              className="w-20 sm:w-24 text-right dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 text-xs sm:text-sm"
                               min="0"
                             />
-                            {item.depotVariantName && <span className="text-xs text-gray-500 dark:text-gray-400">{item.depotVariantName}</span>}
+                            {item.depotVariantName && <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[60px] sm:max-w-none">{item.depotVariantName}</span>}
                           </div>
                         </td>
                       </tr>
@@ -303,11 +309,11 @@ const OrderReceivedPage = () => {
                 </table>
               </div>
             </CardContent>
-            <CardFooter className="flex justify-end pt-6 border-t border-gray-200 dark:border-gray-700">
+            <CardFooter className="flex flex-col sm:flex-row justify-end gap-3 pt-4 md:pt-6 border-t border-gray-200 dark:border-gray-700">
               <Button 
                 variant="outline" 
                 onClick={() => navigate(-1)} 
-                className="mr-3"
+                className="flex-1 sm:flex-none order-2 sm:order-1"
                 disabled={recordReceiptMutation.isPending || isLoadingUserProfile}
               >
                 <ArrowLeft className="h-4 w-4 mr-1.5" /> Cancel
@@ -315,36 +321,38 @@ const OrderReceivedPage = () => {
               <Button 
                 onClick={handleSubmitReceipt} 
                 disabled={recordReceiptMutation.isPending || Object.keys(receivedQuantities).length === 0 || isLoadingUserProfile}
-                className="flex items-center"
+                className="flex items-center justify-center flex-1 sm:flex-none order-1 sm:order-2"
               >
                 <ClipboardCheck className="h-4 w-4 mr-1.5" />
-                {recordReceiptMutation.isPending ? "Submitting..." : "Submit Received Quantities"}
+                <span className="truncate">{recordReceiptMutation.isPending ? "Submitting..." : "Submit Receipt"}</span>
               </Button>
             </CardFooter>
           </Card>
         </div>
 
-        <div className="lg:w-1/3 space-y-6">
+        <div className="lg:w-1/3 space-y-4 md:space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-xl font-semibold text-gray-800 dark:text-gray-100">Vendor Details</CardTitle>
+              <CardTitle className="text-base md:text-xl font-semibold text-gray-800 dark:text-gray-100">Vendor Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
-              <div>
-                <p className="text-gray-500 dark:text-gray-400">Name</p>
-                <p className="font-medium text-gray-800 dark:text-gray-200">{order?.vendor?.name}</p>
-              </div>
-              <div>
-                <p className="text-gray-500 dark:text-gray-400">Email</p>
-                <p className="font-medium text-gray-800 dark:text-gray-200">{order?.vendor?.email}</p>
-              </div>
-              <div>
-                <p className="text-gray-500 dark:text-gray-400">Mobile</p>
-                <p className="font-medium text-gray-800 dark:text-gray-200">{order?.vendor?.mobile}</p>
-              </div>
-              <div>
-                <p className="text-gray-500 dark:text-gray-400">Address</p>
-                <p className="font-medium text-gray-800 dark:text-gray-200">{order?.vendor?.address}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
+                <div>
+                  <p className="text-gray-500 dark:text-gray-400 text-xs">Name</p>
+                  <p className="font-medium text-gray-800 dark:text-gray-200 text-sm truncate">{order?.vendor?.name}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500 dark:text-gray-400 text-xs">Email</p>
+                  <p className="font-medium text-gray-800 dark:text-gray-200 text-sm truncate">{order?.vendor?.email}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500 dark:text-gray-400 text-xs">Mobile</p>
+                  <p className="font-medium text-gray-800 dark:text-gray-200 text-sm">{order?.vendor?.mobile}</p>
+                </div>
+                <div className="sm:col-span-2 lg:col-span-1">
+                  <p className="text-gray-500 dark:text-gray-400 text-xs">Address</p>
+                  <p className="font-medium text-gray-800 dark:text-gray-200 text-sm break-words">{order?.vendor?.address}</p>
+                </div>
               </div>
             </CardContent>
           </Card>

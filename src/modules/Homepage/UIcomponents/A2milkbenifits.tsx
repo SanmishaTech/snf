@@ -94,7 +94,7 @@ const A2MilkSection: React.FC<A2MilkSectionProps> = ({ className = "" }) => {
   };
 
   return (
-    <div className={` py-4 px-4 overflow-x-hidden ${className}`}>
+    <div className={`py-4 px-4 overflow-x-hidden overflow-y-hidden ${className}`}>
       <div className="max-w-7xl mx-auto space-y-12">
         {/* Main Section */}
         <motion.div

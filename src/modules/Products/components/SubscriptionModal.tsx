@@ -314,8 +314,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       setPincodeValidation({
         isValid: validation.isValid,
         message: validation.isValid 
-          ? `Great! Pincode ${pincode} is served by ${currentAreaMaster.name}` 
-          : `Pincode ${pincode} is not served by ${currentAreaMaster.name}. Please check your pincode or select a different area.`,
+          ? `Great! Pincode ${pincode} is served in ${currentAreaMaster.name}` 
+          : `Pincode ${pincode} is not served in ${currentAreaMaster.name}. Please check your pincode or select a different area.`,
         isValidating: false
       });
     } else {
@@ -1012,6 +1012,11 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     console.log('handleAreaMasterSelection called with:', areaMaster.name);
     
     setSelectedAreaMaster(areaMaster);
+    
+    // Clear area master validation error when an area is selected
+    if (formErrors.areaMaster) {
+      setFormErrors((prev) => ({ ...prev, areaMaster: "" }));
+    }
     
     // Store dairy validation message for later use during save, but don't show dialog immediately
     if (product?.isDairyProduct && !areaMaster.isDairyProduct) {
