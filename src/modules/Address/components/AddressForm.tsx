@@ -611,7 +611,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
               {/* Area Master Selection */}
               <div>
                 <label className="text-sm font-medium mb-1.5 block">
-                  Our Delivery Areas* <span className="text-xs text-gray-500"></span>
+                   Delivery Areas* <span className="text-xs text-gray-500"></span>
                 </label>
                 <Select
                   onValueChange={(value) => {

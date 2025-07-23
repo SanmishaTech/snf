@@ -832,7 +832,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                   </div>
                   <div>
                     <Label htmlFor="areaMaster" className="text-sm font-medium mb-1.5 block">
-                      Our Delivery Areas* <span className="text-xs text-gray-500"></span>
+                      Delivery Areas* <span className="text-xs text-gray-500"></span>
                       {product?.isDairyProduct && (
                         <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
                           Dairy Product
