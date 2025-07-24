@@ -426,15 +426,15 @@ const ProductDetailPage: React.FC = () => {
                 {/* Depot Selection - Only show for store pickup */}
                 {deliveryPreference === 'pickup' && (
                   <div className="mb-4">
-                    <label className="mr-2 mb-2 font-medium block">Select Store for Pickup:</label>
+                    {/* <label className="mr-2 mb-2 font-medium block">Select Store for Pickup:</label> */}
                     {depotsLoading ? (
                       <Skeleton className="h-10 w-full" />
                     ) : (
                       <Select
-                        value={selectedDepotId?.toString() ?? ''}
-                        onValueChange={(value) => setSelectedDepotId(parseInt(value, 10))}
+                      value={selectedDepotId !== undefined && selectedDepotId !== null ? selectedDepotId.toString() : ""}
+                      onValueChange={(value) => setSelectedDepotId(parseInt(value, 10))}
                       >
-                        <SelectTrigger className="w-full mt-2">
+                        <SelectTrigger className="w-full mt-2 border-black">
                           <SelectValue placeholder="Select a store for pickup" />
                         </SelectTrigger>
                         <SelectContent>

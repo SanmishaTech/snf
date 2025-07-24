@@ -42,7 +42,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
@@ -62,6 +62,7 @@ import { getCitiesList, type City } from "@/services/cityMasterService";
 import { createLead } from "@/services/leadService";
 import { ServiceNotAvailableDialog, EnhancedLeadCaptureModal } from "@/modules/Lead";
 import { PincodeValidator } from "@/components/ui/PincodeValidator";
+import { SuccessDialog } from "@/components/ui/SuccessDialog";
 
 // Enhanced interfaces to support variants with individual delivery schedules
 interface ProductVariant {
@@ -221,6 +222,11 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     isValidating: boolean;
   }>({ isValid: false, message: "", isValidating: false });
   const [showEnhancedLeadModal, setShowEnhancedLeadModal] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [successDetails, setSuccessDetails] = useState<{
+    subscriptionId?: string;
+    totalAmount?: number;
+  }>({});
 
   useEffect(() => {
     const resetOptionIfNeeded = (option: string) => {
@@ -1322,8 +1328,19 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
     try {
       setIsLoading(true);
-      await createOrderWithSubscriptions(payload);
-      toast.success("Subscription created successfully!");
+      const response = await createOrderWithSubscriptions(payload);
+      
+      // Set success details
+      const totalAmount = subscriptionSummary?.totalPrice || 0;
+      const finalAmount = useWallet ? totalAmount - walletDeduction : totalAmount;
+      
+      setSuccessDetails({
+        subscriptionId: response?.subscriptionId || `SUB-${Date.now()}`,
+        totalAmount: finalAmount,
+      });
+      
+      // Show success dialog instead of toast
+      setShowSuccessDialog(true);
       onOpenChange(false);
     } catch (error) {
       console.error("Failed to create subscription:", error);
@@ -1502,6 +1519,10 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         startDate && !isNaN(new Date(startDate).getTime())
           ? format(new Date(startDate), "dd/MM/yyyy")
           : "Not set",
+      expiryDate:
+        startDate && !isNaN(new Date(startDate).getTime())
+          ? format(addDays(new Date(startDate), selectedPeriod - 1), "dd/MM/yyyy")
+          : "Not set",
     };
   }, [
     product,
@@ -1599,8 +1620,18 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                             </div>
                             
                             {period.value === 30 && (
-                              <span className="absolute -top-2 -right-1 bg-green-500 text-white text-[9px] px-1.5 py-0.5 rounded-full font-medium">
-                                Best Value
+                              <span className="absolute -top-2 -right-1 bg-black text-white text-[9px] px-1.5 py-0.5 rounded-full font-medium">
+                                Super Saver
+                              </span>
+                            )}
+                             {period.value === 3 && (
+                              <span className="absolute -top-2 -right-1 bg-black text-white text-[9px] px-1.5 py-0.5 rounded-full font-medium">
+                                Trial Pack
+                              </span>
+                            )}
+                             {period.value === 15 && (
+                              <span className="absolute -top-2 -right-1 bg-black text-white text-[9px] px-1.5 py-0.5 rounded-full font-medium">
+                                Mid Saver   
                               </span>
                             )}
                           </div>
@@ -2451,7 +2482,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                         ) : (
                           <div className="text-center py-2">
                             <p className="text-gray-500 text-[10px]">
-                              Depot address not available
+                              Location address not available
                             </p>
                           </div>
                         )}
@@ -2538,7 +2569,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
                         {/* Per-Variant Summary - Enhanced */}
                         {hasVariants && selectedVariants.length > 0 && (
-                          <div className="border-t border-gray-200 pt-2 mt-2">
+                          <div className="border-t border-gray-500 pt-2 mt-2">
                             <div className="flex items-center gap-1 mb-2">
                               <Package className="h-3 w-3 text-blue-600" />
                               <h4 className="text-sm font-semibold text-gray-800">
@@ -2725,7 +2756,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               </div>
             </>
           ) : modalView === "confirmation" ? (
-            <div className="bg-white p-4 rounded-md space-y-4">
+            <div className="bg-white p-4 rounded-md space-y-4 w-[50%] mx-auto max-sm:w-full ">
               <h3 className="text-lg font-semibold text-center">
                 Confirm Your Subscription
               </h3>
@@ -2810,6 +2841,11 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Start Date:</span>
                   <span>{subscriptionSummary?.startDate}</span>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">End Date:</span>
+                    <span>{subscriptionSummary?.expiryDate}</span>
                 </div>
 
                 <div className="flex justify-between items-center">
@@ -2947,7 +2983,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               )}
               <div className="bg-green-50 p-3 rounded-md border border-green-100">
                 <p className="text-sm text-primary flex items-start">
-                  <svg
+                  {/* <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-4 w-4 mr-1.5 mt-0.5 flex-shrink-0"
                     fill="none"
@@ -2960,10 +2996,12 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       strokeWidth={2}
                       d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
-                  </svg>
-                  This is not a cash on delivery. But Amount will be collected,
-                  Our team will contact you for futher instructions
-                </p>
+                  </svg> */}
+                  1) Since the milk is sourced from 'Tribal farmers',  all payments are in Advance.<br/><br/>
+
+2) Both Cash & Online options are available.The plan starts after 2 days from receipt of payment.<br/><br/>
+
+3) For Cash payments - our person can visit your home OR you may deposit money at our Tilak Road store.                </p>
               </div>
 
               {selectedDepot?.isOnline ? (
@@ -3000,7 +3038,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               ) : (
                 <div className="bg-white p-4 rounded-md border">
                   <h4 className="text-sm font-medium mb-2">
-                    Pickup from Depot:
+                    Pickup from Location:
                   </h4>
                   <div className="text-sm">
                     <p className="font-medium">{selectedDepot?.name}</p>
@@ -3169,8 +3207,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       htmlFor="landmark"
                       className="text-sm font-medium mb-1.5 block"
                     >
-                      Landmark (Optional)
-                    </Label>
+                      Nearest Landmark*                    </Label>
                     <Input
                       id="landmark"
                       name="landmark"
@@ -3509,6 +3546,22 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
           setSelectedCityId(null);
           setPincodeValidation({ isValid: false, message: "", isValidating: false });
           setModalView("subscriptionDetails");
+        }}
+      />
+
+      {/* Success Dialog */}
+      <SuccessDialog
+        isOpen={showSuccessDialog}
+        onOpenChange={setShowSuccessDialog}
+        title="Subscription Created Successfully!"
+        message="Your subscription has been set up and will start delivering as scheduled."
+        subscriptionDetails={{
+          subscriptionId: successDetails.subscriptionId,
+          productName: product?.name,
+          quantity: selectedVariants.reduce((total, variant) => total + variant.quantity, 0),
+          period: subscriptionPeriods.find(p => p.value === selectedPeriod)?.label,
+          startDate: startDate,
+          totalAmount: successDetails.totalAmount,
         }}
       />
     </Dialog>

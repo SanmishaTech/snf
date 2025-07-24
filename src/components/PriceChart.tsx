@@ -321,7 +321,7 @@ export const PriceChart: React.FC<PriceChartProps> = ({ product, variants, class
             <div className="bg-blue-50/50 p-4 rounded-lg border">
               <h3 className="font-semibold text-gray-900 mb-2">{product?.name || "Product"}</h3>
               <div className="space-y-2">
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-900">
                   Choose the best subscription plan for your needs. Longer periods offer better savings!
                 </p>
                 {deliveryPreference === 'pickup' && selectedDepotId && getSelectedDepotName() && (
@@ -349,73 +349,80 @@ export const PriceChart: React.FC<PriceChartProps> = ({ product, variants, class
               
               {/* Horizontal 2-Column Layout */}
               <div className="overflow-x-auto">
-                <table className="w-full border border-gray-200 rounded-lg">
+                <table className="w-full border border-gray-500 rounded-lg">
                   <thead>
                     <tr className="bg-gray-50">
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-700 border-r border-gray-200">Period</th>
-                      <th className="text-center py-3 px-4 text-sm font-medium text-gray-700 border-r border-gray-200" colSpan={2}>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-700 border-r border-gray-500">Period</th>
+                      <th className="text-center py-3 px-4 text-sm font-medium text-gray-700 border-r border-gray-500" colSpan={2}>
                         <div className="flex items-center justify-center gap-2">
                           <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                          500ml
+                          500ml 
+                          <span className="text-xs text-gray-500">(₹55)</span>
                         </div>
                       </th>
                       <th className="text-center py-3 px-4 text-sm font-medium text-gray-700" colSpan={2}>
                         <div className="flex items-center justify-center gap-2">
                           <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
                           1L
+                          <span className="text-xs text-gray-500">(₹110)</span>
+
                         </div>
                       </th>
                     </tr>
-                    <tr className="bg-gray-50 border-t border-gray-200">
-                      <th className="py-2 px-4 border-r border-gray-200"></th>
-                      <th className="text-center py-2 px-3 text-xs font-medium text-gray-600 border-r border-gray-100">Price</th>
-                      <th className="text-center py-2 px-3 text-xs font-medium text-gray-600 border-r border-gray-200">Savings</th>
-                      <th className="text-center py-2 px-3 text-xs font-medium text-gray-600 border-r border-gray-100">Price</th>
-                      <th className="text-center py-2 px-3 text-xs font-medium text-gray-600">Savings</th>
+                    <tr className="bg-gray-50 border-t border-gray-500">
+                      <th className="py-2 px-4 border-r border-gray-500"></th>
+                      <th className="text-center py-2 px-3 text-xs font-medium text-gray-900 border-r border-gray-500">Price</th>
+                      <th className="text-center py-2 px-3 text-xs font-medium text-gray-900 border-r border-gray-500">Savings</th>
+                      <th className="text-center py-2 px-3 text-xs font-medium text-gray-900 border-r border-gray-500">Price</th>
+                      <th className="text-center py-2 px-3 text-xs font-medium text-gray-900 border-r border-gray-500">Savings</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-gray-500">
                     {/* Buy Once Row */}
                     <tr className="hover:bg-gray-50">
-                      <td className="py-3 px-4 border-r border-gray-200">
+                      <td className="py-3 px-4 border-r border-gray-500">
                         <div className="flex items-center gap-2">
-                          <div className="text-gray-600 font-medium">Buy Once</div>
+                          <div className="text-gray-900 font-medium">Buy Once</div>
                         </div>
                       </td>
-                      <td className="text-center py-3 px-3 font-semibold text-gray-900 border-r border-gray-100">
+                      <td className="text-center py-3 px-3 font-semibold text-gray-900 border-r border-gray-500">
                         ₹{getPriceForPeriod('buyOnce', deliveryPreference, '500ml') || '--'}
                       </td>
-                      <td className="text-center py-3 px-3 border-r border-gray-200">
-                        <span className="text-xs text-black">Base Price</span>
+                      <td className="text-center py-3 px-3 border-r border-gray-500">
+                        <Badge className="bg-gray-200 text-gray-900 text-xs mb-1">
+                                {calculateSavings('buyOnce', deliveryPreference, '500ml')}% off
+                        </Badge>
                       </td>
-                      <td className="text-center py-3 px-3 font-semibold text-gray-900 border-r border-gray-100">
+                      <td className="text-center py-3 px-3 font-semibold text-gray-900 border-r border-gray-500">
                         ₹{getPriceForPeriod('buyOnce', deliveryPreference, '1L') || '--'}
                       </td>
                       <td className="text-center py-3 px-3">
-                        <span className="text-xs text-black">Base Price</span>
+                        <Badge className="bg-green-200 text-green-800 text-xs mb-1">
+                                {calculateSavings('buyOnce', deliveryPreference, '1L')}% off
+                        </Badge>
                       </td>
                     </tr>
                     
                     {/* Subscription Periods */}
                     {subscriptionPeriods.map(period => (
                       <tr key={period.value} className="hover:bg-gray-50">
-                        <td className="py-3 px-4 border-r border-gray-200">
+                        <td className="py-3 px-4 border-r border-gray-500">
                           <div className="flex items-center gap-2">
                             <div style={{ color: period.color }} className="flex items-center">
                               {period.icon}
                             </div>
                             <div>
                               <div className="font-medium text-gray-900 text-sm">{period.label}</div>
-                              <div className="text-xs text-gray-500">{period.description}</div>
+                              <div className="text-xs text-gray-900">{period.description}</div>
                             </div>
                           </div>
                         </td>
-                        <td className="text-center py-3 px-3 border-r border-gray-100">
-                          <span className="font-semibold text-green-600">
+                        <td className="text-center py-3 px-3 border-r border-gray-500">
+                          <span className="font-semibold text-gray-900">
                             ₹{getPriceForPeriod(period.value, deliveryPreference, '500ml') || '--'}
                           </span>
                         </td>
-                        <td className="text-center py-3 px-3 border-r border-gray-200">
+                        <td className="text-center py-3 px-3 border-r border-gray-500">
                           {calculateSavings(period.value, deliveryPreference, '500ml') > 0 ? (
                             <div className="flex flex-col items-center">
                               <Badge className="bg-green-200 text-green-800 text-xs mb-1">
@@ -429,8 +436,8 @@ export const PriceChart: React.FC<PriceChartProps> = ({ product, variants, class
                             <span className="text-xs text-gray-400">No savings</span>
                           )}
                         </td>
-                        <td className="text-center py-3 px-3 border-r border-gray-100">
-                          <span className="font-semibold text-green-600">
+                        <td className="text-center py-3 px-3 border-r border-gray-500">
+                          <span className="font-semibold text-gray-900">
                             ₹{getPriceForPeriod(period.value, deliveryPreference, '1L') || '--'}
                           </span>
                         </td>
@@ -504,7 +511,7 @@ export const PriceChart: React.FC<PriceChartProps> = ({ product, variants, class
                       <div className="w-3 h-3 bg-secondary rounded-full mt-1 flex-shrink-0"></div>
                       <div className="flex-1">
                         <h5 className="font-medium text-gray-900 mb-1 group-hover:text-blue-700 transition-colors">{schedule.label}</h5>
-                        <p className="text-sm text-gray-600 mb-2">{schedule.description}</p>
+                        <p className="text-sm text-gray-900 mb-2">{schedule.description}</p>
                         <div className="text-xs text-blue-600 font-medium">
                           Available for: {schedule.id === 'daily' ? 'All periods' : 
                                         schedule.id === 'alternate-days' ? '15+ days' :

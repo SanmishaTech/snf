@@ -1006,6 +1006,7 @@ const AdminSubscriptionList: React.FC = () => {
       ) : productOrders.length > 0 ? (
         productOrders.filter((order) => {
           if (!showUnassignedOnly) return true;
+          console.log("order",order)
           
           // Show only orders that have at least one subscription without an assigned agency
           return order.subscriptions.some(subscription => !subscription.agencyId);
@@ -1078,15 +1079,22 @@ const AdminSubscriptionList: React.FC = () => {
                     const scheduleLabel = sub.deliverySchedule === 'DAILY' ? 'Daily' :
                                          sub.deliverySchedule === 'WEEKDAYS' ? 'Weekdays Only' :
                                          sub.deliverySchedule === 'WEEKENDS' ? 'Weekends' :
-                                         sub.deliverySchedule === 'ALTERNATE_DAYS' ? 'Every Other Day' :
+                                         sub.deliverySchedule === 'ALTERNATE_DAYS' ? 'Alternate_days' :
                                          sub.deliverySchedule === 'DAY1_DAY2' ? 'Daily (Varying Qty)' :
                                          'Custom';
                     
+                    const periodtolabel = {
+                      "1": "Buy Once",
+                      '3': 'Trial Pack',
+                      '7': 'Mid Saver Pack',
+                      '15': 'Mid Saver Pack',
+                      '30': 'Super Saver Pack',
+                    }
                     return (
                       <div key={sub.id} className="text-sm">
-                        <div className="font-medium text-gray-700 mb-1">{scheduleLabel}</div>
+                        <div className="font-medium text-gray-700 mb-1">{`${scheduleLabel} - ${periodtolabel[sub.period]}`}</div>
                         
-                        {/* Alternate Days Display - Every Other Day (1,3,5,7...) */}
+                        {/* Alternate Days Display - Alternate_days (1,3,5,7...) */}
                         {sub.deliverySchedule === 'ALTERNATE_DAYS' && (sub.qty || sub.altQty) ? (
                           <div className="flex items-center gap-2 text-xs">
                             <div className="flex items-center gap-1">
@@ -1156,7 +1164,7 @@ const AdminSubscriptionList: React.FC = () => {
 
               {/* Payment Status */}
               <TableCell className="px-4 py-3">
-                <div className="flex flex-col gap-1">
+                 <div className="flex flex-col gap-1">
                   <div className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
                     order.paymentStatus === 'PAID' 
                       ? 'bg-green-100 text-green-800' 
@@ -1166,7 +1174,9 @@ const AdminSubscriptionList: React.FC = () => {
                   }`}>
                     {order.paymentStatus}
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">
+                  {console.log("order",order?.subscriptions[0].deliveryAddressId)}
+                  <p>{order?.subscriptions[0].deliveryAddressId !== null ? "Home Delivery" : "Store Pickup"}</p>
+                   <div className="text-xs text-gray-500 mt-1">
                     {order.paymentStatus === 'PAID' 
                       ? 'Payment completed' 
                       : order.paymentStatus === 'PENDING' 
@@ -1190,7 +1200,7 @@ const AdminSubscriptionList: React.FC = () => {
                     <div className="flex items-center gap-2 mt-1">
                       <CalendarCheckIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
                       <div className="flex flex-col">
-                        <span className="text-xs text-gray-500">Expiry</span>
+                        <span className="text-xs text-gray-500">End Date</span>
                         <span>{firstSub.expiryDate ? format(new Date(firstSub.expiryDate), 'dd MMM yyyy') : 'N/A'}</span>
                       </div>
                     </div>

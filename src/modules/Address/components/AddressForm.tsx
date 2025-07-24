@@ -69,7 +69,7 @@ const addressSchema = z.object({
   mobile: z.string().min(1, 'Mobile number is required').regex(/^\d{10,}$/, 'Mobile number must be at least 10 digits and contain only numbers'),
   plotBuilding: z.string().min(1, 'Flat/House/Plot number is required'),
   streetArea: z.string().min(1, 'Street/Area name is required'),
-  landmark: z.string().optional(),
+  landmark: z.string().min(1, 'Landmark is required'),
   pincode: z.string().min(1, 'Pincode is required').regex(/^\d{6}$/, 'Pincode must be exactly 6 numeric digits'),
   city: z.string().min(1, 'City is required'),
   state: z.string().min(1, 'State is required'),

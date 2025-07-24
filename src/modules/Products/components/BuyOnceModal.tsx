@@ -23,6 +23,7 @@ import { getCitiesList, type City } from "@/services/cityMasterService";
 import { createLead } from "@/services/leadService";
 import { ServiceNotAvailableDialog, EnhancedLeadCaptureModal } from "@/modules/Lead";
 import { PincodeValidator } from "@/components/ui/PincodeValidator";
+import { SuccessDialog } from "@/components/ui/SuccessDialog";
 
 interface ProductData {
   id: number;
@@ -139,6 +140,11 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
   const [showServiceNotAvailableDialog, setShowServiceNotAvailableDialog] = useState(false);
   const [serviceNotAvailableMessage, setServiceNotAvailableMessage] = useState<string>("");
   const [showEnhancedLeadModal, setShowEnhancedLeadModal] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [successDetails, setSuccessDetails] = useState<{
+    orderId?: string;
+    totalAmount?: number;
+  }>({});
   
   // Pincode validation state
   const [pincodeValidation, setPincodeValidation] = useState<{
@@ -620,8 +626,16 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
     };
 
     try {
-      await post('/api/product-orders/with-subscriptions', payload);
-      toast.success("Order placed successfully!");
+      const response = await post('/api/product-orders/with-subscriptions', payload);
+      
+      // Set success details
+      setSuccessDetails({
+        orderId: response?.orderId || `ORD-${Date.now()}`,
+        totalAmount: productTotal - walletDeduction,
+      });
+      
+      // Show success dialog instead of toast
+      setShowSuccessDialog(true);
       onOpenChange(false);
     } catch (error: any) {
       console.error("Failed to place order:", error);
@@ -785,7 +799,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                   </div>
                   <div>
                     <Label htmlFor="landmark" className="text-sm font-medium mb-1.5 block">
-                      Landmark (Optional)
+                      Nearest Landmark *
                     </Label>
                     <input
                       id="landmark"
@@ -863,18 +877,8 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                             <div className="flex items-center justify-between w-full">
                               <span>{areaMaster.name}</span>
                               <div className="flex gap-1 ml-2">
-                                <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                  areaMaster.deliveryType === 'HandDelivery' 
-                                    ? 'bg-green-100 text-green-800' 
-                                    : 'bg-blue-100 text-blue-800'
-                                }`}>
-                                  {areaMaster.deliveryType === 'HandDelivery' ? 'Hand Delivery' : 'Courier'}
-                                </span>
-                                {areaMaster.isDairyProduct && (
-                                  <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">
-                                    Dairy Available
-                                  </span>
-                                )}
+                               
+                               
                               </div>
                             </div>
                           </SelectItem>
@@ -1051,7 +1055,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                   // Offline depot - show pickup location
                   return (
                     <div>
-                      <Label className="text-sm font-medium mb-2 block">Pickup from Depot:</Label>
+                      <Label className="text-sm font-medium mb-2 block">Pickup from Location:</Label>
                       <div className="border border-gray-200 rounded-lg p-3 bg-gray-50">
                         <div className="flex items-center gap-2 mb-1">
                           <svg className="h-4 w-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1067,7 +1071,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                             {selectedVariant.depot.pincode && ` - ${selectedVariant.depot.pincode}`}
                           </p>
                         ) : (
-                          <p className="text-sm text-gray-500 italic">Depot address information not available</p>
+                          <p className="text-sm text-gray-500 italic">Location address information not available</p>
                         )}
                       </div>
                       <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
@@ -1230,7 +1234,11 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                       d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  This is not a cash on delivery. But Amount will be collected, Our team will contact you for futher instructions
+                  1) Since the milk is sourced from 'Tribal farmers',  all payments are in Advance.
+
+2) Both Cash & Online options are available.The plan starts after 2 days from receipt of payment.
+
+3) For Cash payments - our person can visit your home OR you may deposit money at our Tilak Road store.
                 </p>
               </div>
 
@@ -1289,7 +1297,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                   </span>
                 </div>
                 <div className="flex justify-between items-start">
-                  <span className="text-sm text-gray-600">Delivery Address:</span>
+                  <span className="text-sm text-gray-600">{selectedAddressId && userAddresses.find(addr => addr.id === selectedAddressId) ? 'Delivery Address:' : 'Pickup Location:'}</span>
                   {selectedAddressId && userAddresses.find(addr => addr.id === selectedAddressId) ? (
                     (() => {
                       const addr = userAddresses.find(ad => ad.id === selectedAddressId)!;
@@ -1300,7 +1308,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                       );
                     })()
                   ) : (
-                    <span className="text-sm font-medium text-gray-800">Not selected</span>
+                    <span className="text-sm font-medium text-gray-800">{selectedDepot?.address}</span>
                   )}
                 </div>
                 <div className="flex justify-between">
@@ -1390,7 +1398,22 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                 </Button>
                 <Button
                   onClick={handleConfirm}
-                  disabled={!selectedDate || !selectedAddressId || !selectedVariantId || quantity < 1}
+                  disabled={(() => {
+                    // Basic validations
+                    if (!selectedDate || !selectedVariantId || quantity < 1) return true;
+                    
+                    // Address validation based on depot type
+                    const selectedVariant = depotVariants.find(v => v.id === selectedVariantId);
+                    if (!selectedVariant) return true;
+                    
+                    // For online depots, require delivery address selection
+                    if (selectedVariant.depot.isOnline && !selectedAddressId) return true;
+                    
+                    // For offline depots (store pickup), require depot address to be available
+                    if (!selectedVariant.depot.isOnline && !selectedVariant.depot.address) return true;
+                    
+                    return false;
+                  })()}
                   className="flex-1 sm:flex-auto bg-primary hover:bg-primary/80 text-white py-3 text-base font-semibold rounded-lg shadow-md disabled:from-gray-300 disabled:to-gray-400 disabled:shadow-none transition-all duration-200"
                 >
                   <span className="hidden sm:inline">Confirm Order & Pay ₹{payableAmount.toFixed(2)}</span>
@@ -1432,6 +1455,21 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
         onSuccess={() => {
           setShowEnhancedLeadModal(false);
           toast.success("Thank you for your interest! We've saved your details and will contact you when we expand to your area.");
+        }}
+      />
+
+      {/* Success Dialog */}
+      <SuccessDialog
+        isOpen={showSuccessDialog}
+        onOpenChange={setShowSuccessDialog}
+        title="Order Placed Successfully!"
+        message="Your order has been Placed Sucessfully. We will call you for futher Information."
+        orderDetails={{
+          orderId: successDetails.orderId,
+          productName: product?.name,
+          quantity: quantity,
+          deliveryDate: selectedDate,
+          totalAmount: successDetails.totalAmount,
         }}
       />
     </Dialog>
