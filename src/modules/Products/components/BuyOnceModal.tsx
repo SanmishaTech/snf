@@ -1465,7 +1465,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
         isOpen={showSuccessDialog}
         onOpenChange={setShowSuccessDialog}
         title="Order Placed Successfully!"
-        message="Your order has been Placed Sucessfully. We will call you for futher Information."
+        message="Your subscription has been set up and will start delivering as scheduled."
         orderDetails={{
           orderId: successDetails.orderId,
           productName: product?.name,
