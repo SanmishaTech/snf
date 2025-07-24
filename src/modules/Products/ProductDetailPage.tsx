@@ -451,17 +451,14 @@ const ProductDetailPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* Show home delivery locations button when home delivery is selected */}
+                {/* Show home delivery areas when home delivery is selected */}
                 {deliveryPreference === 'home' && (
                   <div className="mb-4">
-                    <Button
-                      variant="outline"
-                      onClick={() => setIsHomeDeliveryLocationsModalOpen(true)}
-                      className="w-full py-2 text-sm border-primary text-primary hover:bg-primary/10 hover:text-white"
-                    >
-                      <Truck className="h-4 w-4 mr-2" />
-                      View Home Delivery Areas
-                    </Button>
+                    <AreaMastersDisplay 
+                      title="" 
+                      showDeliveryInfo={true} 
+                      showDairyOnly={product?.isDairyProduct}
+                     />
                   </div>
                 )}
 

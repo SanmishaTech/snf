@@ -323,7 +323,7 @@ const ManageSubscriptionPage: React.FC = () => {
           <div className="px-4 pb-4">
             <Button
               onClick={() => {
-                const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://www.indraai.in///';
+                const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://www.indraai.in//';
                 const invoiceUrl = `${baseUrl}/invoices/${subscription.productOrder.invoicePath}`;
                 window.open(invoiceUrl, '_blank');
               }}

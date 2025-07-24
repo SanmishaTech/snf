@@ -10,11 +10,13 @@ interface AreaMastersDisplayProps {
   title?: string;
   showDeliveryInfo?: boolean;
   showDairyOnly?: boolean;
+  simple?: boolean;
 }
 
 const AreaMastersDisplay: React.FC<AreaMastersDisplayProps> = ({ 
   showDeliveryInfo = true,
-  showDairyOnly = false
+  showDairyOnly = false,
+  simple = false
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const { data: areaMasters = [], isLoading, isError } = useAreaMasters();
@@ -95,46 +97,33 @@ const AreaMastersDisplay: React.FC<AreaMastersDisplayProps> = ({
     );
   }
 
+  // Simple mode: just show area names without any extras
+  if (simple) {
+    return (
+      <div className="space-y-2">
+        {handDeliveryAreas.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {handDeliveryAreas.map((areaMaster) => (
+              <span 
+                key={areaMaster.id} 
+                className="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded-md"
+              >
+                {areaMaster.name}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500">No delivery areas available</p>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      {showDeliveryInfo && (
-        <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-6">
-          <div className="flex items-start gap-3">
-            <div className="bg-green-100 p-2 rounded-lg">
-              <Truck className="h-5 w-5 text-green-600" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-2">We deliver to the following areas:</h3>
-              <p className="text-sm text-gray-600 mb-2">
-                Fresh products delivered daily to your doorstep. Select your area during checkout to confirm delivery availability.
-              </p>
-              <div className="flex flex-wrap gap-2 mt-3">
-                {/* <Badge variant="secondary" className="bg-green-100 text-green-700">
-                  <Package className="h-3 w-3 mr-1" />
-                  {areaList.filter(am => am.isDairyProduct).length} Dairy Areas
-                </Badge> */}
-                {/* <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-                  <Truck className="h-3 w-3 mr-1" />
-                  {areaList.filter(am => am.deliveryType === 'HandDelivery').length} Hand Delivery Areas
-                </Badge> */}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+     
 
-      {/* Search Bar */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-        <Input
-          type="text"
-          placeholder="Search by area name, pincode..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10 bg-white"
-        />
-      </div>
-
+     
       {/* Results */}
       {filteredAreaMasters.length === 0 && searchTerm && (
         <div className="text-center py-8">

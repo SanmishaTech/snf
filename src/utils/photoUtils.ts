@@ -3,7 +3,7 @@
  */
 
 const BACKEND_URL =
-  import.meta.env.VITE_BACKEND_URL || "https://www.indraai.in///";
+  import.meta.env.VITE_BACKEND_URL || "https://www.indraai.in//";
 
 /**
  * Returns the first available photo URL from a member record
