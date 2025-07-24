@@ -314,7 +314,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       setPincodeValidation({
         isValid: validation.isValid,
         message: validation.isValid 
-          ? `Great! Pincode ${pincode} is served in ${currentAreaMaster.name}` 
+          ? `Great ! We deliver in your location` 
           : `Pincode ${pincode} is not served in ${currentAreaMaster.name}. Please check your pincode or select a different area.`,
         isValidating: false
       });
@@ -3105,6 +3105,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     <input
                       id="mobile"
                       name="mobile"
+                      max={10}
+                      maxLength={10}
                       value={addressFormState.mobile}
                       onChange={handleAddressFormChange}
                       placeholder="Mobile number"
@@ -3306,6 +3308,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       type="text"
                       value={addressFormState.pincode}
                       onChange={handleAddressFormChange}
+                      max={6}
                       placeholder="Enter your 6-digit pincode"
                       className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
                       maxLength={6}

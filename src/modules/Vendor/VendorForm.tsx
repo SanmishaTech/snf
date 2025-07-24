@@ -194,7 +194,7 @@ const VendorForm: React.FC<VendorFormProps> = ({ mode, vendorId, onSuccess, init
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="grid gap-2 relative">
           <Label htmlFor="mobile">Mobile Number</Label>
-          <Input id="mobile" type="tel" {...register("mobile")} disabled={isSubmitting} />
+          <Input max={10} id="mobile" type="tel" {...register("mobile")} disabled={isSubmitting} />
           {errors.mobile && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.mobile.message}</span>}
         </div>
         <div className="grid gap-2 relative">

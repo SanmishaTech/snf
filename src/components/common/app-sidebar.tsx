@@ -148,6 +148,12 @@ const initialData = {
           groupLabel: "Indraai",
         },
         {
+          title: "Supervisors",
+          url: "/admin/supervisors",
+          icon: UsersRound,
+          groupLabel: "Indraai",
+        },
+        {
           title: "Orders",
           url: "/admin/orders",
           icon: Briefcase,
@@ -288,6 +294,17 @@ const initialData = {
           url: "/admin/delivery",
           icon: FileText,
           groupLabel: "Agency Portal",
+        },
+      ],
+      navMain: [] as any[],
+    },
+    SUPERVISOR: {
+      projects: [
+        {
+          title: "Orders",
+          url: "/admin/orders",
+          icon: FileText,
+          groupLabel: "Supervisor Portal",
         },
       ],
       navMain: [] as any[],

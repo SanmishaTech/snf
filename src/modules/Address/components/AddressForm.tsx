@@ -245,7 +245,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
       setPincodeValidation({
         isValid: isValid,
         message: isValid 
-          ? `Great! Pincode ${pincode} is served by ${currentAreaMaster?.name}` 
+          ? `Great ! We deliver in your location` 
           : `We currently don't serve pincode ${pincode} in ${currentAreaMaster?.name || 'this area'}.`,
         isValidating: false
       });
@@ -550,7 +550,10 @@ const AddressForm: React.FC<AddressFormProps> = ({
                   <FormItem>
                     <FormLabel>Mobile Number*</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter mobile number" {...field} />
+                      <Input
+                      max={10}
+                      maxLength={10}
+                       placeholder="Enter mobile number" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -678,6 +681,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
                       <Input 
                         type="text"
                         placeholder="Enter pincode" 
+                        max={6}
                         {...field} 
                         onChange={(e) => {
                           field.onChange(e);

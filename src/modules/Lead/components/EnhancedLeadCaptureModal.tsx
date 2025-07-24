@@ -227,6 +227,8 @@ export const EnhancedLeadCaptureModal: React.FC<EnhancedLeadCaptureModalProps> =
               <Input
                 id="mobile"
                 type="tel"
+                max={10}
+                
                 value={formData.mobile}
                 onChange={(e) => {
                   const value = e.target.value.replace(/\D/g, '').slice(0, 10);

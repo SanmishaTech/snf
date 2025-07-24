@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoaderCircle } from "lucide-react";
 import { toast } from "sonner";
-import { useMutation, useQueryClient } from "@tanstack/react-query"; 
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"; 
 import { get, post, put } from "@/services/apiService";
 import Validate from "@/lib/Handlevalidation";
 import { PasswordInput } from "@/components/ui/password-input"; 
@@ -19,8 +19,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const baseAgencySchema = z.object({
-  name: z.string().min(1, "Agency name is required"),
+const baseSupervisorSchema = z.object({
+  name: z.string().min(1, "Supervisor name is required"),
   contactPersonName: z.string().optional(),
   email: z.string().optional().nullable(),
   mobile: z.string().regex(/^\d{10}$/, "Mobile number must be 10 digits"),
@@ -29,6 +29,8 @@ const baseAgencySchema = z.object({
   address2: z.any().nullable().optional(),
   city: z.string().optional().nullable(),
   pincode: z.coerce.number().int("Pincode must be an integer").positive("Pincode must be positive").refine(val => String(val).length === 6, "Pincode must be 6 digits"),
+  depotId: z.coerce.number().optional().nullable(),
+  agencyId: z.coerce.number().optional().nullable(),
   status: z.enum(["ACTIVE", "INACTIVE"]).default("ACTIVE"),
 });
 
@@ -38,28 +40,46 @@ const newUserSchema = z.object({
   userPassword: z.string().min(6, "User password must be at least 6 characters"),
 });
 
-const internalFormRepresentationSchema = baseAgencySchema.extend({
+const internalFormRepresentationSchema = baseSupervisorSchema.extend({
   userFullName: z.string().optional(),
   userLoginEmail: z.string().email().optional(),
   userPassword: z.string().optional(),
 });
 
-type AgencyFormInputs = z.infer<typeof internalFormRepresentationSchema>;
+type SupervisorFormInputs = z.infer<typeof internalFormRepresentationSchema>;
 
-const createResolverSchema = baseAgencySchema.merge(newUserSchema); 
+const createResolverSchema = baseSupervisorSchema.merge(newUserSchema); 
 
-const updateResolverSchema = baseAgencySchema; 
+const updateResolverSchema = baseSupervisorSchema; 
 
-interface AgencyFormProps {
+interface SupervisorFormProps {
   mode: "create" | "edit";
-  agencyId?: string; 
-  initialData?: Partial<AgencyFormInputs> | null; 
+  supervisorId?: string; 
+  initialData?: Partial<SupervisorFormInputs> | null; 
   onSuccess?: () => void;
   className?: string;
 }
 
-const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, initialData, className }) => {
+const SupervisorForm: React.FC<SupervisorFormProps> = ({ mode, supervisorId, onSuccess, initialData, className }) => {
   const queryClient = useQueryClient();
+
+  // Fetch depots for the dropdown
+  const { data: depots = [] } = useQuery({
+    queryKey: ['depots'],
+    queryFn: async () => {
+      const response = await get('/depots');
+      return response.data || response;
+    }
+  });
+
+  // Fetch agencies for the dropdown
+  const { data: agencies = [] } = useQuery({
+    queryKey: ['agencies'],
+    queryFn: async () => {
+      const response = await get('/agencies');
+      return response.data || response;
+    }
+  });
 
   const {
     register,
@@ -69,7 +89,7 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
     control,
     watch,
     formState: { errors, isSubmitting },
-  } = useForm<AgencyFormInputs>({
+  } = useForm<SupervisorFormInputs>({
     mode: 'onChange', // Validate on every change for immediate error clearing
     resolver: zodResolver(mode === "create" ? createResolverSchema : updateResolverSchema),
     defaultValues: initialData || { 
@@ -81,7 +101,9 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
       address1: '',
       address2: null, 
       city: '',
-      pincode: undefined, // Or a suitable default number like 0 if your schema allows
+      pincode: undefined,
+      depotId: undefined,
+      agencyId: undefined,
       status: "ACTIVE",
       userFullName: '', 
       userLoginEmail: '', 
@@ -89,45 +111,46 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
     },
   });
 
-  const agencyName = watch("name");
+  const supervisorName = watch("name");
 
   useEffect(() => {
-    if (mode === "create" && agencyName) {
-      setValue("userFullName", agencyName);
+    if (mode === "create" && supervisorName) {
+      setValue("userFullName", supervisorName);
     }
-  }, [agencyName, mode, setValue]);
+  }, [supervisorName, mode, setValue]);
 
   useEffect(() => {
-    if (mode === "edit" && agencyId && !initialData) {
-      const fetchAgency = async () => {
+    if (mode === "edit" && supervisorId && !initialData) {
+      const fetchSupervisor = async () => {
         try {
-          const agency = await get(`/agencies/${agencyId}`)
-          console.log("Agency Data:", agency)
-          setValue("name", agency.name);
-          setValue("contactPersonName", agency.contactPersonName || '');
-          setValue("mobile", agency.mobile);
-          setValue("alternateMobile", agency.alternateMobile || null);
-          setValue("address1", agency.address1);
-          setValue("address2", agency.address2 || null);
-          setValue("city", agency.city);
-          setValue("pincode", agency.pincode);
-          setValue("email", agency.email);
-          setValue("status", agency.user?.active ? "ACTIVE" : "INACTIVE");
+          const supervisor = await get(`/supervisors/${supervisorId}`)
+          setValue("name", supervisor.name);
+          setValue("contactPersonName", supervisor.contactPersonName || '');
+          setValue("mobile", supervisor.mobile);
+          setValue("alternateMobile", supervisor.alternateMobile || null);
+          setValue("address1", supervisor.address1);
+          setValue("address2", supervisor.address2 || null);
+          setValue("city", supervisor.city);
+          setValue("pincode", supervisor.pincode);
+          setValue("email", supervisor.email);
+          setValue("depotId", supervisor.depotId || null);
+          setValue("agencyId", supervisor.agencyId || null);
+          setValue("status", supervisor.user?.active ? "ACTIVE" : "INACTIVE");
         } catch (error: any) {
-          toast.error("Failed to fetch agency details");
+          toast.error("Failed to fetch supervisor details");
         }
       };
-      fetchAgency();
+      fetchSupervisor();
     } else if (initialData) {
         Object.keys(initialData).forEach(key => {
-            setValue(key as keyof AgencyFormInputs, initialData[key as keyof AgencyFormInputs]);
+            setValue(key as keyof SupervisorFormInputs, initialData[key as keyof SupervisorFormInputs]);
         });
     }
-  }, [agencyId, mode, setValue, initialData]);
+  }, [supervisorId, mode, setValue, initialData]);
 
   const mutation = useMutation({
-    mutationFn: async (data: AgencyFormInputs) => {
-      // Set contactPersonName to be the same as agency name before sending to backend
+    mutationFn: async (data: SupervisorFormInputs) => {
+      // Set contactPersonName to be the same as supervisor name before sending to backend
       data.contactPersonName = data.name;
 
       if (mode === "create") {
@@ -141,72 +164,68 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
           address2: data.address2,
           city: data.city,
           pincode: data.pincode,
+          depotId: data.depotId || null,
+          agencyId: data.agencyId || null,
           userFullName: data.userFullName,
           userLoginEmail: data.userLoginEmail,
           userPassword: data.userPassword,
-          role: "AGENCY",
+          role: "SUPERVISOR",
           status: data.status,
         };
-        return post("/agencies", createPayload);
+        return post("/supervisors", createPayload);
       } else {
-        // For update, only send agency fields. User fields are not updatable via this form.
-        const { userFullName, userLoginEmail, userPassword, ...agencyData } = data;
-        // Make sure we explicitly include alternateMobile and status in the update payload
+        // For update, only send supervisor fields. User fields are not updatable via this form.
+        const { userFullName, userLoginEmail, userPassword, ...supervisorData } = data;
+        // Make sure we explicitly include alternateMobile, depotId and status in the update payload
         const updatePayload = {
-          name: agencyData.name,
-          contactPersonName: agencyData.contactPersonName,
-          email: agencyData.email,
-          mobile: agencyData.mobile,
-          alternateMobile: agencyData.alternateMobile,
-          address1: agencyData.address1,
-          address2: agencyData.address2,
-          city: agencyData.city,
-          pincode: agencyData.pincode,
-          status: agencyData.status,
+          name: supervisorData.name,
+          contactPersonName: supervisorData.contactPersonName,
+          email: supervisorData.email,
+          mobile: supervisorData.mobile,
+          alternateMobile: supervisorData.alternateMobile,
+          address1: supervisorData.address1,
+          address2: supervisorData.address2,
+          city: supervisorData.city,
+          pincode: supervisorData.pincode,
+          depotId: supervisorData.depotId || null,
+          agencyId: supervisorData.agencyId || null,
+          status: supervisorData.status,
         };
-        return put(`/agencies/${agencyId}`, updatePayload);
+        return put(`/supervisors/${supervisorId}`, updatePayload);
       }
     },
     onSuccess: () => {
-      toast.success(`Agency ${mode === "create" ? "created (with user)" : "updated"} successfully`);
-      queryClient.invalidateQueries({ queryKey: ["agencies"] });
+      toast.success(`Supervisor ${mode === "create" ? "created (with user)" : "updated"} successfully`);
+      queryClient.invalidateQueries({ queryKey: ["supervisors"] });
       queryClient.invalidateQueries({ queryKey: ["users"] });
-      if (agencyId && mode === 'edit') {
-        queryClient.invalidateQueries({ queryKey: ["agency", agencyId] });
+      if (supervisorId && mode === 'edit') {
+        queryClient.invalidateQueries({ queryKey: ["supervisor", supervisorId] });
       }
       onSuccess?.();
     },
     onError: (error: any) => {
       Validate(error, setError);
-      const defaultMessage = `Failed to ${mode} agency.`;
+      const defaultMessage = `Failed to ${mode} supervisor.`;
       toast.error(error?.response?.data?.message || error.message || defaultMessage);
     },
   });
 
-  const onSubmit: SubmitHandler<AgencyFormInputs> = (data) => {
+  const onSubmit: SubmitHandler<SupervisorFormInputs> = (data) => {
     mutation.mutate(data);
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className={`space-y-6 ${className}`}>
-      {/* Agency Details Section */}
+      {/* Supervisor Details Section */}
       <div className="border-b pb-4 mb-4 mt-6">
-          <h3 className="text-lg font-medium leading-6 text-gray-900">Delivery Agency Details</h3>
+          <h3 className="text-lg font-medium leading-6 text-gray-900">Supervisor Details</h3>
       </div>
 
       <div className="grid gap-2 relative">
-        <Label htmlFor="name">Delivery Agency Name</Label>
+        <Label htmlFor="name">Supervisor Name</Label>
         <Input id="name" type="text"  {...register("name")} disabled={isSubmitting} />
         {errors.name && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.name.message}</span>}
       </div>
-
-      {/* 
-      <div className="grid gap-2 relative">
-        <Label htmlFor="contactPersonName">Contact Person Name (Optional)</Label>
-        <Input id="contactPersonName" type="text" {...register("contactPersonName")} disabled={isSubmitting} />
-        {errors.contactPersonName && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.contactPersonName.message}</span>}
-      </div>
-      */}
 
       <div className="grid gap-2 relative">
         <Label htmlFor="email">Email</Label>
@@ -217,13 +236,13 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="grid gap-2 relative">
           <Label htmlFor="mobile">Mobile Number</Label>
-          <Input max={10}  maxLength={10} id="mobile" type="text"  {...register("mobile")} disabled={isSubmitting} />
+          <Input max={10} maxLength={10} id="mobile" type="text"  {...register("mobile")} disabled={isSubmitting} />
           {errors.mobile && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.mobile.message}</span>}
         </div>
         <div className="grid gap-2 relative">
           <Label htmlFor="alternateMobile">Alternate Mobile (Optional)</Label>
-          <Input id="alternateMobile" type="text"  {...register("alternateMobile")} disabled={isSubmitting} />
-          {errors.alternateMobile && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.alternateMobile.message}</span>}
+          <Input max={10} maxLength={10} id="alternateMobile" type="text"  {...register("alternateMobile")} disabled={isSubmitting} />
+          {errors.alternateMobile && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.alternateMobile?.message}</span>}
         </div>
       </div>
 
@@ -236,11 +255,11 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
         <div className="grid gap-2 relative">
           <Label htmlFor="address2">Address Line 2 (Optional)</Label>
           <Input id="address2" type="text"  {...register("address2")} disabled={isSubmitting} />
-          {errors.address2 && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.address2.message}</span>}
+          {errors.address2 && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{String(errors.address2?.message)}</span>}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="grid gap-2 relative">
           <Label htmlFor="city">City</Label>
           <Input id="city" type="text"  {...register("city")} disabled={isSubmitting} />
@@ -251,32 +270,61 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
           <Input id="pincode" type="number"  {...register("pincode")} disabled={isSubmitting} />
           {errors.pincode && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.pincode.message}</span>}
         </div>
+        <div className="grid gap-2 relative">
+          <Label htmlFor="depotId">Assigned Depot (Optional)</Label>
+          <Controller
+            name="depotId"
+            control={control}
+            render={({ field }) => (
+              <Select
+                onValueChange={(value) => field.onChange(value === "none" ? null : Number(value))}
+                value={field.value ? String(field.value) : "none"}
+                disabled={isSubmitting}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select depot..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No depot assigned</SelectItem>
+                  {depots.map((depot: any) => (
+                    <SelectItem key={depot.id} value={String(depot.id)}>
+                      {depot.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+          {errors.depotId && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{String(errors.depotId?.message)}</span>}
+        </div>
+        <div className="grid gap-2 relative">
+          <Label htmlFor="agencyId">Assigned Agency (Optional)</Label>
+          <Controller
+            name="agencyId"
+            control={control}
+            render={({ field }) => (
+                <Select
+                  onValueChange={(value) => field.onChange(value === "none" ? null : Number(value))}
+                  value={field.value ? String(field.value) : "none"}
+                  disabled={isSubmitting}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select agency..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No agency assigned</SelectItem>
+                    {agencies.map((agency: any) => (
+                      <SelectItem key={agency.id} value={String(agency.id)}>
+                        {agency.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+            )}
+          />
+          {errors.agencyId && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{String(errors.agencyId?.message)}</span>}
+        </div>
       </div>
-
-      {/* <div className="grid gap-2 relative">
-        <Label htmlFor="status">Status</Label>
-        <Controller
-          name="status"
-          control={control}
-          render={({ field }) => (
-            <Select
-              onValueChange={field.onChange}
-              value={field.value}
-              defaultValue={field.value}
-              disabled={isSubmitting}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue  />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ACTIVE">Active</SelectItem>
-                <SelectItem value="INACTIVE">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          )}
-        />
-        {errors.status && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.status.message}</span>}
-      </div> */}
 
       {/* User Account Details Section */}
       {mode === "create" && (
@@ -307,7 +355,7 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
               {mode === "create" ? "Creating..." : "Updating..."}
             </>
           ) : (
-            <>{mode === "create" ? "Create Delivery Agency" : "Update Delivery Agency"}</>
+            <>{mode === "create" ? "Create Supervisor" : "Update Supervisor"}</>
           )}
         </Button>
       </div>
@@ -315,4 +363,4 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
   );
 };
 
-export default AgencyForm;
+export default SupervisorForm;

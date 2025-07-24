@@ -55,6 +55,7 @@ interface OrderItem {
   quantity: number;
   deliveredQuantity?: number;
   receivedQuantity?: number;
+  supervisorQuantity?: number;
   unit?: string; // Added unit field
   depotVariantId?: string;
   depotVariantName?: string; // Added depot variant name field
@@ -127,6 +128,8 @@ const OrderList = () => {
   const [currentUserDetails, setCurrentUserDetails] = useState<StoredUserDetails>(getStoredUserDetails());
   const [currentAgencyId, setCurrentAgencyId] = useState<string | null>(null);
   const [isAgencyInfoLoading, setIsAgencyInfoLoading] = useState<boolean>(false);
+  const [currentSupervisorAgencyId, setCurrentSupervisorAgencyId] = useState<string | null>(null);
+  const [isSupervisorInfoLoading, setIsSupervisorInfoLoading] = useState<boolean>(false);
 
   const currentUserRole = currentUserDetails?.role;
 
@@ -135,14 +138,14 @@ const OrderList = () => {
   }, []); // setInputValue from useState is stable, so empty dependency array is fine
 
   useEffect(() => {
-    const fetchAgencyInfo = async () => {
+    const fetchUserInfo = async () => {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        console.error("No auth token found for user");
+        return;
+      }
+
       if (currentUserRole === 'AGENCY') {
-        const token = localStorage.getItem("authToken");
-        if (!token) {
-          console.error("No auth token found for AGENCY user");
-          return;
-        }
-        
         setIsAgencyInfoLoading(true);
         try {
           const agencyInfo = await get("/users/me");
@@ -155,9 +158,22 @@ const OrderList = () => {
           setCurrentAgencyId(null);
         }
         setIsAgencyInfoLoading(false);
+      } else if (currentUserRole === 'SUPERVISOR') {
+        setIsSupervisorInfoLoading(true);
+        try {
+          const supervisorInfo = await get("/users/me");
+          console.log("supervisorinfo", supervisorInfo);
+          // Get the agency ID from supervisor's assigned agency
+          setCurrentSupervisorAgencyId(supervisorInfo?.supervisor?.agencyId ? String(supervisorInfo.supervisor.agencyId) : null);
+        } catch (error) {
+          console.error("Failed to fetch supervisor info:", error);
+          toast.error("Could not load supervisor details.");
+          setCurrentSupervisorAgencyId(null);
+        }
+        setIsSupervisorInfoLoading(false);
       }
     };
-    fetchAgencyInfo();
+    fetchUserInfo();
   }, [currentUserRole]);
 
   useEffect(() => {
@@ -188,13 +204,18 @@ const OrderList = () => {
 
   const ordersQueryEnabled = 
     !!currentUserRole && 
-    (currentUserRole !== 'AGENCY' || (currentUserRole === 'AGENCY' && !isAgencyInfoLoading && currentAgencyId !== undefined));
+    (currentUserRole !== 'AGENCY' || (currentUserRole === 'AGENCY' && !isAgencyInfoLoading && currentAgencyId !== undefined)) &&
+    (currentUserRole !== 'SUPERVISOR' || (currentUserRole === 'SUPERVISOR' && !isSupervisorInfoLoading));
+
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["orders", page, searchTerm, dateFilter, statusFilter, currentUserRole, currentAgencyId],
+    queryKey: ["orders", page, searchTerm, dateFilter, statusFilter, currentUserRole, currentAgencyId, currentSupervisorAgencyId],
     queryFn: async () => {
       if (!currentUserRole) return { data: [], totalPages: 0 };
       if (currentUserRole === 'AGENCY' && !currentAgencyId) {
+        return { data: [], totalPages: 0 };
+      }
+      if (currentUserRole === 'SUPERVISOR' && !currentSupervisorAgencyId) {
         return { data: [], totalPages: 0 };
       }
 
@@ -203,6 +224,8 @@ const OrderList = () => {
         baseUrl = '/vendor-orders/my';
       } else if (currentUserRole === 'AGENCY') {
         baseUrl = '/vendor-orders/my-agency-orders'; 
+      } else if (currentUserRole === 'SUPERVISOR') {
+        baseUrl = '/vendor-orders/my-supervisor-orders';
       }
       let url = `${baseUrl}?page=${page}&limit=${pageSize}`;
       
@@ -260,12 +283,13 @@ const OrderList = () => {
 
   const getOrderQuantitiesSummary = (items: OrderItem[]) => {
     if (!items || items.length === 0) {
-      return { ordered: 0, delivered: 0, received: 0 };
+      return { ordered: 0, delivered: 0, received: 0, supervisor: 0 };
     }
     const ordered = items.reduce((sum, item) => sum + (item.quantity || 0), 0);
     const delivered = items.reduce((sum, item) => sum + (item.deliveredQuantity || 0), 0);
     const received = items.reduce((sum, item) => sum + (item.receivedQuantity || 0), 0);
-    return { ordered, delivered, received };
+    const supervisor = items.reduce((sum, item) => sum + (item.supervisorQuantity || 0), 0);
+    return { ordered, delivered, received, supervisor };
   };
 
   const clearFilters = () => {
@@ -278,6 +302,10 @@ const OrderList = () => {
 
   if (currentUserRole === 'AGENCY' && isAgencyInfoLoading) {
     return <div className="flex justify-center items-center h-screen"><p>Loading agency details...</p></div>;
+  }
+
+  if (currentUserRole === 'SUPERVISOR' && isSupervisorInfoLoading) {
+    return <div className="flex justify-center items-center h-screen"><p>Loading supervisor details...</p></div>;
   }
 
   if (isLoading && ordersQueryEnabled) { 
@@ -367,7 +395,7 @@ const OrderList = () => {
                   <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Delivery Date</TableHead>
                   <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Total Amount</TableHead>
                   {currentUserRole === "ADMIN" && (
-                    <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Quantities (O/D/R)</TableHead>
+                    <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Quantities (O/D/R/S)</TableHead>
                   )}
                   <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Status</TableHead>
                   <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Actions</TableHead>
@@ -453,6 +481,12 @@ const OrderList = () => {
                                   <span className="font-medium">Received:</span>{" "}
                                   <span className={quantities.received < quantities.delivered ? "text-red-500 font-medium" : "text-gray-500 dark:text-gray-300"}>
                                     {quantities.received}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="font-medium">Supervisor:</span>{" "}
+                                  <span className={quantities.supervisor < quantities.received ? "text-red-500 font-medium" : "text-gray-500 dark:text-gray-300"}>
+                                    {quantities.supervisor}
                                   </span>
                                 </div>
                               </>
@@ -543,7 +577,24 @@ const OrderList = () => {
                             </>
                           )}
 
-                          {currentUserRole !== "ADMIN" && currentUserRole !== "VENDOR" && currentUserRole !== "AGENCY" && (
+                          {currentUserRole === "SUPERVISOR" && (
+                            <>
+                              <DropdownMenuItem asChild>
+                                <Link to={`/admin/orders/${order.id}`} className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800">
+                                  <Eye className="mr-2 h-4 w-4" /> View Details
+                                </Link>
+                              </DropdownMenuItem>
+                              {(order.status === "DELIVERED" || order.status === "RECEIVED") && (
+                                <DropdownMenuItem asChild>
+                                  <Link to={`/admin/orders/${order.id}/supervisor-quantity`} className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800">
+                                    <ClipboardCheck className="mr-2 h-4 w-4" /> Record Supervisor Quantity
+                                  </Link>
+                                </DropdownMenuItem>
+                              )}
+                            </>
+                          )}
+
+                          {currentUserRole !== "ADMIN" && currentUserRole !== "VENDOR" && currentUserRole !== "AGENCY" && currentUserRole !== "SUPERVISOR" && (
                              <DropdownMenuItem disabled className="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-200">
                               No actions available for your role.
                             </DropdownMenuItem>

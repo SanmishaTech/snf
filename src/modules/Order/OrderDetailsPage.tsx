@@ -33,6 +33,7 @@ interface OrderItem {
   quantity: number;
   deliveredQuantity?: number; 
   receivedQuantity?: number; 
+  supervisorQuantity?: number;
   agencyId?: string; 
   agencyName?: string; 
   unit?: string; 
@@ -89,6 +90,7 @@ const OrderDetailsPage = () => {
         priceAtPurchase: Number(item.priceAtPurchase || 0),
         deliveredQuantity: item.deliveredQuantity !== null && item.deliveredQuantity !== undefined ? Number(item.deliveredQuantity) : undefined,
         receivedQuantity: item.receivedQuantity !== null && item.receivedQuantity !== undefined ? Number(item.receivedQuantity) : undefined, 
+        supervisorQuantity: item.supervisorQuantity !== null && item.supervisorQuantity !== undefined ? Number(item.supervisorQuantity) : undefined,
         quantity: Number(item.quantity || 0),
         agencyId: item.agency?.id ? String(item.agency.id) : undefined,
         agencyName: item.agency?.name || undefined,
@@ -275,17 +277,26 @@ const OrderDetailsPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto border rounded-lg">
-                  <div className="min-w-[600px]">
-                    <div className="bg-gray-50 dark:bg-gray-900 px-2 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 grid grid-cols-12">
-                      <div className="col-span-6">Product</div> 
+                  <div className={currentUserProfile?.role === 'SUPERVISOR' || currentUserProfile?.role === 'ADMIN' ? "min-w-[800px]" : "min-w-[600px]"}>
+                    <div className={cn(
+                      "bg-gray-50 dark:bg-gray-900 px-2 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 grid",
+                      currentUserProfile?.role === 'SUPERVISOR' || currentUserProfile?.role === 'ADMIN' ? "grid-cols-16" : "grid-cols-12"
+                    )}>
+                      <div className={currentUserProfile?.role === 'SUPERVISOR' || currentUserProfile?.role === 'ADMIN' ? "col-span-4" : "col-span-6"}>Product</div> 
                       <div className="col-span-2 text-right text-xs sm:text-sm">Ordered</div>
                       <div className="col-span-2 text-right text-xs sm:text-sm">Delivered</div>
-                      <div className="col-span-2 text-right text-xs sm:text-sm">Received</div> 
+                      <div className="col-span-2 text-right text-xs sm:text-sm">Received</div>
+                      {(currentUserProfile?.role === 'SUPERVISOR' || currentUserProfile?.role === 'ADMIN') && (
+                        <div className="col-span-2 text-right text-xs sm:text-sm">Supervisor</div>
+                      )}
                     </div>
                     <div className="divide-y divide-gray-200 dark:divide-gray-800">
                       {itemsToDisplay.map((item) => (
-                        <div key={item.id} className="px-2 sm:px-4 py-3 sm:py-4 grid grid-cols-12 items-center">
-                          <div className="col-span-6"> 
+                        <div key={item.id} className={cn(
+                          "px-2 sm:px-4 py-3 sm:py-4 grid items-center",
+                          currentUserProfile?.role === 'SUPERVISOR' || currentUserProfile?.role === 'ADMIN' ? "grid-cols-16" : "grid-cols-12"
+                        )}>
+                          <div className={currentUserProfile?.role === 'SUPERVISOR' || currentUserProfile?.role === 'ADMIN' ? "col-span-4" : "col-span-6"}> 
                             <div className="flex items-center">
                               <div className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 rounded-md bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                                 <Package className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
@@ -321,6 +332,16 @@ const OrderDetailsPage = () => {
                               </>
                             ) : <span className="text-gray-400">-</span>}
                           </div>
+                          {(currentUserProfile?.role === 'SUPERVISOR' || currentUserProfile?.role === 'ADMIN') && (
+                            <div className="col-span-2 text-right text-xs sm:text-sm">
+                              {typeof item.supervisorQuantity === 'number' ? (
+                                <>
+                                  <div className="font-medium">{item.supervisorQuantity}</div>
+                                  {item.depotVariantName && <div className="text-xs text-gray-500 dark:text-gray-400 truncate">({item.depotVariantName})</div>}
+                                </>
+                              ) : <span className="text-gray-400">-</span>}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

@@ -133,9 +133,10 @@ export const LeadForm: React.FC<LeadFormProps> = ({
                 <FormLabel>Mobile Number *</FormLabel>
                 <FormControl>
                   <Input 
+                  max={10}
                     placeholder="Enter 10-digit mobile number" 
                     {...field} 
-                    maxLength={15}
+                    maxLength={10}
                   />
                 </FormControl>
                 <FormMessage />

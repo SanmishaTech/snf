@@ -27,10 +27,13 @@ import UserForm from "./modules/User/UserForm";
 import AdminMemberEditPage from "./modules/User/AdminMemberEditPage"; // Added for editing member details
 import VendorList from "./modules/Vendor/VendorList";
 import AgencyList from "./modules/Agency/AgencyList"
+import SupervisorList from "./modules/Supervisor/SupervisorList"
 import CreateVendorPage from "./modules/Vendor/CreateVendorPage";
 import EditVendorPage from "./modules/Vendor/EditVendorPage";
 import CreateAgencyPage from "./modules/Agency/CreateAgencyPage";
 import EditAgencyPage from "./modules/Agency/EditAgencyPage";
+import CreateSupervisorPage from "./modules/Supervisor/CreateSupervisorPage";
+import EditSupervisorPage from "./modules/Supervisor/EditSupervisorPage";
 import Orderlist from "./modules/Order/OrderList";
 import CreateOrderPage from "./modules/Order/CreateOrderPage"
 import OrderDetailsPage from "./modules/Order/OrderDetailsPage"
@@ -40,6 +43,7 @@ import OrderDeliveryPage from "./modules/Order/OrderDeliveryPage"
 import MySubscriptionsPage from './modules/member/MySubscriptionsPage'; // Added for member subscriptions
 import ManageSubscriptionPage from './modules/member/ManageSubscriptionPage'; // Added for managing individual subscriptions
 import OrderReceivedPage from "./modules/Order/OrderReceivedPage"; // Added for admin receipt recording
+import SupervisorQtyPage from "./modules/Order/SupervisorQtyPage"; // Added for supervisor quantity recording
 import ProductList from "./modules/Products/ProductList"
 import LandingPage from "./modules/Homepage/LandingPage"; // Added for milk subscription landing page
 import AboutUsPage from "./modules/StaticPages/AboutUsPage"; // Added for About Us page
@@ -151,11 +155,15 @@ const App = () => {
             <Route path="/admin/agencies" element={<AgencyList />} />
             <Route path="/admin/agencies/create" element={<CreateAgencyPage />} />
             <Route path="/admin/agencies/edit/:id" element={<EditAgencyPage />} />
+            <Route path="/admin/supervisors" element={<SupervisorList />} />
+            <Route path="/admin/supervisors/create" element={<CreateSupervisorPage />} />
+            <Route path="/admin/supervisors/edit/:id" element={<EditSupervisorPage />} />
             <Route path="/admin/orders" element={<Orderlist />} />
             <Route path="/admin/orders/create" element={<CreateOrderPage />} />
             <Route path="/admin/orders/:id" element={<OrderDetailsPage />} />
             <Route path="/admin/orders/:id/edit" element={<EditOrderPage />} />
             <Route path="/admin/orders/:id/record-receipt" element={<OrderReceivedPage />} /> {/* New route for recording receipt */}
+            <Route path="/admin/orders/:id/supervisor-quantity" element={<SupervisorQtyPage />} /> {/* New route for supervisor quantity recording */}
             <Route path="/admin/purchases" element={<PurchaseList />} />
             <Route path="/admin/purchases/create" element={<CreatePurchasePage />} />
             <Route path="/admin/purchases/edit/:id" element={<EditPurchasePage />} />

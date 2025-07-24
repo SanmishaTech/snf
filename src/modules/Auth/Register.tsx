@@ -185,6 +185,8 @@ const Register: React.FC<RegisterProps> = () => {
             <Label htmlFor="mobile">Mobile Number</Label>
             <Input
               id="mobile"
+              max={10}
+              maxLength={10}
               type="tel"
               placeholder="9876543210"
               {...register("mobile")}

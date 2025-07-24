@@ -293,7 +293,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
       setPincodeValidation({
         isValid: validation.isValid,
         message: validation.isValid 
-          ? `Great! Pincode ${pincode} is served by ${currentAreaMaster?.name}` 
+          ? `Great ! We deliver in your location` 
           : `We currently don't serve pincode ${pincode} in ${currentAreaMaster?.name || 'this area'}.`,
         isValidating: false
       });
@@ -730,6 +730,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                       id="mobile"
                       name="mobile"
                       type="tel"
+                      max={10}
                       value={addressFormState.mobile}
                       onChange={(e) => {
                         const value = e.target.value.replace(/\D/g, '').slice(0, 10);
@@ -931,6 +932,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                       id="pincode"
                       name="pincode"
                       type="text"
+                      max={6}
                       value={addressFormState.pincode}
                       onChange={handleAddressFormChange}
                       placeholder="Pincode"
