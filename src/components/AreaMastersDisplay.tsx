@@ -146,14 +146,14 @@ const AreaMastersDisplay: React.FC<AreaMastersDisplayProps> = ({
             </Badge>
           </div>
           
-          <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+          <div className="grid gap-2 grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2">
             {handDeliveryAreas.map((areaMaster) => (
               <div 
                 key={areaMaster.id} 
                 className="flex items-center gap-2 p-2 rounded-lg border border-green-100 bg-green-50/50 hover:bg-green-50 transition-colors"
               >
                 <MapPin className="h-3 w-3 text-green-600 flex-shrink-0" />
-                <span className="text-sm font-medium text-gray-700 truncate">
+                <span className="text-sm font-medium text-gray-700 flex-wrap">
                   {areaMaster.name}
                 </span>
               </div>
