@@ -406,7 +406,7 @@ const PurchaseForm: React.FC<PurchaseFormProps> = ({
         {/* Vendor & Depot */}
         <Card>
           <CardHeader>
-            <CardTitle>Vendor & Depot</CardTitle>
+            <CardTitle>Farmer & Depot</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <Controller
@@ -414,10 +414,10 @@ const PurchaseForm: React.FC<PurchaseFormProps> = ({
               name="vendorId"
               render={({ field }) => (
                 <div>
-                  <Label className="mb-2">Vendor</Label>
+                  <Label className="mb-2">Farmer</Label>
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select vendor" />
+                      <SelectValue placeholder="Select Farmer" />
                     </SelectTrigger>
                     <SelectContent>
                       {vendors.map((v) => (

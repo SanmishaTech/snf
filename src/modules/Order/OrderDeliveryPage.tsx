@@ -288,7 +288,7 @@ const OrderDeliveryPage = () => {
         <div className="lg:w-1/3 space-y-4 md:space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base md:text-xl font-medium text-gray-800 dark:text-gray-100">Vendor Details</CardTitle>
+              <CardTitle className="text-base md:text-xl font-medium text-gray-800 dark:text-gray-100">Farmer Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">

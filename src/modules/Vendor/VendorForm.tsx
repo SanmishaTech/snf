@@ -14,7 +14,7 @@ import Validate from "@/lib/Handlevalidation";
 import { PasswordInput } from "@/components/ui/password-input"; 
 
 const baseVendorSchema = z.object({
-  name: z.string().min(1, "Vendor name is required"),
+  name: z.string().min(1, "Farmer name is required"),
   contactPersonName: z.string().min(1, "Contact person's name is required").optional(),
   email: z.string().optional().nullable(),
   mobile: z.string().regex(/^\d{10}$/, "Mobile number must be 10 digits"),
@@ -96,7 +96,7 @@ const VendorForm: React.FC<VendorFormProps> = ({ mode, vendorId, onSuccess, init
           setValue("email", vendor.email);
           setValue("isDairySupplier", vendor.isDairySupplier || false);
         } catch (error: any) {
-          toast.error("Failed to fetch vendor details");
+          toast.error("Failed to fetch farmer details");
         }
       };
       fetchVendor();
@@ -147,7 +147,7 @@ const VendorForm: React.FC<VendorFormProps> = ({ mode, vendorId, onSuccess, init
       }
     },
     onSuccess: () => {
-      toast.success(`Vendor ${mode === "create" ? "created (with user)" : "updated"} successfully`);
+      toast.success(`Farmer ${mode === "create" ? "created (with user)" : "updated"} successfully`);
       queryClient.invalidateQueries({ queryKey: ["vendors"] });
       queryClient.invalidateQueries({ queryKey: ["users"] }); 
       if (vendorId && mode === 'edit') {
@@ -157,7 +157,7 @@ const VendorForm: React.FC<VendorFormProps> = ({ mode, vendorId, onSuccess, init
     },
     onError: (error: any) => {
       Validate(error, setError); 
-      const defaultMessage = `Failed to ${mode} vendor.`;
+      const defaultMessage = `Failed to ${mode} farmer.`;
       toast.error(error?.response?.data?.message || error.message || defaultMessage);
     },
   });
@@ -170,11 +170,11 @@ const VendorForm: React.FC<VendorFormProps> = ({ mode, vendorId, onSuccess, init
     <form onSubmit={handleSubmit(onSubmit)} className={`space-y-6 ${className}`}>
        
         <div className="border-b pb-4 mb-4 mt-6">
-             <h3 className="text-lg font-medium leading-6 text-gray-900">Vendor Details</h3>
+             <h3 className="text-lg font-medium leading-6 text-gray-900">Farmer Details</h3>
           </div>
 
       <div className="grid gap-2 relative">
-        <Label htmlFor="name">Vendor Company Name</Label>
+        <Label htmlFor="name">Farmer Company Name</Label>
         <Input id="name" type="text"   {...register("name")} disabled={isSubmitting} />
         {errors.name && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.name.message}</span>}
       </div>
@@ -270,7 +270,7 @@ const VendorForm: React.FC<VendorFormProps> = ({ mode, vendorId, onSuccess, init
         {isSubmitting || mutation.isPending ? (
           <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
         ) : null}
-        {mode === "create" ? "Create Vendor" : "Save Changes"}
+        {mode === "create" ? "Create Farmer" : "Save Changes"}
       </Button>
       </div>
       

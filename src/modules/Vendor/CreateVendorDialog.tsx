@@ -17,9 +17,9 @@ const CreateVendorDialog: React.FC<CreateVendorDialogProps> = ({ isOpen, onClose
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Create New Vendor</DialogTitle>
+          <DialogTitle>Create New Farmer</DialogTitle>
           <DialogDescription>
-            Fill in the details below to create a new vendor profile and an associated user account.
+            Fill in the details below to create a new farmer profile and an associated user account.
           </DialogDescription>
         </DialogHeader>
         <VendorForm mode="create" onSuccess={handleFormSuccess} />

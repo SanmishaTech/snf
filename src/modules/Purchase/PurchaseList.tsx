@@ -138,7 +138,7 @@ const PurchaseList = () => {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <Input
-              placeholder="Search by purchase no / vendor"
+              placeholder="Search by purchase no / Farmer"
               value={inputValue}
               onChange={handleInputChange}
             />
@@ -168,7 +168,7 @@ const PurchaseList = () => {
               <TableHeader className="bg-gray-100">
                 <TableRow>
                   <TableHead className="px-6 py-3">Purchase No</TableHead>
-                  <TableHead className="px-6 py-3">Vendor</TableHead>
+                  <TableHead className="px-6 py-3">Farmer</TableHead>
                   <TableHead className="px-6 py-3">Purchase Date</TableHead>
                   <TableHead className="px-6 py-3">Invoice No</TableHead>
                   <TableHead className="px-6 py-3">Invoice Date</TableHead>

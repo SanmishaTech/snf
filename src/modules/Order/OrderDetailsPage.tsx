@@ -140,8 +140,8 @@ const OrderDetailsPage = () => {
 
   const getStatusDescriptionText = (status: Order['status']): string => {
     switch (status) {
-      case "PENDING": return "Order has been created and is awaiting vendor action.";
-      case "DELIVERED": return "Order has been marked as delivered by the vendor.";
+      case "PENDING": return "Order has been created and is awaiting Farmer action.";
+      case "DELIVERED": return "Order has been marked as delivered by the Farmer.";
       case "RECEIVED": return "Order has been received and verified.";
       default:
         return `Order status is currently ${status || 'unknown'}.`;
@@ -449,7 +449,7 @@ const OrderDetailsPage = () => {
                     placeholderIcon: <Truck className="h-5 w-5 text-gray-600 dark:text-gray-400" />,
                     placeholderIconBg: "bg-gray-300 dark:bg-gray-700",
                     time: (order.status === "DELIVERED" || order.status === "RECEIVED") ? format(new Date(order.updatedAt), "dd/MM/yyyy HH:mm") : "Awaiting delivery",
-                    description: "Order has been marked as delivered by the vendor.",
+                    description: "Order has been marked as delivered by the Farmer.",
                     stepStatus: "DELIVERED",
                   },
                   { 

@@ -13,6 +13,7 @@ import { get, post } from "@/services/apiService";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/formatter";
 import { INDIAN_STATES } from "@/config/states";
+import imageurl from "./IMG-20250724-WA0006.jpg"
 import {
   getPublicAreaMasters,
   validateDairySupport,
@@ -1329,6 +1330,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                     ₹{payableAmount.toFixed(2)}
                   </span>
                 </div>
+                <img src={imageurl} alt="" />
               </div>
             </>
           )}

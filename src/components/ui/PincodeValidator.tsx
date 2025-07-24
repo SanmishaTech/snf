@@ -61,7 +61,7 @@ export const PincodeValidator: React.FC<PincodeValidatorProps> = ({
           className="mt-2 text-white bg-secondary border-secondary hover:bg-secondary"
         >
           <MapPin className="h-4 w-4 mr-2" />
-          Request Service in Your Area
+          Click Here to Request Service in Your Area
         </Button>
       )}
     </div>

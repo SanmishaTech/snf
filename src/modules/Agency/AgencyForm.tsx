@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 
 const baseAgencySchema = z.object({
-  name: z.string().min(1, "Agency name is required"),
+  name: z.string().min(1, "Partner name is required"),
   contactPersonName: z.string().optional(),
   email: z.string().optional().nullable(),
   mobile: z.string().regex(/^\d{10}$/, "Mobile number must be 10 digits"),
@@ -102,7 +102,7 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
       const fetchAgency = async () => {
         try {
           const agency = await get(`/agencies/${agencyId}`)
-          console.log("Agency Data:", agency)
+          console.log("Partner Data:", agency)
           setValue("name", agency.name);
           setValue("contactPersonName", agency.contactPersonName || '');
           setValue("mobile", agency.mobile);
@@ -168,7 +168,7 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
       }
     },
     onSuccess: () => {
-      toast.success(`Agency ${mode === "create" ? "created (with user)" : "updated"} successfully`);
+      toast.success(`Partner ${mode === "create" ? "created (with user)" : "updated"} successfully`);
       queryClient.invalidateQueries({ queryKey: ["agencies"] });
       queryClient.invalidateQueries({ queryKey: ["users"] });
       if (agencyId && mode === 'edit') {
@@ -189,13 +189,13 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className={`space-y-6 ${className}`}>
-      {/* Agency Details Section */}
+      {/* Partner Details Section */}
       <div className="border-b pb-4 mb-4 mt-6">
-          <h3 className="text-lg font-medium leading-6 text-gray-900">Delivery Agency Details</h3>
+          <h3 className="text-lg font-medium leading-6 text-gray-900">Delivery Partner Details</h3>
       </div>
 
       <div className="grid gap-2 relative">
-        <Label htmlFor="name">Delivery Agency Name</Label>
+        <Label htmlFor="name">Delivery Partner Name</Label>
         <Input id="name" type="text"  {...register("name")} disabled={isSubmitting} />
         {errors.name && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.name.message}</span>}
       </div>
@@ -307,7 +307,7 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
               {mode === "create" ? "Creating..." : "Updating..."}
             </>
           ) : (
-            <>{mode === "create" ? "Create Delivery Agency" : "Update Delivery Agency"}</>
+            <>{mode === "create" ? "Create Delivery Partner" : "Update Delivery Partner"}</>
           )}
         </Button>
       </div>

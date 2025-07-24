@@ -118,8 +118,10 @@ export const EnhancedLeadCaptureModal: React.FC<EnhancedLeadCaptureModalProps> =
     
     try {
       await createLead(formData);
-      setIsSuccess(true);
-      toast.success('Thank you! We\'ll notify you when service is available in your area.');
+      setTimeout(() => {
+        setIsSuccess(true);
+        toast.success('Thank you! We\'ll notify you when service is available in your area.');
+      }, 2000);
       
       // Call success callback after a short delay to show success state
       setTimeout(() => {
@@ -141,6 +143,7 @@ export const EnhancedLeadCaptureModal: React.FC<EnhancedLeadCaptureModalProps> =
 
   // Success state display
   if (isSuccess) {
+  
     return (
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
         <DialogContent className="w-full max-w-lg mx-auto p-6">

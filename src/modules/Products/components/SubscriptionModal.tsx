@@ -23,6 +23,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
+import imageurl from "./IMG-20250724-WA0006.jpg"
 import {
   CalendarIcon,
   Plus,
@@ -50,6 +51,8 @@ import {
   type OrderWithSubscriptionsRequest,
   type SubscriptionDetail,
 } from "@/services/subscriptionService";
+import { FormDescription } from "@/components/ui/form";
+import { Link } from "react-router-dom";
 import {
   getPublicAreaMasters,
   validateDairySupport,
@@ -321,7 +324,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         isValid: validation.isValid,
         message: validation.isValid 
           ? `Great ! We deliver in your location` 
-          : `Pincode ${pincode} is not served in ${currentAreaMaster.name}. Please check your pincode or select a different area.`,
+          : `Milk Facility is Not available in your pincode. Please check your pincode or select a different area.`,
         isValidating: false
       });
     } else {
@@ -2926,6 +2929,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 )}
               </div>
 
+
               {subscriptionSummary && (
                 <>
                   {remainingPayable > 0 ? (
@@ -3003,6 +3007,12 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
 3) For Cash payments - our person can visit your home OR you may deposit money at our Tilak Road store.                </p>
               </div>
+
+
+              <img src={imageurl} alt="" />
+              <p>1. GPay, UPI - 8850833370  ( Sarkhot Natural Farms) <br/>
+2. Bank Transfer: Current Account: Bank of Baroda A/C No.: 76040200002024, <br/>
+3. IFSC: BARB0VJDOME <br/> 4. Cash Before Delivery. </p>
 
               {selectedDepot?.isOnline ? (
                 <div className="bg-white p-4 rounded-md border">
@@ -3226,7 +3236,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       htmlFor="deliveryCity"
                       className="text-sm font-medium mb-1.5 block"
                     >
-                      Filter by City
+                      City
                     </Label>
                     <Select
                       onValueChange={(value) => {
@@ -3289,7 +3299,12 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                           </SelectItem>
                         ))}
                       </SelectContent>
+
+                    
                     </Select>
+                    <div>
+                      <p className="text-xs ml-2 mt-2">If your area is not listed above <a onClick={handleRequestService} className="text-primary border border-primary px-2 py-1 rounded max-w-4">Click here</a> to request delivery </p>
+                    </div>
                     {formErrors.areaMaster && (
                       <p className="text-red-500 text-sm mt-1">
                         {formErrors.areaMaster}

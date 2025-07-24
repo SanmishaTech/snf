@@ -131,7 +131,7 @@ const VendorList: React.FC = () => {
   const deleteMutation = useMutation<void, Error, string>({
     mutationFn: (vendorId: string) => del(`/vendors/${vendorId}`),
     onSuccess: () => {
-      toast.success("Vendor deleted successfully.");
+      toast.success("Farmer deleted successfully.");
       queryClient.invalidateQueries({ queryKey: ["vendors"] });
       setShowConfirmDeleteDialog(false);
       setVendorToDeleteId(null);
@@ -150,7 +150,7 @@ const VendorList: React.FC = () => {
     mutationFn: ({ vendorUserId, active }: { vendorUserId: string; active: boolean }) => patch(`/users/${vendorUserId}/status`, { active }),
     onSuccess: (_data, variables) => {
       toast.success(
-        `Vendor user status updated to ${variables.active ? "Active" : "Inactive"}.`
+        `Farmer user status updated to ${variables.active ? "Active" : "Inactive"}.`
       );
       queryClient.invalidateQueries({ queryKey: ["vendors"] });
     },
@@ -213,7 +213,7 @@ const VendorList: React.FC = () => {
     return (
       <div className="flex justify-center items-center h-64">
         <Loader className="h-8 w-8 animate-spin text-primary" />
-        <p className="ml-2 text-lg">Loading vendors...</p>
+        <p className="ml-2 text-lg">Loading farmers...</p>
       </div>
     );
   }
@@ -221,7 +221,7 @@ const VendorList: React.FC = () => {
   if (isError) {
     return (
       <div className="text-center py-10">
-        <p className="text-red-500 text-lg">Error loading vendors: {error?.message}</p>
+        <p className="text-red-500 text-lg">Error loading farmers: {error?.message}</p>
       </div>
     );
   }
@@ -239,9 +239,9 @@ const VendorList: React.FC = () => {
         <CardHeader className="bg-muted/50 p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
             <div>
-              <CardTitle className="text-2xl font-semibold">Vendors</CardTitle>
+              <CardTitle className="text-2xl font-semibold">Farmers</CardTitle>
               <CardDescription className="mt-1 text-sm text-muted-foreground">
-                Manage your vendors and their details.
+                Manage your farmers and their details.
               </CardDescription>
             </div>
             <div className="mt-3 sm:mt-0 flex flex-col sm:flex-row gap-2">
@@ -260,7 +260,7 @@ const VendorList: React.FC = () => {
                 className="w-full sm:w-auto bg-green-600 hover:bg-primary text-white"
               >
                 <PlusCircle size={16} className="mr-2" />
-                Add Vendor
+                Add Farmer
               </Button>
             </div>
           </div>
@@ -271,7 +271,7 @@ const VendorList: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 items-end">
                 <div className="flex-grow">
                   <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
-                    Search Vendors
+                    Search Farmers
                   </label>
                   <div className="relative">
                     <Input
@@ -311,7 +311,7 @@ const VendorList: React.FC = () => {
                       className="pl-6 cursor-pointer hover:bg-muted/80 transition-colors w-[200px]"
                       onClick={() => handleSort("name")}
                     >
-                      <div className="flex items-center gap-1">Vendor Name {getSortIndicator("name")}</div>
+                      <div className="flex items-center gap-1">Farmer Name {getSortIndicator("name")}</div>
                     </TableHead>
                     <TableHead
                       className="cursor-pointer hover:bg-muted/80 transition-colors w-[180px]"
@@ -365,7 +365,7 @@ const VendorList: React.FC = () => {
                             size="icon"
                             className="h-8 w-8 text-blue-600 hover:text-blue-700"
                             onClick={() => navigate(`/admin/vendors/edit/${vendor.id}`)}
-                            title="Edit Vendor"
+                            title="Edit Farmer"
                           >
                             <Edit size={16} />
                           </Button>
@@ -374,7 +374,7 @@ const VendorList: React.FC = () => {
                             size="icon"
                             className="h-8 w-8 text-red-600 hover:text-red-700"
                             onClick={() => confirmDeleteVendor(vendor.id)}
-                            title="Delete Vendor"
+                            title="Delete Farmer"
                           >
                             <Trash2 size={16} />
                           </Button>
@@ -385,7 +385,7 @@ const VendorList: React.FC = () => {
                               className="h-8 w-8 ml-2"
                               onClick={() => handleChangeVendorStatus(vendor)}
                               disabled={statusMutation.isPending}
-                              title={vendor.user.active ? "Deactivate Vendor User" : "Activate Vendor User"}
+                              title={vendor.user.active ? "Deactivate Farmer User" : "Activate Farmer User"}
                             >
                               {vendor.user.active ? (
                                 <XCircle size={16} className="text-red-500" />
@@ -431,9 +431,9 @@ const VendorList: React.FC = () => {
           ) : (
             <div className="text-center py-10 px-4">
               <Search size={48} className="mx-auto text-gray-400 mb-3" />
-              <p className="text-lg font-medium text-gray-700">No vendors found.</p>
+              <p className="text-lg font-medium text-gray-700">No Farmer found.</p>
               <p className="text-sm text-gray-500">
-                Try adjusting your search or filter criteria, or add a new vendor.
+                Try adjusting your search or filter criteria, or add a new farmer.
               </p>
             </div>
           )}
@@ -468,13 +468,13 @@ const VendorList: React.FC = () => {
       <ConfirmDialog
         isOpen={showConfirmDeleteDialog}
         title="Confirm Deletion"
-        description="Are you sure you want to delete this vendor? This action cannot be undone and might affect related records."
+        description="Are you sure you want to delete this farmer? This action cannot be undone and might affect related records."
         onCancel={() => {
           setShowConfirmDeleteDialog(false);
           setVendorToDeleteId(null);
         }}
         onConfirm={handleDeleteVendor}
-        confirmLabel="Delete Vendor"
+        confirmLabel="Delete Farmer"
       />
     </div>
   );

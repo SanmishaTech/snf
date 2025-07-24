@@ -14,11 +14,11 @@ const CreateVendorPage: React.FC = () => {
     <div className="container mx-auto p-4 md:p-6">
       <Card className="w-full mx-auto">
         <CardHeader>
-          <CardTitle className="text-2xl font-semibold">Create New Vendor</CardTitle>
+          <CardTitle className="text-2xl font-semibold">Create New Farmer</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground mb-6">
-            Fill in the details below to create a new vendor profile and an associated user account.
+            Fill in the details below to create a new farmer profile and an associated user account.
           </p>
           <VendorForm mode="create" onSuccess={handleSuccess} />
         </CardContent>

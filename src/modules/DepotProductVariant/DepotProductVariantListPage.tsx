@@ -189,9 +189,7 @@ const DepotProductVariantListPage: React.FC = () => {
                     "Depot",
                     "Product",
                     "Name",
-                    "Selling",
-                    "Purchase",
-                    "Closing Qty",
+                     "Closing Qty",
                     "Actions",
                   ].map((h) => (
                     <TableHead
@@ -215,12 +213,6 @@ const DepotProductVariantListPage: React.FC = () => {
                     </TableCell>
                     <TableCell className="px-6 py-4 text-sm font-medium">
                       {v.name}
-                    </TableCell>
-                    <TableCell className="px-6 py-4 text-sm">
-                      {formatCurrency(v.sellingPrice)}
-                    </TableCell>
-                    <TableCell className="px-6 py-4 text-sm">
-                      {formatCurrency(v.purchasePrice)}
                     </TableCell>
                     <TableCell className="px-6 py-4 text-sm">
                       {v.closingQty}

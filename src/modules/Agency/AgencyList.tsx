@@ -146,7 +146,7 @@ const AgencyList: React.FC = () => {
       patch(`/users/${agencyUserId}/status`, { active }),
     onSuccess: (_data, variables) => {
       toast.success(
-        `Agency user status updated to ${variables.active ? "Active" : "Inactive"}.`
+        `Partner user status updated to ${variables.active ? "Active" : "Inactive"}.`
       );
       queryClient.invalidateQueries({ queryKey: ["agencies"] });
     },
@@ -257,9 +257,9 @@ const AgencyList: React.FC = () => {
         <CardHeader className="pb-2">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <CardTitle className="text-2xl">Delivery Agencies</CardTitle>
+              <CardTitle className="text-2xl">Delivery Partner</CardTitle>
               <CardDescription>
-                Manage your delivery agencies and their details.
+                Manage your delivery partner and their details.
               </CardDescription>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -278,7 +278,7 @@ const AgencyList: React.FC = () => {
                 className="w-full sm:w-auto bg-green-600 hover:bg-primary text-white"
               >
                 <PlusCircle size={16} className="mr-2" />
-                Add Delivery Agency
+                Add Delivery Partner
               </Button>
             </div>
           </div>
@@ -330,7 +330,7 @@ const AgencyList: React.FC = () => {
                       className="pl-6 cursor-pointer hover:bg-muted/80 transition-colors w-[200px]"
                       onClick={() => handleSort("name")}
                     >
-                      <div className="flex items-center gap-1">Delivery Agency Name {getSortIndicator("name")}</div>
+                      <div className="flex items-center gap-1">Delivery Partner Name {getSortIndicator("name")}</div>
                     </TableHead>
                     <TableHead
                       className="cursor-pointer hover:bg-muted/80 transition-colors w-[180px]"
@@ -393,7 +393,7 @@ const AgencyList: React.FC = () => {
                             size="icon"
                             className="h-8 w-8 text-blue-600 hover:text-blue-700"
                             onClick={() => navigate(`/admin/agencies/edit/${agency.id}`)}
-                            title="Edit Agency"
+                            title="Edit Partner"
                           >
                             <Edit size={16} />
                           </Button>
@@ -402,7 +402,7 @@ const AgencyList: React.FC = () => {
                             size="icon"
                             className="h-8 w-8 text-red-600 hover:text-red-700"
                             onClick={() => confirmDeleteAgency(agency.id)}
-                            title="Delete Agency"
+                            title="Delete Partner"
                           >
                             <Trash2 size={16} />
                           </Button>
@@ -452,14 +452,14 @@ const AgencyList: React.FC = () => {
               <p className="mb-6 text-muted-foreground max-w-sm">
                 {search
                   ? "Try a different search term or clear filters"
-                  : "Get started by adding your first Delivery Agency"}
+                  : "Get started by adding your first Delivery Partner"}
               </p>
               <Button
                 onClick={() => navigate("/admin/agencies/create")}
                 className="bg-green-600 hover:bg-primary text-white"
               >
                 <PlusCircle size={16} className="mr-2" />
-                Add Delivery Agency
+                Add Delivery Partner
               </Button>
             </div>
           ) : (
@@ -520,14 +520,14 @@ const AgencyList: React.FC = () => {
       {/* Confirm Delete Dialog */}
       <ConfirmDialog
         isOpen={showConfirmDeleteDialog}
-        title="Delete Delivery Agency"
+        title="Delete Delivery Partner"
         description="Are you sure you want to delete this delivery agency? This action cannot be undone."
         onCancel={() => {
           setShowConfirmDeleteDialog(false);
           setAgencyToDeleteId(null);
         }}
         onConfirm={handleDeleteAgency}
-        confirmLabel="Delete Delivery Agency"
+        confirmLabel="Delete Delivery Partner"
       />
     </div>
   );

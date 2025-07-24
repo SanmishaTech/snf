@@ -819,7 +819,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
                 title={
                   !selectedAreaMaster ? "Please select a delivery area" :
                   (form.watch('pincode')?.length === 6 && !pincodeValidation.isValid) ? 
-                    `Pincode ${form.watch('pincode')} is not served in this area` : 
+                    `Pincode ${form.watch('pincode')} is not Serviceable in this area` : 
                     undefined
                 }
               >

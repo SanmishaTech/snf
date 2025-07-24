@@ -160,14 +160,14 @@ const A2MilkSection: React.FC<A2MilkSectionProps> = ({ className = "" }) => {
 
         {/* Benefits Section */}
         <motion.div
-          className="space-y-3"
+          className="space-y-3 border border-gray-200 p-4 rounded-lg bg-primary/20"
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.2 }}
         >
           <motion.div
-            className="text-center space-y-2"
+            className="text-center space-y-2 "
             variants={itemVariants}
           >
             <h2 className="text-2xl lg:text-3xl font-bold text-foreground">
@@ -190,16 +190,16 @@ const A2MilkSection: React.FC<A2MilkSectionProps> = ({ className = "" }) => {
                 transition={{ duration: 0.2 }}
               >
                 <Card className="h-fit hover:shadow-md transition-all duration-300 border-border/50 hover:border-primary/20">
-                  <CardContent className="p-3">
+                  <CardContent className="">
                     <div className="flex items-start space-x-2">
                       <div className="p-1.5 bg-primary/10 rounded-lg flex-shrink-0">
                         <benefit.icon className="w-4 h-4 text-primary" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h3 className="text-sm font-semibold text-foreground mb-1 leading-snug">
+                        <h3 className="text-xl font-semibold text-foreground mb-1 leading-snug">
                           {benefit.title}
                         </h3>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
+                        <p className="text-sm text-muted-foreground leading-relaxed">
                           {benefit.description}
                         </p>
                       </div>

@@ -88,9 +88,9 @@ const EditVendorPage: React.FC = () => {
       <div className="container mx-auto p-6">
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Error Fetching Vendor</AlertTitle>
+          <AlertTitle>Error Fetching Farmer</AlertTitle>
           <AlertDescription>
-            There was a problem retrieving the vendor details. Error: {error?.message || 'Unknown error'}
+            There was a problem retrieving the farmer details. Error: {error?.message || 'Unknown error'}
           </AlertDescription>
         </Alert>
       </div>
@@ -103,7 +103,7 @@ const EditVendorPage: React.FC = () => {
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
-          <AlertDescription>Vendor data not found or unavailable.</AlertDescription>
+          <AlertDescription>Farmer data not found or unavailable.</AlertDescription>
         </Alert>
       </div>
     );
@@ -116,7 +116,7 @@ const EditVendorPage: React.FC = () => {
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
-          <AlertDescription>Vendor data not found or unavailable after loading.</AlertDescription>
+          <AlertDescription>Farmer data not found or unavailable after loading.</AlertDescription>
         </Alert>
       </div>
     );
@@ -144,7 +144,7 @@ const EditVendorPage: React.FC = () => {
     <div className="container mx-auto p-4 md:p-6">
       <Card className="mx-auto">
         <CardHeader>
-          <CardTitle>Edit Vendor: {vendorData.name}</CardTitle>
+          <CardTitle>Edit Farmer: {vendorData.name}</CardTitle>
         </CardHeader>
         <CardContent>
           <VendorForm

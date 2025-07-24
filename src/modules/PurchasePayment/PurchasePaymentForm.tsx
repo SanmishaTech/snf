@@ -221,10 +221,10 @@ const PurchasePaymentForm: React.FC<PurchasePaymentFormProps> = ({ onSuccess }) 
 
           {/* Vendor */}
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">Vendor</label>
+            <label className="text-sm font-medium">Farmer</label>
             <Select value={selectedVendorId} onValueChange={(v) => setValue('vendorId', v)}>
               <SelectTrigger>
-                <SelectValue placeholder="Select vendor" />
+                <SelectValue placeholder="Select farmer" />
               </SelectTrigger>
               <SelectContent>
                 {vendors.map((v) => (

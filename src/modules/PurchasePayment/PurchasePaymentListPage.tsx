@@ -103,7 +103,7 @@ const PurchasePaymentListPage = () => {
             <Input
               value={inputValue}
               onChange={handleInputChange}
-              placeholder="Search by vendor/mode..."
+              placeholder="Search by farmer/mode..."
               className="max-w-sm"
             />
           </div>
@@ -116,7 +116,7 @@ const PurchasePaymentListPage = () => {
                 <TableRow>
                   <TableHead className="px-6 py-3">Payment No</TableHead>
                   <TableHead className="px-6 py-3">Date</TableHead>
-                  <TableHead className="px-6 py-3">Vendor</TableHead>
+                  <TableHead className="px-6 py-3">Farmer</TableHead>
                   <TableHead className="px-6 py-3">Mode</TableHead>
                   <TableHead className="px-6 py-3 text-right">Total</TableHead>
                   <TableHead className="px-6 py-3">Actions</TableHead>

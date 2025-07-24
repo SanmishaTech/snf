@@ -671,9 +671,9 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
       const vendorDetail = vendors.find(v => v.id === vendorIdStr); // vendor.id is already string from fetchVendors
       if (vendorDetail) {
         setSelectedVendor(vendorDetail);
-        console.log("Vendor set in form:", initialData.vendorId, vendorDetail);
+        console.log("Farmer set in form:", initialData.vendorId, vendorDetail);
       } else {
-        console.warn(`Vendor with ID ${initialData.vendorId} not found in fetched farmer list. Cannot preselect.`);
+        console.warn(`Farmer with ID ${initialData.vendorId} not found in fetched farmer list. Cannot preselect.`);
         setSelectedVendor(null); // Clear if not found to avoid stale selection
       }
     }
