@@ -21,6 +21,7 @@ import {
   Trash2,
   ClipboardCheck,
   AlertCircle,
+  Check,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/formatter"
 import { toast } from "sonner";
@@ -92,6 +93,9 @@ interface Order {
   items: OrderItem[];
   totalAmount: number;
   recordedByAgencies?: string[];
+  recordedDelivery?: boolean;    // Add this flag
+  recordedReceipt?: boolean;     // Add this flag
+  recordedSupervisor?: boolean;  // Add this flag
 }
 
 interface StoredUserDetails {
@@ -544,7 +548,7 @@ const OrderList = () => {
 
                           {currentUserRole === "VENDOR" && (
                             <>
-                              {(order.status === "PENDING" || order.status === "DELIVERED") && (
+                              {(order.status === "PENDING" || order.status === "DELIVERED") && !order.recordedDelivery && (
                                 <DropdownMenuItem asChild>
                                   <Link to={`/vendor/orders/${order.id}/record-delivery`} className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800">
                                     <ClipboardCheck className="mr-2 h-4 w-4" /> Record Delivery
@@ -566,7 +570,7 @@ const OrderList = () => {
                                   <Eye className="mr-2 h-4 w-4" /> View Details
                                 </Link>
                               </DropdownMenuItem>
-                              {canAgencyRecord && (
+                              {canAgencyRecord && !order.recordedReceipt && (
                                 <DropdownMenuItem asChild>
                                   <Link to={`/admin/orders/${order.id}/record-receipt`} className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800">
                                     <ClipboardCheck className="mr-2 h-4 w-4" /> 
@@ -584,11 +588,19 @@ const OrderList = () => {
                                   <Eye className="mr-2 h-4 w-4" /> View Details
                                 </Link>
                               </DropdownMenuItem>
-                              {(order.status === "DELIVERED" || order.status === "RECEIVED") && (
+                              {/* Only show record option if not already recorded and status is appropriate */}
+                              {(order.status === "DELIVERED" || order.status === "RECEIVED") && 
+                               !order.recordedSupervisor && ( // This flag should come from your API
                                 <DropdownMenuItem asChild>
                                   <Link to={`/admin/orders/${order.id}/supervisor-quantity`} className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800">
                                     <ClipboardCheck className="mr-2 h-4 w-4" /> Record Supervisor Quantity
                                   </Link>
+                                </DropdownMenuItem>
+                              )}
+                              {/* Add an indicator if already recorded */}
+                              {order.recordedSupervisor && (
+                                <DropdownMenuItem disabled className="flex items-center w-full px-3 py-2 text-sm text-gray-500">
+                                  <Check className="mr-2 h-4 w-4" /> Supervisor Quantity Recorded
                                 </DropdownMenuItem>
                               )}
                             </>

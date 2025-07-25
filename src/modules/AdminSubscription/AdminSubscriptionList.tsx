@@ -584,6 +584,12 @@ const AdminSubscriptionList: React.FC = () => {
   const [showFilters] = useState<boolean>(false);
   const [showUnassignedOnly, setShowUnassignedOnly] = useState<boolean>(false);
   const [downloadingInvoices, setDownloadingInvoices] = useState<Set<string>>(new Set());
+
+  // User role and supervisor filtering state
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+  const [currentSupervisorAgencyId, setCurrentSupervisorAgencyId] = useState<string | null>(null);
+  const [isSupervisorInfoLoading, setIsSupervisorInfoLoading] = useState(false);
+
   const [filters, setFilters] = useState<{ [key: string]: string | undefined }>({
     searchTerm: '',
     memberName: '',
@@ -595,6 +601,37 @@ const AdminSubscriptionList: React.FC = () => {
     // Add other filter keys as needed, initialized to empty or default values
   });
 
+  // Get user role from localStorage
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          setCurrentUserRole(user.role);
+
+          // If user is a supervisor, get their agency information
+          if (user.role === 'SUPERVISOR') {
+            setIsSupervisorInfoLoading(true);
+            try {
+              const supervisorInfo = await get("/users/me");
+              console.log("supervisorinfo", supervisorInfo);
+              // Get the agency ID from supervisor's assigned agency
+              setCurrentSupervisorAgencyId(supervisorInfo?.supervisor?.agencyId ? String(supervisorInfo.supervisor.agencyId) : null);
+            } catch (error) {
+              console.error("Failed to fetch supervisor info:", error);
+              toast.error("Could not load supervisor details.");
+              setCurrentSupervisorAgencyId(null);
+            }
+            setIsSupervisorInfoLoading(false);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to parse user data from localStorage', error);
+      }
+    };
+    fetchUserInfo();
+  }, []);
 
   // Fetch product orders instead of subscriptions
   const fetchProductOrders = useCallback(async (page = currentPage, currentLimit = 10, currentFilters = filters) => {
@@ -626,6 +663,11 @@ const AdminSubscriptionList: React.FC = () => {
       }
     }
 
+    // Add supervisor filtering if user is a supervisor
+    if (currentUserRole === 'SUPERVISOR' && currentSupervisorAgencyId) {
+      apiParams['supervisorAgencyId'] = currentSupervisorAgencyId;
+    }
+
     const queryParams = new URLSearchParams({
       page: effectivePage.toString(),
       limit: effectiveLimit.toString(),
@@ -645,7 +687,7 @@ const AdminSubscriptionList: React.FC = () => {
     } finally {
       setIsLoading(false);
   }
-  }, [currentPage, limit, filters]);
+  }, [currentPage, limit, filters, currentUserRole, currentSupervisorAgencyId]);
 
   const fetchAgencies = useCallback(async () => {
     setIsLoadingAgencies(true);
@@ -663,8 +705,18 @@ const AdminSubscriptionList: React.FC = () => {
   }, []); // No dependencies needed if it's only fetching all agencies
 
   useEffect(() => {
+    // Don't fetch if supervisor info is still loading
+    if (currentUserRole === 'SUPERVISOR' && isSupervisorInfoLoading) {
+      return;
+    }
+    // Don't fetch if supervisor role but no agency assigned
+    if (currentUserRole === 'SUPERVISOR' && !currentSupervisorAgencyId && !isSupervisorInfoLoading) {
+      setProductOrders([]);
+      setIsLoading(false);
+      return;
+    }
     fetchProductOrders(currentPage, limit, filters);
-  }, [fetchProductOrders, currentPage, limit, filters]); // fetchProductOrders is memoized, so this runs on mount and when filters/pagination affecting fetchProductOrders change
+  }, [fetchProductOrders, currentPage, limit, filters, currentUserRole, currentSupervisorAgencyId, isSupervisorInfoLoading]); // fetchProductOrders is memoized, so this runs on mount and when filters/pagination affecting fetchProductOrders change
 
   // Fetch agencies once on mount, or when assign agent modal is opened (as per previous logic)
   // For simplicity here, fetching once on mount. Can be refined if agencies list is very dynamic or large.

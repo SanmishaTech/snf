@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm, SubmitHandler, Controller } from "react-hook-form"; 
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -62,6 +62,7 @@ interface SupervisorFormProps {
 
 const SupervisorForm: React.FC<SupervisorFormProps> = ({ mode, supervisorId, onSuccess, initialData, className }) => {
   const queryClient = useQueryClient();
+  const [isLoadingData, setIsLoadingData] = useState(mode === "edit" && supervisorId && !initialData);
 
   // Fetch depots for the dropdown
   const { data: depots = [] } = useQuery({
@@ -121,9 +122,11 @@ const SupervisorForm: React.FC<SupervisorFormProps> = ({ mode, supervisorId, onS
 
   useEffect(() => {
     if (mode === "edit" && supervisorId && !initialData) {
+      setIsLoadingData(true);
       const fetchSupervisor = async () => {
         try {
           const supervisor = await get(`/supervisors/${supervisorId}`)
+          console.log("Fetched supervisor data:", supervisor); // Debug log
           setValue("name", supervisor.name);
           setValue("contactPersonName", supervisor.contactPersonName || '');
           setValue("mobile", supervisor.mobile);
@@ -134,10 +137,16 @@ const SupervisorForm: React.FC<SupervisorFormProps> = ({ mode, supervisorId, onS
           setValue("pincode", supervisor.pincode);
           setValue("email", supervisor.email);
           setValue("depotId", supervisor.depotId || null);
-          setValue("agencyId", supervisor.agencyId || null);
+          // Fix: Ensure agencyId is properly set, handle both agencyId and agency.id
+          const agencyIdValue = supervisor.agencyId || supervisor.agency?.id || null;
+          console.log("Setting agencyId to:", agencyIdValue); // Debug log
+          setValue("agencyId", agencyIdValue);
           setValue("status", supervisor.user?.active ? "ACTIVE" : "INACTIVE");
         } catch (error: any) {
+          console.error("Error fetching supervisor:", error); // Debug log
           toast.error("Failed to fetch supervisor details");
+        } finally {
+          setIsLoadingData(false);
         }
       };
       fetchSupervisor();
@@ -145,6 +154,9 @@ const SupervisorForm: React.FC<SupervisorFormProps> = ({ mode, supervisorId, onS
         Object.keys(initialData).forEach(key => {
             setValue(key as keyof SupervisorFormInputs, initialData[key as keyof SupervisorFormInputs]);
         });
+        setIsLoadingData(false);
+    } else {
+      setIsLoadingData(false);
     }
   }, [supervisorId, mode, setValue, initialData]);
 
@@ -214,6 +226,16 @@ const SupervisorForm: React.FC<SupervisorFormProps> = ({ mode, supervisorId, onS
     mutation.mutate(data);
   };
 
+  // Show loading indicator while fetching supervisor data in edit mode
+  if (isLoadingData) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <LoaderCircle className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Loading supervisor details...</span>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className={`space-y-6 ${className}`}>
       {/* Supervisor Details Section */}
@@ -242,7 +264,7 @@ const SupervisorForm: React.FC<SupervisorFormProps> = ({ mode, supervisorId, onS
         <div className="grid gap-2 relative">
           <Label htmlFor="alternateMobile">Alternate Mobile (Optional)</Label>
           <Input max={10} maxLength={10} id="alternateMobile" type="text"  {...register("alternateMobile")} disabled={isSubmitting} />
-          {errors.alternateMobile && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.alternateMobile?.message}</span>}
+          {errors.alternateMobile && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{String(errors.alternateMobile?.message)}</span>}
         </div>
       </div>
 
@@ -289,25 +311,34 @@ const SupervisorForm: React.FC<SupervisorFormProps> = ({ mode, supervisorId, onS
           <Controller
             name="depotId"
             control={control}
-            render={({ field }) => (
-              <Select
-                onValueChange={(value) => field.onChange(value === "none" ? null : Number(value))}
-                value={field.value ? String(field.value) : "none"}
-                disabled={isSubmitting}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select depot..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No depot assigned</SelectItem>
-                  {depots.map((depot: any) => (
-                    <SelectItem key={depot.id} value={String(depot.id)}>
-                      {depot.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+            render={({ field }) => {
+              const currentValue = field.value ? String(field.value) : "none";
+              console.log("Depot field render - current value:", currentValue, "field.value:", field.value); // Debug log
+              return (
+                <Select
+                  key={`depot-${currentValue}`} // Force re-render when value changes
+                  onValueChange={(value) => {
+                    const newValue = value === "none" ? null : Number(value);
+                    console.log("Depot value changing to:", newValue); // Debug log
+                    field.onChange(newValue);
+                  }}
+                  value={currentValue}
+                  disabled={isSubmitting}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select depot..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No depot assigned</SelectItem>
+                    {depots.map((depot: any) => (
+                      <SelectItem key={depot.id} value={String(depot.id)}>
+                        {depot.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              );
+            }}
           />
           {errors.depotId && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{String(errors.depotId?.message)}</span>}
         </div>
@@ -316,10 +347,18 @@ const SupervisorForm: React.FC<SupervisorFormProps> = ({ mode, supervisorId, onS
           <Controller
             name="agencyId"
             control={control}
-            render={({ field }) => (
+            render={({ field }) => {
+              const currentValue = field.value ? String(field.value) : "none";
+              console.log("Agency field render - current value:", currentValue, "field.value:", field.value); // Debug log
+              return (
                 <Select
-                  onValueChange={(value) => field.onChange(value === "none" ? null : Number(value))}
-                  value={field.value ? String(field.value) : "none"}
+                  key={`agency-${currentValue}`} // Force re-render when value changes
+                  onValueChange={(value) => {
+                    const newValue = value === "none" ? null : Number(value);
+                    console.log("Agency value changing to:", newValue); // Debug log
+                    field.onChange(newValue);
+                  }}
+                  value={currentValue}
                   disabled={isSubmitting}
                 >
                   <SelectTrigger className="w-full">
@@ -334,7 +373,8 @@ const SupervisorForm: React.FC<SupervisorFormProps> = ({ mode, supervisorId, onS
                     ))}
                   </SelectContent>
                 </Select>
-            )}
+              );
+            }}
           />
           {errors.agencyId && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{String(errors.agencyId?.message)}</span>}
         </div>

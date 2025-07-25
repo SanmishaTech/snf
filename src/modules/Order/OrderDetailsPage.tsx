@@ -73,7 +73,7 @@ const OrderDetailsPage = () => {
       if (!token) {
         throw new Error('User not authenticated');
       }
-      return get("/api/users/me");
+      return get("/users/me");
     },
     staleTime: 5 * 60 * 1000,
     enabled: Boolean(localStorage.getItem("authToken")), // Only run query if authenticated
@@ -104,15 +104,26 @@ const OrderDetailsPage = () => {
     },
   });
 
+  // Helper function to check if supervisor column should be visible
+  const shouldShowSupervisorColumn = useMemo(() => {
+    return currentUserProfile?.role === 'SUPERVISOR' || currentUserProfile?.role === 'ADMIN';
+  }, [currentUserProfile?.role]);
+
   const itemsToDisplay = useMemo(() => {
     if (!order?.items) return [];
+
+    // Debug logging for role-based visibility
+    console.log("Current user profile:", currentUserProfile);
+    console.log("User role:", currentUserProfile?.role);
+    console.log("Should show supervisor column:", shouldShowSupervisorColumn);
+
     if (currentUserProfile?.role === 'AGENCY' && currentUserProfile.agencyId != null) {
       return order.items.filter(
         item => item.agencyId != null && String(item.agencyId) === String(currentUserProfile.agencyId)
       );
     }
     return order.items;
-  }, [order, currentUserProfile]);
+  }, [order, currentUserProfile, shouldShowSupervisorColumn]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -277,26 +288,37 @@ const OrderDetailsPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto border rounded-lg">
-                  <div className={currentUserProfile?.role === 'SUPERVISOR' || currentUserProfile?.role === 'ADMIN' ? "min-w-[800px]" : "min-w-[600px]"}>
-                    <div className={cn(
-                      "bg-gray-50 dark:bg-gray-900 px-2 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 grid",
-                      currentUserProfile?.role === 'SUPERVISOR' || currentUserProfile?.role === 'ADMIN' ? "grid-cols-16" : "grid-cols-12"
-                    )}>
-                      <div className={currentUserProfile?.role === 'SUPERVISOR' || currentUserProfile?.role === 'ADMIN' ? "col-span-4" : "col-span-6"}>Product</div> 
-                      <div className="col-span-2 text-right text-xs sm:text-sm">Ordered</div>
-                      <div className="col-span-2 text-right text-xs sm:text-sm">Delivered</div>
-                      <div className="col-span-2 text-right text-xs sm:text-sm">Received</div>
-                      {(currentUserProfile?.role === 'SUPERVISOR' || currentUserProfile?.role === 'ADMIN') && (
-                        <div className="col-span-2 text-right text-xs sm:text-sm">Supervisor</div>
-                      )}
-                    </div>
-                    <div className="divide-y divide-gray-200 dark:divide-gray-800">
+                  <table className={cn(
+                    "w-full",
+                    (currentUserProfile?.role === 'SUPERVISOR' || currentUserProfile?.role === 'ADMIN')
+                      ? "min-w-[800px]"
+                      : "min-w-[600px]"
+                  )}>
+                    <thead className="bg-gray-50 dark:bg-gray-900">
+                      <tr>
+                        <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
+                          Product
+                        </th>
+                        <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 w-20 sm:w-24">
+                          Ordered
+                        </th>
+                        <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 w-20 sm:w-24">
+                          Delivered
+                        </th>
+                        <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 w-20 sm:w-24">
+                          Received
+                        </th>
+                        {shouldShowSupervisorColumn && (
+                          <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 w-20 sm:w-24">
+                            Supervisor
+                          </th>
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                       {itemsToDisplay.map((item) => (
-                        <div key={item.id} className={cn(
-                          "px-2 sm:px-4 py-3 sm:py-4 grid items-center",
-                          currentUserProfile?.role === 'SUPERVISOR' || currentUserProfile?.role === 'ADMIN' ? "grid-cols-16" : "grid-cols-12"
-                        )}>
-                          <div className={currentUserProfile?.role === 'SUPERVISOR' || currentUserProfile?.role === 'ADMIN' ? "col-span-4" : "col-span-6"}> 
+                        <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                          <td className="px-2 sm:px-4 py-3 sm:py-4">
                             <div className="flex items-center">
                               <div className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 rounded-md bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                                 <Package className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
@@ -311,41 +333,41 @@ const OrderDetailsPage = () => {
                                 </div>
                               </div>
                             </div>
-                          </div>
-                          <div className="col-span-2 text-right text-xs sm:text-sm">
+                          </td>
+                          <td className="px-2 sm:px-4 py-3 sm:py-4 text-right text-xs sm:text-sm">
                             <div className="font-medium">{item.quantity}</div>
                             {item.depotVariantName && <div className="text-xs text-gray-500 dark:text-gray-400 truncate">({item.depotVariantName})</div>}
-                          </div>
-                          <div className="col-span-2 text-right text-xs sm:text-sm">
+                          </td>
+                          <td className="px-2 sm:px-4 py-3 sm:py-4 text-right text-xs sm:text-sm">
                             {typeof item.deliveredQuantity === 'number' ? (
                               <>
                                 <div className="font-medium">{item.deliveredQuantity}</div>
                                 {item.depotVariantName && <div className="text-xs text-gray-500 dark:text-gray-400 truncate">({item.depotVariantName})</div>}
                               </>
                             ) : <span className="text-gray-400">-</span>}
-                          </div>
-                          <div className="col-span-2 text-right text-xs sm:text-sm"> 
+                          </td>
+                          <td className="px-2 sm:px-4 py-3 sm:py-4 text-right text-xs sm:text-sm">
                             {typeof item.receivedQuantity === 'number' ? (
                               <>
                                 <div className="font-medium">{item.receivedQuantity}</div>
                                 {item.depotVariantName && <div className="text-xs text-gray-500 dark:text-gray-400 truncate">({item.depotVariantName})</div>}
                               </>
                             ) : <span className="text-gray-400">-</span>}
-                          </div>
-                          {(currentUserProfile?.role === 'SUPERVISOR' || currentUserProfile?.role === 'ADMIN') && (
-                            <div className="col-span-2 text-right text-xs sm:text-sm">
+                          </td>
+                          {shouldShowSupervisorColumn && (
+                            <td className="px-2 sm:px-4 py-3 sm:py-4 text-right text-xs sm:text-sm">
                               {typeof item.supervisorQuantity === 'number' ? (
                                 <>
                                   <div className="font-medium">{item.supervisorQuantity}</div>
                                   {item.depotVariantName && <div className="text-xs text-gray-500 dark:text-gray-400 truncate">({item.depotVariantName})</div>}
                                 </>
                               ) : <span className="text-gray-400">-</span>}
-                            </div>
+                            </td>
                           )}
-                        </div>
+                        </tr>
                       ))}
-                    </div>
-                  </div>
+                    </tbody>
+                  </table>
                 </div>
               </CardContent>
             </Card>

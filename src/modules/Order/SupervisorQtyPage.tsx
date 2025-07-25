@@ -63,6 +63,7 @@ const SupervisorQtyPage = () => {
   const { id: orderId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [supervisorQuantities, setSupervisorQuantities] = useState<SupervisorQuantities>({});
+  const [isRecorded, setIsRecorded] = useState(false);
 
   const { data: currentUserProfile, isLoading: isLoadingUserProfile } = useQuery<UserProfile>({
     queryKey: ["currentUserProfile"],
@@ -123,21 +124,28 @@ const SupervisorQtyPage = () => {
   useEffect(() => {
     if (order) {
       const initialQuantities = order.items.reduce<SupervisorQuantities>((acc, item) => {
-        acc[item.id] = String(item.supervisorQuantity ?? item.receivedQuantity ?? 0); 
+        acc[item.id] = String(item.supervisorQuantity ?? 0);
         return acc;
       }, {});
       setSupervisorQuantities(initialQuantities);
+
+      // Check if supervisor quantities have been recorded
+      const hasBeenRecorded = order.items.some(item => item.supervisorQuantity !== null && item.supervisorQuantity !== undefined);
+      setIsRecorded(hasBeenRecorded);
     }
   }, [order]);
 
   const handleSupervisorQuantityChange = (itemId: string, value: string) => {
     const item = order?.items.find(i => i.id === itemId);
 
-    if (item && typeof item.receivedQuantity !== 'undefined') {
+    if (item) {
       const supervisorQty = parseInt(value, 10);
-      if (!isNaN(supervisorQty) && supervisorQty > item.receivedQuantity) {
-        toast.error(`Supervisor quantity for ${item.productName} cannot exceed received quantity of ${item.receivedQuantity}.`);
-        setSupervisorQuantities(prev => ({ ...prev, [itemId]: String(item.receivedQuantity) }));
+      const maxAllowedQuantity = item.deliveredQuantity || item.quantity;
+
+      if (!isNaN(supervisorQty) && supervisorQty > maxAllowedQuantity) {
+        const limitType = item.deliveredQuantity ? 'delivered' : 'ordered';
+        toast.error(`Supervisor quantity for ${item.productName} cannot exceed ${limitType} quantity of ${maxAllowedQuantity}.`);
+        setSupervisorQuantities(prev => ({ ...prev, [itemId]: String(maxAllowedQuantity) }));
         return;
       }
     }
@@ -163,8 +171,13 @@ const SupervisorQtyPage = () => {
           return null; 
         }
         
-        if (itemDetail.receivedQuantity !== undefined && supervisorQuantity > itemDetail.receivedQuantity) {
-          toast.info(`Supervisor quantity for ${itemDetail.productName} (${supervisorQuantity}) cannot exceed received quantity (${itemDetail.receivedQuantity}).`);
+        // Supervisor quantity should not exceed delivered quantity (if available)
+        // If no delivered quantity is recorded, supervisor can record up to the ordered quantity
+        const maxAllowedQuantity = itemDetail.deliveredQuantity || itemDetail.quantity;
+
+        if (supervisorQuantity > maxAllowedQuantity) {
+          const limitType = itemDetail.deliveredQuantity ? 'delivered' : 'ordered';
+          toast.info(`Supervisor quantity for ${itemDetail.productName} (${supervisorQuantity}) cannot exceed ${limitType} quantity (${maxAllowedQuantity}).`);
           return null;
         }
         return {
@@ -175,7 +188,7 @@ const SupervisorQtyPage = () => {
       .filter(item => item !== null) as { orderItemId: string; supervisorQuantity: number }[];
 
     if (itemsToSubmit.length === 0) {
-      toast.info("No quantities entered or all quantities are invalid/exceed received amounts. Nothing to submit.");
+      toast.info("No quantities entered or all quantities are invalid/exceed allowed amounts. Nothing to submit.");
       return;
     }
     recordSupervisorQtyMutation.mutate({ items: itemsToSubmit });
@@ -275,13 +288,14 @@ const SupervisorQtyPage = () => {
                         <td className="px-2 sm:px-4 py-3">
                           <div className="flex flex-col sm:flex-row items-end sm:items-center justify-end space-y-1 sm:space-y-0 sm:space-x-2">
                             <Input
-                              type="number"
-                              value={supervisorQuantities[item.id] || ''}
-                              onChange={(e) => handleSupervisorQuantityChange(item.id, e.target.value)}
-                              className="w-20 sm:w-24 text-right dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 text-xs sm:text-sm"
-                              min="0"
-                              max={item.receivedQuantity || undefined}
-                            />
+                                type="number"
+                                value={supervisorQuantities[item.id] || ''}
+                                onChange={(e) => handleSupervisorQuantityChange(item.id, e.target.value)}
+                                className="w-20 sm:w-24 text-right dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 text-xs sm:text-sm"
+                                min="0"
+                                max={item.deliveredQuantity || item.quantity || undefined}
+                                disabled={isRecorded}
+                              />
                             {item.depotVariantName && <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[60px] sm:max-w-none">{item.depotVariantName}</span>}
                           </div>
                         </td>
@@ -298,15 +312,15 @@ const SupervisorQtyPage = () => {
                 className="flex-1 sm:flex-none order-2 sm:order-1"
                 disabled={recordSupervisorQtyMutation.isPending || isLoadingUserProfile}
               >
-                <ArrowLeft className="h-4 w-4 mr-1.5" /> Cancel
+                <ArrowLeft className="h-4 w-4 mr-1.5" /> Back
               </Button>
               <Button 
                 onClick={handleSubmitSupervisorQty} 
-                disabled={recordSupervisorQtyMutation.isPending || Object.keys(supervisorQuantities).length === 0 || isLoadingUserProfile}
+                disabled={recordSupervisorQtyMutation.isPending || Object.keys(supervisorQuantities).length === 0 || isLoadingUserProfile || isRecorded}
                 className="flex items-center justify-center flex-1 sm:flex-none order-1 sm:order-2"
               >
                 <ClipboardCheck className="h-4 w-4 mr-1.5" />
-                <span className="truncate">{recordSupervisorQtyMutation.isPending ? "Submitting..." : "Submit Supervisor Quantity"}</span>
+                <span className="truncate">{recordSupervisorQtyMutation.isPending ? "Submitting..." : isRecorded ? "Quantities Recorded" : "Submit Supervisor Quantity"}</span>
               </Button>
             </CardFooter>
           </Card>
