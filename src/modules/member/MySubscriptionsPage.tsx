@@ -206,7 +206,7 @@ const MySubscriptionsPage: React.FC = () => {
                   {sub.productOrder?.invoicePath && (
                     <Button
                       onClick={() => {
-                        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/';
+                        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://www.indraai.in/';
                         const invoiceUrl = `${baseUrl}/invoices/${sub.productOrder.invoicePath}`;
                         window.open(invoiceUrl, '_blank');
                       }}

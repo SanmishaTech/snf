@@ -869,7 +869,7 @@ const AdminSubscriptionList: React.FC = () => {
       // Check if invoice path is already available in the order data
       if (order.invoicePath) {
         // If invoice path exists, download directly using the existing approach
-        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/';
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://www.indraai.in/';
         const invoiceUrl = `${baseUrl}/invoices/${order.invoicePath}`;
         window.open(invoiceUrl, '_blank');
         toast.success(`Invoice for order ${order.orderNo} downloaded successfully`);
