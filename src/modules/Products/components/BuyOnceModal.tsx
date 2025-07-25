@@ -146,6 +146,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
     orderId?: string;
     totalAmount?: number;
   }>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Pincode validation state
   const [pincodeValidation, setPincodeValidation] = useState<{
@@ -626,6 +627,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
       walletamt: useWallet ? walletDeduction : 0,
     };
 
+    setIsSubmitting(true);
     try {
       const response = await post('/api/product-orders/with-subscriptions', payload);
       
@@ -641,6 +643,8 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
     } catch (error: any) {
       console.error("Failed to place order:", error);
       toast.error(error?.response?.data?.message || "Failed to place order. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -1400,7 +1404,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                 </Button>
                 <Button
                   onClick={handleConfirm}
-                  disabled={(() => {
+                  disabled={isSubmitting || (() => {
                     // Basic validations
                     if (!selectedDate || !selectedVariantId || quantity < 1) return true;
                     
@@ -1418,8 +1422,17 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                   })()}
                   className="flex-1 sm:flex-auto bg-primary hover:bg-primary/80 text-white py-3 text-base font-semibold rounded-lg shadow-md disabled:from-gray-300 disabled:to-gray-400 disabled:shadow-none transition-all duration-200"
                 >
-                  <span className="hidden sm:inline">Confirm Order & Pay ₹{payableAmount.toFixed(2)}</span>
-                  <span className="sm:hidden">Pay ₹{payableAmount.toFixed(2)}</span>
+                  {isSubmitting ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                      <span>Processing...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="hidden sm:inline">Confirm Order & Pay ₹{payableAmount.toFixed(2)}</span>
+                      <span className="sm:hidden">Pay ₹{payableAmount.toFixed(2)}</span>
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
