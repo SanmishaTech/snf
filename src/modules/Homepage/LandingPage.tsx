@@ -75,7 +75,7 @@ const LandingPage = () => {
   };
 
   const BACKEND_URL =
-    import.meta.env.VITE_BACKEND_URL || "https://www.indraai.in//";
+    import.meta.env.VITE_BACKEND_URL || "http://localhost:3000/";
     
   useEffect(() => {
     const fetchProducts = async () => {

@@ -121,12 +121,12 @@ export const SuccessDialog: React.FC<SuccessDialogProps> = ({
                     <span className="font-medium">{subscriptionDetails.productName}</span>
                   </div>
                 )}
-                {subscriptionDetails.quantity && (
+                {/* {subscriptionDetails.quantity && (
                   <div className="flex justify-between">
                     <span>Quantity:</span>
                     <span className="font-medium">{subscriptionDetails.quantity}</span>
                   </div>
-                )}
+                )} */}
                 {subscriptionDetails.period && (
                   <div className="flex justify-between">
                     <span>Period:</span>

@@ -622,8 +622,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
                     <SelectValue placeholder="Filter by city" />
                   </SelectTrigger>
                   <SelectContent className="max-h-60 overflow-y-auto">
-                    <SelectItem value="all">All Cities</SelectItem>
-                    {cities
+                     {cities
                       .sort((a, b) => a.name.localeCompare(b.name))
                       .map((city) => (
                         <SelectItem key={city.id} value={city.id.toString()}>

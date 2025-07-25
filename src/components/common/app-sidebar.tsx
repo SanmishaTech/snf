@@ -147,12 +147,12 @@ const initialData = {
           icon: Briefcase,
           groupLabel: "Indraai",
         },
-        // {
-        //   title: "Supervisors",
-        //   url: "/admin/supervisors",
-        //   icon: UsersRound,
-        //   groupLabel: "Indraai",
-        // },
+        {
+          title: "Supervisors",
+          url: "/admin/supervisors",
+          icon: UsersRound,
+          groupLabel: "Indraai",
+        },
         {
           title: "Orders",
           url: "/admin/orders",

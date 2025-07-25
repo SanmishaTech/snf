@@ -283,7 +283,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     if (formErrors[field as string]) {
       setFormErrors((prev) => ({ ...prev, [field as string]: "" }));
     }
-    
+
     // Real-time pincode validation - only validate if area master is selected
     if (field === "pincode" && typeof value === "string" && selectedAreaMaster) {
       validatePincode(value);
@@ -297,33 +297,33 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   const validatePincode = (pincode: string, areaMaster?: AreaMaster | null) => {
     const currentAreaMaster = areaMaster || selectedAreaMaster;
     console.log('validatePincode called with:', { pincode, currentAreaMaster: currentAreaMaster?.name });
-    
+
     if (!pincode || pincode.length < 6) {
       setPincodeValidation({ isValid: false, message: "", isValidating: false });
       return;
     }
 
     if (!currentAreaMaster) {
-      setPincodeValidation({ 
-        isValid: false, 
-        message: "Please select a delivery area first to validate your pincode", 
-        isValidating: false 
+      setPincodeValidation({
+        isValid: false,
+        message: "Please select a delivery area first to validate your pincode",
+        isValidating: false
       });
       return;
     }
 
     if (pincode.length === 6 && /^\d{6}$/.test(pincode)) {
       setPincodeValidation({ isValid: false, message: "", isValidating: true });
-      
+
       // Validate pincode against the selected area master immediately (no setTimeout)
       console.log('Selected area master pincodes:', currentAreaMaster.pincodes);
       const validation = validatePincodeInAreas(pincode, [currentAreaMaster]);
       console.log('Pincode validation result:', validation);
-      
+
       setPincodeValidation({
         isValid: validation.isValid,
-        message: validation.isValid 
-          ? `Great ! We deliver in your location` 
+        message: validation.isValid
+          ? `Great ! We deliver in your location`
           : `Milk Facility is Not available in your pincode. Please check your pincode or select a different area.`,
         isValidating: false
       });
@@ -343,12 +343,12 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       selectedArea: selectedAreaMaster?.name,
       city: addressFormState.city
     });
-    
+
     // Pre-fill service not available message
-    const message = selectedAreaMaster 
+    const message = selectedAreaMaster
       ? `We currently don't serve pincode ${addressFormState.pincode} in ${selectedAreaMaster.name}. Help us prioritize expanding to your area!`
       : `We currently don't serve pincode ${addressFormState.pincode}. Help us prioritize expanding to your area!`;
-    
+
     setServiceNotAvailableMessage(message);
     setShowEnhancedLeadModal(true);
   };
@@ -455,26 +455,26 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   );
 
   useEffect(() => {
-  const fetchAreaMasters = async () => {
-    try {
-      const areaMastersList = await getPublicAreaMasters();
-      setAreaMasters(areaMastersList);
-      setFilteredAreaMasters(areaMastersList);
-    } catch (error) {
-      console.error("Failed to fetch area masters:", error);
-      toast.error("Could not load delivery areas.");
-    }
-  };
+    const fetchAreaMasters = async () => {
+      try {
+        const areaMastersList = await getPublicAreaMasters();
+        setAreaMasters(areaMastersList);
+        setFilteredAreaMasters(areaMastersList);
+      } catch (error) {
+        console.error("Failed to fetch area masters:", error);
+        toast.error("Could not load delivery areas.");
+      }
+    };
 
-  const fetchCities = async () => {
-    try {
-      const citiesList = await getCitiesList();
-      setCities(citiesList);
-    } catch (error) {
-      console.error("Failed to fetch cities:", error);
-      toast.error("Could not load cities.");
-    }
-  };
+    const fetchCities = async () => {
+      try {
+        const citiesList = await getCitiesList();
+        setCities(citiesList);
+      } catch (error) {
+        console.error("Failed to fetch cities:", error);
+        toast.error("Could not load cities.");
+      }
+    };
 
     if (isOpen) {
       if (productId && depotId != null) {
@@ -544,11 +544,11 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       prev.map((variant) =>
         variant.variantId === variantId
           ? {
-              ...variant,
-              deliveryOption,
-              selectedDays:
-                deliveryOption === "select-days" ? variant.selectedDays : [],
-            }
+            ...variant,
+            deliveryOption,
+            selectedDays:
+              deliveryOption === "select-days" ? variant.selectedDays : [],
+          }
           : variant
       )
     );
@@ -724,7 +724,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     if (!addressFormState?.state?.trim()) errors.state = "State is required.";
     if (!addressFormState?.label?.trim())
       errors.label = "Address label is required.";
-    
+
     // Area master selection is required
     if (!selectedAreaMaster) {
       errors.areaMaster = "Please select a delivery area from our service locations.";
@@ -739,7 +739,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         isValid: validation.isValid,
         message: validation.message
       });
-      
+
       if (!validation.isValid) {
         errors.pincode = `Pincode ${addressFormState.pincode} is not served by ${selectedAreaMaster.name}. Please select a different area or request service.`;
       }
@@ -826,18 +826,18 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
         const mappedAddresses = Array.isArray(response)
           ? response.map((addr) => ({
-              id: addr.id.toString(),
-              recipientName: addr.recipientName || "",
-              mobile: addr.mobile || "",
-              plotBuilding: addr.plotBuilding || "",
-              streetArea: addr.streetArea || "",
-              landmark: addr.landmark || "",
-              city: addr.city || "",
-              state: addr.state || "",
-              pincode: addr.pincode || "",
-              isDefault: addr.isDefault || false,
-              label: addr.label || addr.type || "Home",
-            }))
+            id: addr.id.toString(),
+            recipientName: addr.recipientName || "",
+            mobile: addr.mobile || "",
+            plotBuilding: addr.plotBuilding || "",
+            streetArea: addr.streetArea || "",
+            landmark: addr.landmark || "",
+            city: addr.city || "",
+            state: addr.state || "",
+            pincode: addr.pincode || "",
+            isDefault: addr.isDefault || false,
+            label: addr.label || addr.type || "Home",
+          }))
           : [];
 
         setUserAddresses(mappedAddresses);
@@ -934,13 +934,13 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
   const handleSaveAddress = async () => {
     if (!validateAddressForm()) return;
-    
+
     // Check if this is a dairy product in a non-dairy area
-    const isDairyProductInNonDairyArea = product?.isDairyProduct && 
-      selectedAreaMaster && 
+    const isDairyProductInNonDairyArea = product?.isDairyProduct &&
+      selectedAreaMaster &&
       !selectedAreaMaster.isDairyProduct;
-    
-    
+
+
     if (isDairyProductInNonDairyArea) {
       // Create lead instead of address
       const leadData = {
@@ -961,11 +961,11 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       try {
         await createLead(leadData);
         toast.success("Thank you for your interest! We've noted your details and will contact you when we expand dairy delivery to your area.");
-        
+
         // Show area not served message
         setServiceNotAvailableMessage(`We don't currently serve dairy products in ${selectedAreaMaster.name}. However, we'd love to expand our dairy delivery services to your area! We've saved your details and will notify you when service becomes available.`);
         setShowServiceNotAvailableDialog(true);
-        
+
         // Reset form and go back to subscription details
         setAddressFormState({
           recipientName: "",
@@ -974,10 +974,11 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
           streetArea: "",
           landmark: "",
           pincode: "",
-          city: "",
-          state: "",
+          city: "Dombivli",
+          state: "Maharashtra",
           isDefault: false,
           label: "Home",
+          locationId: undefined,
         });
         setSelectedAreaMaster(null);
         setModalView("subscriptionDetails");
@@ -1002,10 +1003,11 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
           streetArea: "",
           landmark: "",
           pincode: "",
-          city: "",
-          state: "",
+          city: "Dombivli",
+          state: "Maharashtra",
           isDefault: false,
           label: "Home",
+          locationId: undefined,
         });
       } catch (error) {
         console.error("Failed to save address:", error);
@@ -1019,14 +1021,14 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   // Handle area master selection 
   const handleAreaMasterSelection = async (areaMaster: AreaMaster) => {
     console.log('handleAreaMasterSelection called with:', areaMaster.name);
-    
+
     setSelectedAreaMaster(areaMaster);
-    
+
     // Clear area master validation error when an area is selected
     if (formErrors.areaMaster) {
       setFormErrors((prev) => ({ ...prev, areaMaster: "" }));
     }
-    
+
     // Store dairy validation message for later use during save, but don't show dialog immediately
     if (product?.isDairyProduct && !areaMaster.isDairyProduct) {
       const message = `We don't currently serve dairy products in ${areaMaster.name}. However, we'd love to expand our dairy delivery services to your area!`;
@@ -1035,7 +1037,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       // Area is valid for this product type
       setServiceNotAvailableMessage("");
     }
-    
+
     // If pincode is already filled, revalidate it against the newly selected area
     if (addressFormState.pincode && addressFormState.pincode.length === 6) {
       console.log('Revalidating pincode against newly selected area:', {
@@ -1332,16 +1334,16 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     try {
       setIsLoading(true);
       const response = await createOrderWithSubscriptions(payload);
-      
+
       // Set success details
       const totalAmount = subscriptionSummary?.totalPrice || 0;
       const finalAmount = useWallet ? totalAmount - walletDeduction : totalAmount;
-      
+
       setSuccessDetails({
         subscriptionId: response?.subscriptionId || `SUB-${Date.now()}`,
         totalAmount: finalAmount,
       });
-      
+
       // Show success dialog instead of toast
       setShowSuccessDialog(true);
       onOpenChange(false);
@@ -1415,9 +1417,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         });
       });
 
-      deliveryDescription = `${selectedVariants.length} variant${
-        selectedVariants.length > 1 ? "s" : ""
-      } `;
+      deliveryDescription = `${selectedVariants.length} variant${selectedVariants.length > 1 ? "s" : ""
+        } `;
     } else {
       // Original calculation for single product
       let deliveryCount = 0;
@@ -1425,9 +1426,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         case "daily":
           deliveryCount = selectedPeriod;
           totalQuantity = quantity * deliveryCount;
-          deliveryDescription = `Daily delivery of ${quantity} item${
-            quantity > 1 ? "s" : ""
-          }`;
+          deliveryDescription = `Daily delivery of ${quantity} item${quantity > 1 ? "s" : ""
+            }`;
           break;
 
         case "select-days":
@@ -1485,9 +1485,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
             const dayLabels = daysOfWeek
               .filter((day) => selectedDays.includes(day.id))
               .map((day) => day.label);
-            deliveryDescription = `On ${
-              dayLabels.join(", ") || "selected days"
-            }`;
+            deliveryDescription = `On ${dayLabels.join(", ") || "selected days"
+              }`;
           }
           break;
 
@@ -1587,73 +1586,84 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         <div className="flex flex-col h-full overflow-hidden">
           <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4 bg-gray-50 min-h-0">
             {modalView === "subscriptionDetails" ? (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Left Column */}
-                <div className="space-y-4">
-                  {/* Subscription Period */}
-                  <div className="bg-white border border-gray-200 rounded-lg p-3">
-                    <h3 className="text-sm font-medium text-gray-600 mb-2 flex items-center gap-1">
-                      <CalendarIcon className="h-3.5 w-3.5" />
-                      Subscription Period
-                    </h3>
-                    <div className="flex gap-1.5 bg-gray-50 p-1 rounded-lg">
-                      {subscriptionPeriods.map((period) => (
-                        <button
-                          key={period.value}
-                          type="button"
-                          className={`flex-1 h-9 px-3 rounded-md transition-all duration-200 relative ${
-                            selectedPeriod === period.value
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Left Column */}
+                  <div className="space-y-4">
+                    {/* Subscription Period */}
+                    <div className="bg-white border border-gray-200 rounded-lg p-3">
+                      <h3 className="text-sm font-medium text-gray-600 mb-2 flex items-center gap-1">
+                        <CalendarIcon className="h-3.5 w-3.5" />
+                        Subscription Period
+                      </h3>
+                      <div className="flex gap-1.5 bg-gray-50 p-1 rounded-lg max-[1291px]:flex-col">
+                        {subscriptionPeriods.map((period) => (
+                          <button
+                            key={period.value}
+                            type="button"
+                            className={`flex-1 h-9 px-3 max-[1291px]:py-2 rounded-md transition-all duration-200 relative ${selectedPeriod === period.value
                               ? "bg-primary text-white shadow-sm"
                               : "bg-white hover:bg-gray-100 text-gray-700 border border-gray-200"
-                          }`}
-                          onClick={() => setSelectedPeriod(period.value)}
-                        >
-                          <div className="flex items-center justify-center h-full">
-                            <div className="flex items-baseline gap-1">
-                              <span className="font-semibold text-base">
-                                {period.value}
-                              </span>
-                              <span className={`text-sm ${
-                                selectedPeriod === period.value ? "text-white/90" : "text-gray-500"
-                              }`}>
-                                days
-                                
-                              </span>
+                              }`}
+                            onClick={() => setSelectedPeriod(period.value)}
+                          >
+                            <div className="flex items-center justify-center h-full ">
+                              <div className="flex items-baseline gap-1">
+                                {period.value === 3 && (
+                                  <span className="font-semibold text-base max-[1020px]:text-xs text-sm">
+                                    Trial Pack -
+                                  </span>)}
+                                {period.value === 15 && (
+                                  <span className="font-semibold text-base">
+                                    Mid Saver -
+                                  </span>)}
+                                {period.value === 30 && (
+                                  <span className="font-semibold text-base">
+                                    Super Saver  -
+                                  </span>)}
+                                <span className="font-semibold text-base">
+                                  {period.value}
+                                </span>
+
+                                <span className={`text-sm ${selectedPeriod === period.value ? "text-white/90" : "text-gray-500"
+                                  }`}>
+                                  days
+
+                                </span>
+                              </div>
+
+                              {period.value === 30 && (
+                                <span className="absolute -top-2 -right-1 bg-black text-white text-[9px] px-1.5 py-0.5 rounded-full font-medium">
+                                  Super Saver
+                                </span>
+                              )}
+                              {period.value === 3 && (
+                                <span className="absolute -top-2 -right-1 bg-black text-white text-[9px] px-1.5 py-0.5 rounded-full font-medium">
+                                  Trial Pack
+                                </span>
+                              )}
+                              {period.value === 15 && (
+                                <span className="absolute -top-2 -right-1 bg-black text-white text-[9px] px-1.5 py-0.5 rounded-full font-medium">
+                                  Mid Saver
+                                </span>
+                              )}
                             </div>
-                            
-                            {period.value === 30 && (
-                              <span className="absolute -top-2 -right-1 bg-black text-white text-[9px] px-1.5 py-0.5 rounded-full font-medium">
-                                Super Saver
-                              </span>
-                            )}
-                             {period.value === 3 && (
-                              <span className="absolute -top-2 -right-1 bg-black text-white text-[9px] px-1.5 py-0.5 rounded-full font-medium">
-                                Trial Pack
-                              </span>
-                            )}
-                             {period.value === 15 && (
-                              <span className="absolute -top-2 -right-1 bg-black text-white text-[9px] px-1.5 py-0.5 rounded-full font-medium">
-                                Mid Saver   
-                              </span>
-                            )}
-                          </div>
-                        </button>
-                      ))}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Start Date */}
+                    {/* Start Date */}
 
-                  {/* Variant Selection Section */}
-                  {hasVariants && productVariants.length > 0 && (
-                    <div className="bg-white border border-gray-200 rounded-lg p-2.5">
-                      <div className="flex justify-between items-center mb-2">
-                        <h3 className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                          <Package className="h-3 w-3" />
-                          Product Variants
-                        </h3>
-                        <Button
+                    {/* Variant Selection Section */}
+                    {hasVariants && productVariants.length > 0 && (
+                      <div className="bg-white border border-gray-200 rounded-lg p-2.5">
+                        <div className="flex justify-between items-center mb-2">
+                          <h3 className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                            <Package className="h-3 w-3" />
+                            Product Variants
+                          </h3>
+                          <Button
                             variant="outline"
                             size="sm"
                             onClick={() => setSelectedVariants([])}
@@ -1663,323 +1673,271 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                             Clear
                           </Button>
 
-                   
-                      </div>
 
-                      {/* Variant Grid Selection with Individual Delivery Schedules - Responsive Layout */}
-                      <div className="flex flex-col sm:flex-row gap-3 sm:overflow-x-auto sm:pb-2 sm:-mx-2 sm:px-2">
-                        {productVariants.map((variant) => {
-                          const isSelected = selectedVariants.some(
-                            (sv) => sv.variantId === variant.id
-                          );
-                          const selectedVariant = selectedVariants.find(
-                            (sv) => sv.variantId === variant.id
-                          );
+                        </div>
 
-                          return (
-                            <div
-                              key={variant.id}
-                              className={`w-full sm:flex-shrink-0 sm:w-72 border rounded-lg p-3 transition-all ${
-                                isSelected
+                        {/* Variant Grid Selection with Individual Delivery Schedules - Responsive Layout */}
+                        <div className="flex flex-col sm:flex-row gap-3 sm:overflow-x-auto sm:pb-2 sm:-mx-2 sm:px-2">
+                          {productVariants.map((variant) => {
+                            const isSelected = selectedVariants.some(
+                              (sv) => sv.variantId === variant.id
+                            );
+                            const selectedVariant = selectedVariants.find(
+                              (sv) => sv.variantId === variant.id
+                            );
+
+                            return (
+                              <div
+                                key={variant.id}
+                                className={`w-full sm:flex-shrink-0 sm:w-72 border rounded-lg p-3 transition-all ${isSelected
                                   ? "border-red-500 bg-red-50 shadow-md"
                                   : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                              }`}
-                            >
-                              {/* Variant Header - Always Visible */}
-                              <div className="mb-3">
-                                <div className="flex items-start justify-between mb-2">
-                                  <div className="flex items-start gap-2 flex-1">
-                                    {/* Checkbox */}
-                                    <div
-                                      className={`w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 cursor-pointer flex-shrink-0 ${
-                                        isSelected
+                                  }`}
+                              >
+                                {/* Variant Header - Always Visible */}
+                                <div className="mb-3">
+                                  <div className="flex items-start justify-between mb-2">
+                                    <div className="flex items-start gap-2 flex-1">
+                                      {/* Checkbox */}
+                                      <div
+                                        className={`w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 cursor-pointer flex-shrink-0 ${isSelected
                                           ? "bg-primary border-primary"
                                           : "border-gray-300"
-                                      }`}
-                                      onClick={() => {
-                                        if (isSelected) {
-                                          setSelectedVariants((prev) =>
-                                            prev.filter(
-                                              (sv) => sv.variantId !== variant.id
-                                            )
-                                          );
-                                        } else {
-                                          setSelectedVariants((prev) => [
-                                            ...prev,
-                                            {
-                                              variantId: variant.id,
-                                              quantity: 1,
-                                              quantityVarying2: 1,
-                                              deliveryOption: "daily",
-                                              selectedDays: [],
-                                            },
-                                          ]);
-                                        }
-                                      }}
-                                    >
-                                      {isSelected && (
-                                        <svg
-                                          className="w-3 h-3 text-white"
-                                          fill="currentColor"
-                                          viewBox="0 0 20 20"
-                                        >
-                                          <path
-                                            fillRule="evenodd"
-                                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                            clipRule="evenodd"
-                                          />
-                                        </svg>
-                                      )}
+                                          }`}
+                                        onClick={() => {
+                                          if (isSelected) {
+                                            setSelectedVariants((prev) =>
+                                              prev.filter(
+                                                (sv) => sv.variantId !== variant.id
+                                              )
+                                            );
+                                          } else {
+                                            setSelectedVariants((prev) => [
+                                              ...prev,
+                                              {
+                                                variantId: variant.id,
+                                                quantity: 1,
+                                                quantityVarying2: 1,
+                                                deliveryOption: "daily",
+                                                selectedDays: [],
+                                              },
+                                            ]);
+                                          }
+                                        }}
+                                      >
+                                        {isSelected && (
+                                          <svg
+                                            className="w-3 h-3 text-white"
+                                            fill="currentColor"
+                                            viewBox="0 0 20 20"
+                                          >
+                                            <path
+                                              fillRule="evenodd"
+                                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                              clipRule="evenodd"
+                                            />
+                                          </svg>
+                                        )}
+                                      </div>
+
+                                      {/* Variant Name */}
+                                      <h4 className="font-medium text-gray-900 text-sm">
+                                        {variant.name}
+                                      </h4>
                                     </div>
 
-                                    {/* Variant Name */}
-                                    <h4 className="font-medium text-gray-900 text-sm">
-                                      {variant.name}
-                                    </h4>
-                                  </div>
-                                  
-                                  {/* Price Badge */}
-                                  <Badge variant="outline" className="bg-green-50 border-green-600 px-2 py-1">
-                                    {variant.mrp && variant.mrp > getVariantPriceForPeriod(variant, selectedPeriod) ? (
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-xs text-gray-500 line-through">
-                                          ₹{variant.mrp}
-                                        </span>
+                                    {/* Price Badge */}
+                                    <Badge variant="outline" className="bg-green-50 border-green-600 px-2 py-1">
+                                      {variant.mrp && variant.mrp > getVariantPriceForPeriod(variant, selectedPeriod) ? (
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-xs text-gray-500 line-through">
+                                            ₹{variant.mrp}
+                                          </span>
+                                          <span className="text-sm text-green-700 font-bold">
+                                            ₹{getVariantPriceForPeriod(variant, selectedPeriod)}
+                                          </span>
+                                        </div>
+                                      ) : (
                                         <span className="text-sm text-green-700 font-bold">
                                           ₹{getVariantPriceForPeriod(variant, selectedPeriod)}
                                         </span>
-                                      </div>
-                                    ) : (
-                                      <span className="text-sm text-green-700 font-bold">
-                                        ₹{getVariantPriceForPeriod(variant, selectedPeriod)}
-                                      </span>
-                                    )}
-                                    {variant.unit && (
-                                      <span className="text-xs text-gray-600 ml-1">/{variant.unit}</span>
-                                    )}
-                                  </Badge>
-                                </div>
-                                
-                                {/* Description */}
-                                {variant.description && (
-                                  <p className="text-sm text-gray-600 ml-7">
-                                    {variant.description}
-                                  </p>
-                                )}
-                              </div>
-
-                              {/* Expandable Content - Only show when selected */}
-                              {isSelected && selectedVariant && (
-                                <div className="space-y-3 border-t border-gray-200 pt-3">
-                                  {/* Delivery Schedule Options */}
-                                  <div>
-                                    <Label className="text-[10px] font-medium text-gray-700 mb-1 block flex items-center gap-0.5">
-                                      <Clock className="h-2.5 w-2.5" />
-                                      Schedule
-                                    </Label>
-                                    <div className="grid grid-cols-2 gap-0.5">
-                                      <Button
-                                        variant={
-                                          selectedVariant.deliveryOption ===
-                                          "daily"
-                                            ? "default"
-                                            : "outline"
-                                        }
-                                        size="sm"
-                                        className={`h-6 text-sm px-1 ${
-                                          selectedVariant.deliveryOption ===
-                                          "daily"
-                                            ? "bg-secondary hover:bg-secondary/80"
-                                            : "border-gray-300"
-                                        }`}
-                                        onClick={() =>
-                                          updateVariantDeliveryOption(
-                                            variant.id,
-                                            "daily"
-                                          )
-                                        }
-                                      >
-                                        Daily
-                                      </Button>
-                                            {selectedPeriod >= 15 && (
-                                              <Button
-                                                variant={
-                                                  selectedVariant.deliveryOption ===
-                                                  "alternate-days"
-                                                    ? "default"
-                                                    : "outline"
-                                                }
-                                                size="sm"
-                                                className={`h-7 text-sm ${
-                                                  selectedVariant.deliveryOption ===
-                                                  "alternate-days"
-                                                    ? "bg-secondary hover:bg-secondary/80"
-                                                    : "border-gray-300"
-                                                }`}
-                                                title="Delivery every other day"
-                                                onClick={() =>
-                                                  updateVariantDeliveryOption(
-                                                    variant.id,
-                                                    "alternate-days"
-                                                  )
-                                                }
-                                              >
-                                                Alternate Days
-                                              </Button>
-                                            )}
-                                            {selectedPeriod >= 7 && (
-                                              <Button
-                                                variant={
-                                                  selectedVariant.deliveryOption ===
-                                                  "day1-day2"
-                                                    ? "default"
-                                                    : "outline"
-                                                }
-                                                size="sm"
-                                                className={`h-7 text-sm ${
-                                                  selectedVariant.deliveryOption ===
-                                                  "day1-day2"
-                                                    ? "bg-secondary hover:bg-blue-600"
-                                                    : "border-gray-300"
-                                                } truncate`}
-                                                title="Daily Delivery with Varying Quantities"
-                                                onClick={() =>
-                                                  updateVariantDeliveryOption(
-                                                    variant.id,
-                                                    "day1-day2"
-                                                  )
-                                                }
-                                              >
-                                                Day 1 - Day 2
-                                              </Button>
-                                            )}
-                                            {selectedPeriod >= 30 && (
-                                              <Button
-                                                variant={
-                                                  selectedVariant.deliveryOption ===
-                                                  "select-days"
-                                                    ? "default"
-                                                    : "outline"
-                                                }
-                                                size="sm"
-                                                className={`h-7 text-sm ${
-                                                  selectedVariant.deliveryOption ===
-                                                  "select-days"
-                                                    ? "bg-secondary hover:bg-blue-600"
-                                                    : "border-gray-300"
-                                                }`}
-                                                title="Choose specific days for delivery"
-                                                onClick={() =>
-                                                  updateVariantDeliveryOption(
-                                                    variant.id,
-                                                    "select-days"
-                                                  )
-                                                }
-                                              >
-                                                Weekdays
-                                              </Button>
-                                            )}
-                                    </div>
+                                      )}
+                                      {variant.unit && (
+                                        <span className="text-xs text-gray-600 ml-1">/{variant.unit}</span>
+                                      )}
+                                    </Badge>
                                   </div>
 
-                                  {/* Day Selection for Select Days Option */}
-                                  {selectedVariant.deliveryOption ===
-                                    "select-days" && (
+                                  {/* Description */}
+                                  {variant.description && (
+                                    <p className="text-sm text-gray-600 ml-7">
+                                      {variant.description}
+                                    </p>
+                                  )}
+                                </div>
+
+                                {/* Expandable Content - Only show when selected */}
+                                {isSelected && selectedVariant && (
+                                  <div className="space-y-3 border-t border-gray-200 pt-3">
+                                    {/* Delivery Schedule Options */}
                                     <div>
-                                      <Label className="text-sm font-medium text-gray-700 mb-1 block">
-                                        Select days (min 3):
+                                      <Label className="text-[10px] font-medium text-gray-700 mb-1 block flex items-center gap-0.5">
+                                        <Clock className="h-2.5 w-2.5" />
+                                        Schedule
                                       </Label>
-                                      <div className="flex flex-wrap gap-1">
-                                        {daysOfWeek.map((day) => (
+                                      <div className="grid grid-cols-2 gap-0.5">
+                                        <Button
+                                          variant={
+                                            selectedVariant.deliveryOption ===
+                                              "daily"
+                                              ? "default"
+                                              : "outline"
+                                          }
+                                          size="sm"
+                                          className={`h-6 text-sm px-1 ${selectedVariant.deliveryOption ===
+                                            "daily"
+                                            ? "bg-secondary hover:bg-secondary/80"
+                                            : "border-gray-300"
+                                            }`}
+                                          onClick={() =>
+                                            updateVariantDeliveryOption(
+                                              variant.id,
+                                              "daily"
+                                            )
+                                          }
+                                        >
+                                          Daily
+                                        </Button>
+                                        {selectedPeriod >= 15 && (
                                           <Button
-                                            key={day.id}
-                                            type="button"
-                                            size="sm"
                                             variant={
-                                              selectedVariant.selectedDays.includes(
-                                                day.id
-                                              )
+                                              selectedVariant.deliveryOption ===
+                                                "alternate-days"
                                                 ? "default"
                                                 : "outline"
                                             }
-                                            className={`h-6 w-8 p-0 text-sm ${
-                                              selectedVariant.selectedDays.includes(
-                                                day.id
-                                              )
-                                                ? "bg-primary"
-                                                : "border-gray-300 text-gray-700"
-                                            }`}
+                                            size="sm"
+                                            className={`h-7 text-sm ${selectedVariant.deliveryOption ===
+                                              "alternate-days"
+                                              ? "bg-secondary hover:bg-secondary/80"
+                                              : "border-gray-300"
+                                              }`}
+                                            title="Delivery every other day"
                                             onClick={() =>
-                                              toggleVariantDay(
+                                              updateVariantDeliveryOption(
                                                 variant.id,
-                                                day.id
+                                                "alternate-days"
                                               )
                                             }
                                           >
-                                            {day.label}
+                                            Alternate Days
                                           </Button>
-                                        ))}
+                                        )}
+                                        {selectedPeriod >= 7 && (
+                                          <Button
+                                            variant={
+                                              selectedVariant.deliveryOption ===
+                                                "day1-day2"
+                                                ? "default"
+                                                : "outline"
+                                            }
+                                            size="sm"
+                                            className={`h-7 text-sm ${selectedVariant.deliveryOption ===
+                                              "day1-day2"
+                                              ? "bg-secondary hover:bg-blue-600"
+                                              : "border-gray-300"
+                                              } truncate`}
+                                            title="Daily Delivery with Varying Quantities"
+                                            onClick={() =>
+                                              updateVariantDeliveryOption(
+                                                variant.id,
+                                                "day1-day2"
+                                              )
+                                            }
+                                          >
+                                            Day 1 - Day 2
+                                          </Button>
+                                        )}
+                                        {selectedPeriod >= 30 && (
+                                          <Button
+                                            variant={
+                                              selectedVariant.deliveryOption ===
+                                                "select-days"
+                                                ? "default"
+                                                : "outline"
+                                            }
+                                            size="sm"
+                                            className={`h-7 text-sm ${selectedVariant.deliveryOption ===
+                                              "select-days"
+                                              ? "bg-secondary hover:bg-blue-600"
+                                              : "border-gray-300"
+                                              }`}
+                                            title="Choose specific days for delivery"
+                                            onClick={() =>
+                                              updateVariantDeliveryOption(
+                                                variant.id,
+                                                "select-days"
+                                              )
+                                            }
+                                          >
+                                            Weekdays
+                                          </Button>
+                                        )}
                                       </div>
                                     </div>
-                                  )}
 
-                                  {/* Quantity Controls */}
-                                  {(selectedVariant.deliveryOption ===
-                                    "daily" ||
-                                    selectedVariant.deliveryOption ===
-                                      "select-days" ||
-                                    selectedVariant.deliveryOption ===
-                                      "alternate-days") && (
-                                    <div>
-                                      <Label className="text-sm font-medium text-gray-700 mb-1 block">
-                                        Quantity per delivery:
-                                      </Label>
-                                      <div className="flex items-center border rounded overflow-hidden bg-white w-fit">
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() =>
-                                            updateVariantQuantity(
-                                              variant.id,
-                                              "quantity",
-                                              selectedVariant.quantity - 1
-                                            )
-                                          }
-                                          className="h-7 w-7 p-0 hover:bg-gray-100"
-                                        >
-                                          <Minus className="h-3 w-3" />
-                                        </Button>
-                                        <span className="px-3 py-1 text-sm font-medium min-w-[40px] text-center">
-                                          {selectedVariant.quantity}
-                                        </span>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() =>
-                                            updateVariantQuantity(
-                                              variant.id,
-                                              "quantity",
-                                              selectedVariant.quantity + 1
-                                            )
-                                          }
-                                          className="h-7 w-7 p-0 hover:bg-gray-100"
-                                        >
-                                          <Plus className="h-3 w-3" />
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {selectedVariant.deliveryOption ===
-                                    "day1-day2" && (
-                                    <div>
-                                      <Label className="text-sm font-medium text-gray-700 mb-1 block">
-                                        Quantities:
-                                      </Label>
-                                      <div className="flex gap-3">
+                                    {/* Day Selection for Select Days Option */}
+                                    {selectedVariant.deliveryOption ===
+                                      "select-days" && (
                                         <div>
-                                          <div className="text-sm text-gray-600 mb-1">Day 1:</div>
-                                          <div className="flex items-center border rounded overflow-hidden bg-white">
+                                          <Label className="text-sm font-medium text-gray-700 mb-1 block">
+                                            Select days (min 3):
+                                          </Label>
+                                          <div className="flex flex-wrap gap-1">
+                                            {daysOfWeek.map((day) => (
+                                              <Button
+                                                key={day.id}
+                                                type="button"
+                                                size="sm"
+                                                variant={
+                                                  selectedVariant.selectedDays.includes(
+                                                    day.id
+                                                  )
+                                                    ? "default"
+                                                    : "outline"
+                                                }
+                                                className={`h-6 w-8 p-0 text-sm ${selectedVariant.selectedDays.includes(
+                                                  day.id
+                                                )
+                                                  ? "bg-primary"
+                                                  : "border-gray-300 text-gray-700"
+                                                  }`}
+                                                onClick={() =>
+                                                  toggleVariantDay(
+                                                    variant.id,
+                                                    day.id
+                                                  )
+                                                }
+                                              >
+                                                {day.label}
+                                              </Button>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+
+                                    {/* Quantity Controls */}
+                                    {(selectedVariant.deliveryOption ===
+                                      "daily" ||
+                                      selectedVariant.deliveryOption ===
+                                      "select-days" ||
+                                      selectedVariant.deliveryOption ===
+                                      "alternate-days") && (
+                                        <div>
+                                          <Label className="text-sm font-medium text-gray-700 mb-1 block">
+                                            Quantity per delivery:
+                                          </Label>
+                                          <div className="flex items-center border rounded overflow-hidden bg-white w-fit">
                                             <Button
                                               variant="ghost"
                                               size="sm"
@@ -1994,7 +1952,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                             >
                                               <Minus className="h-3 w-3" />
                                             </Button>
-                                            <span className="px-2 py-1 text-sm font-medium min-w-[30px] text-center">
+                                            <span className="px-3 py-1 text-sm font-medium min-w-[40px] text-center">
                                               {selectedVariant.quantity}
                                             </span>
                                             <Button
@@ -2013,264 +1971,270 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                             </Button>
                                           </div>
                                         </div>
+                                      )}
+
+                                    {selectedVariant.deliveryOption ===
+                                      "day1-day2" && (
                                         <div>
-                                          <div className="text-sm text-gray-600 mb-1">Day 2:</div>
-                                          <div className="flex items-center border rounded overflow-hidden bg-white">
-                                            <Button
-                                              variant="ghost"
-                                              size="sm"
-                                              onClick={() =>
-                                                updateVariantQuantity(
-                                                  variant.id,
-                                                  "quantityVarying2",
-                                                  (selectedVariant.quantityVarying2 || 1) - 1
-                                                )
-                                              }
-                                              className="h-7 w-7 p-0 hover:bg-gray-100"
-                                            >
-                                              <Minus className="h-3 w-3" />
-                                            </Button>
-                                            <span className="px-2 py-1 text-sm font-medium min-w-[30px] text-center">
-                                              {selectedVariant.quantityVarying2 || 1}
-                                            </span>
-                                            <Button
-                                              variant="ghost"
-                                              size="sm"
-                                              onClick={() =>
-                                                updateVariantQuantity(
-                                                  variant.id,
-                                                  "quantityVarying2",
-                                                  (selectedVariant.quantityVarying2 || 1) + 1
-                                                )
-                                              }
-                                              className="h-7 w-7 p-0 hover:bg-gray-100"
-                                            >
-                                              <Plus className="h-3 w-3" />
-                                            </Button>
+                                          <Label className="text-sm font-medium text-gray-700 mb-1 block">
+                                            Quantities:
+                                          </Label>
+                                          <div className="flex gap-3">
+                                            <div>
+                                              <div className="text-sm text-gray-600 mb-1">Day 1:</div>
+                                              <div className="flex items-center border rounded overflow-hidden bg-white">
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  onClick={() =>
+                                                    updateVariantQuantity(
+                                                      variant.id,
+                                                      "quantity",
+                                                      selectedVariant.quantity - 1
+                                                    )
+                                                  }
+                                                  className="h-7 w-7 p-0 hover:bg-gray-100"
+                                                >
+                                                  <Minus className="h-3 w-3" />
+                                                </Button>
+                                                <span className="px-2 py-1 text-sm font-medium min-w-[30px] text-center">
+                                                  {selectedVariant.quantity}
+                                                </span>
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  onClick={() =>
+                                                    updateVariantQuantity(
+                                                      variant.id,
+                                                      "quantity",
+                                                      selectedVariant.quantity + 1
+                                                    )
+                                                  }
+                                                  className="h-7 w-7 p-0 hover:bg-gray-100"
+                                                >
+                                                  <Plus className="h-3 w-3" />
+                                                </Button>
+                                              </div>
+                                            </div>
+                                            <div>
+                                              <div className="text-sm text-gray-600 mb-1">Day 2:</div>
+                                              <div className="flex items-center border rounded overflow-hidden bg-white">
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  onClick={() =>
+                                                    updateVariantQuantity(
+                                                      variant.id,
+                                                      "quantityVarying2",
+                                                      (selectedVariant.quantityVarying2 || 1) - 1
+                                                    )
+                                                  }
+                                                  className="h-7 w-7 p-0 hover:bg-gray-100"
+                                                >
+                                                  <Minus className="h-3 w-3" />
+                                                </Button>
+                                                <span className="px-2 py-1 text-sm font-medium min-w-[30px] text-center">
+                                                  {selectedVariant.quantityVarying2 || 1}
+                                                </span>
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  onClick={() =>
+                                                    updateVariantQuantity(
+                                                      variant.id,
+                                                      "quantityVarying2",
+                                                      (selectedVariant.quantityVarying2 || 1) + 1
+                                                    )
+                                                  }
+                                                  className="h-7 w-7 p-0 hover:bg-gray-100"
+                                                >
+                                                  <Plus className="h-3 w-3" />
+                                                </Button>
+                                              </div>
+                                            </div>
                                           </div>
                                         </div>
-                                      </div>
+                                      )}
+                                    {/* Schedule Summary */}
+                                    <div className="bg-blue-50 px-2 py-1 rounded text-sm text-blue-700 border border-blue-200">
+                                      <span className="font-medium">
+                                        {selectedVariant.deliveryOption === "daily" && "Daily delivery"}
+                                        {selectedVariant.deliveryOption === "select-days" &&
+                                          (selectedVariant.selectedDays.length > 0
+                                            ? `${selectedVariant.selectedDays.length} days/week`
+                                            : "Select delivery days")}
+                                        {selectedVariant.deliveryOption === "alternate-days" && "Alternate days"}
+                                        {selectedVariant.deliveryOption === "day1-day2" && "Varying quantities"}
+                                      </span>
                                     </div>
-                                  )}
-                                  {/* Schedule Summary */}
-                                  <div className="bg-blue-50 px-2 py-1 rounded text-sm text-blue-700 border border-blue-200">
-                                    <span className="font-medium">
-                                      {selectedVariant.deliveryOption === "daily" && "Daily delivery"}
-                                      {selectedVariant.deliveryOption === "select-days" &&
-                                        (selectedVariant.selectedDays.length > 0
-                                          ? `${selectedVariant.selectedDays.length} days/week`
-                                          : "Select delivery days")}
-                                      {selectedVariant.deliveryOption === "alternate-days" && "Alternate days"}
-                                      {selectedVariant.deliveryOption === "day1-day2" && "Varying quantities"}
-                                    </span>
                                   </div>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+
+
+
+                        {formErrors.selectedVariants && (
+                          <p className="text-red-500 text-sm mt-2">
+                            {formErrors.selectedVariants}
+                          </p>
+                        )}
+                        {formErrors.variantSchedules && (
+                          <p className="text-red-500 text-sm mt-2">
+                            {formErrors.variantSchedules}
+                          </p>
+                        )}
                       </div>
+                    )}
 
-                      
-
-                      {formErrors.selectedVariants && (
-                        <p className="text-red-500 text-sm mt-2">
-                          {formErrors.selectedVariants}
-                        </p>
-                      )}
-                      {formErrors.variantSchedules && (
-                        <p className="text-red-500 text-sm mt-2">
-                          {formErrors.variantSchedules}
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Non-variant delivery options */}
-                  {!hasVariants && (
-                    <div className="bg-white border border-gray-200 rounded-lg p-4">
-                      <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        Delivery Schedule
-                      </h3>
-                      <div className="flex gap-2 flex-wrap">
-                        <Button
-                          variant={
-                            deliveryOption === "daily" ? "default" : "outline"
-                          }
-                          className={`h-8 text-sm px-3 ${
-                            deliveryOption === "daily"
+                    {/* Non-variant delivery options */}
+                    {!hasVariants && (
+                      <div className="bg-white border border-gray-200 rounded-lg p-4">
+                        <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                          <Clock className="h-4 w-4" />
+                          Delivery Schedule
+                        </h3>
+                        <div className="flex gap-2 flex-wrap">
+                          <Button
+                            variant={
+                              deliveryOption === "daily" ? "default" : "outline"
+                            }
+                            className={`h-8 text-sm px-3 ${deliveryOption === "daily"
                               ? "bg-secondary hover:bg-secondary/80"
                               : "border-gray-300"
-                          }`}
-                          title="Delivery every day"
-                          onClick={() => setDeliveryOption("daily")}
-                        >
-                          Daily
-                        </Button>
-                        {selectedPeriod >= 15 && (
-                          <Button
-                            variant={
-                              deliveryOption === "alternate-days"
-                                ? "default"
-                                : "outline"
-                            }
-                            className={`h-8 text-sm px-3 ${
-                              deliveryOption === "alternate-days"
+                              }`}
+                            title="Delivery every day"
+                            onClick={() => setDeliveryOption("daily")}
+                          >
+                            Daily
+                          </Button>
+                          {selectedPeriod >= 15 && (
+                            <Button
+                              variant={
+                                deliveryOption === "alternate-days"
+                                  ? "default"
+                                  : "outline"
+                              }
+                              className={`h-8 text-sm px-3 ${deliveryOption === "alternate-days"
                                 ? "bg-secondary hover:bg-secondary/80"
                                 : "border-gray-300"
-                            }`}
-                            title="Delivery every other day"
-                            onClick={() => setDeliveryOption("alternate-days")}
-                          >
-                            Alternate
-                          </Button>
-                        )}
-                        {selectedPeriod >= 7 && (
-                          <Button
-                            variant={
-                              deliveryOption === "day1-day2"
-                                ? "default"
-                                : "outline"
-                            }
-                            className={`h-8 text-sm px-3 ${
-                              deliveryOption === "day1-day2"
+                                }`}
+                              title="Delivery every other day"
+                              onClick={() => setDeliveryOption("alternate-days")}
+                            >
+                              Alternate
+                            </Button>
+                          )}
+                          {selectedPeriod >= 7 && (
+                            <Button
+                              variant={
+                                deliveryOption === "day1-day2"
+                                  ? "default"
+                                  : "outline"
+                              }
+                              className={`h-8 text-sm px-3 ${deliveryOption === "day1-day2"
                                 ? "bg-secondary hover:bg-secondary/80"
                                 : "border-gray-300"
-                            }`}
-                            title="Customize quantities for Day 1 and Day 2"
-                            onClick={() => setDeliveryOption("day1-day2")}
-                          >
-                            Day 1-2
-                          </Button>
-                        )}
-                        {selectedPeriod >= 30 && (
-                          <Button
-                            variant={
-                              deliveryOption === "select-days"
-                                ? "default"
-                                : "outline"
-                            }
-                            className={`h-8 text-sm px-3 ${
-                              deliveryOption === "select-days"
+                                }`}
+                              title="Customize quantities for Day 1 and Day 2"
+                              onClick={() => setDeliveryOption("day1-day2")}
+                            >
+                              Day 1-2
+                            </Button>
+                          )}
+                          {selectedPeriod >= 30 && (
+                            <Button
+                              variant={
+                                deliveryOption === "select-days"
+                                  ? "default"
+                                  : "outline"
+                              }
+                              className={`h-8 text-sm px-3 ${deliveryOption === "select-days"
                                 ? "bg-secondary hover:bg-secondary/80"
                                 : "border-gray-300"
-                            }`}
-                            title="Choose specific days for delivery"
-                            onClick={() => setDeliveryOption("select-days")}
-                          >
-                            Select Days
-                          </Button>
-                        )}
-                      </div>
+                                }`}
+                              title="Choose specific days for delivery"
+                              onClick={() => setDeliveryOption("select-days")}
+                            >
+                              Select Days
+                            </Button>
+                          )}
+                        </div>
 
-                      {/* Inline details based on selected option */}
-                      <div className="mt-3">
-                        {deliveryOption === "daily" && (
-                          <div className="text-sm text-blue-700 bg-blue-50 px-3 py-2 rounded-md border border-blue-200">
-                            Daily delivery - Fresh products every day
-                          </div>
-                        )}
-                        
-                        {deliveryOption === "alternate-days" && (
-                          <div className="text-sm text-blue-700 bg-blue-50 px-3 py-2 rounded-md border border-blue-200">
-                            Every other day starting from your selected start date
-                          </div>
-                        )}
-                        
-                        {deliveryOption === "day1-day2" && (
-                          <div className="text-sm text-blue-700 bg-blue-50 px-3 py-2 rounded-md border border-blue-200">
-                            Daily delivery with different quantities on alternating days
-                          </div>
-                        )}
-
-                        {deliveryOption === "select-days" && (
-                          <div className="space-y-3">
-                            <div className="text-sm text-gray-600">
-                              Select delivery days (minimum 3):
+                        {/* Inline details based on selected option */}
+                        <div className="mt-3">
+                          {deliveryOption === "daily" && (
+                            <div className="text-sm text-blue-700 bg-blue-50 px-3 py-2 rounded-md border border-blue-200">
+                              Daily delivery - Fresh products every day
                             </div>
-                            <div className="flex flex-wrap gap-1">
-                              {daysOfWeek.map((day) => (
-                                <Button
-                                  key={day.id}
-                                  type="button"
-                                  size="sm"
-                                  variant={
-                                    selectedDays.includes(day.id)
-                                      ? "default"
-                                      : "outline"
-                                  }
-                                  className={`h-7 w-10 p-0 text-sm ${
-                                    selectedDays.includes(day.id)
+                          )}
+
+                          {deliveryOption === "alternate-days" && (
+                            <div className="text-sm text-blue-700 bg-blue-50 px-3 py-2 rounded-md border border-blue-200">
+                              Every other day starting from your selected start date
+                            </div>
+                          )}
+
+                          {deliveryOption === "day1-day2" && (
+                            <div className="text-sm text-blue-700 bg-blue-50 px-3 py-2 rounded-md border border-blue-200">
+                              Daily delivery with different quantities on alternating days
+                            </div>
+                          )}
+
+                          {deliveryOption === "select-days" && (
+                            <div className="space-y-3">
+                              <div className="text-sm text-gray-600">
+                                Select delivery days (minimum 3):
+                              </div>
+                              <div className="flex flex-wrap gap-1">
+                                {daysOfWeek.map((day) => (
+                                  <Button
+                                    key={day.id}
+                                    type="button"
+                                    size="sm"
+                                    variant={
+                                      selectedDays.includes(day.id)
+                                        ? "default"
+                                        : "outline"
+                                    }
+                                    className={`h-7 w-10 p-0 text-sm ${selectedDays.includes(day.id)
                                       ? "bg-primary"
                                       : "border-gray-300 text-gray-700"
-                                  }`}
-                                  onClick={() => {
-                                    toggleDaySelection(day.id);
-                                    if (formErrors.selectedDays)
-                                      setFormErrors((prev) => ({
-                                        ...prev,
-                                        selectedDays: "",
-                                      }));
-                                  }}
-                                >
-                                  {day.label}
-                                </Button>
-                              ))}
+                                      }`}
+                                    onClick={() => {
+                                      toggleDaySelection(day.id);
+                                      if (formErrors.selectedDays)
+                                        setFormErrors((prev) => ({
+                                          ...prev,
+                                          selectedDays: "",
+                                        }));
+                                    }}
+                                  >
+                                    {day.label}
+                                  </Button>
+                                ))}
+                              </div>
+                              {formErrors.selectedDays && (
+                                <p className="text-red-500 text-sm">
+                                  {formErrors.selectedDays}
+                                </p>
+                              )}
                             </div>
-                            {formErrors.selectedDays && (
-                              <p className="text-red-500 text-sm">
-                                {formErrors.selectedDays}
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      </div>
+                          )}
+                        </div>
 
-                      {/* Quantity selectors for non-variant products */}
-                      <div className="mt-4 border-t pt-4">
-                        {(deliveryOption === "daily" ||
-                          deliveryOption === "select-days" ||
-                          deliveryOption === "alternate-days") && (
-                          <div>
-                            <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                              Quantity per delivery:
-                            </Label>
-                            <div className="flex items-center border rounded overflow-hidden bg-white w-fit">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() =>
-                                  setQuantity(Math.max(1, quantity - 1))
-                                }
-                                className="h-8 w-8 p-0 hover:bg-gray-100"
-                              >
-                                <Minus className="h-3 w-3" />
-                              </Button>
-                              <span className="px-4 text-center font-medium min-w-[50px]">
-                                {quantity}
-                              </span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setQuantity(quantity + 1)}
-                                className="h-8 w-8 p-0 hover:bg-gray-100"
-                              >
-                                <Plus className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-
-                        {deliveryOption === "day1-day2" && (
-                          <div>
-                            <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                              Quantities:
-                            </Label>
-                            <div className="flex gap-4">
+                        {/* Quantity selectors for non-variant products */}
+                        <div className="mt-4 border-t pt-4">
+                          {(deliveryOption === "daily" ||
+                            deliveryOption === "select-days" ||
+                            deliveryOption === "alternate-days") && (
                               <div>
-                                <div className="text-sm text-gray-600 mb-1">Day A:</div>
-                                <div className="flex items-center border rounded overflow-hidden bg-white">
+                                <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                                  Quantity per delivery:
+                                </Label>
+                                <div className="flex items-center border rounded overflow-hidden bg-white w-fit">
                                   <Button
                                     variant="ghost"
                                     size="sm"
@@ -2281,7 +2245,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                   >
                                     <Minus className="h-3 w-3" />
                                   </Button>
-                                  <span className="px-3 text-center font-medium min-w-[40px]">
+                                  <span className="px-4 text-center font-medium min-w-[50px]">
                                     {quantity}
                                   </span>
                                   <Button
@@ -2294,146 +2258,95 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                   </Button>
                                 </div>
                               </div>
-                              <div>
-                                <div className="text-sm text-gray-600 mb-1">Day B:</div>
-                                <div className="flex items-center border rounded overflow-hidden bg-white">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() =>
-                                      setQuantityVarying2(
-                                        Math.max(1, quantityVarying2 - 1)
-                                      )
-                                    }
-                                    className="h-8 w-8 p-0 hover:bg-gray-100"
-                                  >
-                                    <Minus className="h-3 w-3" />
-                                  </Button>
-                                  <span className="px-3 text-center font-medium min-w-[40px]">
-                                    {quantityVarying2}
-                                  </span>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() =>
-                                      setQuantityVarying2(quantityVarying2 + 1)
-                                    }
-                                    className="h-8 w-8 p-0 hover:bg-gray-100"
-                                  >
-                                    <Plus className="h-3 w-3" />
-                                  </Button>
+                            )}
+
+                          {deliveryOption === "day1-day2" && (
+                            <div>
+                              <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                                Quantities:
+                              </Label>
+                              <div className="flex gap-4">
+                                <div>
+                                  <div className="text-sm text-gray-600 mb-1">Day A:</div>
+                                  <div className="flex items-center border rounded overflow-hidden bg-white">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() =>
+                                        setQuantity(Math.max(1, quantity - 1))
+                                      }
+                                      className="h-8 w-8 p-0 hover:bg-gray-100"
+                                    >
+                                      <Minus className="h-3 w-3" />
+                                    </Button>
+                                    <span className="px-3 text-center font-medium min-w-[40px]">
+                                      {quantity}
+                                    </span>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => setQuantity(quantity + 1)}
+                                      className="h-8 w-8 p-0 hover:bg-gray-100"
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-sm text-gray-600 mb-1">Day B:</div>
+                                  <div className="flex items-center border rounded overflow-hidden bg-white">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() =>
+                                        setQuantityVarying2(
+                                          Math.max(1, quantityVarying2 - 1)
+                                        )
+                                      }
+                                      className="h-8 w-8 p-0 hover:bg-gray-100"
+                                    >
+                                      <Minus className="h-3 w-3" />
+                                    </Button>
+                                    <span className="px-3 text-center font-medium min-w-[40px]">
+                                      {quantityVarying2}
+                                    </span>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() =>
+                                        setQuantityVarying2(quantityVarying2 + 1)
+                                      }
+                                      className="h-8 w-8 p-0 hover:bg-gray-100"
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                
-                </div>
-
-                {/* Right Column - Address Section */}
-                <div className="space-y-4">
-                  <div className="bg-white border border-gray-200 rounded-lg p-2.5">
-                    {/* Conditionally render based on depot type */}
-                    {selectedDepot?.isOnline ? (
-                      <>
-                        {/* ===== UI for ONLINE Depots (Home Delivery) ===== */}
-                        <div className="flex justify-between items-center mb-1.5">
-                          <h3 className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                            <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                            Delivery Address
-                          </h3>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setAddressFormState((prev) => ({
-                                ...prev,
-                                mobile: userMobile,
-                              }));
-                              setModalView("addressForm");
-                            }}
-                            className="text-[10px] h-6 px-1.5"
-                          >
-                            <Plus className="h-2.5 w-2.5 mr-0.5" /> Add
-                          </Button>
+                          )}
                         </div>
+                      </div>
+                    )}
 
-                        {isLoadingAddresses ? (
-                          <div className="flex items-center justify-center py-2">
-                            <span className="text-gray-500 text-[10px]">
-                              Loading...
-                            </span>
-                          </div>
-                        ) : userAddresses.length > 0 ? (
-                          <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
-                            <RadioGroup
-                              value={selectedAddressId || ""}
-                              onValueChange={(id: string) => {
-                                setSelectedAddressId(id);
-                                if (formErrors.selectedAddressId)
-                                  setFormErrors((prev) => ({
-                                    ...prev,
-                                    selectedAddressId: "",
-                                  }));
-                              }}
-                              className="flex gap-1.5"
-                            >
-                              {userAddresses.map((address) => (
-                                <div
-                                  key={address.id}
-                                  className={`flex-shrink-0 w-52 p-1.5 border rounded cursor-pointer transition-all ${
-                                    selectedAddressId === address.id
-                                      ? "border-red-500 bg-red-50 shadow-sm"
-                                      : "border-gray-200 hover:bg-gray-50"
-                                  }`}
-                                >
-                                  <Label
-                                    htmlFor={`address-item-${address.id}`}
-                                    className="flex items-start space-x-1.5 w-full cursor-pointer"
-                                  >
-                                    <RadioGroupItem
-                                      value={address.id}
-                                      id={`address-item-${address.id}`}
-                                      className="mt-0.5 h-3 w-3"
-                                    />
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center justify-between gap-1 mb-0.5">
-                                        <span className="font-medium text-gray-900 text-[12px] truncate ">
-                                          {address.recipientName}
-                                        </span>
-                                        <Badge variant="outline" className="text-[9px] py-0 px-1 h-3.5">
-                                          {address.label}
-                                        </Badge>
-                                      </div>
-                                      <p className="text-[10px] text-gray-600 truncate leading-tight">
-                                        {address.plotBuilding}, {address.streetArea}
-                                      </p>
-                                      <p className="text-[10px] text-gray-600 truncate leading-tight">
-                                        {address.city} - {address.pincode}
-                                      </p>
-                                      {address.isDefault && (
-                                        <span className="inline-block mt-0.5 px-1 py-0 bg-blue-100 text-blue-800 rounded text-[8px]">
-                                          Default
-                                        </span>
-                                      )}
-                                    </div>
-                                  </Label>
-                                </div>
-                              ))}
-                            </RadioGroup>
-                          </div>
-                        ) : (
-                          <div className="text-center py-2">
-                            <p className="text-gray-500 text-[10px] mb-1">
-                              No addresses saved
-                            </p>
+
+                  </div>
+
+                  {/* Right Column - Address Section */}
+                  <div className="space-y-4">
+                    <div className="bg-white border border-gray-200 rounded-lg p-2.5">
+                      {/* Conditionally render based on depot type */}
+                      {selectedDepot?.isOnline ? (
+                        <>
+                          {/* ===== UI for ONLINE Depots (Home Delivery) ===== */}
+                          <div className="flex justify-between items-center mb-1.5">
+                            <h3 className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                              <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                              Delivery Address
+                            </h3>
                             <Button
                               variant="outline"
                               size="sm"
@@ -2444,550 +2357,634 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                                 }));
                                 setModalView("addressForm");
                               }}
-                              className="text-[10px] h-6 px-2"
+                              className="text-[10px] h-6 px-1.5"
                             >
-                              <Plus className="h-2.5 w-2.5 mr-0.5" /> Add Address
+                              <Plus className="h-2.5 w-2.5 mr-0.5" /> Add
                             </Button>
                           </div>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        {/* ===== UI for OFFLINE Depots (Pickup) ===== */}
-                        <div className="flex justify-between items-center mb-1.5">
-                          <h3 className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                            <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                            </svg>
-                            Pickup Location
-                          </h3>
-                        </div>
-                        {selectedDepot ? (
-                          <div className="p-1.5 border rounded bg-gray-50">
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-medium text-gray-900 text-[11px]">
-                                {selectedDepot.name}
+
+                          {isLoadingAddresses ? (
+                            <div className="flex items-center justify-center py-2">
+                              <span className="text-gray-500 text-[10px]">
+                                Loading...
                               </span>
-                              <Badge variant="secondary" className="text-[9px] py-0 px-1 h-3.5">Pickup</Badge>
                             </div>
-                            <p className="text-[10px] text-gray-600 mt-0.5">
-                              {selectedDepot.address}, {selectedDepot.city} - {selectedDepot.pincode}
-                            </p>
-                            <div className="mt-3 p-1 bg-blue-50 border border-blue-200 rounded-md">
-                        <p className="text-[11px] text-blue-700 flex items-start ml-2 ">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5  flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          You will need to pick up your order from this depot location.
-                        </p>
-                      </div>
-                          </div>
-                        ) : (
-                          <div className="text-center py-2">
-                            <p className="text-gray-500 text-[10px]">
-                              Location address not available
-                            </p>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                  <div className="bg-white border border-gray-200 rounded-lg p-2.5">
-                    <h3 className="text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1">
-                      <CalendarIcon className="h-3 w-3" />
-                      Start Date
-                    </h3>
-                    <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full justify-start text-left font-normal border-gray-300 rounded h-7 text-sm",
-                            !startDate && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-1.5 h-3 w-3" />
-                          {startDate ? (
-                            format(startDate, "dd/MM/yyyy")
+                          ) : userAddresses.length > 0 ? (
+                            <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+                              <RadioGroup
+                                value={selectedAddressId || ""}
+                                onValueChange={(id: string) => {
+                                  setSelectedAddressId(id);
+                                  if (formErrors.selectedAddressId)
+                                    setFormErrors((prev) => ({
+                                      ...prev,
+                                      selectedAddressId: "",
+                                    }));
+                                }}
+                                className="flex gap-1.5"
+                              >
+                                {userAddresses.map((address) => (
+                                  <div
+                                    key={address.id}
+                                    className={`flex-shrink-0 w-52 p-1.5 border rounded cursor-pointer transition-all ${selectedAddressId === address.id
+                                      ? "border-red-500 bg-red-50 shadow-sm"
+                                      : "border-gray-200 hover:bg-gray-50"
+                                      }`}
+                                  >
+                                    <Label
+                                      htmlFor={`address-item-${address.id}`}
+                                      className="flex items-start space-x-1.5 w-full cursor-pointer"
+                                    >
+                                      <RadioGroupItem
+                                        value={address.id}
+                                        id={`address-item-${address.id}`}
+                                        className="mt-0.5 h-3 w-3"
+                                      />
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center justify-between gap-1 mb-0.5">
+                                          <span className="font-medium text-gray-900 text-[12px] truncate ">
+                                            {address.recipientName}
+                                          </span>
+                                          <Badge variant="outline" className="text-[9px] py-0 px-1 h-3.5">
+                                            {address.label}
+                                          </Badge>
+                                        </div>
+                                        <p className="text-[10px] text-gray-600 truncate leading-tight">
+                                          {address.plotBuilding}, {address.streetArea}
+                                        </p>
+                                        <p className="text-[10px] text-gray-600 truncate leading-tight">
+                                          {address.city} - {address.pincode}
+                                        </p>
+                                        {address.isDefault && (
+                                          <span className="inline-block mt-0.5 px-1 py-0 bg-blue-100 text-blue-800 rounded text-[8px]">
+                                            Default
+                                          </span>
+                                        )}
+                                      </div>
+                                    </Label>
+                                  </div>
+                                ))}
+                              </RadioGroup>
+                            </div>
                           ) : (
-                            <span>Select date</span>
+                            <div className="text-center py-2">
+                              <p className="text-gray-500 text-[10px] mb-1">
+                                No addresses saved
+                              </p>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setAddressFormState((prev) => ({
+                                    ...prev,
+                                    mobile: userMobile,
+                                  }));
+                                  setModalView("addressForm");
+                                }}
+                                className="text-[10px] h-6 px-2"
+                              >
+                                <Plus className="h-2.5 w-2.5 mr-0.5" /> Add Address
+                              </Button>
+                            </div>
                           )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent
-                        className="w-auto p-0 pointer-events-auto"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Calendar
-                          mode="single"
-                          selected={startDate}
-                          onSelect={(date) => {
-                            setStartDate(date);
-                            setCalendarOpen(false);
-                            if (formErrors.startDate)
-                              setFormErrors((prev) => ({
-                                ...prev,
-                                startDate: "",
-                              }));
-                          }}
-                          initialFocus
-                          disabled={(date) => {
-                            // Disable dates before +3 days from current date
-                            const minDate = new Date();
-                            minDate.setDate(minDate.getDate() + 3);
-                            minDate.setHours(0, 0, 0, 0);
-                            return date < minDate;
-                          }}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    {formErrors.startDate && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {formErrors.startDate}
-                      </p>
-                    )}
-                  </div>
-                  {/* Enhanced Summary Section with Per-Variant Details */}
-                  {subscriptionSummary && (
-                    <div className="bg-white border border-gray-200 rounded-lg p-3">
-                      <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
-                        <Package className="h-3.5 w-3.5" />
-                        Order Summary
+                        </>
+                      ) : (
+                        <>
+                          {/* ===== UI for OFFLINE Depots (Pickup) ===== */}
+                          <div className="flex justify-between items-center mb-1.5">
+                            <h3 className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                              <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                              </svg>
+                              Pickup Location
+                            </h3>
+                          </div>
+                          {selectedDepot ? (
+                            <div className="p-1.5 border rounded bg-gray-50">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-medium text-gray-900 text-[11px]">
+                                  {selectedDepot.name}
+                                </span>
+                                <Badge variant="secondary" className="text-[9px] py-0 px-1 h-3.5">Pickup</Badge>
+                              </div>
+                              <p className="text-[10px] text-gray-600 mt-0.5">
+                                {selectedDepot.address}, {selectedDepot.city} - {selectedDepot.pincode}
+                              </p>
+                              <div className="mt-3 p-1 bg-blue-50 border border-blue-200 rounded-md">
+                                <p className="text-[11px] text-blue-700 flex items-start ml-2 ">
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5  flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                  You will need to pick up your order from this depot location.
+                                </p>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-center py-2">
+                              <p className="text-gray-500 text-[10px]">
+                                Location address not available
+                              </p>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                    <div className="bg-white border border-gray-200 rounded-lg p-2.5">
+                      <h3 className="text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1">
+                        <CalendarIcon className="h-3 w-3" />
+                        Start Date
                       </h3>
-                      <div className="space-y-1.5 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Period:</span>
-                          <span>{subscriptionSummary.period}</span>
-                        </div>
-                        {/* <div className="flex justify-between">
+                      <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full justify-start text-left font-normal border-gray-300 rounded h-7 text-sm",
+                              !startDate && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-1.5 h-3 w-3" />
+                            {startDate ? (
+                              format(startDate, "dd/MM/yyyy")
+                            ) : (
+                              <span>Select date</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          className="w-auto p-0 pointer-events-auto"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Calendar
+                            mode="single"
+                            selected={startDate}
+                            onSelect={(date) => {
+                              setStartDate(date);
+                              setCalendarOpen(false);
+                              if (formErrors.startDate)
+                                setFormErrors((prev) => ({
+                                  ...prev,
+                                  startDate: "",
+                                }));
+                            }}
+                            initialFocus
+                            disabled={(date) => {
+                              // Disable dates before +3 days from current date
+                              const minDate = new Date();
+                              minDate.setDate(minDate.getDate() + 3);
+                              minDate.setHours(0, 0, 0, 0);
+                              return date < minDate;
+                            }}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      {formErrors.startDate && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {formErrors.startDate}
+                        </p>
+                      )}
+                    </div>
+                    {/* Enhanced Summary Section with Per-Variant Details */}
+                    {subscriptionSummary && (
+                      <div className="bg-white border border-gray-200 rounded-lg p-3">
+                        <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                          <Package className="h-3.5 w-3.5" />
+                          Order Summary
+                        </h3>
+                        <div className="space-y-1.5 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Period:</span>
+                            <span>{subscriptionSummary.period}</span>
+                          </div>
+                          {/* <div className="flex justify-between">
                           <span className="text-gray-600">Schedule:</span>
                           <span className="text-right">
                             {subscriptionSummary.deliveryDescription}
                           </span>
                         </div> */}
-                        {/* <div className="flex justify-between">
+                          {/* <div className="flex justify-between">
                           <span className="text-gray-600">Start Date:</span>
                           <span>{subscriptionSummary.startDate}</span>
                         </div> */}
 
-                        {/* Per-Variant Summary - Enhanced */}
-                        {hasVariants && selectedVariants.length > 0 && (
-                          <div className="border-t border-gray-500 pt-2 mt-2">
-                            <div className="flex items-center gap-1 mb-2">
-                              <Package className="h-3 w-3 text-blue-600" />
-                              <h4 className="text-sm font-semibold text-gray-800">
-                                Variant Details
-                              </h4>
-                            </div>
-                            <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-                              {selectedVariants.map(
-                                (selectedVariant, index) => {
-                                  const variant = productVariants.find(
-                                    (v) => v.id === selectedVariant.variantId
-                                  );
-                                  if (!variant) return null;
-
-                                  const deliveryCount =
-                                    calculateVariantDeliveryCount(
-                                      selectedVariant
+                          {/* Per-Variant Summary - Enhanced */}
+                          {hasVariants && selectedVariants.length > 0 && (
+                            <div className="border-t border-gray-500 pt-2 mt-2">
+                              <div className="flex items-center gap-1 mb-2">
+                                <Package className="h-3 w-3 text-blue-600" />
+                                <h4 className="text-sm font-semibold text-gray-800">
+                                  Variant Details
+                                </h4>
+                              </div>
+                              <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+                                {selectedVariants.map(
+                                  (selectedVariant, index) => {
+                                    const variant = productVariants.find(
+                                      (v) => v.id === selectedVariant.variantId
                                     );
-                                  let variantTotalQty = 0;
+                                    if (!variant) return null;
 
-                                  switch (selectedVariant.deliveryOption) {
-                                    case "daily":
-                                    case "select-days":
-                                      variantTotalQty =
-                                        selectedVariant.quantity *
-                                        deliveryCount;
-                                      break;
-                                    case "day1-day2":
-                                      const days1 = Math.ceil(
-                                        selectedPeriod / 2
+                                    const deliveryCount =
+                                      calculateVariantDeliveryCount(
+                                        selectedVariant
                                       );
-                                      const days2 = Math.floor(
-                                        selectedPeriod / 2
-                                      );
-                                      variantTotalQty =
-                                        selectedVariant.quantity * days1 +
-                                        (selectedVariant.quantityVarying2 ||
-                                          1) *
-                                          days2;
-                                      break;
-                                    case "alternate-days":
-                                      variantTotalQty =
-                                        selectedVariant.quantity *
-                                        Math.ceil(selectedPeriod / 2);
-                                      break;
-                                  }
+                                    let variantTotalQty = 0;
 
-                                  const scheduleText =
-                                    selectedVariant.deliveryOption === "daily"
-                                      ? "Daily"
-                                      : selectedVariant.deliveryOption ===
-                                        "select-days"
-                                      ? `${selectedVariant.selectedDays.length} days/week`
-                                      : selectedVariant.deliveryOption ===
-                                        "alternate-days"
-                                      ? "Alternate Days"
-                                      : "Day1-Day2";
-
-                                  const getScheduleIcon = () => {
                                     switch (selectedVariant.deliveryOption) {
                                       case "daily":
-                                        return "🌅"; // Daily sunrise
                                       case "select-days":
-                                        return "📅"; // Selected days
-                                      case "alternate-days":
-                                        return "🔄"; // Alternating
+                                        variantTotalQty =
+                                          selectedVariant.quantity *
+                                          deliveryCount;
+                                        break;
                                       case "day1-day2":
-                                        return "⚖️"; // Varying quantities
-                                      default:
-                                        return "📦";
+                                        const days1 = Math.ceil(
+                                          selectedPeriod / 2
+                                        );
+                                        const days2 = Math.floor(
+                                          selectedPeriod / 2
+                                        );
+                                        variantTotalQty =
+                                          selectedVariant.quantity * days1 +
+                                          (selectedVariant.quantityVarying2 ||
+                                            1) *
+                                          days2;
+                                        break;
+                                      case "alternate-days":
+                                        variantTotalQty =
+                                          selectedVariant.quantity *
+                                          Math.ceil(selectedPeriod / 2);
+                                        break;
                                     }
-                                  };
 
-                                  return (
-                                    <div
-                                      key={index}
-                                      className="flex-shrink-0 w-56 border border-gray-200 rounded-md p-2 bg-gradient-to-r from-gray-50 to-blue-50"
-                                    >
-                                      {/* Header with variant name and schedule */}
-                                      <div className="flex items-center justify-between mb-1.5">
-                                        <div className="flex items-center gap-1 flex-1 min-w-0">
-                                          <span className="text-sm">
-                                            {getScheduleIcon()}
-                                          </span>
-                                          <span className="font-medium text-gray-800 text-sm truncate">
-                                            {variant.name}
-                                          </span>
-                                        </div>
-                                        <Badge
-                                          variant="secondary"
-                                          className="text-[11px] bg-blue-100 text-blue-700 border-blue-200 py-0 px-1.5 h-4"
-                                        >
-                                          {scheduleText}
-                                        </Badge>
-                                      </div>
+                                    const scheduleText =
+                                      selectedVariant.deliveryOption === "daily"
+                                        ? "Daily"
+                                        : selectedVariant.deliveryOption ===
+                                          "select-days"
+                                          ? `${selectedVariant.selectedDays.length} days/week`
+                                          : selectedVariant.deliveryOption ===
+                                            "alternate-days"
+                                            ? "Alternate Days"
+                                            : "Day1-Day2";
 
-                                      {/* Compact details */}
-                                      <div className="text-[11px] space-y-1">
-                                        <div className="flex justify-between items-center">
-                                          <span className="text-gray-600 text-xs" >Qty/delivery:</span>
-                                          <span className="text-gray-900 font-medium text-xs">
-                                            {selectedVariant.deliveryOption === "day1-day2" ? (
-                                              <>{selectedVariant.quantity} + {selectedVariant.quantityVarying2 || 1} - {variant.name || 'Quantity'}{selectedVariant.quantity > 1 || (selectedVariant.quantityVarying2 || 1) > 1 ? 's' : ''}</>                                              
-                                            ) : (
-                                              <>{selectedVariant.quantity} - {variant.name || 'Quantity'}</>                                              
-                                            )}
-                                          </span>
-                                        </div>
-                                        <div className="flex justify-between items-center">
-                                          <span className="text-gray-600 text-xs">Total:</span>
-                                          <span className="text-gray-900 font-medium text-xs">
-                                            {variantTotalQty} - {variant.name || 'Quantity'}
-                                          </span>
-                                        </div>
-                                        <div className="flex justify-between items-center pt-1 border-t border-gray-200">
-                                          <span className="text-gray-600">Price:</span>
-                                          <span className="text-green-700 font-semibold">
-                                            ₹{(variantTotalQty * getVariantPriceForPeriod(variant, selectedPeriod)).toFixed(2)}
-                                          </span>
-                                        </div>
-                                      </div>
+                                    const getScheduleIcon = () => {
+                                      switch (selectedVariant.deliveryOption) {
+                                        case "daily":
+                                          return "🌅"; // Daily sunrise
+                                        case "select-days":
+                                          return "📅"; // Selected days
+                                        case "alternate-days":
+                                          return "🔄"; // Alternating
+                                        case "day1-day2":
+                                          return "⚖️"; // Varying quantities
+                                        default:
+                                          return "📦";
+                                      }
+                                    };
 
-                                      {/* Additional info for select-days */}
-                                      {selectedVariant.deliveryOption === "select-days" && selectedVariant.selectedDays.length > 0 && (
-                                        <div className="mt-1 pt-1 border-t border-gray-200">
-                                          <div className="text-[10px] text-gray-600">
-                                            Days: {selectedVariant.selectedDays.join(", ")}
+                                    return (
+                                      <div
+                                        key={index}
+                                        className="flex-shrink-0 w-56 border border-gray-200 rounded-md p-2 bg-gradient-to-r from-gray-50 to-blue-50"
+                                      >
+                                        {/* Header with variant name and schedule */}
+                                        <div className="flex items-center justify-between mb-1.5">
+                                          <div className="flex items-center gap-1 flex-1 min-w-0">
+                                            <span className="text-sm">
+                                              {getScheduleIcon()}
+                                            </span>
+                                            <span className="font-medium text-gray-800 text-sm truncate">
+                                              {variant.name}
+                                            </span>
+                                          </div>
+                                          <Badge
+                                            variant="secondary"
+                                            className="text-[11px] bg-blue-100 text-blue-700 border-blue-200 py-0 px-1.5 h-4"
+                                          >
+                                            {scheduleText}
+                                          </Badge>
+                                        </div>
+
+                                        {/* Compact details */}
+                                        <div className="text-[11px] space-y-1">
+                                          <div className="flex justify-between items-center">
+                                            <span className="text-gray-600 text-xs" >Qty/delivery:</span>
+                                            <span className="text-gray-900 font-medium text-xs">
+                                              {selectedVariant.deliveryOption === "day1-day2" ? (
+                                                <>{selectedVariant.quantity} + {selectedVariant.quantityVarying2 || 1} - {variant.name || 'Quantity'}{selectedVariant.quantity > 1 || (selectedVariant.quantityVarying2 || 1) > 1 ? 's' : ''}</>
+                                              ) : (
+                                                <>{selectedVariant.quantity} - {variant.name || 'Quantity'}</>
+                                              )}
+                                            </span>
+                                          </div>
+                                          <div className="flex justify-between items-center">
+                                            <span className="text-gray-600 text-xs">Total:</span>
+                                            <span className="text-gray-900 font-medium text-xs">
+                                              {variantTotalQty} - {variant.name || 'Quantity'}
+                                            </span>
+                                          </div>
+                                          <div className="flex justify-between items-center pt-1 border-t border-gray-200">
+                                            <span className="text-gray-600">Price:</span>
+                                            <span className="text-green-700 font-semibold">
+                                              ₹{(variantTotalQty * getVariantPriceForPeriod(variant, selectedPeriod)).toFixed(2)}
+                                            </span>
                                           </div>
                                         </div>
-                                      )}
-                                    </div>
-                                  );
-                                }
-                              )}
+
+                                        {/* Additional info for select-days */}
+                                        {selectedVariant.deliveryOption === "select-days" && selectedVariant.selectedDays.length > 0 && (
+                                          <div className="mt-1 pt-1 border-t border-gray-200">
+                                            <div className="text-[10px] text-gray-600">
+                                              Days: {selectedVariant.selectedDays.join(", ")}
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  }
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
 
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Total Quantity:</span>
-                          <span className="font-medium">
-                            {subscriptionSummary.totalQuantity}{" "}
-                            {!hasVariants ? product?.name || "" : "items"}
-                          </span>
-                        </div>
-
-                        {/* Enhanced Savings Display */}
-                        {calculateSavings() > 0 && (
-                          <div className="relative overflow-hidden">
-                            {/* Animated Background */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 animate-pulse"></div>
-                            <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/90 via-green-400/90 to-teal-400/90"></div>
-
-                            {/* Sparkle Animation Elements */}
-                            <div className="absolute top-2 left-4 animate-bounce delay-75">
-                              <Star className="h-3 w-3 text-yellow-300 fill-yellow-300" />
-                            </div>
-                            <div className="absolute top-3 right-6 animate-bounce delay-150">
-                              <Sparkles className="h-2 w-2 text-yellow-200 fill-yellow-200" />
-                            </div>
-                            <div className="absolute bottom-2 right-4 animate-bounce delay-300">
-                              <Zap className="h-3 w-3 text-yellow-300 fill-yellow-300" />
-                            </div>
-
-                            {/* Main Content */}
-                          </div>
-                        )}
-
-                        <div className="border-t border-gray-200 pt-1.5 mt-1.5">
-                          <div className="flex justify-between font-medium text-sm">
-                            <span>Total Price:</span>
-                            <span className="text-green-600">
-                              ₹{subscriptionSummary.totalPrice.toFixed(2)}
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Total Quantity:</span>
+                            <span className="font-medium">
+                              {subscriptionSummary.totalQuantity}{" "}
+                              {!hasVariants ? product?.name || "" : "items"}
                             </span>
                           </div>
-                        </div>
-                      </div>
-                      
-                    </div>
-                    
-                  )}
-                  
-                </div>
-              </div>
-            </>
-          ) : modalView === "confirmation" ? (
-            <div className="bg-white p-4 rounded-md space-y-4 w-[50%] mx-auto max-sm:w-full ">
-              <h3 className="text-lg font-semibold text-center">
-                Confirm Your Subscription
-              </h3>
 
-              <div className="border rounded-lg p-4 bg-gray-50 space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Product:</span>
-                  <span className="font-semibold">{product.name}</span>
-                </div>
+                          {/* Enhanced Savings Display */}
+                          {calculateSavings() > 0 && (
+                            <div className="relative overflow-hidden">
+                              {/* Animated Background */}
+                              <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 animate-pulse"></div>
+                              <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/90 via-green-400/90 to-teal-400/90"></div>
 
-                {/* Enhanced Variant Summary in Confirmation with Individual Schedules */}
-                {hasVariants && selectedVariants.length > 0 && (
-                  <div className="border-t border-gray-200 pt-3">
-                    <span className="text-sm font-medium block mb-2">
-                      Selected Variants & Schedules:
-                    </span>
-                    <div className="space-y-3">
-                      {selectedVariants.map((selectedVariant, index) => {
-                        const variant = productVariants.find(
-                          (v) => v.id === selectedVariant.variantId
-                        );
-                        if (!variant) return null;
+                              {/* Sparkle Animation Elements */}
+                              <div className="absolute top-2 left-4 animate-bounce delay-75">
+                                <Star className="h-3 w-3 text-yellow-300 fill-yellow-300" />
+                              </div>
+                              <div className="absolute top-3 right-6 animate-bounce delay-150">
+                                <Sparkles className="h-2 w-2 text-yellow-200 fill-yellow-200" />
+                              </div>
+                              <div className="absolute bottom-2 right-4 animate-bounce delay-300">
+                                <Zap className="h-3 w-3 text-yellow-300 fill-yellow-300" />
+                              </div>
 
-                        const deliveryCount =
-                          calculateVariantDeliveryCount(selectedVariant);
-                        const scheduleText =
-                          selectedVariant.deliveryOption === "daily"
-                            ? "Daily delivery"
-                            : selectedVariant.deliveryOption === "select-days"
-                            ? `On ${selectedVariant.selectedDays
-                                .map(
-                                  (day) =>
-                                    daysOfWeek.find((d) => d.id === day)?.label
-                                )
-                                .join(", ")}`
-                            : selectedVariant.deliveryOption ===
-                              "alternate-days"
-                            ? "Alternate Day"
-                            : "Day1-Day2";
-
-                        return (
-                          <div
-                            key={index}
-                            className="bg-white p-3 rounded border text-sm"
-                          >
-                            <div className="flex justify-between items-center mb-2">
-                              <span className="font-medium">
-                                {variant.name}
-                              </span>
-                              <Badge variant="outline">
-                                ₹
-                                {getVariantPriceForPeriod(
-                                  variant,
-                                  selectedPeriod
-                                )}{" "}
-                                {variant.name && `per ${variant.name}`}
-                              </Badge>
+                              {/* Main Content */}
                             </div>
-                            <div className="text-sm text-gray-600 space-y-1">
-                              <div>Schedule: {scheduleText}</div>
-                              <div>Deliveries: {deliveryCount} times</div>
-                              {selectedVariant.deliveryOption !==
-                                "day1-day2" && (
-                                <div>
-                                  Quantity per delivery:{" "}
-                                  {selectedVariant.quantity}
-                                </div>
-                              )}
+                          )}
+
+                          <div className="border-t border-gray-200 pt-1.5 mt-1.5">
+                            <div className="flex justify-between font-medium text-sm">
+                              <span>Total Price:</span>
+                              <span className="text-green-600">
+                                ₹{subscriptionSummary.totalPrice.toFixed(2)}
+                              </span>
                             </div>
                           </div>
-                        );
-                      })}
+                        </div>
+
+                      </div>
+
+                    )}
+
+                  </div>
+                </div>
+              </>
+            ) : modalView === "confirmation" ? (
+              <div className="bg-white p-4 rounded-md space-y-4 w-[50%] mx-auto max-sm:w-full ">
+                <h3 className="text-lg font-semibold text-center">
+                  Confirm Your Subscription
+                </h3>
+
+                <div className="border rounded-lg p-4 bg-gray-50 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Product:</span>
+                    <span className="font-semibold">{product.name}</span>
+                  </div>
+
+                  {/* Enhanced Variant Summary in Confirmation with Individual Schedules */}
+                  {hasVariants && selectedVariants.length > 0 && (
+                    <div className="border-t border-gray-200 pt-3">
+                      <span className="text-sm font-medium block mb-2">
+                        Selected Variants & Schedules:
+                      </span>
+                      <div className="space-y-3">
+                        {selectedVariants.map((selectedVariant, index) => {
+                          const variant = productVariants.find(
+                            (v) => v.id === selectedVariant.variantId
+                          );
+                          if (!variant) return null;
+
+                          const deliveryCount =
+                            calculateVariantDeliveryCount(selectedVariant);
+                          const scheduleText =
+                            selectedVariant.deliveryOption === "daily"
+                              ? "Daily delivery"
+                              : selectedVariant.deliveryOption === "select-days"
+                                ? `On ${selectedVariant.selectedDays
+                                  .map(
+                                    (day) =>
+                                      daysOfWeek.find((d) => d.id === day)?.label
+                                  )
+                                  .join(", ")}`
+                                : selectedVariant.deliveryOption ===
+                                  "alternate-days"
+                                  ? "Alternate Day"
+                                  : "Day1-Day2";
+
+                          return (
+                            <div
+                              key={index}
+                              className="bg-white p-3 rounded border text-sm"
+                            >
+                              <div className="flex justify-between items-center mb-2">
+                                <span className="font-medium">
+                                  {variant.name}
+                                </span>
+                                <Badge variant="outline">
+                                  ₹
+                                  {getVariantPriceForPeriod(
+                                    variant,
+                                    selectedPeriod
+                                  )}{" "}
+                                  {variant.name && `per ${variant.name}`}
+                                </Badge>
+                              </div>
+                              <div className="text-sm text-gray-600 space-y-1">
+                                <div>Schedule: {scheduleText}</div>
+                                <div>Deliveries: {deliveryCount} times</div>
+                                {selectedVariant.deliveryOption !==
+                                  "day1-day2" && (
+                                    <div>
+                                      Quantity per delivery:{" "}
+                                      {selectedVariant.quantity}
+                                    </div>
+                                  )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
+                  )}
+
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Period:</span>
+                    <span>{subscriptionSummary?.period}</span>
                   </div>
-                )}
 
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Period:</span>
-                  <span>{subscriptionSummary?.period}</span>
-                </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Start Date:</span>
+                    <span>{subscriptionSummary?.startDate}</span>
+                  </div>
 
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Start Date:</span>
-                  <span>{subscriptionSummary?.startDate}</span>
-                </div>
-
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">End Date:</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">End Date:</span>
                     <span>{subscriptionSummary?.expiryDate}</span>
-                </div>
+                  </div>
 
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Total Quantity:</span>
-                  <span>
-                    {subscriptionSummary?.totalQuantity}{" "}
-                    {!hasVariants ? product?.name || "" : "items"}
-                  </span>
-                </div>
-
-                {/* Enhanced Savings Display in Confirmation */}
-
-                <div className="pt-2 border-t border-gray-200 space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium">Subtotal:</span>
-                    <span className="text-sm">
-                      ₹{subscriptionSummary?.totalPrice?.toFixed(2)}
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Total Quantity:</span>
+                    <span>
+                      {subscriptionSummary?.totalQuantity}{" "}
+                      {!hasVariants ? product?.name || "" : "items"}
                     </span>
                   </div>
 
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium">Wallet Credit:</span>
-                    <span className="text-sm text-green-600">
-                      -₹{walletDeduction.toFixed(2)}
-                    </span>
-                  </div>
+                  {/* Enhanced Savings Display in Confirmation */}
 
-                  <div className="flex justify-between font-medium pt-2">
-                    <span className="text-sm font-semibold">
-                      Amount Payable:
-                    </span>
-                    <span className="text-sm font-semibold text-green-600">
-                      ₹{remainingPayable.toFixed(2)}
-                    </span>
-                  </div>
+                  <div className="pt-2 border-t border-gray-200 space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Subtotal:</span>
+                      <span className="text-sm">
+                        ₹{subscriptionSummary?.totalPrice?.toFixed(2)}
+                      </span>
+                    </div>
 
-                  {/* <div className="flex items-center justify-between mt-4">
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Wallet Credit:</span>
+                      <span className="text-sm text-green-600">
+                        -₹{walletDeduction.toFixed(2)}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between font-medium pt-2">
+                      <span className="text-sm font-semibold">
+                        Amount Payable:
+                      </span>
+                      <span className="text-sm font-semibold text-green-600">
+                        ₹{remainingPayable.toFixed(2)}
+                      </span>
+                    </div>
+
+                    {/* <div className="flex items-center justify-between mt-4">
                     <Label htmlFor="useWallet" className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
                       <Checkbox id="useWallet" checked={useWallet} onCheckedChange={(checked) => setUseWallet(Boolean(checked))} className="w-5 h-5 rounded border-gray-300" />
                       <span>Apply Wallet Balance</span>
                     </Label>
                   </div> */}
-                </div>
-              </div>
-
-              {/* Wallet Balance Section */}
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <div className="flex items-center justify-between mb-3">
-                  <Label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
-                    <Wallet className="h-4 w-4" /> Use Wallet Balance
-                  </Label>
-                  <div className="text-sm font-medium">
-                    Available: ₹{walletBalance.toFixed(2)}
                   </div>
                 </div>
 
-                {useWallet && walletBalance > 0 && (
-                  <div className="bg-white p-3 rounded border border-blue-300">
-                    <div className="text-sm text-blue-700 space-y-1">
-                      <div className="flex justify-between">
-                        <span>Wallet Balance:</span>
-                        <span>₹{walletBalance.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Amount to be deducted:</span>
-                        <span className="font-medium text-green-600">
-                          ₹{walletDeduction.toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between font-medium pt-1 border-t">
-                        <span>Remaining in wallet:</span>
-                        <span>
-                          ₹{(walletBalance - walletDeduction).toFixed(2)}
-                        </span>
-                      </div>
+                {/* Wallet Balance Section */}
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <div className="flex items-center justify-between mb-3">
+                    <Label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                      <Wallet className="h-4 w-4" /> Use Wallet Balance
+                    </Label>
+                    <div className="text-sm font-medium">
+                      Available: ₹{walletBalance.toFixed(2)}
                     </div>
                   </div>
-                )}
-              </div>
+
+                  {useWallet && walletBalance > 0 && (
+                    <div className="bg-white p-3 rounded border border-blue-300">
+                      <div className="text-sm text-blue-700 space-y-1">
+                        <div className="flex justify-between">
+                          <span>Wallet Balance:</span>
+                          <span>₹{walletBalance.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Amount to be deducted:</span>
+                          <span className="font-medium text-green-600">
+                            ₹{walletDeduction.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between font-medium pt-1 border-t">
+                          <span>Remaining in wallet:</span>
+                          <span>
+                            ₹{(walletBalance - walletDeduction).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
 
-              {subscriptionSummary && (
-                <>
-                  {remainingPayable > 0 ? (
-                    <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
-                      <p className="text-sm text-blue-700 flex items-start">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4 mr-1.5 mt-0.5 flex-shrink-0"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                        {walletDeduction > 0
-                          ? `₹${walletDeduction.toFixed(
+                {subscriptionSummary && (
+                  <>
+                    {remainingPayable > 0 ? (
+                      <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
+                        <p className="text-sm text-blue-700 flex items-start">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4 mr-1.5 mt-0.5 flex-shrink-0"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          {walletDeduction > 0
+                            ? `₹${walletDeduction.toFixed(
                               2
                             )} will be deducted from your wallet. The remaining ₹${remainingPayable.toFixed(
                               2
                             )} will be collected via Cash/UPI before delivery.`
-                          : `Full amount of ₹${remainingPayable.toFixed(
+                            : `Full amount of ₹${remainingPayable.toFixed(
                               2
                             )} will be collected via Cash/UPI before delivery.`}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="bg-green-50 p-3 rounded-md border border-green-100">
-                      <p className="text-sm text-green-700 flex items-start">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4 mr-1.5 mt-0.5 flex-shrink-0"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                        Full amount of ₹
-                        {subscriptionSummary?.totalPrice?.toFixed(2)} will be
-                        deducted from your wallet.
-                      </p>
-                    </div>
-                  )}
-                </>
-              )}
-              <div className="bg-green-50 p-3 rounded-md border border-green-100">
-                <p className="text-sm text-primary flex items-start">
-                  {/* <svg
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="bg-green-50 p-3 rounded-md border border-green-100">
+                        <p className="text-sm text-green-700 flex items-start">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4 mr-1.5 mt-0.5 flex-shrink-0"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          Full amount of ₹
+                          {subscriptionSummary?.totalPrice?.toFixed(2)} will be
+                          deducted from your wallet.
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
+                <div className="bg-green-50 p-3 rounded-md border border-green-100">
+                  <p className="text-sm text-primary flex items-start">
+                    {/* <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-4 w-4 mr-1.5 mt-0.5 flex-shrink-0"
                     fill="none"
@@ -3001,520 +2998,519 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg> */}
-                  1) Since the milk is sourced from 'Tribal farmers',  all payments are in Advance.<br/><br/>
+                    1) Since the milk is sourced from 'Tribal farmers',  all payments are in Advance.<br /><br />
 
-2) Both Cash & Online options are available.The plan starts after 2 days from receipt of payment.<br/><br/>
+                    2) Both Cash & Online options are available.The plan starts after 2 days from receipt of payment.<br /><br />
 
-3) For Cash payments - our person can visit your home OR you may deposit money at our Tilak Road store.                </p>
+                    3) For Cash payments - our person can visit your home OR you may deposit money at our Tilak Road store.                </p>
+                </div>
+
+
+                <img src={imageurl} alt="" />
+                <p>1. GPay, UPI - 8850833370  ( Sarkhot Natural Farms) <br />
+                  2. Bank Transfer: Current Account: Bank of Baroda A/C No.: 76040200002024, <br />
+                  3. IFSC: BARB0VJDOME <br /> 4. Cash Before Delivery. </p>
+
+                {selectedDepot?.isOnline ? (
+                  <div className="bg-white p-4 rounded-md border">
+                    <h4 className="text-sm font-medium mb-2">
+                      Delivery Address:
+                    </h4>
+                    {userAddresses.map((address) => {
+                      if (address.id === selectedAddressId) {
+                        return (
+                          <div key={address.id} className="text-sm">
+                            <Badge variant="outline" className="mt-1 ">
+                              {address.label}
+                            </Badge>
+                            <p>
+                              <span className="font-medium ">
+                                {address.recipientName}
+                              </span>{" "}
+                              • {address.mobile}
+                            </p>
+                            <p>
+                              {address.plotBuilding}, {address.streetArea}
+                            </p>
+                            {address.landmark && <p>{address.landmark}</p>}
+                            <p>
+                              {address.city}, {address.state} - {address.pincode}
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })}
+                  </div>
+                ) : (
+                  <div className="bg-white p-4 rounded-md border">
+                    <h4 className="text-sm font-medium mb-2">
+                      Pickup from Location:
+                    </h4>
+                    <div className="text-sm">
+                      <p className="font-medium">{selectedDepot?.name}</p>
+                      <p>{selectedDepot?.address}</p>
+                    </div>
+                  </div>
+                )}
               </div>
-
-
-              <img src={imageurl} alt="" />
-              <p>1. GPay, UPI - 8850833370  ( Sarkhot Natural Farms) <br/>
-2. Bank Transfer: Current Account: Bank of Baroda A/C No.: 76040200002024, <br/>
-3. IFSC: BARB0VJDOME <br/> 4. Cash Before Delivery. </p>
-
-              {selectedDepot?.isOnline ? (
-                <div className="bg-white p-4 rounded-md border">
-                  <h4 className="text-sm font-medium mb-2">
-                    Delivery Address:
-                  </h4>
-                  {userAddresses.map((address) => {
-                    if (address.id === selectedAddressId) {
-                      return (
-                        <div key={address.id} className="text-sm">
-                          <Badge variant="outline" className="mt-1 ">
-                            {address.label}
-                          </Badge>
-                          <p>
-                            <span className="font-medium ">
-                              {address.recipientName}
-                            </span>{" "}
-                            • {address.mobile}
-                          </p>
-                          <p>
-                            {address.plotBuilding}, {address.streetArea}
-                          </p>
-                          {address.landmark && <p>{address.landmark}</p>}
-                          <p>
-                            {address.city}, {address.state} - {address.pincode}
-                          </p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })}
-                </div>
-              ) : (
-                <div className="bg-white p-4 rounded-md border">
-                  <h4 className="text-sm font-medium mb-2">
-                    Pickup from Location:
-                  </h4>
-                  <div className="text-sm">
-                    <p className="font-medium">{selectedDepot?.name}</p>
-                    <p>{selectedDepot?.address}</p>
+            ) : (
+              // Address Form View - Made scrollable
+              <div className="bg-white rounded-md">
+                <div className="p-4 border-b bg-white sticky top-0 z-10">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setModalView("subscriptionDetails")}
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                    <h3 className="text-lg font-semibold">Add New Address</h3>
                   </div>
                 </div>
-              )}
-            </div>
-          ) : (
-            // Address Form View - Made scrollable
-            <div className="bg-white rounded-md">
-              <div className="p-4 border-b bg-white sticky top-0 z-10">
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setModalView("subscriptionDetails")}
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
-                  <h3 className="text-lg font-semibold">Add New Address</h3>
-                </div>
-              </div>
-              <div className="p-4 space-y-5">
-                <div>
-                  <Label
-                    htmlFor="address-label"
-                    className="text-sm font-medium mb-2 block"
-                  >
-                    Address Label
-                  </Label>
-                  <RadioGroup
-                    defaultValue="Home"
-                    value={addressFormState.label}
-                    onValueChange={handleAddressLabelChange}
-                    className="flex gap-4 mt-1"
-                    id="address-label"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem
-                        value="Home"
-                        id="type-home"
-                        className="text-green-500"
-                      />
-                      <Label htmlFor="type-home" className="text-sm">
-                        Home
+                <div className="p-4 space-y-5">
+                  <div>
+                    <Label
+                      htmlFor="address-label"
+                      className="text-sm font-medium mb-2 block"
+                    >
+                      Address Label
+                    </Label>
+                    <RadioGroup
+                      defaultValue="Home"
+                      value={addressFormState.label}
+                      onValueChange={handleAddressLabelChange}
+                      className="flex gap-4 mt-1"
+                      id="address-label"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem
+                          value="Home"
+                          id="type-home"
+                          className="text-green-500"
+                        />
+                        <Label htmlFor="type-home" className="text-sm">
+                          Home
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem
+                          value="Work"
+                          id="type-work"
+                          className="text-green-500"
+                        />
+                        <Label htmlFor="type-work" className="text-sm">
+                          Work
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="Other" id="label-other" />
+                        <Label htmlFor="label-other">Other</Label>
+                      </div>
+                    </RadioGroup>
+                    {formErrors.label && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {formErrors.label}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Row 1: Delivery To + Mobile */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label
+                        htmlFor="recipientName"
+                        className="text-sm font-medium mb-1.5 block"
+                      >
+                        Delivery To*
                       </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem
-                        value="Work"
-                        id="type-work"
-                        className="text-green-500"
+                      <input
+                        id="recipientName"
+                        name="recipientName"
+                        value={addressFormState.recipientName}
+                        onChange={handleAddressFormChange}
+                        placeholder="Full name of recipient"
+                        className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
                       />
-                      <Label htmlFor="type-work" className="text-sm">
-                        Work
+                      {formErrors.recipientName && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {formErrors.recipientName}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <Label
+                        htmlFor="mobile"
+                        className="text-sm font-medium mb-1.5 block"
+                      >
+                        Mobile*
                       </Label>
+                      <input
+                        id="mobile"
+                        name="mobile"
+                        max={10}
+                        maxLength={10}
+                        value={addressFormState.mobile}
+                        onChange={handleAddressFormChange}
+                        placeholder="Mobile number"
+                        className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
+                      />
+                      {formErrors.mobile && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {formErrors.mobile}
+                        </p>
+                      )}
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="Other" id="label-other" />
-                      <Label htmlFor="label-other">Other</Label>
+                  </div>
+
+                  {/* Row 2: Plot/Building + Street/Area + Landmark */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label
+                        htmlFor="plotBuilding"
+                        className="text-sm font-medium mb-1.5 block"
+                      >
+                        Plot/Building*
+                      </Label>
+                      <input
+                        id="plotBuilding"
+                        name="plotBuilding"
+                        value={addressFormState.plotBuilding}
+                        onChange={handleAddressFormChange}
+                        placeholder="Plot number, building name"
+                        className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
+                      />
+                      {formErrors.plotBuilding && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {formErrors.plotBuilding}
+                        </p>
+                      )}
                     </div>
-                  </RadioGroup>
-                  {formErrors.label && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {formErrors.label}
-                    </p>
-                  )}
-                </div>
+                    <div>
+                      <Label
+                        htmlFor="streetArea"
+                        className="text-sm font-medium mb-1.5 block"
+                      >
+                        Street/Area*
+                      </Label>
+                      <input
+                        id="streetArea"
+                        name="streetArea"
+                        value={addressFormState.streetArea}
+                        onChange={handleAddressFormChange}
+                        placeholder="Street, area"
+                        className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
+                      />
+                      {formErrors.streetArea && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {formErrors.streetArea}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <Label
+                        htmlFor="landmark"
+                        className="text-sm font-medium mb-1.5 block"
+                      >
+                        Nearest Landmark*                    </Label>
+                      <Input
+                        id="landmark"
+                        name="landmark"
+                        value={addressFormState.landmark}
+                        onChange={handleAddressFormChange}
+                        placeholder="Nearby landmark"
+                        className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
+                      />
+                    </div>
+                  </div>
 
-                {/* Row 1: Delivery To + Mobile */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label
-                      htmlFor="recipientName"
-                      className="text-sm font-medium mb-1.5 block"
-                    >
-                      Delivery To*
-                    </Label>
-                    <input
-                      id="recipientName"
-                      name="recipientName"
-                      value={addressFormState.recipientName}
-                      onChange={handleAddressFormChange}
-                      placeholder="Full name of recipient"
-                      className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
-                    />
-                    {formErrors.recipientName && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {formErrors.recipientName}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <Label
-                      htmlFor="mobile"
-                      className="text-sm font-medium mb-1.5 block"
-                    >
-                      Mobile*
-                    </Label>
-                    <input
-                      id="mobile"
-                      name="mobile"
-                      max={10}
-                      maxLength={10}
-                      value={addressFormState.mobile}
-                      onChange={handleAddressFormChange}
-                      placeholder="Mobile number"
-                      className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
-                    />
-                    {formErrors.mobile && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {formErrors.mobile}
-                      </p>
-                    )}
-                  </div>
-                </div>
+                  {/* Row 3: Filter by City + Delivery Area */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label
+                        htmlFor="deliveryCity"
+                        className="text-sm font-medium mb-1.5 block"
+                      >
+                        City
+                      </Label>
+                      <Select
+                        onValueChange={(value) => {
+                          const cityId = value === "Dombivli" ? null : parseInt(value);
+                          setSelectedCityId(cityId);
+                          // Clear area master selection when city changes
+                          setSelectedAreaMaster(null);
+                        }}
+                        value={selectedCityId?.toString()}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select your City " />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-60 overflow-y-auto">
+                          {cities
+                            .sort((a, b) => a.name.localeCompare(b.name))
+                            .map((city) => (
+                              <SelectItem key={city.id} value={city.id.toString()}>
+                                {city.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label
+                        htmlFor="areaMaster"
+                        className="text-sm font-medium mb-1.5 block"
+                      >
+                        Delivery Area* <span className="text-xs text-gray-500"></span>
+                      </Label>
+                      <Select
+                        onValueChange={(value) => {
+                          const areaMaster = filteredAreaMasters.find(am => am.id === parseInt(value));
+                          if (areaMaster) {
+                            handleAreaMasterSelection(areaMaster);
+                            // Auto-fill city from selected area master
+                            if (areaMaster.city?.name) {
+                              handleAddressChange("city", areaMaster.city.name);
+                            }
+                          }
+                        }}
+                        value={selectedAreaMaster?.id?.toString() || ""}
+                      >
+                        <SelectTrigger
+                          className={formErrors.areaMaster ? "border-red-500 w-full" : "w-full"}
+                        >
+                          <SelectValue placeholder="Select your delivery area" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-60 overflow-y-auto">
+                          {filteredAreaMasters
+                            .sort((a, b) => a.name.localeCompare(b.name))
+                            .map((areaMaster) => (
+                              <SelectItem
+                                key={areaMaster.id}
+                                value={areaMaster.id.toString()}
+                              >
+                                {areaMaster.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
 
-                {/* Row 2: Plot/Building + Street/Area + Landmark */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label
-                      htmlFor="plotBuilding"
-                      className="text-sm font-medium mb-1.5 block"
-                    >
-                      Plot/Building*
-                    </Label>
-                    <input
-                      id="plotBuilding"
-                      name="plotBuilding"
-                      value={addressFormState.plotBuilding}
-                      onChange={handleAddressFormChange}
-                      placeholder="Plot number, building name"
-                      className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
-                    />
-                    {formErrors.plotBuilding && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {formErrors.plotBuilding}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <Label
-                      htmlFor="streetArea"
-                      className="text-sm font-medium mb-1.5 block"
-                    >
-                      Street/Area*
-                    </Label>
-                    <input
-                      id="streetArea"
-                      name="streetArea"
-                      value={addressFormState.streetArea}
-                      onChange={handleAddressFormChange}
-                      placeholder="Street, area"
-                      className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
-                    />
-                    {formErrors.streetArea && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {formErrors.streetArea}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <Label
-                      htmlFor="landmark"
-                      className="text-sm font-medium mb-1.5 block"
-                    >
-                      Nearest Landmark*                    </Label>
-                    <Input
-                      id="landmark"
-                      name="landmark"
-                      value={addressFormState.landmark}
-                      onChange={handleAddressFormChange}
-                      placeholder="Nearby landmark"
-                      className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
-                    />
-                  </div>
-                </div>
 
-                {/* Row 3: Filter by City + Delivery Area */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label
-                      htmlFor="deliveryCity"
-                      className="text-sm font-medium mb-1.5 block"
-                    >
-                      City
-                    </Label>
-                    <Select
-                      onValueChange={(value) => {
-                        const cityId = value === "all" ? null : parseInt(value);
-                        setSelectedCityId(cityId);
-                        // Clear area master selection when city changes
-                        setSelectedAreaMaster(null);
-                      }}
-                      value={selectedCityId?.toString() || "all"}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Filter by city (optional)" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-60 overflow-y-auto">
-                        <SelectItem value="all">All Cities</SelectItem>
-                        {cities
-                          .sort((a, b) => a.name.localeCompare(b.name))
-                          .map((city) => (
-                            <SelectItem key={city.id} value={city.id.toString()}>
-                              {city.name}
+                      </Select>
+                      <div>
+                        <p className="text-xs ml-2 mt-2">If your area is not listed above <a onClick={handleRequestService} className="text-primary border border-primary px-2 py-1 rounded max-w-4">Click here</a> to request delivery </p>
+                      </div>
+                      {formErrors.areaMaster && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {formErrors.areaMaster}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <Label
+                        htmlFor="state"
+                        className="text-sm font-medium mb-1.5 block"
+                      >
+                        State*
+                      </Label>
+                      <Select
+                        onValueChange={(val) => handleAddressChange("state", val)}
+                        value={addressFormState.state}
+                        disabled={true}
+                      >
+                        <SelectTrigger
+                          className={formErrors.state ? "border-red-500 w-full" : "w-full"}
+                        >
+                          <SelectValue placeholder="Select a state" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-60 overflow-y-auto">
+                          {INDIAN_STATES.filter(st => st && typeof st.label === 'string').map((st) => (
+                            <SelectItem key={st.value} value={st.label}>
+                              {st.label}
                             </SelectItem>
                           ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label
-                      htmlFor="areaMaster"
-                      className="text-sm font-medium mb-1.5 block"
-                    >
-                      Delivery Area* <span className="text-xs text-gray-500"></span>
-                    </Label>
-                    <Select
-                      onValueChange={(value) => {
-                        const areaMaster = filteredAreaMasters.find(am => am.id === parseInt(value));
-                        if (areaMaster) {
-                          handleAreaMasterSelection(areaMaster);
-                          // Auto-fill city from selected area master
-                          if (areaMaster.city?.name) {
-                            handleAddressChange("city", areaMaster.city.name);
-                          }
-                        }
-                      }}
-                      value={selectedAreaMaster?.id?.toString() || ""}
-                    >
-                      <SelectTrigger
-                        className={formErrors.areaMaster ? "border-red-500 w-full" : "w-full"}
-                      >
-                        <SelectValue placeholder="Select your delivery area" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-60 overflow-y-auto">
-                        {filteredAreaMasters
-                          .sort((a, b) => a.name.localeCompare(b.name))
-                          .map((areaMaster) => (
-                          <SelectItem
-                            key={areaMaster.id}
-                            value={areaMaster.id.toString()}
-                          >
-                            {areaMaster.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-
-                    
-                    </Select>
-                    <div>
-                      <p className="text-xs ml-2 mt-2">If your area is not listed above <a onClick={handleRequestService} className="text-primary border border-primary px-2 py-1 rounded max-w-4">Click here</a> to request delivery </p>
+                        </SelectContent>
+                      </Select>
+                      {formErrors.state && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {formErrors.state}
+                        </p>
+                      )}
                     </div>
-                    {formErrors.areaMaster && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {formErrors.areaMaster}
-                      </p>
-                    )}
                   </div>
-                  <div>
-                    <Label
-                      htmlFor="state"
-                      className="text-sm font-medium mb-1.5 block"
-                    >
-                      State*
-                    </Label>
-                    <Select
-                      onValueChange={(val) => handleAddressChange("state", val)}
-                      value={addressFormState.state}
-                      disabled={true}
-                    >
-                      <SelectTrigger
-                        className={formErrors.state ? "border-red-500 w-full" : "w-full"}
+
+                  {/* Row 4: State + Pincode */}
+                  <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+
+                    <div>
+                      <Label
+                        htmlFor="pincode"
+                        className="text-sm font-medium mb-1.5 block"
                       >
-                        <SelectValue placeholder="Select a state" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-60 overflow-y-auto">
-                        {INDIAN_STATES.filter(st => st && typeof st.label === 'string').map((st) => (
-                          <SelectItem key={st.value} value={st.label}>
-                            {st.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {formErrors.state && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {formErrors.state}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Row 4: State + Pincode */}
-                <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-                  
-                  <div>
-                    <Label
-                      htmlFor="pincode"
-                      className="text-sm font-medium mb-1.5 block"
-                    >
-                      Pincode*
-                    </Label>
-                    <Input
-                      id="pincode"
-                      name="pincode"
-                      type="text"
-                      value={addressFormState.pincode}
-                      onChange={handleAddressFormChange}
-                      max={6}
-                      placeholder="Enter your 6-digit pincode"
-                      className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
-                      maxLength={6}
-                    />
-                    {formErrors.pincode && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {formErrors.pincode}
-                      </p>
-                    )}
-                    
-                    {/* Real-time pincode validation */}
-                    {selectedAreaMaster && (
-                      <PincodeValidator
-                        pincode={addressFormState.pincode}
-                        isValid={pincodeValidation.isValid}
-                        message={pincodeValidation.message}
-                        isValidating={pincodeValidation.isValidating}
-                        showServiceRequest={!pincodeValidation.isValid && !pincodeValidation.isValidating && addressFormState.pincode.length === 6}
-                        onRequestService={handleRequestService}
+                        Pincode*
+                      </Label>
+                      <Input
+                        id="pincode"
+                        name="pincode"
+                        type="text"
+                        value={addressFormState.pincode}
+                        onChange={handleAddressFormChange}
+                        max={6}
+                        placeholder="Enter your 6-digit pincode"
+                        className="w-full h-11 px-3 border border-gray-300 rounded-md bg-white"
+                        maxLength={6}
                       />
-                    )}
+                      {formErrors.pincode && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {formErrors.pincode}
+                        </p>
+                      )}
+
+                      {/* Real-time pincode validation */}
+                      {selectedAreaMaster && (
+                        <PincodeValidator
+                          pincode={addressFormState.pincode}
+                          isValid={pincodeValidation.isValid}
+                          message={pincodeValidation.message}
+                          isValidating={pincodeValidation.isValidating}
+                          showServiceRequest={!pincodeValidation.isValid && !pincodeValidation.isValidating && addressFormState.pincode.length === 6}
+                          onRequestService={handleRequestService}
+                        />
+                      )}
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="isDefault"
-                    name="isDefault"
-                    checked={addressFormState.isDefault}
-                    onChange={(e) =>
-                      setAddressFormState((prev) => ({
-                        ...prev,
-                        isDefault: e.target.checked,
-                      }))
-                    }
-                    className="h-4 w-4 text-green-500 focus:ring-green-500 border-gray-300 rounded"
-                  />
-                  <Label htmlFor="isDefault" className="text-sm">
-                    Set as default address
-                  </Label>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="isDefault"
+                      name="isDefault"
+                      checked={addressFormState.isDefault}
+                      onChange={(e) =>
+                        setAddressFormState((prev) => ({
+                          ...prev,
+                          isDefault: e.target.checked,
+                        }))
+                      }
+                      className="h-4 w-4 text-green-500 focus:ring-green-500 border-gray-300 rounded"
+                    />
+                    <Label htmlFor="isDefault" className="text-sm">
+                      Set as default address
+                    </Label>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
           </div>
 
           <div className="p-4 border-t bg-white">
             {modalView === "subscriptionDetails" ? (
-            <div className="space-y-3">
-              {/* Savings indicator */}
-              {calculateSavings() > 0 && (
-                <div className="flex items-center justify-center gap-2 text-sm">
-                  <div className="flex items-center gap-1 text-green-600">
-                    <TrendingDown className="h-4 w-4" />
-                    <span className="font-medium">
-                      You Save: ₹{calculateSavings().toFixed(2)}
-                    </span>
+              <div className="space-y-3">
+                {/* Savings indicator */}
+                {calculateSavings() > 0 && (
+                  <div className="flex items-center justify-center gap-2 text-sm">
+                    <div className="flex items-center gap-1 text-green-600">
+                      <TrendingDown className="h-4 w-4" />
+                      <span className="font-medium">
+                        You Save: ₹{calculateSavings().toFixed(2)}
+                      </span>
+                    </div>
+                    <span className="text-gray-500 text-sm">vs MRP pricing</span>
                   </div>
-                  <span className="text-gray-500 text-sm">vs MRP pricing</span>
-                </div>
-              )}
-              <Button
-                onClick={handleProceedToConfirmation}
-                disabled={
-                  isLoadingAddresses ||
-                  (!hasVariants &&
-                    deliveryOption === "select-days" &&
-                    selectedDays.length < 3) ||
-                  (hasVariants &&
-                    selectedVariants.some(
-                      (v) =>
-                        v.deliveryOption === "select-days" &&
-                        v.selectedDays.length < 3
-                    ))
-                }
-                className="w-full bg-primary hover:bg-primary text-white py-2 rounded-md font-medium"
-              >
-                Review Subscription
-              </Button>
-            </div>
-          ) : modalView === "addressForm" ? (
-            <div className="flex justify-end gap-3 w-full">
-              <Button
-                variant="outline"
-                onClick={handleCancelAddAddress}
-                className="rounded-lg h-11 border-gray-300"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSaveAddress}
-                className="bg-primary hover:bg-primary text-white rounded-lg h-11"
-                disabled={
-                  !!(
-                    formErrors.recipientName ||
-                    formErrors.mobile ||
-                    formErrors.plotBuilding ||
-                    formErrors.streetArea ||
-                    formErrors.pincode ||
-                    formErrors.city ||
-                    formErrors.state ||
-                    formErrors.label ||
-                    formErrors.areaMaster
-                  )
-                }
-              >
-                Save Address
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {/* Savings indicator for confirmation */}
-              {calculateSavings() > 0 && (
-                <div className="flex items-center justify-center gap-2 text-sm">
-                  <div className="flex items-center gap-1 text-green-600">
-                    <TrendingDown className="h-4 w-4" />
-                    <span className="font-medium">
-                      Total Savings: ₹{calculateSavings().toFixed(2)}
-                    </span>
-                  </div>
-                  <span className="text-gray-500 text-sm">vs MRP pricing</span>
-                </div>
-              )}
-              <div className="flex justify-end items-center gap-3 w-full">
+                )}
+                <Button
+                  onClick={handleProceedToConfirmation}
+                  disabled={
+                    isLoadingAddresses ||
+                    (!hasVariants &&
+                      deliveryOption === "select-days" &&
+                      selectedDays.length < 3) ||
+                    (hasVariants &&
+                      selectedVariants.some(
+                        (v) =>
+                          v.deliveryOption === "select-days" &&
+                          v.selectedDays.length < 3
+                      ))
+                  }
+                  className="w-full bg-primary hover:bg-primary text-white py-2 rounded-md font-medium"
+                >
+                  Review Subscription
+                </Button>
+              </div>
+            ) : modalView === "addressForm" ? (
+              <div className="flex justify-end gap-3 w-full">
                 <Button
                   variant="outline"
+                  onClick={handleCancelAddAddress}
                   className="rounded-lg h-11 border-gray-300"
-                  onClick={() => setModalView("subscriptionDetails")}
                 >
-                  Back
+                  Cancel
                 </Button>
-
                 <Button
+                  onClick={handleSaveAddress}
                   className="bg-primary hover:bg-primary text-white rounded-lg h-11"
-                  onClick={handleConfirmSubscription}
                   disabled={
-                    isLoading ||
                     !!(
-                      formErrors.startDate ||
-                      formErrors.selectedDays ||
-                      formErrors.selectedAddressId ||
-                      formErrors.variantSchedules
+                      formErrors.recipientName ||
+                      formErrors.mobile ||
+                      formErrors.plotBuilding ||
+                      formErrors.streetArea ||
+                      formErrors.pincode ||
+                      formErrors.city ||
+                      formErrors.state ||
+                      formErrors.label ||
+                      formErrors.areaMaster
                     )
                   }
                 >
-                  {isLoading ? "Confirming..." : "Confirm Subscription"}
+                  Save Address
                 </Button>
               </div>
-            </div>
+            ) : (
+              <div className="space-y-3">
+                {/* Savings indicator for confirmation */}
+                {calculateSavings() > 0 && (
+                  <div className="flex items-center justify-center gap-2 text-sm">
+                    <div className="flex items-center gap-1 text-green-600">
+                      <TrendingDown className="h-4 w-4" />
+                      <span className="font-medium">
+                        Total Savings: ₹{calculateSavings().toFixed(2)}
+                      </span>
+                    </div>
+                    <span className="text-gray-500 text-sm">vs MRP pricing</span>
+                  </div>
+                )}
+                <div className="flex justify-end items-center gap-3 w-full">
+                  <Button
+                    variant="outline"
+                    className="rounded-lg h-11 border-gray-300"
+                    onClick={() => setModalView("subscriptionDetails")}
+                  >
+                    Back
+                  </Button>
+
+                  <Button
+                    className="bg-primary hover:bg-primary text-white rounded-lg h-11"
+                    onClick={handleConfirmSubscription}
+                    disabled={
+                      isLoading ||
+                      !!(
+                        formErrors.startDate ||
+                        formErrors.selectedDays ||
+                        formErrors.selectedAddressId ||
+                        formErrors.variantSchedules
+                      )
+                    }
+                  >
+                    {isLoading ? "Confirming..." : "Confirm Subscription"}
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
         </div>
       </DialogContent>
-      
+
       {/* Service Not Available Dialog */}
       <ServiceNotAvailableDialog
         isOpen={showServiceNotAvailableDialog}
@@ -3552,10 +3548,11 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
             streetArea: "",
             landmark: "",
             pincode: "",
-            city: "",
+            city: "Dombivli",
             state: "Maharashtra",
             isDefault: false,
             label: "Home",
+            locationId: undefined,
           });
           setSelectedAreaMaster(null);
           setSelectedCityId(null);

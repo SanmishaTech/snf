@@ -265,11 +265,25 @@ const SupervisorForm: React.FC<SupervisorFormProps> = ({ mode, supervisorId, onS
           <Input id="city" type="text"  {...register("city")} disabled={isSubmitting} />
           {errors.city && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.city.message}</span>}
         </div>
-        <div className="grid gap-2 relative">
-          <Label htmlFor="pincode">Pin Code</Label>
-          <Input id="pincode" type="number"  {...register("pincode")} disabled={isSubmitting} />
-          {errors.pincode && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.pincode.message}</span>}
-        </div>
+    <div className="grid gap-2 relative">
+  <Label htmlFor="pincode">Pin Code</Label>
+  <Input 
+    id="pincode" 
+    type="text" 
+    inputMode="numeric"
+    pattern="[0-9]{6}"
+    maxLength={6}
+    {...register("pincode", { 
+      required: "Pin code is required",
+      pattern: {
+        value: /^[0-9]{6}$/,
+        message: "Pin code must be exactly 6 digits"
+      }
+    })} 
+    disabled={isSubmitting} 
+  />
+  {errors.pincode && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.pincode.message}</span>}
+</div>
         <div className="grid gap-2 relative">
           <Label htmlFor="depotId">Assigned Depot (Optional)</Label>
           <Controller
