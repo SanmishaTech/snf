@@ -283,13 +283,13 @@ export interface ApiUser {
   id: number;
   name: string;
   email?: string;
+  mobile?: string;
 }
 
 export interface ApiMember {
   id: number;
   name: string;
   user?: ApiUser; // User details might be nested
-  phoneNumber?: string; // Added phoneNumber
 }
 
 export interface ApiProduct {

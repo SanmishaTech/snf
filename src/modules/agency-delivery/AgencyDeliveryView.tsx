@@ -217,7 +217,7 @@ const AgencyDeliveryView: React.FC = () => {
       'Product Name': delivery.product.name,
       'Product Variant': delivery.depotProductVariant?.name || 'N/A',
       'Quantity': delivery.quantity,
-      'Delivery Address': `${delivery.deliveryAddress.plotBuilding || ''}${delivery.deliveryAddress.plotBuilding && delivery.deliveryAddress.streetArea ? ', ' : ''}${delivery.deliveryAddress.streetArea || ''}, ${delivery.deliveryAddress.city}, ${delivery.deliveryAddress.pincode}${delivery.member.phoneNumber ? ` (Phone: ${delivery.member.phoneNumber})` : ''}`,
+      'Delivery Address': `${delivery.deliveryAddress.plotBuilding || ''}${delivery.deliveryAddress.plotBuilding && delivery.deliveryAddress.streetArea ? ', ' : ''}${delivery.deliveryAddress.streetArea || ''}, ${delivery.deliveryAddress.city}, ${delivery.deliveryAddress.pincode}${delivery.member.user?.mobile ? ` (Phone: ${delivery.member.user.mobile})` : ''}`,
       'Landmark': delivery.deliveryAddress?.landmark || 'N/A',
       'Status': delivery.status,
       'Phone': delivery.deliveryAddress.mobile || 'N/A', // Dedicated phone column remains
@@ -416,8 +416,8 @@ const AgencyDeliveryView: React.FC = () => {
                     <div className="text-sm text-gray-900">{delivery.deliveryAddress?.recipientName}</div>
                     <div className="text-sm text-gray-900">{delivery.deliveryAddress && `${delivery.deliveryAddress.plotBuilding || ''}${delivery.deliveryAddress.plotBuilding && delivery.deliveryAddress.streetArea ? ', ' : ''}${delivery.deliveryAddress.streetArea || ''}`}</div>
                     <div className="text-sm text-gray-500">{delivery.deliveryAddress ? `${delivery.deliveryAddress.city}, ${delivery.deliveryAddress.pincode}` : 'Offline Depot Delivery'}</div>
-                    {delivery.member.phoneNumber && (
-                      <div className="text-sm text-blue-600 mt-1">Phone: {delivery.member.phoneNumber}</div>
+                    {delivery.member.user?.mobile && (
+                      <div className="text-sm text-blue-600 mt-1">Phone: {delivery.member.user.mobile}</div>
                     )}
                     {delivery.deliveryAddress?.deliveryNotes && (
                       <div className="text-xs text-gray-500 mt-1 italic">Notes: {delivery.deliveryAddress.deliveryNotes}</div>
