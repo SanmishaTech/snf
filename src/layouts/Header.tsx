@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Facebook, Instagram, Search, Menu, X, UserCircle, LogOut, ShoppingBag } from 'lucide-react';
+import { Facebook, Instagram, Search, Menu, X, UserCircle, LogOut, ShoppingBag, KeyRound } from 'lucide-react';
+import UserChangePasswordDialog from '@/components/common/UserChangePasswordDialog';
 import { appName } from '@/config';
 import WalletButton from '@/modules/Wallet/Components/Walletmenu';
 import Sarkotlogo from "@/images/Sarkhot-Natural-Farms-Png.webp"
@@ -20,6 +21,7 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
   const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
   const [headerVisible, setHeaderVisible] = useState(true);
   const [scrolled, setScrolled] = useState(false);
+  const [isChangePasswordDialogOpen, setIsChangePasswordDialogOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(() => {
     try {
       const userDataString = localStorage.getItem('user');
@@ -166,6 +168,7 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
                           <p className="text-sm font-medium text-gray-800 truncate">{userName}</p>
                         </div>
                       )}
+                    
                       {userRole !== 'ADMIN' && (
                         <Link 
                           to="/member/subscriptions" 
@@ -185,6 +188,18 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
                           <ShoppingBag size={16} className="mr-2 text-green-600" />
                           Manage Address
                         </Link>
+                      )}
+                      {userRole === 'MEMBER' && (
+                        <button 
+                          onClick={() => { 
+                            setIsChangePasswordDialogOpen(true); 
+                            setIsAccountDropdownOpen(false); 
+                          }}
+                          className="w-full flex items-center text-left px-4 py-2 text-sm text-gray-700 hover:bg-green-50 transition-colors"
+                        >
+                          <KeyRound size={16} className="mr-2 text-green-600" />
+                          Change Password
+                        </button>
                       )}
                       <button 
                         onClick={() => { onLogout(); setIsAccountDropdownOpen(false); }}
@@ -308,6 +323,12 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
           </div>
         </div>
       )}
+      
+      {/* Change Password Dialog */}
+      <UserChangePasswordDialog
+        isOpen={isChangePasswordDialogOpen}
+        onClose={() => setIsChangePasswordDialogOpen(false)}
+      />
       </header>
   );
 };

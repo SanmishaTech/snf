@@ -205,10 +205,35 @@ const MySubscriptionsPage: React.FC = () => {
                   )}
                   {sub.productOrder?.invoicePath && (
                     <Button
-                      onClick={() => {
-                        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://www.indraai.in/';
-                        const invoiceUrl = `${baseUrl}/invoices/${sub.productOrder.invoicePath}`;
-                        window.open(invoiceUrl, '_blank');
+                      onClick={async () => {
+                        try {
+                          const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://www.indraai.in/';
+                          const invoiceUrl = `${baseUrl}/invoices/${sub.productOrder.invoicePath}`;
+                          
+                          // Fetch the file as blob to force download
+                          const response = await fetch(invoiceUrl);
+                          if (!response.ok) throw new Error('Download failed');
+                          
+                          const blob = await response.blob();
+                          const url = window.URL.createObjectURL(blob);
+                          
+                          // Create a temporary anchor element for download
+                          const link = document.createElement('a');
+                          link.href = url;
+                          link.download = `invoice-${sub.productOrder?.invoiceNo || sub.productOrder?.orderNo}.pdf`;
+                          document.body.appendChild(link);
+                          link.click();
+                          
+                          // Cleanup
+                          document.body.removeChild(link);
+                          window.URL.revokeObjectURL(url);
+                        } catch (error) {
+                          console.error('Download failed:', error);
+                          // Fallback to opening in new tab if download fails
+                          const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://www.indraai.in/';
+                          const invoiceUrl = `${baseUrl}/invoices/${sub.productOrder.invoicePath}`;
+                          window.open(invoiceUrl, '_blank');
+                        }
                       }}
                       variant="outline"
                       className="w-full sm:flex-1 flex items-center justify-center gap-2"

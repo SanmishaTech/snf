@@ -42,6 +42,7 @@ import OrderDeliveryPage from "./modules/Order/OrderDeliveryPage"
 // import OrderHistoryPage from './modules/member/OrderHistoryPage'; // File not found, commented out
 import MySubscriptionsPage from './modules/member/MySubscriptionsPage'; // Added for member subscriptions
 import ManageSubscriptionPage from './modules/member/ManageSubscriptionPage'; // Added for managing individual subscriptions
+import MemberProfilePage from './modules/member/MemberProfilePage'; // Added for member profile management
 import OrderReceivedPage from "./modules/Order/OrderReceivedPage"; // Added for admin receipt recording
 import SupervisorQtyPage from "./modules/Order/SupervisorQtyPage"; // Added for supervisor quantity recording
 import ProductList from "./modules/Products/ProductList"
@@ -205,11 +206,7 @@ const App = () => {
             <Route path="/member/orders/:id" element={<OrderDetailsPage />} />
             <Route path="/member/products" element={<MemberProductDisplayPage />} /> {/* Member product display page */}
             <Route path="/member/products/:id" element={<ProductDetailPage />} /> {/* New route for member product detail */}
-            <Route path="/member/profile" element={<div className="space-y-4">
-              <h1 className="text-2xl font-bold">Profile Management</h1>
-              <p>Manage your personal information and preferences here.</p>
-             </div>} />
-            <Route path="/member/addresses" element={<AddressListPage />} />
+             <Route path="/member/addresses" element={<AddressListPage />} />
             <Route path="/member/wallet" element={<UserWallet />} />
 
             <Route path="/member/addresses/create" element={<CreateAddressPage />} />

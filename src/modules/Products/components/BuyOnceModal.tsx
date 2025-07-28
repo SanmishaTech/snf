@@ -178,6 +178,10 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
       // Reset selections when modal opens
       setSelectedCityId(null);
       setSelectedAreaMaster(null);
+      // Clear any existing form errors
+      setFormErrors({});
+      // Reset pincode validation
+      setPincodeValidation({ isValid: false, message: "", isValidating: false });
     }
   }, [isOpen]);
 
@@ -232,6 +236,14 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
     
     setSelectedAreaMaster(areaMaster);
     
+    // Clear area master error when user selects an area
+    if (formErrors.areaMaster) {
+      setFormErrors(prev => ({
+        ...prev,
+        areaMaster: ''
+      }));
+    }
+    
     // Auto-fill city from selected area master
     if (areaMaster.city?.name) {
       handleAddressChange("city", areaMaster.city.name);
@@ -262,14 +274,32 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
       ...prev,
       [field]: value
     }));
+    
+    // Clear the error for this field when it's programmatically updated
+    if (formErrors[field as string]) {
+      setFormErrors(prev => ({
+        ...prev,
+        [field as string]: ''
+      }));
+    }
   };
 
   const handleAddressFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
+    const fieldValue = type === 'checkbox' ? checked : value;
+    
     setAddressFormState(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: fieldValue
     }));
+    
+    // Clear the error for this field when user starts typing/correcting
+    if (formErrors[name]) {
+      setFormErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
     
     // Validate pincode when it changes
     if (name === 'pincode' && value.length === 6 && /^\d{6}$/.test(value)) {
@@ -285,6 +315,14 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
       ...prev,
       label: value
     }));
+    
+    // Clear the error for label field when user selects/changes it
+    if (formErrors.label) {
+      setFormErrors(prev => ({
+        ...prev,
+        label: ''
+      }));
+    }
   };
   
   // Pincode validation function
@@ -757,6 +795,14 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                           ...prev,
                           mobile: value
                         }));
+                        
+                        // Clear the mobile error when user starts typing/correcting
+                        if (formErrors.mobile) {
+                          setFormErrors(prev => ({
+                            ...prev,
+                            mobile: ''
+                          }));
+                        }
                       }}
                       placeholder="Mobile number"
                       maxLength={10}
@@ -828,10 +874,17 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                     </Label>
                     <Select
                       onValueChange={(value) => {
-                        const cityId = value === "all" ? null : parseInt(value);
+                        // const cityId = value === "all" ? null : parseInt(value);
                         setSelectedCityId(cityId);
                         // Clear area master selection when city changes
                         setSelectedAreaMaster(null);
+                        // Clear area master error since selection was reset
+                        if (formErrors.areaMaster) {
+                          setFormErrors(prev => ({
+                            ...prev,
+                            areaMaster: ''
+                          }));
+                        }
                       }}
                       value={selectedCityId?.toString() }
                     >
@@ -839,8 +892,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                         <SelectValue placeholder="Filter by city" />
                       </SelectTrigger>
                       <SelectContent className="max-h-60 overflow-y-auto">
-                        <SelectItem value="all">All Cities</SelectItem>
-                        {cities
+                         {cities
                           .sort((a, b) => a.name.localeCompare(b.name))
                           .map((city) => (
                             <SelectItem key={city.id} value={city.id.toString()}>

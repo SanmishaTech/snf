@@ -866,12 +866,30 @@ const AdminSubscriptionList: React.FC = () => {
     setDownloadingInvoices(prev => new Set(prev).add(order.id));
 
     try {
-      // Check if invoice path is already available in the order data
+    // Check if invoice path is already available in the order data
       if (order.invoicePath) {
-        // If invoice path exists, download directly using the existing approach
+        // If invoice path exists, download using forced download approach
         const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://www.indraai.in/';
         const invoiceUrl = `${baseUrl}/invoices/${order.invoicePath}`;
-        window.open(invoiceUrl, '_blank');
+        
+        // Fetch the file as blob to force download
+        const response = await fetch(invoiceUrl);
+        if (!response.ok) throw new Error('Download failed');
+        
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        
+        // Create a temporary anchor element for download
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `invoice-${order.invoiceNo || order.orderNo}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        
+        // Cleanup
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
         toast.success(`Invoice for order ${order.orderNo} downloaded successfully`);
       } else {
         // If no invoice path in order data, try to generate/fetch invoice
@@ -882,6 +900,12 @@ const AdminSubscriptionList: React.FC = () => {
       console.error('Failed to download invoice:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to download invoice. Please try again.';
       toast.error(errorMessage);
+      // Fallback to opening in new tab if download fails
+      if (order.invoicePath) {
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://www.indraai.in/';
+        const invoiceUrl = `${baseUrl}/invoices/${order.invoicePath}`;
+        window.open(invoiceUrl, '_blank');
+      }
     } finally {
       // Remove order ID from downloading set
       setDownloadingInvoices(prev => {
