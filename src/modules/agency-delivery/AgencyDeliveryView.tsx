@@ -129,7 +129,7 @@ const AgencyDeliveryView: React.FC = () => {
       // Debug: Check if DepotProductVariant is present in the response
       if (data && data.length > 0) {
         console.log('[fetchDeliveries] First delivery item:', data[0]);
-        console.log('[fetchDeliveries] depotProductVariant in first item:', data[0].depotProductVariant);
+        console.log('[fetchDeliveries] DepotProductVariant in first item:', data[0].DepotProductVariant);
       }
       setDeliveries(data || []);
     } catch (err: any) {
@@ -210,12 +210,12 @@ const AgencyDeliveryView: React.FC = () => {
 
     // Debug: Log the first delivery to see the data structure
     console.log('First delivery data:', deliveries[0]);
-    console.log('depotProductVariant:', deliveries[0]?.depotProductVariant);
+    console.log('DepotProductVariant:', deliveries[0]?.DepotProductVariant);
 
     const formattedData = deliveries.map(delivery => ({
       'Customer Name': delivery.member.name,
       'Product Name': delivery.product.name,
-      'Product Variant': delivery.depotProductVariant?.name || 'N/A',
+      'Product Variant': delivery.DepotProductVariant?.name || 'N/A',
       'Quantity': delivery.quantity,
       'Delivery Address': `${delivery.deliveryAddress.plotBuilding || ''}${delivery.deliveryAddress.plotBuilding && delivery.deliveryAddress.streetArea ? ', ' : ''}${delivery.deliveryAddress.streetArea || ''}, ${delivery.deliveryAddress.city}, ${delivery.deliveryAddress.pincode}${delivery.member.user?.mobile ? ` (Phone: ${delivery.member.user.mobile})` : ''}`,
       'Landmark': delivery.deliveryAddress?.landmark || 'N/A',

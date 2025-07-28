@@ -338,5 +338,5 @@ export interface ApiDeliveryScheduleEntry {
   member: ApiMember;
   deliveryAddress: ApiDeliveryAddress;
   subscription: ApiSubscriptionInfo;
-  depotProductVariant?: ApiDepotProductVariant;
+  DepotProductVariant?: ApiDepotProductVariant;
 }
