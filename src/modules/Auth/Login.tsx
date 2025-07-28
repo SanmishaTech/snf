@@ -86,6 +86,9 @@ const Login: React.FC<LoginProps> = () => {
     if (user && user.role === "AGENCY") {
       return "/admin/dashboard";
     }
+    if (user && user.role === "SUPERVISOR") {
+      return "/admin/dashboard";
+    }
     // Add other role-based redirects here if needed in the future
     // e.g., if (user && user.role === 'ADMIN') return '/admin/overview';
     return "/"; // Default path for other roles or if user is undefined
@@ -363,7 +366,7 @@ const Login: React.FC<LoginProps> = () => {
               <Input
                 id="identifier"
                 type="text"
-                placeholder="name@example.com or 9876543210"
+                placeholder="name@example.com or 9876543210 (use your registered mobile)"
                 {...register("identifier")}
                 disabled={
                   loginMutation.isPending || acceptPolicyMutation.isPending

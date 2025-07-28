@@ -147,12 +147,12 @@ const initialData = {
           icon: Briefcase,
           groupLabel: "Indraai",
         },
-        {
-          title: "Supervisors",
-          url: "/admin/supervisors",
-          icon: UsersRound,
-          groupLabel: "Indraai",
-        },
+        // {
+        //   title: "Supervisors",
+        //   url: "/admin/supervisors",
+        //   icon: UsersRound,
+        //   groupLabel: "Indraai",
+        // },
         {
           title: "Orders",
           url: "/admin/orders",
@@ -173,12 +173,12 @@ const initialData = {
         },
         
 
-        // {
-        //   title: "Customer",
-        //   url: "/admin/members",
-        //   icon: Briefcase,
-        //   groupLabel: "Member",
-        // },
+        {
+          title: "Customer",
+          url: "/admin/members",
+          icon: Briefcase,
+          groupLabel: "Member",
+        },
         // {
         //   title: "Users",
         //   url: "/admin/users",
