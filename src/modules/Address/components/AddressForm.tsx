@@ -607,11 +607,11 @@ const AddressForm: React.FC<AddressFormProps> = ({
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium mb-1.5 block">
-                  Filter by City
+                  City
                 </label>
                 <Select
                   onValueChange={(value) => {
-                    const cityId = value === "all" ? null : parseInt(value);
+                    const cityId = value === "dombivli" ? null : parseInt(value);
                     setSelectedCityId(cityId);
                     // Clear area master selection when city changes
                     setSelectedAreaMaster(null);
@@ -619,7 +619,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
                   value={selectedCityId?.toString() || "all"}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Filter by city" />
+                    <SelectValue placeholder=" city" />
                   </SelectTrigger>
                   <SelectContent className="max-h-60 overflow-y-auto">
                      {cities

@@ -870,11 +870,11 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                       htmlFor="deliveryCity"
                       className="text-sm font-medium mb-1.5 block"
                     >
-                      Filter by City
+                      City
                     </Label>
                     <Select
                       onValueChange={(value) => {
-                        // const cityId = value === "all" ? null : parseInt(value);
+                        const cityId = value === "dombivli" ? null : parseInt(value);
                         setSelectedCityId(cityId);
                         // Clear area master selection when city changes
                         setSelectedAreaMaster(null);
@@ -889,7 +889,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                       value={selectedCityId?.toString() }
                     >
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Filter by city" />
+                        <SelectValue placeholder="city" />
                       </SelectTrigger>
                       <SelectContent className="max-h-60 overflow-y-auto">
                          {cities
