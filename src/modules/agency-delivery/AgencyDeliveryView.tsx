@@ -309,7 +309,7 @@ const AgencyDeliveryView: React.FC = () => {
           />
         </div>
         {currentUser?.role === 'ADMIN' && (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 max-sm:flex-col">
             <label htmlFor="agencySelect" className="font-semibold text-gray-700 whitespace-nowrap">Select Agency:</label>
             <Select
               value={selectedAgencyIdForAdmin || ''}
