@@ -207,7 +207,7 @@ const MySubscriptionsPage: React.FC = () => {
                     <Button
                       onClick={async () => {
                         try {
-                          const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://www.indraai.in/';
+                          const baseUrl = import.meta.env.VITE_BACKEND_URL || 'https://www.indraai.in';
                           const invoiceUrl = `${baseUrl}/invoices/${sub.productOrder.invoicePath}`;
                           
                           // Fetch the file as blob to force download
@@ -230,7 +230,7 @@ const MySubscriptionsPage: React.FC = () => {
                         } catch (error) {
                           console.error('Download failed:', error);
                           // Fallback to opening in new tab if download fails
-                          const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://www.indraai.in/';
+                          const baseUrl = import.meta.env.VITE_BACKEND_URL || 'https://www.indraai.in';
                           const invoiceUrl = `${baseUrl}/invoices/${sub.productOrder.invoicePath}`;
                           window.open(invoiceUrl, '_blank');
                         }
