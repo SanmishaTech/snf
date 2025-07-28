@@ -1,5 +1,5 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { get } from '../../services/apiService'; // Corrected to import 'get' named export
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'; // Added CardFooter
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -117,17 +117,60 @@ const formatDeliverySchedule = (schedule: MemberSubscription['deliverySchedule']
 };
 
 const MySubscriptionsPage: React.FC = () => {
+  const queryClient = useQueryClient();
+  
+  // Get current user info from localStorage
+  const getCurrentUser = () => {
+    try {
+      const userStr = localStorage.getItem('user');
+      const token = localStorage.getItem('authToken');
+      return userStr && token ? JSON.parse(userStr) : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const currentUser = getCurrentUser();
+  const userId = currentUser?.id;
+
+  // Use user-specific query key to prevent cross-user data pollution
   const { data: subscriptions, isLoading, error } = useQuery<MemberSubscription[], Error>({
-    queryKey: ['mySubscriptions'],
+    queryKey: ['mySubscriptions', userId],
     queryFn: async () => {
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
       return get<MemberSubscription[]>('/subscriptions');
     },
+    enabled: !!userId, // Only run query if we have a user ID
     // Refetch on window focus or mount, but not too often
     refetchOnWindowFocus: true,
     refetchOnMount: true,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes, renamed from cacheTime for v5
+    staleTime: 2 * 60 * 1000, // 2 minutes (reduced for better user switching)
+    gcTime: 5 * 60 * 1000, // 5 minutes (reduced for better memory management)
   });
+
+  // Clear all queries when user changes (detected by userId change)
+  useEffect(() => {
+    if (!userId) {
+      // User logged out or not authenticated - clear all caches
+      queryClient.clear();
+    }
+  }, [userId, queryClient]);
+
+  // Handle unauthenticated user
+  if (!userId) {
+    return (
+      <div className="container mx-auto p-4">
+        <Alert variant="destructive" className="mt-4">
+          <AlertTitle>Authentication Required</AlertTitle>
+          <AlertDescription>
+            Please log in to view your subscriptions.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

@@ -5,6 +5,8 @@ import UserChangePasswordDialog from "@/components/common/UserChangePasswordDial
 import { LogOut, UserPen, ChevronsUpDown, KeySquare } from "lucide-react";
 import ConfirmDialog from "@/components/common/confirm-dialog";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { clearAuthData } from "@/utils/auth";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,12 +36,17 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false);
 
   const handleLogout = () => {
-    localStorage.removeItem("authToken"); // Remove auth token
-    localStorage.removeItem("user"); // Remove user data
+    // Clear all cached query data to prevent stale data issues
+    queryClient.clear();
+    
+    // Clear all authentication data from localStorage
+    clearAuthData();
+    
     setShowConfirmation(false);
     navigate("/"); // Redirect to login page
   };

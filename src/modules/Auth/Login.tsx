@@ -130,6 +130,10 @@ const Login: React.FC<LoginProps> = () => {
         "Type:",
         typeof data.accesstoken
       );
+      
+      // Clear all previous user data and caches when a new user logs in
+      queryClient.clear();
+      
       localStorage.setItem("authToken", data.token || data.accesstoken);
       localStorage.setItem("refreshToken", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
