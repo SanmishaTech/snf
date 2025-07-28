@@ -126,6 +126,11 @@ const AgencyDeliveryView: React.FC = () => {
     try {
       const data = await get<ApiDeliveryScheduleEntry[]>(fetchUrl);
       console.log('[fetchDeliveries] Raw data received:', data);
+      // Debug: Check if DepotProductVariant is present in the response
+      if (data && data.length > 0) {
+        console.log('[fetchDeliveries] First delivery item:', data[0]);
+        console.log('[fetchDeliveries] depotProductVariant in first item:', data[0].depotProductVariant);
+      }
       setDeliveries(data || []);
     } catch (err: any) {
       console.error('[fetchDeliveries] Error fetching deliveries:', err);
@@ -203,11 +208,17 @@ const AgencyDeliveryView: React.FC = () => {
       return;
     }
 
+    // Debug: Log the first delivery to see the data structure
+    console.log('First delivery data:', deliveries[0]);
+    console.log('depotProductVariant:', deliveries[0]?.depotProductVariant);
+
     const formattedData = deliveries.map(delivery => ({
       'Customer Name': delivery.member.name,
       'Product Name': delivery.product.name,
+      'Product Variant': delivery.depotProductVariant?.name || 'N/A',
       'Quantity': delivery.quantity,
       'Delivery Address': `${delivery.deliveryAddress.plotBuilding || ''}${delivery.deliveryAddress.plotBuilding && delivery.deliveryAddress.streetArea ? ', ' : ''}${delivery.deliveryAddress.streetArea || ''}, ${delivery.deliveryAddress.city}, ${delivery.deliveryAddress.pincode}${delivery.member.phoneNumber ? ` (Phone: ${delivery.member.phoneNumber})` : ''}`,
+      'Landmark': delivery.deliveryAddress?.landmark || 'N/A',
       'Status': delivery.status,
       'Phone': delivery.deliveryAddress.mobile || 'N/A', // Dedicated phone column remains
       // 'Notes': delivery.deliveryAddress.deliveryNotes || ''
@@ -218,13 +229,14 @@ const AgencyDeliveryView: React.FC = () => {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Deliveries');
 
     const columnWidths = [
-      { wch: 20 }, // Member Name
+      { wch: 20 }, // Customer Name
       { wch: 25 }, // Product Name
+      { wch: 20 }, // Product Variant
       { wch: 10 }, // Quantity
       { wch: 40 }, // Delivery Address
+      { wch: 15 }, // Landmark
       { wch: 15 }, // Status
-      { wch: 15 }, // Phone
-      { wch: 30 }  // Notes
+      { wch: 15 }  // Phone
     ];
     worksheet['!cols'] = columnWidths;
 

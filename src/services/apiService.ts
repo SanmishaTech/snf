@@ -317,6 +317,12 @@ export interface ApiSubscriptionInfo {
   // Add other relevant subscription fields if needed by the frontend for context
 }
 
+export interface ApiDepotProductVariant {
+  id: number;
+  name: string;
+  hsnCode?: string;
+}
+
 export interface ApiDeliveryScheduleEntry {
   id: string; // Prisma CUID is a string
   subscriptionId: number;
@@ -332,4 +338,5 @@ export interface ApiDeliveryScheduleEntry {
   member: ApiMember;
   deliveryAddress: ApiDeliveryAddress;
   subscription: ApiSubscriptionInfo;
+  depotProductVariant?: ApiDepotProductVariant;
 }
