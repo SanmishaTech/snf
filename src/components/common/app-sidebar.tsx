@@ -173,18 +173,18 @@ const initialData = {
         },
         
 
-        {
-          title: "Customer",
-          url: "/admin/members",
-          icon: Briefcase,
-          groupLabel: "Member",
-        },
-        {
-          title: "Users",
-          url: "/admin/users",
-          icon: Briefcase,
-          groupLabel: "System",
-        },
+        // {
+        //   title: "Customer",
+        //   url: "/admin/members",
+        //   icon: Briefcase,
+        //   groupLabel: "Member",
+        // },
+        // {
+        //   title: "Users",
+        //   url: "/admin/users",
+        //   icon: Briefcase,
+        //   groupLabel: "System",
+        // },
       ],
       navMain: [],
     },
