@@ -33,12 +33,15 @@ interface Agency {
 
 interface Address {
   id: string;
-  address: string;
+  recipientName?: string;
+  plotBuilding?: string;
+  streetArea?: string;
+  landmark?: string;
   city: string;
   state: string;
-  zip: string;
-  country: string;
-  isDefault: boolean;
+  pincode: string;
+  country?: string;
+  isDefault?: boolean;
 }
 
 export interface MemberSubscription {
@@ -240,7 +243,7 @@ const MySubscriptionsPage: React.FC = () => {
                 {sub.agency && <p><strong>Assigned Agent:</strong> {sub.agency.user.name}</p>}
                 {sub.deliveryAddress && (
                   <p>
-                    <strong>Delivering to:</strong> {`${sub.deliveryAddress?.recipientName && sub.deliveryAddress?.recipientName} ${sub.deliveryAddress?.plotBuilding && sub.deliveryAddress?.plotBuilding} ,${sub.deliveryAddress?.streetArea && sub.deliveryAddress?.streetArea}, ${sub.deliveryAddress.landmark && sub.deliveryAddress.landmark}, ${sub.deliveryAddress.city}, ${sub.deliveryAddress.state} ${sub.deliveryAddress.pincode}`}
+                    <strong>Delivering to:</strong> {sub.deliveryAddress.recipientName || ''}{sub.deliveryAddress.recipientName ? ', ' : ''}{sub.deliveryAddress.plotBuilding || ''}{sub.deliveryAddress.plotBuilding && sub.deliveryAddress.streetArea ? ', ' : ''}{sub.deliveryAddress.streetArea || ''}, {sub.deliveryAddress.city}, {sub.deliveryAddress.state} {sub.deliveryAddress.pincode}{sub.deliveryAddress.landmark ? ` (${sub.deliveryAddress.landmark})` : ''}
                   </p>
                 )}
                 {sub.amount !== undefined && <p className="font-semibold text-base"><strong>Total Amount:</strong> ₹{sub.amount.toFixed(2)}</p>}

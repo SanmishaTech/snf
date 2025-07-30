@@ -962,7 +962,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Farmer Details</p>
                 <div className="grid grid-cols-2 gap-2 mt-2 text-sm max-md:grid-cols-1">
                   <div>
-                    <span className="text-gray-500 dark:text-gray-400">Email:</span>
+                  <span className="text-gray-500 dark:text-gray-400">Email:</span>
                     <p className="font-medium text-gray-700 dark:text-gray-300 max-sm:text-xs">{selectedVendor.email}</p>
                   </div>
                   <div>
