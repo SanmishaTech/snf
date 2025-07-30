@@ -7,8 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton'; // For loading state
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { X, UserPlus, UserIcon, PhoneIcon, MailIcon, PackageIcon, ShoppingCartIcon, IndianRupeeIcon, CalendarIcon, CalendarCheckIcon, UserCheckIcon, Calendar, Users, Download } from 'lucide-react';
+import { X, UserPlus, UserIcon, PhoneIcon, MailIcon, PackageIcon, ShoppingCartIcon, IndianRupeeIcon, CalendarIcon, CalendarCheckIcon, UserCheckIcon, Calendar, Users, Download, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from "sonner"; // Using Sonner for toasts
 import { BulkAgencyAssignmentModal } from './components/BulkAgencyAssignmentModal';
@@ -94,6 +95,7 @@ interface Subscription {
   paymentDate?: string | null; // Store as ISO string or Date
   expiryDate?: string | null;
   deliveryAddress?: DeliveryAddress;
+  deliveryInstructions?: string | null; // Delivery instructions field
 }
 
 // API shape when fetching product orders
@@ -369,6 +371,7 @@ interface AssignAgentModalProps {
   onUpdateSubscription: (updatedDetails: {
     subscriptionId: number;
     agencyId?: number | null;
+    deliveryInstructions?: string;
   }) => Promise<void>;
 }
 
@@ -381,12 +384,21 @@ const AssignAgentModal: React.FC<AssignAgentModalProps> = ({
   onUpdateSubscription,
 }) => {
   const [selectedAgencyId, setSelectedAgencyId] = useState<string>('NONE');
+  const [deliveryInstructions, setDeliveryInstructions] = useState('');
 
   useEffect(() => {
     if (subscription) {
+      console.log('AssignAgentModal - Subscription loaded:', {
+        id: subscription.id,
+        agencyId: subscription.agencyId,
+        deliveryInstructions: subscription.deliveryInstructions,
+        fullSubscription: subscription
+      });
       setSelectedAgencyId(subscription.agencyId?.toString() || 'NONE');
+      setDeliveryInstructions(subscription.deliveryInstructions || '');
     } else {
       setSelectedAgencyId('NONE');
+      setDeliveryInstructions('');
     }
   }, [subscription]);
 
@@ -396,7 +408,16 @@ const AssignAgentModal: React.FC<AssignAgentModalProps> = ({
     const updatedDetails = {
       subscriptionId: subscription.id,
       agencyId: selectedAgencyId !== 'NONE' ? parseInt(selectedAgencyId, 10) : null,
+      deliveryInstructions: deliveryInstructions,
     };
+
+    console.log('AssignAgentModal - Submitting update:', {
+      subscriptionId: subscription.id,
+      originalDeliveryInstructions: subscription.deliveryInstructions,
+      newDeliveryInstructions: deliveryInstructions,
+      selectedAgencyId,
+      updatedDetails
+    });
 
     try {
       await onUpdateSubscription(updatedDetails);
@@ -532,7 +553,7 @@ const AssignAgentModal: React.FC<AssignAgentModalProps> = ({
 
           {/* Agent Selection */}
           <fieldset className="grid gap-4 border p-4 rounded-md">
-            <legend className="text-sm font-medium px-1">Delivery Agent</legend>
+            <legend className="text-sm font-medium px-1">Delivery Agent & Instructions</legend>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="delivery-agent" className="text-right col-span-1">Agent</Label>
               <Select
@@ -553,6 +574,17 @@ const AssignAgentModal: React.FC<AssignAgentModalProps> = ({
                   }
                 </SelectContent>
               </Select>
+            </div>
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="delivery-instructions" className="text-right col-span-1 mt-2">Instructions</Label>
+              <Textarea
+                id="delivery-instructions"
+                value={deliveryInstructions}
+                onChange={(e) => setDeliveryInstructions(e.target.value)}
+                className="col-span-3"
+                placeholder="Enter any delivery instructions (e.g., leave at door, call on arrival)"
+                maxLength={200}
+              />
             </div>
           </fieldset>
         </div>
@@ -804,19 +836,27 @@ const AdminSubscriptionList: React.FC = () => {
     }
   };
 
-  const handleAgentAssignmentUpdate = async (updatedDetails: { subscriptionId: number; agencyId?: number | null }) => {
+  const handleAgentAssignmentUpdate = async (updatedDetails: { subscriptionId: number; agencyId?: number | null; deliveryInstructions?: string; }) => {
     if (!selectedSubscription) return;
 
-    const { subscriptionId, agencyId } = updatedDetails;
-    const apiPayload = { agencyId: agencyId === undefined ? null : Number(agencyId) };
+    const { subscriptionId, agencyId, deliveryInstructions } = updatedDetails;
+    const apiPayload = { agencyId: agencyId === undefined ? null : Number(agencyId), deliveryInstructions };
+
+    console.log('handleAgentAssignmentUpdate - API call:', {
+      subscriptionId,
+      originalSubscription: selectedSubscription,
+      apiPayload,
+      endpoint: `/subscriptions/${subscriptionId}/assign-agent`
+    });
 
     try {
-      await put(`/subscriptions/${subscriptionId}/assign-agent`, apiPayload);
-      toast.success("Agent assigned successfully!");
+      const response = await put(`/subscriptions/${subscriptionId}/assign-agent`, apiPayload);
+      console.log('handleAgentAssignmentUpdate - API response:', response);
+      toast.success("Agent and delivery instructions updated successfully!");
       fetchProductOrders(); // Refresh list to show updated agent
     } catch (error) {
-      toast.error("Failed to assign agent.");
-      console.error("Error assigning agent:", error);
+      console.error("Error assigning agent - Full error:", error);
+      toast.error("Failed to update subscription.");
     }
   };
 
@@ -869,7 +909,7 @@ const AdminSubscriptionList: React.FC = () => {
     // Check if invoice path is already available in the order data
       if (order.invoicePath) {
         // If invoice path exists, download using forced download approach
-        const baseUrl = import.meta.env.VITE_BACKEND_URL || 'https://www.indraai.in';
+        const baseUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
         const invoiceUrl = `${baseUrl}/invoices/${order.invoicePath}`;
         
         // Fetch the file as blob to force download
@@ -902,7 +942,7 @@ const AdminSubscriptionList: React.FC = () => {
       toast.error(errorMessage);
       // Fallback to opening in new tab if download fails
       if (order.invoicePath) {
-        const baseUrl = import.meta.env.VITE_BACKEND_URL || 'https://www.indraai.in';
+        const baseUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
         const invoiceUrl = `${baseUrl}/invoices/${order.invoicePath}`;
         window.open(invoiceUrl, '_blank');
       }
@@ -927,6 +967,13 @@ const AdminSubscriptionList: React.FC = () => {
       'SUNDAY': 'Sun'
     };
     return dayMap[day.toUpperCase()] || day;
+  };
+
+  // Utility function to truncate delivery instructions
+  const truncateText = (text: string | null | undefined, maxLength: number = 50): string => {
+    if (!text) return '';
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
   };
 
   const formatDeliverySchedule = (schedule: string, weekdays?: string | null): {
@@ -1108,7 +1155,7 @@ const AdminSubscriptionList: React.FC = () => {
               <TableHead className="px-4 py-3 font-medium text-gray-700">Member</TableHead>
               <TableHead className="px-4 py-3 font-medium text-gray-700">Subscription Details</TableHead>
               <TableHead className="px-4 py-3 font-medium text-gray-700">Delivery</TableHead>
-              <TableHead className="px-4 py-3 font-medium text-gray-700">Payment</TableHead>
+              <TableHead className="px-4 py-3 font-medium text-gray-700">Payment & Delivery</TableHead>
               <TableHead className="px-4 py-3 font-medium text-gray-700">Dates</TableHead>
               <TableHead className="px-4 py-3 font-medium text-gray-700">Agent</TableHead>
               <TableHead className="px-4 py-3 font-medium text-gray-700 text-right">Actions</TableHead>
@@ -1297,6 +1344,27 @@ const AdminSubscriptionList: React.FC = () => {
                               ? 'Processing payment'
                               : 'Payment required'}
                         </div>
+                        
+                        {/* Delivery Instructions */}
+                        {firstSub?.deliveryInstructions && (
+                          <div className="mt-2 border-t pt-2">
+                            <div className="flex items-start gap-1.5">
+                              <MessageSquare className="h-3.5 w-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="text-xs text-gray-600 cursor-help">
+                                      {truncateText(firstSub.deliveryInstructions, 40)}
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="left" className="max-w-xs">
+                                    <p className="whitespace-pre-wrap">{firstSub.deliveryInstructions}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </TableCell>
 
@@ -1366,13 +1434,13 @@ const AdminSubscriptionList: React.FC = () => {
                                 size="icon"
                                 className="h-8 w-8 rounded-full bg-white hover:bg-gray-50"
                                 onClick={() => handleOpenAssignAgentModal(firstSub)}
-                                disabled={firstSub?.paymentStatus !== 'PAID' || !!firstSub?.agencyId}
+                                disabled={firstSub?.paymentStatus !== 'PAID'}
                               >
                                 <UserPlus className="h-4 w-4" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent side="top">
-                              <p>{!!firstSub?.agencyId ? "Agent assigned" : firstSub?.paymentStatus !== 'PAID' ? "Complete payment first" : "Assign Agent"}</p>
+                              <p>{firstSub?.paymentStatus !== 'PAID' ? "Complete payment first" : firstSub?.agencyId ? "Edit Agent & Instructions" : "Assign Agent"}</p>
                             </TooltipContent>
                           </Tooltip>
 

@@ -14,6 +14,7 @@ export interface SubscriptionRequest {
   altQty?: number;
   paymentMode: 'ONLINE' | 'CASH' | 'UPI' | 'BANK';
   paymentReferenceNo?: string;
+  deliveryInstructions?: string;
 }
 
 export interface SubscriptionDetail {
@@ -32,6 +33,7 @@ export interface OrderWithSubscriptionsRequest {
   subscriptions: SubscriptionDetail[];
   deliveryAddressId: string;
   walletamt?: number;
+  deliveryInstructions?: string;
 }
 
 export interface Subscription {

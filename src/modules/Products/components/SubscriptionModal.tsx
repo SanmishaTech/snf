@@ -211,6 +211,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [useWallet, setUseWallet] = useState(true);
+  const [deliveryInstructions, setDeliveryInstructions] = useState<string>("");
   const [locations, setLocations] = useState<LocationData[]>([]);
   const [cities, setCities] = useState<City[]>([]);
   const [selectedCityId, setSelectedCityId] = useState<number | null>(null);
@@ -1329,6 +1330,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       subscriptions,
       deliveryAddressId: String(deliveryAddressIdForPayload),
       walletamt: useWallet ? walletDeduction : 0, // Wallet amount not handled in this form
+      deliveryInstructions: deliveryInstructions.trim() || undefined, // Include delivery instructions
     };
 
     try {
@@ -1654,6 +1656,25 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     </div>
 
                     {/* Start Date */}
+                    <div className="bg-white border border-gray-200 rounded-lg p-2.5">
+                      <h3 className="text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1">
+                        <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Delivery Instructions (Optional)
+                      </h3>
+                      <textarea
+                        value={deliveryInstructions}
+                        onChange={(e) => setDeliveryInstructions(e.target.value)}
+                        placeholder="e.g., Leave at gate, Call before delivery, Ring doorbell twice..."
+                        className="w-full p-2 border border-gray-300 rounded-md text-sm resize-none"
+                        rows={2}
+                        maxLength={200}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        {deliveryInstructions.length}/200 characters
+                      </p>
+                    </div>
 
                     {/* Variant Selection Section */}
                     {hasVariants && productVariants.length > 0 && (

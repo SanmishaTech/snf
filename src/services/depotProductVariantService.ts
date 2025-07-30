@@ -18,6 +18,7 @@ export interface DepotProductVariant {
   notInStock: boolean;
   isHidden: boolean;
   buyOncePrice?: number;
+  purchasePrice?: number;
   createdAt?: string;
   updatedAt?: string;
 }

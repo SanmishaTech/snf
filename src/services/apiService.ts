@@ -314,6 +314,7 @@ export interface ApiDeliveryAddress {
 
 export interface ApiSubscriptionInfo {
   id: number;
+  deliveryInstructions?: string; // Added delivery instructions from subscription
   // Add other relevant subscription fields if needed by the frontend for context
 }
 

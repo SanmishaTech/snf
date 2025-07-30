@@ -147,6 +147,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
     totalAmount?: number;
   }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deliveryInstructions, setDeliveryInstructions] = useState<string>("");
   
   // Pincode validation state
   const [pincodeValidation, setPincodeValidation] = useState<{
@@ -663,6 +664,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
       ],
       deliveryAddressId: parseInt(String(deliveryAddressIdForPayload), 10),
       walletamt: useWallet ? walletDeduction : 0,
+      deliveryInstructions: deliveryInstructions.trim() || undefined, // Include delivery instructions
     };
 
     setIsSubmitting(true);
@@ -1253,6 +1255,28 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                     </Button>
                   </div>
                 </div>
+              </div>
+
+              {/* Delivery Instructions */}
+              <div>
+                <Label htmlFor="deliveryInstructions" className="text-sm font-medium mb-2 block flex items-center gap-1">
+                  <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Delivery Instructions (Optional)
+                </Label>
+                <textarea
+                  id="deliveryInstructions"
+                  value={deliveryInstructions}
+                  onChange={(e) => setDeliveryInstructions(e.target.value)}
+                  placeholder="e.g., Leave at gate, Call before delivery, Ring doorbell twice..."
+                  className="w-full p-2 border border-gray-300 rounded-md text-sm resize-none focus:ring-green-500 focus:border-green-500"
+                  rows={3}
+                  maxLength={200}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {deliveryInstructions.length}/200 characters
+                </p>
               </div>
 
               <div>

@@ -261,5 +261,36 @@
     .border-primary {
       border-color: var(--primary) !important;
     }
+
+    /* Mobile-specific improvements for form elements */
+    [data-slot="select-trigger"] {
+      min-width: 100% !important;
+      width: 100% !important;
+    }
+
+    [data-slot="select-content"] {
+      max-width: 95vw !important;
+      min-width: 250px !important;
+    }
+
+    /* Ensure select values don't overflow */
+    [data-slot="select-value"] {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: calc(100% - 32px);
+    }
+    
+    /* Fix table overflow issues on mobile */
+    .table-container {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Improve touch targets for mobile */
+    button, [role="button"] {
+      min-height: 44px;
+      min-width: 44px;
+    }
   }
 }

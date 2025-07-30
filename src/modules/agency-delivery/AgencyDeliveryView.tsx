@@ -4,6 +4,12 @@ import { get, put, ApiDeliveryScheduleEntry, DeliveryStatus } from '../../servic
 import clsx from 'clsx';
 import * as XLSX from 'xlsx';
 
+// Helper function to truncate text with ellipsis
+const truncateText = (text: string | undefined | null, maxLength: number = 50): string => {
+  if (!text) return 'N/A';
+  return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
+};
+
 // Helper function to get user details from localStorage
 const getUserDetailsFromLocalStorage = (): { role: string | null; userId: string | null; agencyId: string | null; name: string | null; } => {
   console.log('[StorageDebug] Attempting to get user details...');
@@ -219,6 +225,7 @@ const AgencyDeliveryView: React.FC = () => {
       'Quantity': delivery.quantity,
       'Delivery Address': `${delivery.deliveryAddress.plotBuilding || ''}${delivery.deliveryAddress.plotBuilding && delivery.deliveryAddress.streetArea ? ', ' : ''}${delivery.deliveryAddress.streetArea || ''}, ${delivery.deliveryAddress.city}, ${delivery.deliveryAddress.pincode}${delivery.member.user?.mobile ? ` (Phone: ${delivery.member.user.mobile})` : ''}`,
       'Landmark': delivery.deliveryAddress?.landmark || 'N/A',
+      'Delivery Instructions': delivery.subscription?.deliveryInstructions || 'N/A',
       'Status': delivery.status,
       'Phone': delivery.deliveryAddress.mobile || 'N/A', // Dedicated phone column remains
       // 'Notes': delivery.deliveryAddress.deliveryNotes || ''
@@ -235,6 +242,7 @@ const AgencyDeliveryView: React.FC = () => {
       { wch: 10 }, // Quantity
       { wch: 40 }, // Delivery Address
       { wch: 15 }, // Landmark
+      { wch: 30 }, // Delivery Instructions
       { wch: 15 }, // Status
       { wch: 15 }  // Phone
     ];
@@ -393,6 +401,7 @@ const AgencyDeliveryView: React.FC = () => {
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Delivery Instructions</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 {currentUser?.role === 'AGENCY' && (
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -408,6 +417,9 @@ const AgencyDeliveryView: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">{delivery.product.name}</div>
+                    {delivery.DepotProductVariant?.name && (
+                      <div className="text-xs text-gray-500">{delivery.DepotProductVariant.name}</div>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="text-sm text-gray-900">{delivery.quantity}</span>
@@ -422,6 +434,11 @@ const AgencyDeliveryView: React.FC = () => {
                     {delivery.deliveryAddress?.deliveryNotes && (
                       <div className="text-xs text-gray-500 mt-1 italic">Notes: {delivery.deliveryAddress.deliveryNotes}</div>
                     )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-normal max-w-xs">
+                    <div className="text-sm text-gray-900" title={delivery.subscription?.deliveryInstructions || 'N/A'}>
+                      {truncateText(delivery.subscription?.deliveryInstructions, 40)}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={clsx("px-2 inline-flex text-xs leading-5 font-semibold rounded-full", getStatusBadgeClass(delivery.status))}>

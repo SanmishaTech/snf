@@ -32,6 +32,7 @@ const formSchema = z.object({
   notInStock: z.boolean().default(false),
   isHidden: z.boolean().default(false),
   buyOncePrice: z.coerce.number().nonnegative().optional(),
+  purchasePrice: z.coerce.number({ invalid_type_error: 'Purchase price must be a number' }).nonnegative().optional(),
 });
 
 export type DepotVariantFormData = z.infer<typeof formSchema>;
@@ -66,6 +67,7 @@ const DepotProductVariantForm: React.FC<Props> = ({ initialData, onClose, onSucc
       price1Month: initialData?.price1Month ?? 0,
       isHidden: initialData?.isHidden || false,
       buyOncePrice: initialData?.buyOncePrice ?? 0,
+      purchasePrice: initialData?.purchasePrice ?? 0,
     },
   });
 
@@ -96,6 +98,7 @@ const DepotProductVariantForm: React.FC<Props> = ({ initialData, onClose, onSucc
         price15Day: initialData.price15Day ?? 0,
         price1Month: initialData.price1Month ?? 0,
         buyOncePrice: initialData.buyOncePrice ?? 0,
+        purchasePrice: initialData.purchasePrice ?? 0,
       });
     }
   }, [initialData, reset]);
@@ -185,10 +188,24 @@ const DepotProductVariantForm: React.FC<Props> = ({ initialData, onClose, onSucc
         <Input
           id="buyOncePrice"
           type="number"
+          step="0.01"
           {...register('buyOncePrice')}
         />
         {errors.buyOncePrice && (
           <p className="text-sm text-red-500">{errors.buyOncePrice.message}</p>
+        )}
+      </div>
+
+      <div className="grid gap-2">
+        <Label htmlFor="purchasePrice">Purchase Price</Label>
+        <Input
+          id="purchasePrice"
+          type="number"
+          step="0.01"
+          {...register('purchasePrice')}
+        />
+        {errors.purchasePrice && (
+          <p className="text-sm text-red-500">{errors.purchasePrice.message}</p>
         )}
       </div>
 

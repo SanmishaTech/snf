@@ -75,7 +75,10 @@ interface DepotVariant {
   name: string;
   mrp?: number;
   buyOncePrice?: number;
+  purchasePrice?: number;
   unit?: string;
+  depotId?: string;
+  productId?: string;
 }
 
 // Helper functions from user's Calendar28
@@ -193,7 +196,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
   const [depots, setDepots] = useState<Depot[]>([]);
   const [depotVariants, setDepotVariants] = useState<DepotVariant[]>([]);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
-  const [orderTotal, setordertotal] = useState()
+  const [orderTotal, setOrderTotal] = useState<number>(0)
   const [isFetchingPrefill, setIsFetchingPrefill] = useState<boolean>(false);
   const [isOrderSummaryExpanded, setIsOrderSummaryExpanded] = useState<boolean>(true);
   const [expandedProducts, setExpandedProducts] = useState<Record<string, boolean>>({});
@@ -284,7 +287,8 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
       const depot = depots.find(d => String(d.id) === item.depotId);
       
       if (product && variant) {
-        const variantPrice = Number(variant.mrp) || Number(variant.buyOncePrice) || 0;
+        // Prioritize purchasePrice if available, then fallback to mrp or buyOncePrice
+        const variantPrice = Number(variant.purchasePrice) || Number(variant.mrp) || Number(variant.buyOncePrice) || 0;
         const itemQuantity = Number(item.quantity);
         
         if (!summary[item.productId]) {
@@ -555,24 +559,44 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                   // If we have member details, use them to distribute quantity accurately
                   if (group.members && Array.isArray(group.members)) {
                     group.members.forEach((member: any) => {
-                      // For now, we'll distribute evenly since member data doesn't include agency info
-                      // In a real scenario, you might want to map members to agencies
+                      // Count members per agency based on their agencyId
+                      if (member.agencyId) {
+                        const agencyIdStr = String(member.agencyId);
+                        membersByAgency[agencyIdStr] = (membersByAgency[agencyIdStr] || 0) + (member.quantity || 1);
+                      }
                     });
                   }
                   
-                  // For now, distribute quantity evenly among agencies
-                  const quantityPerAgency = Math.ceil(group.statistics.totalQuantity / group.agencies.ids.length);
+                  // Distribute quantities based on member counts or evenly if no member data
+                  const hasValidMemberData = Object.keys(membersByAgency).length > 0;
                   
                   group.agencies.ids.forEach((agencyId: number, index: number) => {
+                    const agencyIdStr = String(agencyId);
+                    let agencyQuantity = 0;
+                    
+                    if (hasValidMemberData && membersByAgency[agencyIdStr]) {
+                      // Use actual member-based quantity for this agency
+                      agencyQuantity = membersByAgency[agencyIdStr];
+                    } else {
+                      // Fall back to even distribution
+                      const quantityPerAgency = Math.ceil(group.statistics.totalQuantity / group.agencies.ids.length);
+                      agencyQuantity = quantityPerAgency;
+                    }
+                    
                     const mappedItem = {
                       depotId: String(group.depot.id || ''),
-                      agencyId: String(agencyId),
+                      agencyId: agencyIdStr,
                       productId: String(group.product.id || ''),
                       depotVariantId: String(group.variant.id || ''),
-                      quantity: quantityPerAgency,
+                      quantity: agencyQuantity,
                     };
                     
-                    console.log(`[OrderForm] Mapped item for agency ${group.agencies.names[index]}:`, mappedItem);
+                    console.log(`[OrderForm] Mapped item for agency ${group.agencies.names[index]} (${agencyIdStr}):`, mappedItem);
+                    if (hasValidMemberData) {
+                      console.log(`[OrderForm] Using member-based quantity: ${agencyQuantity} for agency ${agencyIdStr}`);
+                    } else {
+                      console.log(`[OrderForm] Using evenly distributed quantity: ${agencyQuantity} for agency ${agencyIdStr}`);
+                    }
                     
                     // Only add valid items
                     if (mappedItem.depotId && mappedItem.agencyId && mappedItem.productId && 
@@ -716,6 +740,9 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
   });
 
   const onSubmit: SubmitHandler<OrderFormData> = (data) => {
+    console.log("[OrderForm] Form submitted with data:", data);
+    console.log("[OrderForm] Form validation errors:", errors);
+    
     // Prepare the complete order data with all required fields
     const completeOrderData = {
       ...data,
@@ -738,6 +765,50 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
     mutation.mutate(completeOrderData);
   };
 
+  const onError = (errors: any) => {
+    console.log("[OrderForm] Form validation failed:", errors);
+    
+    // Extract specific error messages
+    const errorMessages: string[] = [];
+    
+    if (errors.vendorId) {
+      errorMessages.push(`Farmer: ${errors.vendorId.message}`);
+    }
+    if (errors.contactPersonName) {
+      errorMessages.push(`Contact Person: ${errors.contactPersonName.message}`);
+    }
+    if (errors.orderDate) {
+      errorMessages.push(`Order Date: ${errors.orderDate.message}`);
+    }
+    if (errors.deliveryDate) {
+      errorMessages.push(`Delivery Date: ${errors.deliveryDate.message}`);
+    }
+    if (errors.orderItems) {
+      if (errors.orderItems.message) {
+        errorMessages.push(`Order Items: ${errors.orderItems.message}`);
+      } else if (Array.isArray(errors.orderItems)) {
+        errors.orderItems.forEach((itemError: any, index: number) => {
+          if (itemError) {
+            if (itemError.depotId) errorMessages.push(`Item ${index + 1} - Depot: ${itemError.depotId.message}`);
+            if (itemError.agencyId) errorMessages.push(`Item ${index + 1} - Agency: ${itemError.agencyId.message}`);
+            if (itemError.productId) errorMessages.push(`Item ${index + 1} - Product: ${itemError.productId.message}`);
+            if (itemError.depotVariantId) errorMessages.push(`Item ${index + 1} - Depot Variant: ${itemError.depotVariantId.message}`);
+            if (itemError.quantity) errorMessages.push(`Item ${index + 1} - Quantity: ${itemError.quantity.message}`);
+          }
+        });
+      }
+    }
+    
+    // Show specific errors or generic message
+    if (errorMessages.length > 0) {
+      const errorText = errorMessages.slice(0, 3).join('; '); // Show first 3 errors
+      const moreErrors = errorMessages.length > 3 ? ` and ${errorMessages.length - 3} more` : '';
+      toast.error(`Validation errors: ${errorText}${moreErrors}`);
+    } else {
+      toast.error("Please fix the form errors before submitting");
+    }
+  };
+
  
 
   useEffect(() => {
@@ -751,7 +822,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
       return accumulator + (summaryItem.totalPrice || 0);
     }, 0);
     console.log("[OrderForm] calculatedTotalPrice:", calculatedTotalPrice);
-    setordertotal(calculatedTotalPrice);
+    setOrderTotal(calculatedTotalPrice);
   }, [groupedProductSummary, products, watchedOrderItemsString]); // Use stringified version in dependency
   // Helper to render current step content
   const renderStepContent = () => {
@@ -778,7 +849,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                 </div>
               )}
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4  max-md:grid-cols-1">
                 <div className="relative">
                   <Controller
                     control={control}
@@ -889,10 +960,10 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
             {selectedVendor && (
               <div className="mt-4 p-3 bg-white/90 dark:bg-gray-900/90 rounded-md border border-emerald-200 dark:border-emerald-800">
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Farmer Details</p>
-                <div className="grid grid-cols-2 gap-2 mt-2 text-sm">
+                <div className="grid grid-cols-2 gap-2 mt-2 text-sm max-md:grid-cols-1">
                   <div>
                     <span className="text-gray-500 dark:text-gray-400">Email:</span>
-                    <p className="font-medium text-gray-700 dark:text-gray-300">{selectedVendor.email}</p>
+                    <p className="font-medium text-gray-700 dark:text-gray-300 max-sm:text-xs">{selectedVendor.email}</p>
                   </div>
                   <div>
                     <span className="text-gray-500 dark:text-gray-400">Phone:</span>
@@ -907,10 +978,10 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
         {/* Products & Agencies Section */}
         <Card className="shadow-lg mt-6">
           <CardHeader className="bg-gray-50 dark:bg-gray-900">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between mt-4">
               <div className="flex items-center gap-2">
                 <Package className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-                <CardTitle className="text-gray-700 dark:text-gray-300">Products & Agencies</CardTitle>
+                <CardTitle className="text-gray-700 dark:text-gray-300 ">Products & Agencies</CardTitle>
               </div>
               <Button
                 type="button"
@@ -944,22 +1015,24 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
             )}
             {fields.length > 0 && (
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  <thead className="bg-gray-50 dark:bg-gray-800">
-                    <tr>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Depot</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[150px]">Agency</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[200px]">Product</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Depot Variant</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[80px]">QTY</th>
-                       <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[80px]">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                <div className="hidden md:block">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead className="bg-gray-50 dark:bg-gray-800">
+                      <tr>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Depot</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Agency</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Product</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Depot Variant</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">QTY</th>
+                         <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                     {fields.map((itemField, index) => {
                       console.log(`[OrderForm] Rendering field ${index}:`, itemField, "Watched item:", watchedOrderItems[index]);
                       const variantInfo = depotVariants.find(v => String(v.id) === watchedOrderItems[index]?.depotVariantId);
-                      const unitPrice = variantInfo ? (Number(variantInfo.mrp) || Number(variantInfo.buyOncePrice) || 0) : 0;
+                      // Prioritize purchasePrice if available, then fallback to mrp or buyOncePrice
+                      const unitPrice = variantInfo ? (Number(variantInfo.purchasePrice) || Number(variantInfo.mrp) || Number(variantInfo.buyOncePrice) || 0) : 0;
                       const itemTotal = unitPrice * (watchedOrderItems[index]?.quantity || 0);
 
                       return (
@@ -970,7 +1043,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                               name={`orderItems.${index}.depotId`}
                               render={({ field }) => (
                                 <Select onValueChange={field.onChange} value={field.value || ""}>
-                                  <SelectTrigger className="h-9 text-sm bg-white dark:bg-gray-700 min-w-full">
+                                  <SelectTrigger className={cn("h-9 text-sm bg-white dark:bg-gray-700 min-w-full", errors.orderItems?.[index]?.depotId && "border-red-500")}>
                                     <SelectValue placeholder="Select Depot" />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -1024,18 +1097,31 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                             <Controller
                               control={control}
                               name={`orderItems.${index}.depotVariantId`}
-                              render={({ field }) => (
-                                <Select onValueChange={field.onChange} value={field.value || ""}>
-                                  <SelectTrigger className="h-9 text-sm bg-white dark:bg-gray-700 min-w-full">
-                                    <SelectValue placeholder="Select Depot Variant" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {depotVariants.map(variant => (
-                                      <SelectItem key={variant.id} value={variant.id}>{variant.name}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              )}
+                              render={({ field }) => {
+                                // Filter depot variants based on selected depot and product
+                                const currentItem = watchedOrderItems[index];
+                                const filteredVariants = depotVariants.filter(variant => {
+                                  // Only show variants that match the selected depot and product
+                                  const matchesDepot = !currentItem?.depotId || String(variant.depotId) === currentItem.depotId;
+                                  const matchesProduct = !currentItem?.productId || String(variant.productId) === currentItem.productId;
+                                  return matchesDepot && matchesProduct;
+                                });
+                                
+                                return (
+                                  <Select onValueChange={field.onChange} value={field.value || ""}>
+                                    <SelectTrigger className="h-9 text-sm bg-white dark:bg-gray-700 min-w-full">
+                                      <SelectValue placeholder="Select Depot Variant" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {filteredVariants.map(variant => (
+                                        <SelectItem key={variant.id} value={variant.id}>
+                                          {variant.name} {variant.purchasePrice ? `(₹${variant.purchasePrice})` : variant.mrp ? `(₹${variant.mrp})` : ''}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                );
+                              }}
                             />
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap min-w-[100px]">
@@ -1066,6 +1152,154 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                   </tbody>
                 </table>
               </div>
+              
+              {/* Mobile card layout */}
+              <div className="md:hidden space-y-4">
+                {fields.map((itemField, index) => {
+                  console.log(`[OrderForm] Rendering mobile field ${index}:`, itemField, "Watched item:", watchedOrderItems[index]);
+                  const variantInfo = depotVariants.find(v => String(v.id) === watchedOrderItems[index]?.depotVariantId);
+                  const unitPrice = variantInfo ? (Number(variantInfo.purchasePrice) || Number(variantInfo.mrp) || Number(variantInfo.buyOncePrice) || 0) : 0;
+                  const itemTotal = unitPrice * (watchedOrderItems[index]?.quantity || 0);
+
+                  return (
+                    <div key={itemField.id} className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 space-y-4">
+                      <div className="flex justify-between items-center">
+                        <h3 className="font-semibold text-gray-800 dark:text-gray-200">Item {index + 1}</h3>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => remove(index)}
+                          className="h-8 w-8 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800/50"
+                          disabled={fields.length === 1}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 gap-4">
+                        <div>
+                          <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Depot</Label>
+                          <Controller
+                            control={control}
+                            name={`orderItems.${index}.depotId`}
+                            render={({ field }) => (
+                              <Select onValueChange={field.onChange} value={field.value || ""}>
+                                <SelectTrigger className={cn("mt-1 bg-white dark:bg-gray-700", errors.orderItems?.[index]?.depotId && "border-red-500")}>
+                                  <SelectValue placeholder="Select Depot" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {depots.map(depot => (
+                                    <SelectItem key={depot.id} value={depot.id}>{depot.name}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          />
+                        </div>
+                        
+                        <div>
+                          <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Agency</Label>
+                          <Controller
+                            control={control}
+                            name={`orderItems.${index}.agencyId`}
+                            render={({ field: agencyField }) => (
+                              <Select onValueChange={agencyField.onChange} value={agencyField.value || ""}>
+                                <SelectTrigger className="mt-1 bg-white dark:bg-gray-700">
+                                  <SelectValue placeholder="Select Agency" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {agencies.map(agency => (
+                                    <SelectItem key={agency.id} value={agency.id}>{agency.name}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          />
+                        </div>
+                        
+                        <div>
+                          <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Product</Label>
+                          <Controller
+                            control={control}
+                            name={`orderItems.${index}.productId`}
+                            render={({ field: controllerField }) => (
+                              <Select onValueChange={controllerField.onChange} value={controllerField.value || ""}>
+                                <SelectTrigger className="mt-1 bg-white dark:bg-gray-700">
+                                  <SelectValue placeholder="Select Product" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {products.map((product) => (
+                                    <SelectItem key={product.id} value={String(product.id)}>
+                                      {product.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          />
+                        </div>
+                        
+                        <div>
+                          <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Depot Variant</Label>
+                          <Controller
+                            control={control}
+                            name={`orderItems.${index}.depotVariantId`}
+                            render={({ field }) => {
+                              const currentItem = watchedOrderItems[index];
+                              const filteredVariants = depotVariants.filter(variant => {
+                                const matchesDepot = !currentItem?.depotId || String(variant.depotId) === currentItem.depotId;
+                                const matchesProduct = !currentItem?.productId || String(variant.productId) === currentItem.productId;
+                                return matchesDepot && matchesProduct;
+                              });
+                              
+                              return (
+                                <Select onValueChange={field.onChange} value={field.value || ""}>
+                                  <SelectTrigger className="mt-1 bg-white dark:bg-gray-700">
+                                    <SelectValue placeholder="Select Depot Variant" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {filteredVariants.map(variant => (
+                                      <SelectItem key={variant.id} value={variant.id}>
+                                        {variant.name} {variant.purchasePrice ? `(₹${variant.purchasePrice})` : variant.mrp ? `(₹${variant.mrp})` : ''}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              );
+                            }}
+                          />
+                        </div>
+                        
+                        <div>
+                          <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Quantity</Label>
+                          <Input
+                            id={`orderItems.${index}.quantity`}
+                            type="number"
+                            min="1"
+                            {...register(`orderItems.${index}.quantity`, { valueAsNumber: true })}
+                            className="mt-1 bg-white dark:bg-gray-700"
+                          />
+                        </div>
+                      </div>
+                      
+                      {variantInfo && (
+                        <div className="pt-3 border-t border-gray-200 dark:border-gray-600">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600 dark:text-gray-400">Unit Price:</span>
+                            <span className="font-medium">₹{unitPrice.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between text-sm font-semibold">
+                            <span className="text-gray-800 dark:text-gray-200">Item Total:</span>
+                            <span className="text-green-600 dark:text-green-400">₹{itemTotal.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              </div>
             )}
             
             {errors.orderItems && typeof errors.orderItems === 'object' && 'message' in errors.orderItems && (
@@ -1089,7 +1323,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
           <Card className="shadow-lg mt-6 border-2 border-blue-100 dark:border-blue-900">
             <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
               <div 
-                className="flex items-center justify-between cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/50 transition-colors rounded p-2 -m-2"
+                className="flex flex-col md:flex-row md:items-center md:justify-between cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/50 transition-colors rounded p-2 -m-2"
                 onClick={toggleOrderSummary}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
@@ -1368,13 +1602,13 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
   };
 
   return (
-    <div className="space-y-8 mx-auto p-4 sm:p-6 lg:p-8">
-      <div className="space-y-6">
+    <div className="w-full max-w-none space-y-8 p-4 sm:p-6 lg:p-8">
+      <div className="space-y-6 min-w-0">
         <h2 className="text-2xl font-bold">
           {mode === "create" ? "Create New Order" : "Edit Order"}
         </h2>
         
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={handleSubmit(onSubmit, onError)}>
           {renderStepContent()} 
 
           {/* Submit Button */}

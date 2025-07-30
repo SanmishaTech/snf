@@ -325,7 +325,7 @@ const OrderList = () => {
        
 
       <Card className="mb-6 shadow-lg dark:bg-gray-800">
-        <CardHeader className="flex flex-row items-center justify-between pb-4">
+        <CardHeader className="flex flex-row items-center justify-between pb-4 max-sm:flex-col">
           <CardTitle className="text-2xl font-bold text-gray-800 dark:text-gray-100">Order Management</CardTitle>
           {currentUserRole === "ADMIN" && (
             <Link to="/admin/orders/create">

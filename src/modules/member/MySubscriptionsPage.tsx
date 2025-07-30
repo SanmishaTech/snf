@@ -13,6 +13,12 @@ interface Product {
   name: string;
   price?: number;
   unit?: string; // Added unit property
+  depotProductVariantId?: string;
+  depotVariant?: {
+    id: string;
+    name: string;
+    unit: string;
+  };
 }
 
 interface AgencyUser {
@@ -218,10 +224,10 @@ const MySubscriptionsPage: React.FC = () => {
               </CardHeader>
               <CardContent className="space-y-2 text-sm text-gray-700 dark:text-gray-300 p-4 flex-grow">
                 <p>
-  <strong>Quantity:</strong> {sub.qty} {sub.product.unit}{sub.qty > 1 ? 's' : ''}
+  <strong>Quantity:</strong> {sub.qty} {sub.product.depotVariant?.unit || sub.product.unit || 'unit'}
   {sub.altQty ? (
     <>
-      {' '} &amp; {sub.altQty} {sub.product.unit}{sub.altQty > 1 ? 's' : ''}
+      {' '} &amp; {sub.altQty} {sub.product.depotVariant?.unit || sub.product.unit || 'unit'}
     </>
   ) : null}
 </p>
@@ -234,7 +240,7 @@ const MySubscriptionsPage: React.FC = () => {
                 {sub.agency && <p><strong>Assigned Agent:</strong> {sub.agency.user.name}</p>}
                 {sub.deliveryAddress && (
                   <p>
-                    <strong>Delivering to:</strong> {`${sub.deliveryAddress?.streetArea && sub.deliveryAddress?.streetArea}, ${sub.deliveryAddress.landmark && sub.deliveryAddress.landmark}, ${sub.deliveryAddress.city}, ${sub.deliveryAddress.state} ${sub.deliveryAddress.pincode}`}
+                    <strong>Delivering to:</strong> {`${sub.deliveryAddress?.recipientName && sub.deliveryAddress?.recipientName} ${sub.deliveryAddress?.plotBuilding && sub.deliveryAddress?.plotBuilding} ,${sub.deliveryAddress?.streetArea && sub.deliveryAddress?.streetArea}, ${sub.deliveryAddress.landmark && sub.deliveryAddress.landmark}, ${sub.deliveryAddress.city}, ${sub.deliveryAddress.state} ${sub.deliveryAddress.pincode}`}
                   </p>
                 )}
                 {sub.amount !== undefined && <p className="font-semibold text-base"><strong>Total Amount:</strong> ₹{sub.amount.toFixed(2)}</p>}
@@ -250,7 +256,7 @@ const MySubscriptionsPage: React.FC = () => {
                     <Button
                       onClick={async () => {
                         try {
-                          const baseUrl = import.meta.env.VITE_BACKEND_URL || 'https://www.indraai.in';
+                          const baseUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
                           const invoiceUrl = `${baseUrl}/invoices/${sub.productOrder.invoicePath}`;
                           
                           // Fetch the file as blob to force download
@@ -273,7 +279,7 @@ const MySubscriptionsPage: React.FC = () => {
                         } catch (error) {
                           console.error('Download failed:', error);
                           // Fallback to opening in new tab if download fails
-                          const baseUrl = import.meta.env.VITE_BACKEND_URL || 'https://www.indraai.in';
+                          const baseUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
                           const invoiceUrl = `${baseUrl}/invoices/${sub.productOrder.invoicePath}`;
                           window.open(invoiceUrl, '_blank');
                         }
