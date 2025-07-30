@@ -909,7 +909,7 @@ const AdminSubscriptionList: React.FC = () => {
     // Check if invoice path is already available in the order data
       if (order.invoicePath) {
         // If invoice path exists, download using forced download approach
-        const baseUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+        const baseUrl = import.meta.env.VITE_BACKEND_URL || 'https://www.indraai.in';
         const invoiceUrl = `${baseUrl}/invoices/${order.invoicePath}`;
         
         // Fetch the file as blob to force download
@@ -942,7 +942,7 @@ const AdminSubscriptionList: React.FC = () => {
       toast.error(errorMessage);
       // Fallback to opening in new tab if download fails
       if (order.invoicePath) {
-        const baseUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+        const baseUrl = import.meta.env.VITE_BACKEND_URL || 'https://www.indraai.in';
         const invoiceUrl = `${baseUrl}/invoices/${order.invoicePath}`;
         window.open(invoiceUrl, '_blank');
       }
