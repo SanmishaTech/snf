@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatCurrency } from "@/lib/formatter.js";
 import { motion } from "framer-motion";
-import Cows from "./images/cows.png"
+import Cows from "./images/picture.png";
 import {
   FaTruck,
   FaGlassWhiskey,
@@ -76,7 +76,7 @@ const LandingPage = () => {
 
   const BACKEND_URL =
     import.meta.env.VITE_BACKEND_URL || "https://www.indraai.in";
-    
+
   useEffect(() => {
     const fetchProducts = async () => {
       setIsLoading(true);
@@ -135,7 +135,11 @@ const LandingPage = () => {
           { sortBy: "listOrder", sortOrder: "asc", limit: 7 } // Fetch active banners, sorted
         );
 
-        if (responseData && responseData.banners && responseData.banners.length > 0) {
+        if (
+          responseData &&
+          responseData.banners &&
+          responseData.banners.length > 0
+        ) {
           const transformedBanners = responseData.banners
             .filter((banner) => banner.imagePath)
             .map((banner) => {
@@ -159,26 +163,29 @@ const LandingPage = () => {
           // Use Unsplash images as fallback when no banners from API
           const unsplashBanners: CarouselImage[] = [
             {
-              id: 'unsplash-1',
-              src: 'https://images.unsplash.com/photo-1528821128474-27f963b062bf?q=80&w=2070&auto=format&fit=crop',
-              mobileSrc: 'https://images.unsplash.com/photo-1528821128474-27f963b062bf?q=80&w=640&auto=format&fit=crop',
-              alt: 'Fresh milk in glass bottles',
-              title: 'Pure A2 Milk, Delivered Fresh',
+              id: "unsplash-1",
+              src: "https://images.unsplash.com/photo-1528821128474-27f963b062bf?q=80&w=2070&auto=format&fit=crop",
+              mobileSrc:
+                "https://images.unsplash.com/photo-1528821128474-27f963b062bf?q=80&w=640&auto=format&fit=crop",
+              alt: "Fresh milk in glass bottles",
+              title: "Pure A2 Milk, Delivered Fresh",
             },
             {
-              id: 'unsplash-2',
-              src: 'https://images.unsplash.com/photo-1516640000-9951dfc3c8d1?q=80&w=2070&auto=format&fit=crop',
-              mobileSrc: 'https://images.unsplash.com/photo-1516640000-9951dfc3c8d1?q=80&w=640&auto=format&fit=crop',
-              alt: 'Cows grazing in green pasture',
-              title: 'From Happy Cows to Your Home',
+              id: "unsplash-2",
+              src: "https://images.unsplash.com/photo-1516640000-9951dfc3c8d1?q=80&w=2070&auto=format&fit=crop",
+              mobileSrc:
+                "https://images.unsplash.com/photo-1516640000-9951dfc3c8d1?q=80&w=640&auto=format&fit=crop",
+              alt: "Cows grazing in green pasture",
+              title: "From Happy Cows to Your Home",
             },
             {
-              id: 'unsplash-3',
-              src: 'https://images.unsplash.com/photo-1523473827533-2a64d0d36748?q=80&w=2080&auto=format&fit=crop',
-              mobileSrc: 'https://images.unsplash.com/photo-1523473827533-2a64d0d36748?q=80&w=640&auto=format&fit=crop',
-              alt: 'Dairy farm at sunrise',
-              title: 'Natural, Ethical, Sustainable',
-            }
+              id: "unsplash-3",
+              src: "https://images.unsplash.com/photo-1523473827533-2a64d0d36748?q=80&w=2080&auto=format&fit=crop",
+              mobileSrc:
+                "https://images.unsplash.com/photo-1523473827533-2a64d0d36748?q=80&w=640&auto=format&fit=crop",
+              alt: "Dairy farm at sunrise",
+              title: "Natural, Ethical, Sustainable",
+            },
           ];
           setHeroBanners(unsplashBanners);
         }
@@ -189,30 +196,33 @@ const LandingPage = () => {
             : "Failed to fetch banners for hero section";
         console.error("Error fetching hero banners:", errorMsg);
         setBannerError(errorMsg);
-        
+
         // Use Unsplash images as fallback on error
         const unsplashBanners: CarouselImage[] = [
           {
-            id: 'unsplash-1',
-            src: 'https://images.unsplash.com/photo-1528821128474-27f963b062bf?q=80&w=2070&auto=format&fit=crop',
-            mobileSrc: 'https://images.unsplash.com/photo-1528821128474-27f963b062bf?q=80&w=640&auto=format&fit=crop',
-            alt: 'Fresh milk in glass bottles',
-            title: 'Pure A2 Milk, Delivered Fresh',
+            id: "unsplash-1",
+            src: "https://images.unsplash.com/photo-1528821128474-27f963b062bf?q=80&w=2070&auto=format&fit=crop",
+            mobileSrc:
+              "https://images.unsplash.com/photo-1528821128474-27f963b062bf?q=80&w=640&auto=format&fit=crop",
+            alt: "Fresh milk in glass bottles",
+            title: "Pure A2 Milk, Delivered Fresh",
           },
           {
-            id: 'unsplash-2',
-            src: 'https://images.unsplash.com/photo-1516640000-9951dfc3c8d1?q=80&w=2070&auto=format&fit=crop',
-            mobileSrc: 'https://images.unsplash.com/photo-1516640000-9951dfc3c8d1?q=80&w=640&auto=format&fit=crop',
-            alt: 'Cows grazing in green pasture',
-            title: 'From Happy Cows to Your Home',
+            id: "unsplash-2",
+            src: "https://images.unsplash.com/photo-1516640000-9951dfc3c8d1?q=80&w=2070&auto=format&fit=crop",
+            mobileSrc:
+              "https://images.unsplash.com/photo-1516640000-9951dfc3c8d1?q=80&w=640&auto=format&fit=crop",
+            alt: "Cows grazing in green pasture",
+            title: "From Happy Cows to Your Home",
           },
           {
-            id: 'unsplash-3',
-            src: 'https://images.unsplash.com/photo-1523473827533-2a64d0d36748?q=80&w=2080&auto=format&fit=crop',
-            mobileSrc: 'https://images.unsplash.com/photo-1523473827533-2a64d0d36748?q=80&w=640&auto=format&fit=crop',
-            alt: 'Dairy farm at sunrise',
-            title: 'Natural, Ethical, Sustainable',
-          }
+            id: "unsplash-3",
+            src: "https://images.unsplash.com/photo-1523473827533-2a64d0d36748?q=80&w=2080&auto=format&fit=crop",
+            mobileSrc:
+              "https://images.unsplash.com/photo-1523473827533-2a64d0d36748?q=80&w=640&auto=format&fit=crop",
+            alt: "Dairy farm at sunrise",
+            title: "Natural, Ethical, Sustainable",
+          },
         ];
         setHeroBanners(unsplashBanners);
       } finally {
@@ -263,7 +273,9 @@ const LandingPage = () => {
       <section id="benefits" className="py-8 bg-white">
         <div className="container max-w-6xl mx-auto px-4">
           <div className="text-center text-primary mb-16">
-            <h2 className="text-3xl font-bold tracking-tight mb-3 text-primary">Indraai</h2>
+            <h2 className="text-3xl font-bold tracking-tight mb-3 text-primary">
+              Indraai
+            </h2>
             <div className="flex justify-center mb-6">
               <div className="h-1 w-20  rounded-full"></div>
             </div>
@@ -430,7 +442,7 @@ const LandingPage = () => {
           </div>
         </div>
       </section>
-      
+
       <AppFooter />
     </div>
   );

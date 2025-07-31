@@ -2,11 +2,24 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Heart, Shield, Zap, Droplets, Sparkles } from "lucide-react";
-import Indraai from "@/modules/Homepage/images/indraai.png"
-import Cows from "../images/cows.png"
+import {
+  CheckCircle,
+  Heart,
+  Shield,
+  Zap,
+  Droplets,
+  Sparkles,
+} from "lucide-react";
+import Indraai from "@/modules/Homepage/images/indraai.png";
+import Cows from "../images/picture.png";
 
 interface A2MilkSectionProps {
   className?: string;
@@ -17,33 +30,33 @@ const A2MilkSection: React.FC<A2MilkSectionProps> = ({ className = "" }) => {
     {
       icon: Shield,
       title: "Strengthens Immunity",
-      description: "Supports the body's natural defense system"
+      description: "Supports the body's natural defense system",
     },
     {
       icon: Zap,
       title: "High in Calcium & Protein",
-      description: "Essential nutrients for strong bones and muscles"
+      description: "Essential nutrients for strong bones and muscles",
     },
     {
       icon: CheckCircle,
       title: "Gentle on the Stomach",
-      description: "Does not cause bloating or indigestion"
+      description: "Does not cause bloating or indigestion",
     },
     {
       icon: Heart,
       title: "Anti-Inflammatory Benefits",
-      description: "Helps reduce internal inflammation"
+      description: "Helps reduce internal inflammation",
     },
     {
       icon: Heart,
       title: "Supports Heart Health",
-      description: "Promotes cardiovascular well-being"
+      description: "Promotes cardiovascular well-being",
     },
     {
       icon: Sparkles,
       title: "Nourishes the Skin",
-      description: "Contributes to healthy, glowing skin"
-    }
+      description: "Contributes to healthy, glowing skin",
+    },
   ];
 
   const containerVariants = {
@@ -52,8 +65,8 @@ const A2MilkSection: React.FC<A2MilkSectionProps> = ({ className = "" }) => {
       opacity: 1,
       transition: {
         staggerChildren: 0.2,
-       }
-    }
+      },
+    },
   };
 
   const itemVariants = {
@@ -63,9 +76,9 @@ const A2MilkSection: React.FC<A2MilkSectionProps> = ({ className = "" }) => {
       y: 0,
       transition: {
         duration: 0.6,
-        ease: "easeOut"
-      }
-    }
+        ease: "easeOut",
+      },
+    },
   };
 
   const imageVariants = {
@@ -75,9 +88,9 @@ const A2MilkSection: React.FC<A2MilkSectionProps> = ({ className = "" }) => {
       x: 0,
       transition: {
         duration: 0.8,
-        ease: "easeOut"
-      }
-    }
+        ease: "easeOut",
+      },
+    },
   };
 
   const textVariants = {
@@ -88,27 +101,25 @@ const A2MilkSection: React.FC<A2MilkSectionProps> = ({ className = "" }) => {
       transition: {
         duration: 0.8,
         ease: "easeOut",
-    
-      }
-    }
+      },
+    },
   };
 
   return (
-    <div className={`py-4 px-4 overflow-x-hidden overflow-y-hidden ${className}`}>
+    <div
+      className={`py-4 px-4 overflow-x-hidden overflow-y-hidden ${className}`}
+    >
       <div className="max-w-7xl mx-auto space-y-12">
         {/* Main Section */}
         <motion.div
-          className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center " 
+          className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center "
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.3 }}
         >
           {/* Image Section */}
-          <motion.div
-            className="relative   "
-            variants={imageVariants}
-          >
+          <motion.div className="relative   " variants={imageVariants}>
             <div className="relative overflow-hidden rounded-2xl shadow-2xl">
               <img
                 src={Cows}
@@ -142,16 +153,29 @@ const A2MilkSection: React.FC<A2MilkSectionProps> = ({ className = "" }) => {
               </h1>
               <div className="space-y-4 text-gray-700 leading-relaxed text-justify">
                 <p>
-                  A2 milk contains the A2 beta-casein protein, which is naturally present in the milk of Indian-origin (Desi) cow breeds such as Gir, Kathiawadi, Dangi, Sahiwal, Hallikar, Konkan Gidda, and others. This protein makes A2 milk lighter on the stomach and easier to digest.
+                  A2 milk contains the A2 beta-casein protein, which is
+                  naturally present in the milk of Indian-origin (Desi) cow
+                  breeds such as Gir, Kathiawadi, Dangi, Sahiwal, Hallikar,
+                  Konkan Gidda, and others. This protein makes A2 milk lighter
+                  on the stomach and easier to digest.
                 </p>
                 <p>
-                  A2 milk is structurally closer to human mother's milk, making it not only more digestible but also suitable for young children.
+                  A2 milk is structurally closer to human mother's milk, making
+                  it not only more digestible but also suitable for young
+                  children.
                 </p>
                 <p>
-                  In contrast, regular milk typically comes from hybrid breeds like Holstein Friesian and Jersey cows. While these breeds are preferred in commercial dairies due to their high milk yield, their milk contains A1 beta-casein, which may cause digestive discomfort—such as bloating, gas, or cramps—in some individuals.
+                  In contrast, regular milk typically comes from hybrid breeds
+                  like Holstein Friesian and Jersey cows. While these breeds are
+                  preferred in commercial dairies due to their high milk yield,
+                  their milk contains A1 beta-casein, which may cause digestive
+                  discomfort—such as bloating, gas, or cramps—in some
+                  individuals.
                 </p>
                 <p>
-                  For those sensitive to regular milk, A2 milk offers a gentler, nutrient-rich alternative that supports better digestion and overall well-being.
+                  For those sensitive to regular milk, A2 milk offers a gentler,
+                  nutrient-rich alternative that supports better digestion and
+                  overall well-being.
                 </p>
               </div>
             </div>
@@ -174,7 +198,8 @@ const A2MilkSection: React.FC<A2MilkSectionProps> = ({ className = "" }) => {
               A2 Milk Benefits
             </h2>
             <p className="text-sm text-gray-700 max-w-2xl mx-auto">
-              Discover the numerous health advantages of choosing A2 milk for you and your family
+              Discover the numerous health advantages of choosing A2 milk for
+              you and your family
             </p>
           </motion.div>
 
@@ -210,9 +235,6 @@ const A2MilkSection: React.FC<A2MilkSectionProps> = ({ className = "" }) => {
             ))}
           </motion.div>
         </motion.div>
-
- 
-     
       </div>
     </div>
   );
