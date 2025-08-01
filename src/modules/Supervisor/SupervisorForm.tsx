@@ -199,7 +199,7 @@ const SupervisorForm: React.FC<SupervisorFormProps> = ({
     } else {
       setIsLoadingData(false);
     }
-  }, [supervisorId, mode, setValue, initialData, agencies, setPendingAgencyId]);
+  }, [supervisorId, mode, setValue, initialData]);
 
   // Effect to handle setting agencyId once agencies are loaded
   useEffect(() => {

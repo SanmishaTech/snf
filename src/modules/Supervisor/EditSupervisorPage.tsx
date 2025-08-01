@@ -167,6 +167,7 @@ type SupervisorFormInputs = {
   city: string;
   pincode?: number; 
   depotId?: number | null;
+  agencyId?: number | null;
   status?: "ACTIVE" | "INACTIVE";
   userFullName?: string; 
   userLoginEmail?: string; 
