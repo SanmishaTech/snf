@@ -1,6 +1,14 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import React, { useState, useEffect } from "react"; // Added React import
-import { Sun, Moon, LogOut, Settings, Repeat, Package, Leaf } from "lucide-react"; // Removed User, Clock, Added Leaf
+import {
+  Sun,
+  Moon,
+  LogOut,
+  Settings,
+  Repeat,
+  Package,
+  Leaf,
+} from "lucide-react"; // Removed User, Clock, Added Leaf
 
 import { Button } from "@/components/ui/button";
 import {
@@ -8,16 +16,16 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,      
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { appName } from "@/config";
 import { get } from "@/services/apiService"; // For fetching products
-import Header from '@/layouts/Header';
-import BottomNavBar from '@/components/BottomNavBar';
- 
+import Header from "@/layouts/Header";
+import BottomNavBar from "@/components/BottomNavBar";
+
 // Define Product type (ensure this matches your actual Product structure)
 
 // Define props for MemberLayout
@@ -30,7 +38,7 @@ interface Product {
   // Add other relevant fields if needed for logic, though only 'id' is used here
 }
 
-export default function MemberLayout({ children }: MemberLayoutProps) { 
+export default function MemberLayout({ children }: MemberLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -48,7 +56,7 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
   const initialName = userData?.name || userData?.username || userData?.email;
   const [userName, setUserName] = useState<string | undefined>(initialName);
   const showWallet = isLoggedIn && role === "MEMBER";
-  
+
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDarkMode);
   }, [isDarkMode]);
@@ -57,17 +65,24 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
     // Listen for storage changes to update login state (e.g., if user logs out in another tab)
     const handleStorageChange = () => {
       const currentStoredUserData = localStorage.getItem("user");
-      const currentUserData = currentStoredUserData ? JSON.parse(currentStoredUserData) : null;
+      const currentUserData = currentStoredUserData
+        ? JSON.parse(currentStoredUserData)
+        : null;
       setIsLoggedIn(!!currentUserData);
-      setUserName(currentUserData?.name || currentUserData?.username || currentUserData?.email || null);
+      setUserName(
+        currentUserData?.name ||
+          currentUserData?.username ||
+          currentUserData?.email ||
+          null
+      );
     };
 
-    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener("storage", handleStorageChange);
     // Initial check in case of direct navigation or refresh
-    handleStorageChange(); 
+    handleStorageChange();
 
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener("storage", handleStorageChange);
     };
   }, [location.pathname]);
 
@@ -76,7 +91,7 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
     if (!userData) return; // Only run if user is logged in
 
     // Avoid redirect if already on a product page or the main products listing
-    if (location.pathname.startsWith('/member/products')) {
+    if (location.pathname.startsWith("/member/products")) {
       return;
     }
 
@@ -84,8 +99,10 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
       try {
         // Assuming get('/products') returns an object like { data: Product[] } or Product[] directly
         // Adjust based on your actual API response structure
-        const response = await get('/products') as { data?: Product[] } | Product[];
-        
+        const response = (await get("/products")) as
+          | { data?: Product[] }
+          | Product[];
+
         let products: Product[] = [];
         if (Array.isArray(response)) {
           products = response;
@@ -99,21 +116,20 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
         } else {
           // No products found, navigate to the general products page
           // MemberProductDisplayPage should handle showing "No products available"
-          navigate('/member/products');
+          navigate("/member/products");
         }
       } catch (error) {
         console.error("Failed to fetch products for redirect:", error);
         // Fallback: navigate to the general products page on error
-        navigate('/member/products');
+        navigate("/member/products");
       }
     };
 
     // Only attempt redirect if the user lands on /dashboard initially.
     // Navigating to other specific member pages (like /manage-subscription) should not trigger this redirect.
-    if (location.pathname === '/dashboard') {
-        fetchAndRedirect();
+    if (location.pathname === "/dashboard") {
+      fetchAndRedirect();
     }
-
   }, [userData, navigate, location.pathname]);
 
   // Effect to listen for system preference changes
@@ -142,7 +158,7 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
     localStorage.removeItem("user");
     localStorage.removeItem("roles");
     localStorage.removeItem("memberId");
-    
+
     toast.success("You have been logged out");
     navigate("/");
   };
@@ -160,19 +176,24 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header isLoggedIn={isLoggedIn} userName={userName} onLogout={handleLogout} showWallet={showWallet} />
+      <Header
+        isLoggedIn={isLoggedIn}
+        userName={userName}
+        onLogout={handleLogout}
+        showWallet={showWallet}
+      />
 
       {/* Main content */}
-      <main 
+      <main
         className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 pb-8"
-        style={{ paddingTop: 'var(--header-height)' }}
+        style={{ paddingTop: "var(--header-height)" }}
       >
         {children || <Outlet />}
       </main>
-      
+
       {/* Footer */}
       <AppFooter />
-      {role === 'MEMBER' && <BottomNavBar />}
+      {role === "MEMBER" && <BottomNavBar />}
     </div>
   );
 }
@@ -188,52 +209,151 @@ const AppFooter = () => {
           <div className="md:col-span-12 lg:col-span-4">
             <div className="mb-6 flex items-center">
               <Leaf className="h-10 w-10 text-green-600 mr-3" />
-              <span className="text-2xl font-bold text-green-700 dark:text-green-500">Sarkhot Natural Farms</span>
+              <span className="text-2xl font-bold text-green-700 dark:text-green-500">
+                Sarkhot Natural Farms
+              </span>
             </div>
             <p className="text-sm mb-6 leading-relaxed">
-              Sarkhot Natural farms denote the community of natural farmers. Natural means <span className="font-semibold text-red-500">💯%</span> chemical free, preservative free and poison free.
+              Sarkhot Natural farms denote the community of natural farmers.
+              Natural means{" "}
+              <span className="font-semibold text-red-500">💯%</span> chemical
+              free, preservative free and poison free.
             </p>
-            <h3 className="text-[0.9rem] font-semibold mb-3 text-gray-600 dark:text-gray-400">Payment Accepted</h3>
+            <h3 className="text-[0.9rem] font-semibold mb-3 text-gray-600 dark:text-gray-400">
+              Payment Accepted
+            </h3>
             <div className="flex flex-wrap gap-2 items-center">
-              {['Mastercard', 'Discover', 'BitPay', 'Visa', 'Stripe'].map(method => (
-                <span key={method} className="text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-md shadow-sm">{method}</span>
-              ))}
+              {["Mastercard", "Discover", "BitPay", "Visa", "Stripe"].map(
+                (method) => (
+                  <span
+                    key={method}
+                    className="text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-md shadow-sm"
+                  >
+                    {method}
+                  </span>
+                )
+              )}
             </div>
           </div>
 
-          {/* Spacer for large screens to push link columns to the right */} 
+          {/* Spacer for large screens to push link columns to the right */}
           <div className="hidden lg:block lg:col-span-1"></div>
 
           {/* Column 2: Policies */}
           <div className="md:col-span-4 lg:col-span-2">
-            <h3 className="text-md font-semibold mb-4 text-green-700 dark:text-green-500 border-b-2 border-green-500 pb-1 inline-block">Policies</h3>
+            <h3 className="text-md font-semibold mb-4 text-green-700 dark:text-green-500 border-b-2 border-green-500 pb-1 inline-block">
+              Policies
+            </h3>
             <ul className="space-y-2.5 text-sm">
-              <li><a href="/privacy-policy" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Privacy Policy</a></li>
-              <li><a href="/refund-policy" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Refund and Returns Policy</a></li>
-              <li><a href="/shipping-policy" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Shipping and delivery policy</a></li>
-              <li><a href="/terms-and-conditions" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Terms and Conditions</a></li>
+              <li>
+                <a
+                  href="/privacy-policy"
+                  className="hover:text-green-600 dark:hover:text-green-400 transition-colors"
+                >
+                  Privacy Policy
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/refund-policy"
+                  className="hover:text-green-600 dark:hover:text-green-400 transition-colors"
+                >
+                  Refund and Returns Policy
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/shipping-policy"
+                  className="hover:text-green-600 dark:hover:text-green-400 transition-colors"
+                >
+                  Shipping and delivery policy
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/terms-and-conditions"
+                  className="hover:text-green-600 dark:hover:text-green-400 transition-colors"
+                >
+                  Terms and Conditions
+                </a>
+              </li>
             </ul>
           </div>
 
           {/* Column 3: Useful Links */}
           <div className="md:col-span-4 lg:col-span-2">
-            <h3 className="text-md font-semibold mb-4 text-green-700 dark:text-green-500 border-b-2 border-green-500 pb-1 inline-block">Useful Links</h3>
+            <h3 className="text-md font-semibold mb-4 text-green-700 dark:text-green-500 border-b-2 border-green-500 pb-1 inline-block">
+              Useful Links
+            </h3>
             <ul className="space-y-2.5 text-sm">
-              <li><a href="/" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Home</a></li>
-              <li><a href="/member/products" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Shop</a></li>
-              <li><a href="/about" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">About</a></li>
-              <li><a href="/contact" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Contact Us</a></li>
+              <li>
+                <a
+                  href="/"
+                  className="hover:text-green-600 dark:hover:text-green-400 transition-colors"
+                >
+                  Home
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/member/products/1"
+                  className="hover:text-green-600 dark:hover:text-green-400 transition-colors"
+                >
+                  Products
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/about"
+                  className="hover:text-green-600 dark:hover:text-green-400 transition-colors"
+                >
+                  About
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/contact"
+                  className="hover:text-green-600 dark:hover:text-green-400 transition-colors"
+                >
+                  Contact Us
+                </a>
+              </li>
             </ul>
           </div>
 
           {/* Column 4: Contact */}
           <div className="md:col-span-4 lg:col-span-3">
-            <h3 className="text-md font-semibold mb-4 text-green-700 dark:text-green-500 border-b-2 border-green-500 pb-1 inline-block">Contact</h3>
+            <h3 className="text-md font-semibold mb-4 text-green-700 dark:text-green-500 border-b-2 border-green-500 pb-1 inline-block">
+              Contact
+            </h3>
             <address className="text-sm not-italic space-y-2 leading-relaxed">
-              <p>Sarkhot Natural Farms, Shop no 3, Chidghan society, Opp. Maharashtra Steel, Tilak cross Phadke Road, Dombivli East - 421201</p>
-              <p><strong className="text-gray-800 dark:text-gray-200">Landmark</strong> - Near Brahman Sabha hall.</p>
-              <p><a href="mailto:sarkhotnaturalfarms@gmail.com" className="hover:text-green-600 dark:hover:text-green-400 transition-colors break-all">sarkhotnaturalfarms@gmail.com</a></p>
-              <p><a href="tel:+919920999100" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">+91 9920999100</a></p>
+              <p>
+                Sarkhot Natural Farms, Shop no 3, Chidghan society, Opp.
+                Maharashtra Steel, Tilak cross Phadke Road, Dombivli East -
+                421201
+              </p>
+              <p>
+                <strong className="text-gray-800 dark:text-gray-200">
+                  Landmark
+                </strong>{" "}
+                - Near Brahman Sabha hall.
+              </p>
+              <p>
+                <a
+                  href="mailto:sarkhotnaturalfarms@gmail.com"
+                  className="hover:text-green-600 dark:hover:text-green-400 transition-colors break-all"
+                >
+                  sarkhotnaturalfarms@gmail.com
+                </a>
+              </p>
+              <p>
+                <a
+                  href="tel:+919920999100"
+                  className="hover:text-green-600 dark:hover:text-green-400 transition-colors"
+                >
+                  +91 9920999100
+                </a>
+              </p>
             </address>
           </div>
         </div>
@@ -242,8 +362,19 @@ const AppFooter = () => {
       {/* Sub-Footer */}
       <div className="bg-gray-200 dark:bg-gray-800 py-4 border-t border-gray-300 dark:border-gray-700">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-xs text-gray-600 dark:text-gray-400">
-          <p className="mb-2 md:mb-0 text-center md:text-left">&copy; {new Date().getFullYear()} Sarkhot Natural Farms. All Rights Reserved.</p>
-          <p className="text-center md:text-right">Powered by <a href="https://sanmisha.com/" className="font-semibold text-green-700 dark:text-green-500 hover:underline">Sanmisha Technologies</a></p>
+          <p className="mb-2 md:mb-0 text-center md:text-left">
+            &copy; {new Date().getFullYear()} Sarkhot Natural Farms. All Rights
+            Reserved.
+          </p>
+          <p className="text-center md:text-right">
+            Powered by{" "}
+            <a
+              href="https://sanmisha.com/"
+              className="font-semibold text-green-700 dark:text-green-500 hover:underline"
+            >
+              Sanmisha Technologies
+            </a>
+          </p>
         </div>
       </div>
     </footer>
