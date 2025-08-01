@@ -12,7 +12,6 @@ import {
   ChevronDown,
 } from "lucide-react";
 
-
 import { NavUser } from "@/components/common/nav-user";
 import {
   Sidebar,
@@ -147,12 +146,12 @@ const initialData = {
           icon: Briefcase,
           groupLabel: "Indraai",
         },
-        // {
-        //   title: "Supervisors",
-        //   url: "/admin/supervisors",
-        //   icon: UsersRound,
-        //   groupLabel: "Indraai",
-        // },
+        {
+          title: "Supervisors",
+          url: "/admin/supervisors",
+          icon: UsersRound,
+          groupLabel: "Indraai",
+        },
         {
           title: "Orders",
           url: "/admin/orders",
@@ -171,7 +170,6 @@ const initialData = {
           icon: FileText,
           groupLabel: "Indraai",
         },
-        
 
         {
           title: "Customer",
@@ -278,7 +276,7 @@ const initialData = {
           icon: FileText,
           groupLabel: "Depot",
         },
-      ],    
+      ],
       navMain: [] as any[],
     },
     AGENCY: {
@@ -450,7 +448,11 @@ export function AppSidebar(props: AppSidebarProps) {
   }, {} as Record<string, typeof data.projects>);
 
   return (
-    <Sidebar collapsible="icon" {...props} className="bg-[#1d398d] border-r border-[#1d398d]/80">
+    <Sidebar
+      collapsible="icon"
+      {...props}
+      className="bg-[#1d398d] border-r border-[#1d398d]/80"
+    >
       <SidebarHeader className="border-b border-[#1d398d]/30 bg-[#1d398d]">
         <SidebarMenu className="flex">
           <SidebarMenuItem>
@@ -580,9 +582,7 @@ export function AppSidebar(props: AppSidebarProps) {
                   <item.icon
                     className={cn(
                       "h-4 w-4",
-                      pathname === item.url
-                        ? "text-[#1d398d]"
-                        : "text-blue-200"
+                      pathname === item.url ? "text-[#1d398d]" : "text-blue-200"
                     )}
                   />
                 )}

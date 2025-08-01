@@ -5,7 +5,7 @@ import { get, del } from "@/services/apiService";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { formatCurrency } from "@/lib/formatter"
+import { formatCurrency } from "@/lib/formatter";
 import {
   Select,
   SelectTrigger,
@@ -48,16 +48,13 @@ import {
 } from "lucide-react";
 import CustomPagination from "@/components/common/custom-pagination";
 import ConfirmDialog from "@/components/common/confirm-dialog";
-import { format } from 'date-fns';
+import { format } from "date-fns";
 
 interface Product {
   id: number;
   name: string;
   url?: string | null;
-  price: string;
-  rate: string;  // Added rate
-  unit?: string | null; // Added unit
-  date: string; 
+  date: string;
   quantity: number;
   createdAt: string;
   updatedAt: string;
@@ -90,7 +87,7 @@ const ProductList: React.FC = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const location = useLocation();
-  const isAdminRoute = location.pathname.includes('/admin/');
+  const isAdminRoute = location.pathname.includes("/admin/");
   const [currentPage, setCurrentPage] = useState(1);
   const [recordsPerPage, setRecordsPerPage] = useState(10);
   const [sortBy, setSortBy] = useState("createdAt");
@@ -101,20 +98,22 @@ const ProductList: React.FC = () => {
 
   useEffect(() => {
     try {
-      const userString = localStorage.getItem('user');
+      const userString = localStorage.getItem("user");
       if (userString) {
         const user = JSON.parse(userString);
-        if (user && user.role === 'ADMIN') {
+        if (user && user.role === "ADMIN") {
           setIsAdmin(true);
         }
       }
     } catch (error) {
-      console.error('Failed to parse user data from localStorage', error);
+      console.error("Failed to parse user data from localStorage", error);
     }
   }, []);
 
   const [showConfirmDeleteDialog, setShowConfirmDeleteDialog] = useState(false);
-  const [productToDeleteId, setProductToDeleteId] = useState<number | null>(null);
+  const [productToDeleteId, setProductToDeleteId] = useState<number | null>(
+    null
+  );
 
   const {
     data: apiResponse,
@@ -122,14 +121,28 @@ const ProductList: React.FC = () => {
     isError,
     error,
   } = useQuery<ApiResponse | Product[], Error>({
-    queryKey: ["products", currentPage, sortBy, sortOrder, search, recordsPerPage] as const,
-    queryFn: () => fetchProducts(currentPage, sortBy, sortOrder, search, recordsPerPage),
+    queryKey: [
+      "products",
+      currentPage,
+      sortBy,
+      sortOrder,
+      search,
+      recordsPerPage,
+    ] as const,
+    queryFn: () =>
+      fetchProducts(currentPage, sortBy, sortOrder, search, recordsPerPage),
     placeholderData: (previousData) => previousData,
   });
 
-  const products: Product[] = Array.isArray(apiResponse) ? apiResponse : (apiResponse as ApiResponse)?.data || [];
-  const totalPages: number = Array.isArray(apiResponse) ? Math.ceil(apiResponse.length / recordsPerPage) : (apiResponse as ApiResponse)?.totalPages || 1;
-  const totalProducts: number = Array.isArray(apiResponse) ? apiResponse.length : (apiResponse as ApiResponse)?.totalRecords || 0;
+  const products: Product[] = Array.isArray(apiResponse)
+    ? apiResponse
+    : (apiResponse as ApiResponse)?.data || [];
+  const totalPages: number = Array.isArray(apiResponse)
+    ? Math.ceil(apiResponse.length / recordsPerPage)
+    : (apiResponse as ApiResponse)?.totalPages || 1;
+  const totalProducts: number = Array.isArray(apiResponse)
+    ? apiResponse.length
+    : (apiResponse as ApiResponse)?.totalRecords || 0;
 
   const deleteMutation = useMutation<void, Error, number>({
     mutationFn: (productId: number) => del(`/products/${productId}`),
@@ -174,7 +187,11 @@ const ProductList: React.FC = () => {
 
   const getSortIndicator = (column: string) => {
     if (sortBy === column) {
-      return sortOrder === "asc" ? <ChevronUp size={16} /> : <ChevronDown size={16} />;
+      return sortOrder === "asc" ? (
+        <ChevronUp size={16} />
+      ) : (
+        <ChevronDown size={16} />
+      );
     }
     return null;
   };
@@ -202,16 +219,14 @@ const ProductList: React.FC = () => {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>Products</CardTitle>
-            <CardDescription>
-              Manage your product inventory.
-            </CardDescription>
+            <CardDescription>Manage your product inventory.</CardDescription>
           </div>
           <div className="mb-4 flex items-center gap-4">
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
-                 value={search}
+                value={search}
                 onChange={handleSearchChange}
                 className="pl-8 w-full"
               />
@@ -224,12 +239,8 @@ const ProductList: React.FC = () => {
               Add Product
             </Button>
           </div>
-           
-         
         </CardHeader>
         <CardContent>
-           
-
           {isLoading && products.length === 0 ? (
             <div className="flex justify-center items-center py-24">
               <Loader size={30} className="animate-spin text-blue-600" />
@@ -245,15 +256,14 @@ const ProductList: React.FC = () => {
                   ? "Try a different search term."
                   : "Get started by adding your first product."}
               </p>
-              
-                <Button
-                  onClick={() => navigate("/admin/products/create")}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  <PlusCircle size={16} className="mr-2" />
-                  Add Product
-                </Button>
-              
+
+              <Button
+                onClick={() => navigate("/admin/products/create")}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <PlusCircle size={16} className="mr-2" />
+                Add Product
+              </Button>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -263,33 +273,11 @@ const ProductList: React.FC = () => {
                     {/* <TableHead onClick={() => handleSort("id")} className="cursor-pointer">
                       ID {getSortIndicator("id")}
                     </TableHead> */}
-                    <TableHead onClick={() => handleSort('name')} className="cursor-pointer hover:bg-muted/50 transition-colors min-w-[150px]">
-                      Name {getSortIndicator('name')}
-                    </TableHead>
-                  
                     <TableHead
-                      className="cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => handleSort("price")}
+                      onClick={() => handleSort("name")}
+                      className="cursor-pointer hover:bg-muted/50 transition-colors min-w-[150px]"
                     >
-                      <div className="flex items-center">
-                        Price {getSortIndicator("price")}
-                      </div>
-                    </TableHead>
-                    <TableHead
-                      className="cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => handleSort("rate")}
-                    >
-                      <div className="flex items-center">
-                        Rate {getSortIndicator("rate")}
-                      </div>
-                    </TableHead>
-                    <TableHead
-                      className="cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => handleSort("unit")}
-                    >
-                      <div className="flex items-center">
-                        Unit {getSortIndicator("unit")}
-                      </div>
+                      Name {getSortIndicator("name")}
                     </TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -298,21 +286,21 @@ const ProductList: React.FC = () => {
                   {products.map((product) => (
                     <TableRow key={product.id}>
                       {/* <TableCell>{product.id}</TableCell> */}
-                      <TableCell 
-                        className="font-medium cursor-pointer hover:text-blue-600 hover:underline" 
+                      <TableCell
+                        className="font-medium cursor-pointer hover:text-blue-600 hover:underline"
                         title={product.name}
-                        onClick={() => navigate(isAdminRoute ? `/admin/products/${product.id}` : `/member/products/${product.id}`)}
+                        onClick={() =>
+                          navigate(
+                            isAdminRoute
+                              ? `/admin/products/${product.id}`
+                              : `/member/products/${product.id}`
+                          )
+                        }
                       >
                         {product.name}
                       </TableCell>
-                      
-                      <TableCell>
-                        {product.price ? formatCurrency(parseFloat(product.price)) : "N/A"}
-                      </TableCell>
-                      <TableCell>{product.rate ? formatCurrency(parseFloat(product.rate)) : "N/A"}</TableCell>
-                      <TableCell>{product.unit || "N/A"}</TableCell>
                       <TableCell className="text-right">
-                        <DropdownMenu modal={false} >
+                        <DropdownMenu modal={false}>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm">
                               <MoreHorizontal size={16} />
@@ -321,12 +309,20 @@ const ProductList: React.FC = () => {
                           <DropdownMenuContent align="end">
                             <DropdownMenuGroup>
                               <DropdownMenuItem
-                                onClick={() => navigate(isAdminRoute ? `/admin/products/${product.id}` : `/member/products/${product.id}`)}
+                                onClick={() =>
+                                  navigate(
+                                    isAdminRoute
+                                      ? `/admin/products/${product.id}`
+                                      : `/member/products/${product.id}`
+                                  )
+                                }
                               >
                                 <Eye size={14} className="mr-2" /> View
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={() => navigate(`/admin/products/edit/${product.id}`)}
+                                onClick={() =>
+                                  navigate(`/admin/products/edit/${product.id}`)
+                                }
                               >
                                 <Edit size={14} className="mr-2" /> Edit
                               </DropdownMenuItem>
@@ -350,7 +346,14 @@ const ProductList: React.FC = () => {
           {products.length > 0 && (
             <div className="mt-6 flex flex-col sm:flex-row justify-between items-center">
               <div className="mb-4 sm:mb-0 text-sm text-muted-foreground">
-                {`Showing ${products.length > 0 ? (currentPage - 1) * recordsPerPage + 1 : 0} to ${Math.min(currentPage * recordsPerPage, totalProducts)} of ${totalProducts} records`}
+                {`Showing ${
+                  products.length > 0
+                    ? (currentPage - 1) * recordsPerPage + 1
+                    : 0
+                } to ${Math.min(
+                  currentPage * recordsPerPage,
+                  totalProducts
+                )} of ${totalProducts} records`}
               </div>
               <div className="flex items-center space-x-2 sm:space-x-6">
                 <div className="flex items-center space-x-2">
@@ -358,11 +361,11 @@ const ProductList: React.FC = () => {
                   <Select
                     value={recordsPerPage.toString()}
                     onValueChange={(value: string) => {
-                    const numericValue = parseInt(value, 10);
-                    if (!isNaN(numericValue)) {
-                      handleRecordsPerPageChange(numericValue);
-                    }
-                  }}
+                      const numericValue = parseInt(value, 10);
+                      if (!isNaN(numericValue)) {
+                        handleRecordsPerPageChange(numericValue);
+                      }
+                    }}
                   >
                     <SelectTrigger className="h-8 w-[70px]">
                       <SelectValue placeholder={recordsPerPage.toString()} />

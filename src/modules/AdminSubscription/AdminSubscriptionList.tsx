@@ -1,18 +1,60 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { get, put, post } from '@/services/apiService'; // Assuming you have a configured apiService
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton'; // For loading state
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { X, UserPlus, UserIcon, PhoneIcon, MailIcon, PackageIcon, ShoppingCartIcon, IndianRupeeIcon, CalendarIcon, CalendarCheckIcon, UserCheckIcon, Calendar, Users, Download, MessageSquare } from 'lucide-react';
-import { format } from 'date-fns';
+import React, { useEffect, useState, useCallback } from "react";
+import { get, put, post } from "@/services/apiService"; // Assuming you have a configured apiService
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton"; // For loading state
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  X,
+  UserPlus,
+  UserIcon,
+  PhoneIcon,
+  MailIcon,
+  PackageIcon,
+  ShoppingCartIcon,
+  IndianRupeeIcon,
+  CalendarIcon,
+  CalendarCheckIcon,
+  UserCheckIcon,
+  Calendar,
+  Users,
+  Download,
+  MessageSquare,
+} from "lucide-react";
+import { format } from "date-fns";
 import { toast } from "sonner"; // Using Sonner for toasts
-import { BulkAgencyAssignmentModal } from './components/BulkAgencyAssignmentModal';
+import { BulkAgencyAssignmentModal } from "./components/BulkAgencyAssignmentModal";
 
 // Define interfaces based on expected API response and schema
 interface Agency {
@@ -154,15 +196,15 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
   order,
   onUpdateOrder,
 }) => {
-  const [paymentMode, setPaymentMode] = useState<string>('');
-  const [paymentReference, setPaymentReference] = useState<string>('');
-  const [paymentDate, setPaymentDate] = useState<string>('');
-  const [paymentStatusState, setPaymentStatusState] = useState<string>('');
+  const [paymentMode, setPaymentMode] = useState<string>("");
+  const [paymentReference, setPaymentReference] = useState<string>("");
+  const [paymentDate, setPaymentDate] = useState<string>("");
+  const [paymentStatusState, setPaymentStatusState] = useState<string>("");
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
-  const [receivedAmount, setReceivedAmount] = useState<string>('');
-  const [payableAmount, setPayableAmount] = useState<string>('');
+  const [receivedAmount, setReceivedAmount] = useState<string>("");
+  const [payableAmount, setPayableAmount] = useState<string>("");
 
-  const isPaymentSectionDisabled = order?.paymentStatus === 'PAID';
+  const isPaymentSectionDisabled = order?.paymentStatus === "PAID";
 
   useEffect(() => {
     if (order) {
@@ -171,22 +213,26 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
         totalAmount: order.totalAmount,
         walletamt: order.walletamt,
         payableamt: order.payableamt,
-        currentStatus: order.paymentStatus
+        currentStatus: order.paymentStatus,
       });
-      setPaymentMode(order.paymentMode || '');
-      setPaymentReference(order.paymentReferenceNo || '');
-      setPaymentDate(order.paymentDate ? format(new Date(order.paymentDate), 'yyyy-MM-dd') : '');
-      setPaymentStatusState(order.paymentStatus || '');
+      setPaymentMode(order.paymentMode || "");
+      setPaymentReference(order.paymentReferenceNo || "");
+      setPaymentDate(
+        order.paymentDate
+          ? format(new Date(order.paymentDate), "yyyy-MM-dd")
+          : ""
+      );
+      setPaymentStatusState(order.paymentStatus || "");
       // Use order-level payableamt (remaining amount after wallet deduction)
-      setPayableAmount(order.payableamt?.toString() || '0');
-      setReceivedAmount(order.payableamt?.toString() || '0');
+      setPayableAmount(order.payableamt?.toString() || "0");
+      setReceivedAmount(order.payableamt?.toString() || "0");
     } else {
-      setPaymentMode('');
-      setPaymentReference('');
-      setPaymentDate('');
-      setPaymentStatusState('');
-      setPayableAmount('');
-      setReceivedAmount('');
+      setPaymentMode("");
+      setPaymentReference("");
+      setPaymentDate("");
+      setPaymentStatusState("");
+      setPayableAmount("");
+      setReceivedAmount("");
     }
   }, [order]);
 
@@ -194,7 +240,7 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
     const errors: { [key: string]: string } = {};
 
     if (!paymentStatusState) {
-      errors.paymentStatus = 'Payment status is required';
+      errors.paymentStatus = "Payment status is required";
     }
 
     setFormErrors(errors);
@@ -214,15 +260,22 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
 
     const payable = order.payableamt ?? 0;
     const total = order.totalAmount ?? 0;
-    console.log("payable", payable, "total", total)
+    console.log("payable", payable, "total", total);
 
     if (paymentStatusState === "PAID") {
       // Allow received to match payableamt (the actual amount owed after wallet deduction)
       // or totalAmount if payableamt is 0 (workaround for old orders)
-      const isValidAmount = (received === payable) || (payable === 0 && received === total);
+      const isValidAmount =
+        received === payable || (payable === 0 && received === total);
       if (!isValidAmount) {
-        const expectedAmount = (payable === 0 && total > 0) ? total : payable;
-        toast.error(`Received amount (₹${received.toFixed(2)}) must equal the payable amount (₹${expectedAmount.toFixed(2)}) to mark as PAID.`);
+        const expectedAmount = payable === 0 && total > 0 ? total : payable;
+        toast.error(
+          `Received amount (₹${received.toFixed(
+            2
+          )}) must equal the payable amount (₹${expectedAmount.toFixed(
+            2
+          )}) to mark as PAID.`
+        );
         return;
       }
     }
@@ -247,7 +300,7 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
         onOpenChange(false);
       }
     } catch (error) {
-      console.error('Failed to update payment:', error);
+      console.error("Failed to update payment:", error);
     }
   };
 
@@ -262,15 +315,28 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
             Modify payment details for the entire order.
           </DialogDescription>
         </DialogHeader>
-        <DialogClose className="absolute right-4 top-4 z-10" onClick={() => onOpenChange(false)}>
+        <DialogClose
+          className="absolute right-4 top-4 z-10"
+          onClick={() => onOpenChange(false)}
+        >
           <X className="h-4 w-4" />
         </DialogClose>
 
         <div className="grid gap-6 py-4">
-          <fieldset disabled={isPaymentSectionDisabled} className="grid gap-4 border p-4 rounded-md">
-            <legend className="text-sm font-medium px-1">Payment Information {isPaymentSectionDisabled ? `(Status: ${order.paymentStatus} - Disabled)` : ""}</legend>
+          <fieldset
+            disabled={isPaymentSectionDisabled}
+            className="grid gap-4 border p-4 rounded-md"
+          >
+            <legend className="text-sm font-medium px-1">
+              Payment Information{" "}
+              {isPaymentSectionDisabled
+                ? `(Status: ${order.paymentStatus} - Disabled)`
+                : ""}
+            </legend>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="paymentMode" className="text-right col-span-1">Payment Mode <span className="text-red-500">*</span></Label>
+              <Label htmlFor="paymentMode" className="text-right col-span-1">
+                Payment Mode <span className="text-red-500">*</span>
+              </Label>
               <Select
                 value={paymentMode}
                 onValueChange={(value) => setPaymentMode(value)}
@@ -280,7 +346,7 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
                   <SelectValue placeholder="Select payment mode" />
                 </SelectTrigger>
                 <SelectContent>
-                  {paymentModeOptions.map(option => (
+                  {paymentModeOptions.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>
@@ -289,30 +355,55 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
               </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="payment-reference" className="text-right col-span-1">Reference #</Label>
-              <Input id="payment-reference" value={paymentReference} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPaymentReference(e.target.value)} className="col-span-3" />
+              <Label
+                htmlFor="payment-reference"
+                className="text-right col-span-1"
+              >
+                Reference #
+              </Label>
+              <Input
+                id="payment-reference"
+                value={paymentReference}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setPaymentReference(e.target.value)
+                }
+                className="col-span-3"
+              />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="payment-date" className="text-right col-span-1">Payment Date</Label>
+              <Label htmlFor="payment-date" className="text-right col-span-1">
+                Payment Date
+              </Label>
               <Input
                 type="date"
                 id="payment-date"
                 value={paymentDate}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPaymentDate(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setPaymentDate(e.target.value)
+                }
                 className="col-span-3"
               />
             </div>
             {/* Add this section after the "Payment Date" input */}
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="payable-amount" className="text-right col-span-1">Payable Amount</Label>
+              <Label htmlFor="payable-amount" className="text-right col-span-1">
+                Payable Amount
+              </Label>
               <div className="col-span-3 flex items-center gap-2">
                 <IndianRupeeIcon className="h-4 w-4 text-gray-500" />
-                <span id="payable-amount" className="font-semibold">{payableAmount}</span>
+                <span id="payable-amount" className="font-semibold">
+                  {payableAmount}
+                </span>
               </div>
             </div>
 
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="received-amount" className="text-right col-span-1">Received Amount <span className="text-red-500">*</span></Label>
+              <Label
+                htmlFor="received-amount"
+                className="text-right col-span-1"
+              >
+                Received Amount <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="received-amount"
                 type="number"
@@ -323,19 +414,28 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right col-span-1" htmlFor="payment-status-modal">
+              <Label
+                className="text-right col-span-1"
+                htmlFor="payment-status-modal"
+              >
                 Status <span className="text-red-500">*</span>
               </Label>
               <div className="col-span-3 flex flex-col gap-1">
-                <Select value={paymentStatusState} onValueChange={(value) => {
-                  setPaymentStatusState(value);
-                  if (value) {
-                    const newErrors = { ...formErrors };
-                    delete newErrors.paymentStatus;
-                    setFormErrors(newErrors);
-                  }
-                }}>
-                  <SelectTrigger id="payment-status-modal" className={formErrors.paymentStatus ? "border-red-500" : ""}>
+                <Select
+                  value={paymentStatusState}
+                  onValueChange={(value) => {
+                    setPaymentStatusState(value);
+                    if (value) {
+                      const newErrors = { ...formErrors };
+                      delete newErrors.paymentStatus;
+                      setFormErrors(newErrors);
+                    }
+                  }}
+                >
+                  <SelectTrigger
+                    id="payment-status-modal"
+                    className={formErrors.paymentStatus ? "border-red-500" : ""}
+                  >
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -345,7 +445,9 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
                   </SelectContent>
                 </Select>
                 {formErrors.paymentStatus && (
-                  <p className="text-xs text-red-500">{formErrors.paymentStatus}</p>
+                  <p className="text-xs text-red-500">
+                    {formErrors.paymentStatus}
+                  </p>
                 )}
               </div>
             </div>
@@ -353,8 +455,12 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={isPaymentSectionDisabled}>Save Changes</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit} disabled={isPaymentSectionDisabled}>
+            Save Changes
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -383,22 +489,22 @@ const AssignAgentModal: React.FC<AssignAgentModalProps> = ({
   isLoadingAgencies,
   onUpdateSubscription,
 }) => {
-  const [selectedAgencyId, setSelectedAgencyId] = useState<string>('NONE');
-  const [deliveryInstructions, setDeliveryInstructions] = useState('');
+  const [selectedAgencyId, setSelectedAgencyId] = useState<string>("NONE");
+  const [deliveryInstructions, setDeliveryInstructions] = useState("");
 
   useEffect(() => {
     if (subscription) {
-      console.log('AssignAgentModal - Subscription loaded:', {
+      console.log("AssignAgentModal - Subscription loaded:", {
         id: subscription.id,
         agencyId: subscription.agencyId,
         deliveryInstructions: subscription.deliveryInstructions,
-        fullSubscription: subscription
+        fullSubscription: subscription,
       });
-      setSelectedAgencyId(subscription.agencyId?.toString() || 'NONE');
-      setDeliveryInstructions(subscription.deliveryInstructions || '');
+      setSelectedAgencyId(subscription.agencyId?.toString() || "NONE");
+      setDeliveryInstructions(subscription.deliveryInstructions || "");
     } else {
-      setSelectedAgencyId('NONE');
-      setDeliveryInstructions('');
+      setSelectedAgencyId("NONE");
+      setDeliveryInstructions("");
     }
   }, [subscription]);
 
@@ -407,49 +513,53 @@ const AssignAgentModal: React.FC<AssignAgentModalProps> = ({
 
     const updatedDetails = {
       subscriptionId: subscription.id,
-      agencyId: selectedAgencyId !== 'NONE' ? parseInt(selectedAgencyId, 10) : null,
+      agencyId:
+        selectedAgencyId !== "NONE" ? parseInt(selectedAgencyId, 10) : null,
       deliveryInstructions: deliveryInstructions,
     };
 
-    console.log('AssignAgentModal - Submitting update:', {
+    console.log("AssignAgentModal - Submitting update:", {
       subscriptionId: subscription.id,
       originalDeliveryInstructions: subscription.deliveryInstructions,
       newDeliveryInstructions: deliveryInstructions,
       selectedAgencyId,
-      updatedDetails
+      updatedDetails,
     });
 
     try {
       await onUpdateSubscription(updatedDetails);
       onOpenChange(false);
     } catch (error) {
-      console.error('Failed to update subscription in modal:', error);
+      console.error("Failed to update subscription in modal:", error);
     }
   };
 
   if (!isOpen || !subscription) return null;
 
   // Format delivery schedule in a user-friendly way
-  const formatDeliverySchedule = (schedule: string, weekdays?: string | null) => {
+  const formatDeliverySchedule = (
+    schedule: string,
+    weekdays?: string | null
+  ) => {
     switch (schedule) {
-      case 'DAILY':
-        return 'Daily';
-      case 'WEEKDAYS':
-        return 'Weekdays (Mon-Fri)';
-      case 'ALTERNATE_DAYS':
-        return 'Alternate Days';
-      case 'SELECT_DAYS':
+      case "DAILY":
+        return "Daily";
+      case "WEEKDAYS":
+        return "Weekdays (Mon-Fri)";
+      case "ALTERNATE_DAYS":
+        return "Alternate Days";
+      case "SELECT_DAYS":
         try {
           if (weekdays) {
             const days = JSON.parse(weekdays);
-            return `Selected Days: ${days.join(', ')}`;
+            return `Selected Days: ${days.join(", ")}`;
           }
-          return 'Selected Days';
+          return "Selected Days";
         } catch {
-          return 'Selected Days';
+          return "Selected Days";
         }
-      case 'VARYING':
-        return 'Varying Schedule';
+      case "VARYING":
+        return "Varying Schedule";
       default:
         return schedule;
     }
@@ -457,11 +567,11 @@ const AssignAgentModal: React.FC<AssignAgentModalProps> = ({
 
   // Format date to a more readable format
   const formatDate = (dateString: string | null | undefined) => {
-    if (!dateString) return 'Not set';
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
+    if (!dateString) return "Not set";
+    return new Date(dateString).toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
     });
   };
 
@@ -469,12 +579,18 @@ const AssignAgentModal: React.FC<AssignAgentModalProps> = ({
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl max-h-[85vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Assign Agent for: {subscription.product.name}</DialogTitle>
+          <DialogTitle>
+            Assign Agent for: {subscription.product.name}
+          </DialogTitle>
           <DialogDescription>
-            Subscription for {subscription.member?.user?.name || 'Unknown Member'}
+            Subscription for{" "}
+            {subscription.member?.user?.name || "Unknown Member"}
           </DialogDescription>
         </DialogHeader>
-        <DialogClose className="absolute right-4 top-4 z-10" onClick={() => onOpenChange(false)}>
+        <DialogClose
+          className="absolute right-4 top-4 z-10"
+          onClick={() => onOpenChange(false)}
+        >
           <X className="h-4 w-4" />
         </DialogClose>
 
@@ -490,27 +606,44 @@ const AssignAgentModal: React.FC<AssignAgentModalProps> = ({
               <div>
                 <p className="text-gray-500">Quantity</p>
                 <p className="font-medium">
-                  {subscription.deliverySchedule === 'ALTERNATE_DAYS'
-                    ? `${subscription.qty} / ${subscription.altQty ?? '-'}`
+                  {subscription.deliverySchedule === "ALTERNATE_DAYS"
+                    ? `${subscription.qty} / ${subscription.altQty ?? "-"}`
                     : subscription.qty}
                 </p>
               </div>
               <div>
                 <p className="text-gray-500">Delivery Schedule</p>
-                <p className="font-medium">{formatDeliverySchedule(subscription.deliverySchedule, subscription.weekdays)}</p>
+                <p className="font-medium">
+                  {formatDeliverySchedule(
+                    subscription.deliverySchedule,
+                    subscription.weekdays
+                  )}
+                </p>
               </div>
               <div>
                 <p className="text-gray-500">Start Date</p>
-                <p className="font-medium">{formatDate(subscription.startDate)}</p>
+                <p className="font-medium">
+                  {formatDate(subscription.startDate)}
+                </p>
               </div>
               <div>
                 <p className="text-gray-500">Expiry Date</p>
-                <p className="font-medium">{formatDate(subscription.expiryDate)}</p>
+                <p className="font-medium">
+                  {formatDate(subscription.expiryDate)}
+                </p>
               </div>
               <div>
                 <p className="text-gray-500">Payment Status</p>
                 <p className="font-medium">
-                  <span className={`inline-block px-2 py-0.5 rounded ${subscription.paymentStatus === 'PAID' ? 'bg-green-100 text-green-800' : subscription.paymentStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
+                  <span
+                    className={`inline-block px-2 py-0.5 rounded ${
+                      subscription.paymentStatus === "PAID"
+                        ? "bg-green-100 text-green-800"
+                        : subscription.paymentStatus === "PENDING"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : "bg-red-100 text-red-800"
+                    }`}
+                  >
                     {subscription.paymentStatus}
                   </span>
                 </p>
@@ -524,17 +657,30 @@ const AssignAgentModal: React.FC<AssignAgentModalProps> = ({
               <h3 className="text-sm font-medium mb-2">Delivery Address</h3>
               <div className="grid gap-1 text-sm">
                 <div className="flex items-center gap-2">
-                  <p className="font-medium">{subscription.deliveryAddress.recipientName}</p>
+                  <p className="font-medium">
+                    {subscription.deliveryAddress.recipientName}
+                  </p>
                   {subscription.deliveryAddress.label && (
                     <span className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded">
                       {subscription.deliveryAddress.label}
                     </span>
                   )}
                 </div>
-                <p>{subscription.deliveryAddress.plotBuilding}, {subscription.deliveryAddress.streetArea}</p>
-                {subscription.deliveryAddress.landmark && <p>{subscription.deliveryAddress.landmark}</p>}
-                <p>{subscription.deliveryAddress.city}, {subscription.deliveryAddress.state} - {subscription.deliveryAddress.pincode}</p>
-                <p className="text-blue-600">Mobile: {subscription.deliveryAddress.mobile}</p>
+                <p>
+                  {subscription.deliveryAddress.plotBuilding},{" "}
+                  {subscription.deliveryAddress.streetArea}
+                </p>
+                {subscription.deliveryAddress.landmark && (
+                  <p>{subscription.deliveryAddress.landmark}</p>
+                )}
+                <p>
+                  {subscription.deliveryAddress.city},{" "}
+                  {subscription.deliveryAddress.state} -{" "}
+                  {subscription.deliveryAddress.pincode}
+                </p>
+                <p className="text-blue-600">
+                  Mobile: {subscription.deliveryAddress.mobile}
+                </p>
               </div>
             </div>
           )}
@@ -543,40 +689,66 @@ const AssignAgentModal: React.FC<AssignAgentModalProps> = ({
           <div className="bg-gray-50 p-4 rounded-lg">
             <h3 className="text-sm font-medium mb-2">Member Details</h3>
             <div className="grid gap-1 text-sm">
-              <p><span className="text-gray-500">Name:</span> {subscription.member?.user?.name || 'N/A'}</p>
-              <p><span className="text-gray-500">Email:</span> {subscription.member?.user?.email || 'N/A'}</p>
+              <p>
+                <span className="text-gray-500">Name:</span>{" "}
+                {subscription.member?.user?.name || "N/A"}
+              </p>
+              <p>
+                <span className="text-gray-500">Email:</span>{" "}
+                {subscription.member?.user?.email || "N/A"}
+              </p>
               {subscription.member?.user?.mobile && (
-                <p><span className="text-gray-500">Mobile:</span> {subscription.member.user.mobile}</p>
+                <p>
+                  <span className="text-gray-500">Mobile:</span>{" "}
+                  {subscription.member.user.mobile}
+                </p>
               )}
             </div>
           </div>
 
           {/* Agent Selection */}
           <fieldset className="grid gap-4 border p-4 rounded-md">
-            <legend className="text-sm font-medium px-1">Delivery Agent & Instructions</legend>
+            <legend className="text-sm font-medium px-1">
+              Delivery Agent & Instructions
+            </legend>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="delivery-agent" className="text-right col-span-1">Agent</Label>
+              <Label htmlFor="delivery-agent" className="text-right col-span-1">
+                Agent
+              </Label>
               <Select
                 value={selectedAgencyId}
                 onValueChange={setSelectedAgencyId}
                 disabled={isLoadingAgencies}
               >
                 <SelectTrigger id="delivery-agent" className="col-span-3">
-                  <SelectValue placeholder={isLoadingAgencies ? "Loading agents..." : "Select agent"} />
+                  <SelectValue
+                    placeholder={
+                      isLoadingAgencies ? "Loading agents..." : "Select agent"
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="NONE">Unassign / Not Assigned</SelectItem>
-                  {agencies.map(agent => (
-                    <SelectItem key={agent.id} value={agent.id.toString()}>{agent.user?.name || agent.name}</SelectItem>
+                  {agencies.map((agent) => (
+                    <SelectItem key={agent.id} value={agent.id.toString()}>
+                      {agent.user?.name || agent.name}
+                    </SelectItem>
                   ))}
-                  {agencies.length === 0 && !isLoadingAgencies &&
-                    <p className="text-sm text-muted-foreground p-2">No agents available.</p>
-                  }
+                  {agencies.length === 0 && !isLoadingAgencies && (
+                    <p className="text-sm text-muted-foreground p-2">
+                      No agents available.
+                    </p>
+                  )}
                 </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="delivery-instructions" className="text-right col-span-1 mt-2">Instructions</Label>
+              <Label
+                htmlFor="delivery-instructions"
+                className="text-right col-span-1 mt-2"
+              >
+                Instructions
+              </Label>
               <Textarea
                 id="delivery-instructions"
                 value={deliveryInstructions}
@@ -590,8 +762,18 @@ const AssignAgentModal: React.FC<AssignAgentModalProps> = ({
         </div>
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button type="button" onClick={handleSubmit} disabled={isLoadingAgencies}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            onClick={handleSubmit}
+            disabled={isLoadingAgencies}
+          >
             {isLoadingAgencies ? "Loading..." : "Assign Agent"}
           </Button>
         </DialogFooter>
@@ -607,7 +789,8 @@ const AdminSubscriptionList: React.FC = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<ProductOrder | null>(null);
-  const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
+  const [selectedSubscription, setSelectedSubscription] =
+    useState<Subscription | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isAssignAgentModalOpen, setIsAssignAgentModalOpen] = useState(false);
   const [isBulkAssignModalOpen, setIsBulkAssignModalOpen] = useState(false);
@@ -615,41 +798,51 @@ const AdminSubscriptionList: React.FC = () => {
   const [isLoadingAgencies, setIsLoadingAgencies] = useState<boolean>(false);
   const [showFilters] = useState<boolean>(false);
   const [showUnassignedOnly, setShowUnassignedOnly] = useState<boolean>(false);
-  const [downloadingInvoices, setDownloadingInvoices] = useState<Set<string>>(new Set());
+  const [downloadingInvoices, setDownloadingInvoices] = useState<Set<string>>(
+    new Set()
+  );
 
   // User role and supervisor filtering state
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
-  const [currentSupervisorAgencyId, setCurrentSupervisorAgencyId] = useState<string | null>(null);
+  const [currentSupervisorAgencyId, setCurrentSupervisorAgencyId] = useState<
+    string | null
+  >(null);
   const [isSupervisorInfoLoading, setIsSupervisorInfoLoading] = useState(false);
 
-  const [filters, setFilters] = useState<{ [key: string]: string | undefined }>({
-    searchTerm: '',
-    memberName: '',
-    subscriptionDate: '',
-    paymentStatus: 'ALL',
-    deliveryStatus: '',
-    agencyId: '',
-    productId: '',
-    // Add other filter keys as needed, initialized to empty or default values
-  });
+  const [filters, setFilters] = useState<{ [key: string]: string | undefined }>(
+    {
+      searchTerm: "",
+      memberName: "",
+      subscriptionDate: "",
+      paymentStatus: "ALL",
+      deliveryStatus: "",
+      agencyId: "",
+      productId: "",
+      // Add other filter keys as needed, initialized to empty or default values
+    }
+  );
 
   // Get user role from localStorage
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
-        const userStr = localStorage.getItem('user');
+        const userStr = localStorage.getItem("user");
         if (userStr) {
           const user = JSON.parse(userStr);
           setCurrentUserRole(user.role);
 
           // If user is a supervisor, get their agency information
-          if (user.role === 'SUPERVISOR') {
+          if (user.role === "SUPERVISOR") {
             setIsSupervisorInfoLoading(true);
             try {
               const supervisorInfo = await get("/users/me");
               console.log("supervisorinfo", supervisorInfo);
               // Get the agency ID from supervisor's assigned agency
-              setCurrentSupervisorAgencyId(supervisorInfo?.supervisor?.agencyId ? String(supervisorInfo.supervisor.agencyId) : null);
+              setCurrentSupervisorAgencyId(
+                supervisorInfo?.supervisor?.agencyId
+                  ? String(supervisorInfo.supervisor.agencyId)
+                  : null
+              );
             } catch (error) {
               console.error("Failed to fetch supervisor info:", error);
               toast.error("Could not load supervisor details.");
@@ -659,76 +852,96 @@ const AdminSubscriptionList: React.FC = () => {
           }
         }
       } catch (error) {
-        console.error('Failed to parse user data from localStorage', error);
+        console.error("Failed to parse user data from localStorage", error);
       }
     };
     fetchUserInfo();
   }, []);
 
   // Fetch product orders instead of subscriptions
-  const fetchProductOrders = useCallback(async (page = currentPage, currentLimit = 10, currentFilters = filters) => {
-    setIsLoading(true);
+  const fetchProductOrders = useCallback(
+    async (page = currentPage, currentLimit = 10, currentFilters = filters) => {
+      setIsLoading(true);
 
-    // Determine effective values for pagination and filters, providing fallbacks
-    const effectivePage = page !== undefined ? page : (currentPage !== undefined ? currentPage : 1);
-    const effectiveLimit = currentLimit !== undefined ? currentLimit : (limit !== undefined ? limit : 10);
-    const effectiveFilters = currentFilters || filters || {}; // Ensure filters is an object
+      // Determine effective values for pagination and filters, providing fallbacks
+      const effectivePage =
+        page !== undefined ? page : currentPage !== undefined ? currentPage : 1;
+      const effectiveLimit =
+        currentLimit !== undefined
+          ? currentLimit
+          : limit !== undefined
+          ? limit
+          : 10;
+      const effectiveFilters = currentFilters || filters || {}; // Ensure filters is an object
 
-    const apiParams: { [key: string]: string } = {};
-    for (const [originalKey, originalValueObj] of Object.entries(effectiveFilters)) {
-      // Ensure originalValueObj is not null or undefined before calling toString
-      if (originalValueObj === null || originalValueObj === undefined) {
-        continue;
+      const apiParams: { [key: string]: string } = {};
+      for (const [originalKey, originalValueObj] of Object.entries(
+        effectiveFilters
+      )) {
+        // Ensure originalValueObj is not null or undefined before calling toString
+        if (originalValueObj === null || originalValueObj === undefined) {
+          continue;
+        }
+        const value = String(originalValueObj).trim();
+
+        if (value === "" || value.toLowerCase() === "all") {
+          continue;
+        }
+
+        if (originalKey === "memberName") {
+          apiParams["searchTerm"] = value;
+        } else if (originalKey === "subscriptionDate") {
+          apiParams["startDate"] = value;
+        } else {
+          apiParams[originalKey] = value;
+        }
       }
-      const value = String(originalValueObj).trim();
 
-      if (value === '' || value.toLowerCase() === 'all') {
-        continue;
+      // Add supervisor filtering if user is a supervisor
+      if (currentUserRole === "SUPERVISOR" && currentSupervisorAgencyId) {
+        apiParams["supervisorAgencyId"] = currentSupervisorAgencyId;
       }
 
-      if (originalKey === 'memberName') {
-        apiParams['searchTerm'] = value;
-      } else if (originalKey === 'subscriptionDate') {
-        apiParams['startDate'] = value;
-      } else {
-        apiParams[originalKey] = value;
+      const queryParams = new URLSearchParams({
+        page: effectivePage.toString(),
+        limit: effectiveLimit.toString(),
+        ...apiParams,
+      }).toString();
+
+      try {
+        const response: ApiResponse = await get(
+          `/product-orders?${queryParams}`
+        );
+        setProductOrders(response.data || []);
+        setTotalPages(response.totalPages);
+        setCurrentPage(response.currentPage);
+      } catch (err: any) {
+        console.error("Failed to fetch subscriptions:", err);
+        const errorMessage =
+          err.response?.data?.message ||
+          err.message ||
+          "Failed to fetch subscriptions.";
+        toast.error(errorMessage);
+        setProductOrders([]); // Ensure productOrders is an empty array on error
+      } finally {
+        setIsLoading(false);
       }
-    }
-
-    // Add supervisor filtering if user is a supervisor
-    if (currentUserRole === 'SUPERVISOR' && currentSupervisorAgencyId) {
-      apiParams['supervisorAgencyId'] = currentSupervisorAgencyId;
-    }
-
-    const queryParams = new URLSearchParams({
-      page: effectivePage.toString(),
-      limit: effectiveLimit.toString(),
-      ...apiParams
-    }).toString();
-
-    try {
-      const response: ApiResponse = await get(`/product-orders?${queryParams}`);
-      setProductOrders(response.data || []);
-      setTotalPages(response.totalPages);
-      setCurrentPage(response.currentPage);
-    } catch (err: any) {
-      console.error('Failed to fetch subscriptions:', err);
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to fetch subscriptions.';
-      toast.error(errorMessage);
-      setProductOrders([]); // Ensure productOrders is an empty array on error
-    } finally {
-      setIsLoading(false);
-  }
-  }, [currentPage, limit, filters, currentUserRole, currentSupervisorAgencyId]);
+    },
+    [currentPage, limit, filters, currentUserRole, currentSupervisorAgencyId]
+  );
 
   const fetchAgencies = useCallback(async () => {
     setIsLoadingAgencies(true);
     try {
-      const response = await get('/agencies'); // Fetch all agencies
+      const response = await get("/agencies"); // Fetch all agencies
       setAgencies(response.data || []);
-    } catch (err: any) { // Added type for err
-      console.error('Failed to fetch agencies:', err);
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to load delivery agents.';
+    } catch (err: any) {
+      // Added type for err
+      console.error("Failed to fetch agencies:", err);
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to load delivery agents.";
       toast.error(errorMessage); // Use Sonner toast for errors
       setAgencies([]); // Ensure agencies is an array on error
     } finally {
@@ -738,17 +951,29 @@ const AdminSubscriptionList: React.FC = () => {
 
   useEffect(() => {
     // Don't fetch if supervisor info is still loading
-    if (currentUserRole === 'SUPERVISOR' && isSupervisorInfoLoading) {
+    if (currentUserRole === "SUPERVISOR" && isSupervisorInfoLoading) {
       return;
     }
     // Don't fetch if supervisor role but no agency assigned
-    if (currentUserRole === 'SUPERVISOR' && !currentSupervisorAgencyId && !isSupervisorInfoLoading) {
+    if (
+      currentUserRole === "SUPERVISOR" &&
+      !currentSupervisorAgencyId &&
+      !isSupervisorInfoLoading
+    ) {
       setProductOrders([]);
       setIsLoading(false);
       return;
     }
     fetchProductOrders(currentPage, limit, filters);
-  }, [fetchProductOrders, currentPage, limit, filters, currentUserRole, currentSupervisorAgencyId, isSupervisorInfoLoading]); // fetchProductOrders is memoized, so this runs on mount and when filters/pagination affecting fetchProductOrders change
+  }, [
+    fetchProductOrders,
+    currentPage,
+    limit,
+    filters,
+    currentUserRole,
+    currentSupervisorAgencyId,
+    isSupervisorInfoLoading,
+  ]); // fetchProductOrders is memoized, so this runs on mount and when filters/pagination affecting fetchProductOrders change
 
   // Fetch agencies once on mount, or when assign agent modal is opened (as per previous logic)
   // For simplicity here, fetching once on mount. Can be refined if agencies list is very dynamic or large.
@@ -767,9 +992,11 @@ const AdminSubscriptionList: React.FC = () => {
     fetchProductOrders(1, newLimit, filters);
   };
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleFilterChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
-    setFilters(prevFilters => ({
+    setFilters((prevFilters) => ({
       ...prevFilters,
       [name]: value,
     }));
@@ -784,18 +1011,18 @@ const AdminSubscriptionList: React.FC = () => {
   // Clear a specific filter or all filters
   const clearFilter = (filterName?: string) => {
     if (filterName) {
-      const newFilterValue = filterName === 'paymentStatus' ? 'ALL' : '';
-      setFilters(prev => ({ ...prev, [filterName]: newFilterValue }));
+      const newFilterValue = filterName === "paymentStatus" ? "ALL" : "";
+      setFilters((prev) => ({ ...prev, [filterName]: newFilterValue }));
     } else {
       // Reset all filters to initial state
       setFilters({
-        searchTerm: '',
-        memberName: '',
-        subscriptionDate: '',
-        paymentStatus: 'ALL', // Default to 'ALL'
-        deliveryStatus: '',
-        agencyId: '',
-        productId: '',
+        searchTerm: "",
+        memberName: "",
+        subscriptionDate: "",
+        paymentStatus: "ALL", // Default to 'ALL'
+        deliveryStatus: "",
+        agencyId: "",
+        productId: "",
       });
     }
     // Optionally, re-fetch immediately or wait for explicit submit
@@ -805,7 +1032,6 @@ const AdminSubscriptionList: React.FC = () => {
     // Or rely on useEffect triggered by filters change if fetchSubscriptions is in its deps
     // For simplicity, let's assume the state update is quick enough or handleFilterSubmit is called after this.
   };
-
 
   const handlePaymentDetailsUpdate = async (updatedDetails: {
     orderId: string;
@@ -829,29 +1055,40 @@ const AdminSubscriptionList: React.FC = () => {
       fetchProductOrders(); // Refresh the list
       return true;
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || "Failed to update payment.";
+      const errorMessage =
+        error.response?.data?.message || "Failed to update payment.";
       toast.error(errorMessage);
       console.error("Error updating payment:", error);
       return false;
     }
   };
 
-  const handleAgentAssignmentUpdate = async (updatedDetails: { subscriptionId: number; agencyId?: number | null; deliveryInstructions?: string; }) => {
+  const handleAgentAssignmentUpdate = async (updatedDetails: {
+    subscriptionId: number;
+    agencyId?: number | null;
+    deliveryInstructions?: string;
+  }) => {
     if (!selectedSubscription) return;
 
     const { subscriptionId, agencyId, deliveryInstructions } = updatedDetails;
-    const apiPayload = { agencyId: agencyId === undefined ? null : Number(agencyId), deliveryInstructions };
+    const apiPayload = {
+      agencyId: agencyId === undefined ? null : Number(agencyId),
+      deliveryInstructions,
+    };
 
-    console.log('handleAgentAssignmentUpdate - API call:', {
+    console.log("handleAgentAssignmentUpdate - API call:", {
       subscriptionId,
       originalSubscription: selectedSubscription,
       apiPayload,
-      endpoint: `/subscriptions/${subscriptionId}/assign-agent`
+      endpoint: `/subscriptions/${subscriptionId}/assign-agent`,
     });
 
     try {
-      const response = await put(`/subscriptions/${subscriptionId}/assign-agent`, apiPayload);
-      console.log('handleAgentAssignmentUpdate - API response:', response);
+      const response = await put(
+        `/subscriptions/${subscriptionId}/assign-agent`,
+        apiPayload
+      );
+      console.log("handleAgentAssignmentUpdate - API response:", response);
       toast.success("Agent and delivery instructions updated successfully!");
       fetchProductOrders(); // Refresh list to show updated agent
     } catch (error) {
@@ -880,18 +1117,23 @@ const AdminSubscriptionList: React.FC = () => {
     fetchAgencies();
   };
 
-  const handleBulkAssignAgency = async (subscriptionIds: number[], agencyId: number | null) => {
+  const handleBulkAssignAgency = async (
+    subscriptionIds: number[],
+    agencyId: number | null
+  ) => {
     try {
-      await post('/subscriptions/bulk-assign-agency', {
+      await post("/subscriptions/bulk-assign-agency", {
         subscriptionIds,
-        agencyId
+        agencyId,
       });
 
-      toast.success(`Successfully assigned agency to ${subscriptionIds.length} subscription(s)`);
+      toast.success(
+        `Successfully assigned agency to ${subscriptionIds.length} subscription(s)`
+      );
       fetchProductOrders(); // Refresh the list to show updated assignments
     } catch (error) {
-      console.error('Bulk agency assignment failed:', error);
-      toast.error('Failed to assign agencies. Please try again.');
+      console.error("Bulk agency assignment failed:", error);
+      toast.error("Failed to assign agencies. Please try again.");
       throw error; // Re-throw to let the modal handle it
     }
   };
@@ -903,52 +1145,61 @@ const AdminSubscriptionList: React.FC = () => {
     }
 
     // Add order ID to downloading set
-    setDownloadingInvoices(prev => new Set(prev).add(order.id));
+    setDownloadingInvoices((prev) => new Set(prev).add(order.id));
 
     try {
-    // Check if invoice path is already available in the order data
+      // Check if invoice path is already available in the order data
       if (order.invoicePath) {
         // If invoice path exists, download using forced download approach
-        const baseUrl = import.meta.env.VITE_BACKEND_URL || 'https://www.indraai.in';
+        const baseUrl =
+          import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
         const invoiceUrl = `${baseUrl}/invoices/${order.invoicePath}`;
-        
+
         // Fetch the file as blob to force download
         const response = await fetch(invoiceUrl);
-        if (!response.ok) throw new Error('Download failed');
-        
+        if (!response.ok) throw new Error("Download failed");
+
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
-        
+
         // Create a temporary anchor element for download
-        const link = document.createElement('a');
+        const link = document.createElement("a");
         link.href = url;
         link.download = `invoice-${order.invoiceNo || order.orderNo}.pdf`;
         document.body.appendChild(link);
         link.click();
-        
+
         // Cleanup
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-        
-        toast.success(`Invoice for order ${order.orderNo} downloaded successfully`);
+
+        toast.success(
+          `Invoice for order ${order.orderNo} downloaded successfully`
+        );
       } else {
         // If no invoice path in order data, try to generate/fetch invoice
         // For now, we'll show an informative message since the backend endpoint may not be ready
-        toast.info('Invoice generation is not yet available. Please check back later or contact support.');
+        toast.info(
+          "Invoice generation is not yet available. Please check back later or contact support."
+        );
       }
     } catch (error: any) {
-      console.error('Failed to download invoice:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to download invoice. Please try again.';
+      console.error("Failed to download invoice:", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to download invoice. Please try again.";
       toast.error(errorMessage);
       // Fallback to opening in new tab if download fails
       if (order.invoicePath) {
-        const baseUrl = import.meta.env.VITE_BACKEND_URL || 'https://www.indraai.in';
+        const baseUrl =
+          import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
         const invoiceUrl = `${baseUrl}/invoices/${order.invoicePath}`;
-        window.open(invoiceUrl, '_blank');
+        window.open(invoiceUrl, "_blank");
       }
     } finally {
       // Remove order ID from downloading set
-      setDownloadingInvoices(prev => {
+      setDownloadingInvoices((prev) => {
         const newSet = new Set(prev);
         newSet.delete(order.id);
         return newSet;
@@ -958,43 +1209,57 @@ const AdminSubscriptionList: React.FC = () => {
 
   const formatWeekdayToShort = (day: string): string => {
     const dayMap: Record<string, string> = {
-      'MONDAY': 'Mon',
-      'TUESDAY': 'Tue',
-      'WEDNESDAY': 'Wed',
-      'THURSDAY': 'Thu',
-      'FRIDAY': 'Fri',
-      'SATURDAY': 'Sat',
-      'SUNDAY': 'Sun'
+      MONDAY: "Mon",
+      TUESDAY: "Tue",
+      WEDNESDAY: "Wed",
+      THURSDAY: "Thu",
+      FRIDAY: "Fri",
+      SATURDAY: "Sat",
+      SUNDAY: "Sun",
     };
     return dayMap[day.toUpperCase()] || day;
   };
 
   // Utility function to truncate delivery instructions
-  const truncateText = (text: string | null | undefined, maxLength: number = 50): string => {
-    if (!text) return '';
+  const truncateText = (
+    text: string | null | undefined,
+    maxLength: number = 50
+  ): string => {
+    if (!text) return "";
     if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + '...';
+    return text.substring(0, maxLength) + "...";
   };
 
-  const formatDeliverySchedule = (schedule: string, weekdays?: string | null): {
-    scheduleType: string,
-    weekdaysArray: string[],
-    isSpecificDays: boolean
+  const formatDeliverySchedule = (
+    schedule: string,
+    weekdays?: string | null
+  ): {
+    scheduleType: string;
+    weekdaysArray: string[];
+    isSpecificDays: boolean;
   } => {
-    const scheduleType = schedule.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    const scheduleType = schedule
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (l) => l.toUpperCase());
     let weekdaysArray: string[] = [];
     let isSpecificDays = false;
 
-    if (schedule === 'WEEKDAYS' || schedule === 'SELECT_DAYS' || schedule === 'VARYING') {
+    if (
+      schedule === "WEEKDAYS" ||
+      schedule === "SELECT_DAYS" ||
+      schedule === "VARYING"
+    ) {
       isSpecificDays = true;
       if (weekdays) {
         try {
           const parsedDays = JSON.parse(weekdays);
           if (Array.isArray(parsedDays) && parsedDays.length > 0) {
-            weekdaysArray = parsedDays.map(day => day.toString().toUpperCase());
+            weekdaysArray = parsedDays.map((day) =>
+              day.toString().toUpperCase()
+            );
           }
         } catch (e) {
-          console.error('Error parsing weekdays JSON:', weekdays, e);
+          console.error("Error parsing weekdays JSON:", weekdays, e);
         }
       }
     }
@@ -1021,7 +1286,6 @@ const AdminSubscriptionList: React.FC = () => {
   };
   return (
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
-
       <div className="flex justify-between items-center mb-6 max-sm:flex-col">
         <h1 className="text-2xl font-bold">Admin - Subscriptions Management</h1>
         <div className="flex gap-2">
@@ -1033,7 +1297,10 @@ const AdminSubscriptionList: React.FC = () => {
             <UserPlus className="h-4 w-4" />
             {showUnassignedOnly ? "Show All" : "Unassigned Only"}
           </Button>
-          <Button onClick={handleOpenBulkAssignModal} className="flex items-center gap-2">
+          <Button
+            onClick={handleOpenBulkAssignModal}
+            className="flex items-center gap-2"
+          >
             <Users className="h-4 w-4" />
             Bulk Assign Agencies
           </Button>
@@ -1053,11 +1320,14 @@ const AdminSubscriptionList: React.FC = () => {
           <h2 className="text-xl font-semibold mb-4">Filters</h2>
           <form onSubmit={handleFilterSubmit}>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 items-end">
-
-
               {/* Member name search */}
               <div className="relative">
-                <Label htmlFor="memberName" className="text-sm font-medium mb-2">Member Name</Label>
+                <Label
+                  htmlFor="memberName"
+                  className="text-sm font-medium mb-2"
+                >
+                  Member Name
+                </Label>
                 <div className="relative">
                   <UserIcon className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
                   <Input
@@ -1065,7 +1335,7 @@ const AdminSubscriptionList: React.FC = () => {
                     placeholder="Search by member name"
                     name="memberName"
                     className="pl-8"
-                    value={filters.memberName || ''}
+                    value={filters.memberName || ""}
                     onChange={handleFilterChange}
                   />
                 </div>
@@ -1073,7 +1343,12 @@ const AdminSubscriptionList: React.FC = () => {
 
               {/* Subscription date filter */}
               <div className="relative">
-                <Label htmlFor="subscriptionDate" className="text-sm font-medium mb-2">Subscription Date</Label>
+                <Label
+                  htmlFor="subscriptionDate"
+                  className="text-sm font-medium mb-2"
+                >
+                  Subscription Date
+                </Label>
                 <div className="relative">
                   <Calendar className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
                   <Input
@@ -1081,7 +1356,7 @@ const AdminSubscriptionList: React.FC = () => {
                     type="date"
                     name="subscriptionDate"
                     className="pl-8"
-                    value={filters.subscriptionDate || ''}
+                    value={filters.subscriptionDate || ""}
                     onChange={handleFilterChange}
                   />
                 </div>
@@ -1089,11 +1364,20 @@ const AdminSubscriptionList: React.FC = () => {
 
               {/* Payment status filter */}
               <div>
-                <Label htmlFor="paymentStatus" className="text-sm font-medium mb-2">Payment Status</Label>
+                <Label
+                  htmlFor="paymentStatus"
+                  className="text-sm font-medium mb-2"
+                >
+                  Payment Status
+                </Label>
                 <Select
                   name="paymentStatus"
-                  value={filters.paymentStatus || ''}
-                  onValueChange={(value) => handleFilterChange({ target: { name: 'paymentStatus', value } } as React.ChangeEvent<HTMLSelectElement>)}
+                  value={filters.paymentStatus || ""}
+                  onValueChange={(value) =>
+                    handleFilterChange({
+                      target: { name: "paymentStatus", value },
+                    } as React.ChangeEvent<HTMLSelectElement>)
+                  }
                 >
                   <SelectTrigger id="paymentStatus">
                     <SelectValue placeholder="Payment Status" />
@@ -1130,11 +1414,13 @@ const AdminSubscriptionList: React.FC = () => {
       )}
 
       <div className="mb-4 flex justify-between items-center">
-        <span className="text-sm text-gray-600 dark:text-gray-400">
-        </span>
+        <span className="text-sm text-gray-600 dark:text-gray-400"></span>
         <div className="flex items-center space-x-2">
           <span className="text-sm">Items per page:</span>
-          <Select value={limit.toString()} onValueChange={(value) => handleLimitChange(Number(value))}>
+          <Select
+            value={limit.toString()}
+            onValueChange={(value) => handleLimitChange(Number(value))}
+          >
             <SelectTrigger className="w-20">
               <SelectValue placeholder={limit.toString()} />
             </SelectTrigger>
@@ -1152,13 +1438,27 @@ const AdminSubscriptionList: React.FC = () => {
         <Table className="min-w-full">
           <TableHeader className="bg-gray-50">
             <TableRow className="border-b border-gray-200">
-              <TableHead className="px-4 py-3 font-medium text-gray-700">Member</TableHead>
-              <TableHead className="px-4 py-3 font-medium text-gray-700">Subscription Details</TableHead>
-              <TableHead className="px-4 py-3 font-medium text-gray-700">Delivery</TableHead>
-              <TableHead className="px-4 py-3 font-medium text-gray-700">Payment & Delivery</TableHead>
-              <TableHead className="px-4 py-3 font-medium text-gray-700">Dates</TableHead>
-              <TableHead className="px-4 py-3 font-medium text-gray-700">Agent</TableHead>
-              <TableHead className="px-4 py-3 font-medium text-gray-700 text-right">Actions</TableHead>
+              <TableHead className="px-4 py-3 font-medium text-gray-700">
+                Member
+              </TableHead>
+              <TableHead className="px-4 py-3 font-medium text-gray-700">
+                Subscription Details
+              </TableHead>
+              <TableHead className="px-4 py-3 font-medium text-gray-700">
+                Delivery
+              </TableHead>
+              <TableHead className="px-4 py-3 font-medium text-gray-700">
+                Payment & Delivery
+              </TableHead>
+              <TableHead className="px-4 py-3 font-medium text-gray-700">
+                Dates
+              </TableHead>
+              <TableHead className="px-4 py-3 font-medium text-gray-700">
+                Agent
+              </TableHead>
+              <TableHead className="px-4 py-3 font-medium text-gray-700 text-right">
+                Actions
+              </TableHead>
             </TableRow>
           </TableHeader>
 
@@ -1166,341 +1466,451 @@ const AdminSubscriptionList: React.FC = () => {
             {isLoading ? (
               renderSkeletons(7)
             ) : productOrders.length > 0 ? (
-              productOrders.filter((order) => {
-                if (!showUnassignedOnly) return true;
-                console.log("order", order)
+              productOrders
+                .filter((order) => {
+                  if (!showUnassignedOnly) return true;
+                  console.log("order", order);
 
-                // Show only orders that have at least one subscription without an assigned agency
-                return order.subscriptions?.some(subscription => !subscription.agencyId) || false;
-              }).map((order) => {
-                const firstSub = order.subscriptions?.[0];
+                  // Show only orders that have at least one subscription without an assigned agency
+                  return (
+                    order.subscriptions?.some(
+                      (subscription) => !subscription.agencyId
+                    ) || false
+                  );
+                })
+                .map((order) => {
+                  const firstSub = order.subscriptions?.[0];
 
-                return (
-                  <TableRow key={order.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                    {/* Member Information */}
-                    <TableCell className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="bg-gray-100 border-2 border-dashed rounded-xl w-10 h-10 flex items-center justify-center">
-                          <UserIcon className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <div>
-                          <div className="font-medium text-gray-900 flex items-center gap-2">
-                            {order.member?.user?.name || 'N/A'}
+                  return (
+                    <TableRow
+                      key={order.id}
+                      className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                    >
+                      {/* Member Information */}
+                      <TableCell className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="bg-gray-100 border-2 border-dashed rounded-xl w-10 h-10 flex items-center justify-center">
+                            <UserIcon className="h-5 w-5 text-gray-400" />
                           </div>
-                          <div className="flex flex-col gap-1 mt-1 text-xs text-gray-500">
-                            <div className="flex items-center gap-1.5">
-                              <PhoneIcon className="h-3.5 w-3.5" />
-                              <span>{order?.member?.user?.mobile || 'N/A'}</span>
+                          <div>
+                            <div className="font-medium text-gray-900 flex items-center gap-2">
+                              {order.member?.user?.name || "N/A"}
                             </div>
-                            <div className="flex items-center gap-1.5">
-                              <MailIcon className="h-3.5 w-3.5" />
-                              <span className="truncate max-w-[120px]">{order.member?.user?.email || 'N/A'}</span>
+                            <div className="flex flex-col gap-1 mt-1 text-xs text-gray-500">
+                              <div className="flex items-center gap-1.5">
+                                <PhoneIcon className="h-3.5 w-3.5" />
+                                <span>
+                                  {order?.member?.user?.mobile || "N/A"}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <MailIcon className="h-3.5 w-3.5" />
+                                <span className="truncate max-w-[120px]">
+                                  {order.member?.user?.email || "N/A"}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    </TableCell>
+                      </TableCell>
 
-                    {/* Subscription Details */}
-                    <TableCell className="px-4 py-3">
-                      <div className="flex flex-col gap-2">
-                        <div className="flex flex-wrap gap-1.5">
-                          {order.subscriptions.map((sub: Subscription) => (
-                            <div key={sub.id} className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full flex items-center gap-1.5 text-xs">
-                              <PackageIcon className="h-3.5 w-3.5" />
-                              <span className="font-medium">{sub.product?.name}</span>
+                      {/* Subscription Details */}
+                      <TableCell className="px-4 py-3">
+                        <div className="flex flex-col gap-2">
+                          <div className="flex flex-wrap gap-1.5">
+                            {order.subscriptions.map((sub: Subscription) => (
+                              <div
+                                key={sub.id}
+                                className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full flex items-center gap-1.5 text-xs"
+                              >
+                                <PackageIcon className="h-3.5 w-3.5" />
+                                <span className="font-medium">
+                                  {sub.product?.name}
+                                </span>
+                                <span>
+                                  {sub.deliverySchedule === "ALTERNATE_DAYS"
+                                    ? `×${sub.qty}/${sub.altQty ?? "-"}`
+                                    : `×${sub.qty}`}
+                                </span>
+                                <span className="text-blue-600">
+                                  {sub.depotProductVariant?.name || ""}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="flex items-center gap-3 text-sm mt-1">
+                            <div className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded">
+                              <ShoppingCartIcon className="h-4 w-4 text-gray-500" />
                               <span>
-                                {sub.deliverySchedule === 'ALTERNATE_DAYS'
-                                  ? `×${sub.qty}/${sub.altQty ?? '-'}`
-                                  : `×${sub.qty}`}
-                              </span>
-                              <span className="text-blue-600">
-                                {sub.depotProductVariant?.name || ''}
+                                {order.subscriptions.length} item
+                                {order.subscriptions.length > 1 ? "s" : ""}
                               </span>
                             </div>
-                          ))}
-                        </div>
-                        <div className="flex items-center gap-3 text-sm mt-1">
-                          <div className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded">
-                            <ShoppingCartIcon className="h-4 w-4 text-gray-500" />
-                            <span>{order.subscriptions.length} item{order.subscriptions.length > 1 ? 's' : ''}</span>
-                          </div>
-                          <div className="flex items-center gap-1 font-medium">
-                            <IndianRupeeIcon className="h-4 w-4" />
-                            <span>{(order.payableamt || 0).toFixed(2)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </TableCell>
-
-                    {/* Delivery Schedule */}
-                    <TableCell className="px-4 py-3">
-                      <div className="flex flex-col gap-1.5">
-                        {order.subscriptions.map((sub: Subscription) => {
-                          const { weekdaysArray, isSpecificDays } = formatDeliverySchedule(sub.deliverySchedule, sub.weekdays);
-                          const scheduleLabel = sub.deliverySchedule === 'DAILY' ? 'Daily' :
-                            sub.deliverySchedule === 'WEEKDAYS' ? 'Weekdays Only' :
-                              sub.deliverySchedule === 'WEEKENDS' ? 'Weekends' :
-                                sub.deliverySchedule === 'ALTERNATE_DAYS' ? 'Alternate_days' :
-                                  sub.deliverySchedule === 'DAY1_DAY2' ? 'Daily (Varying Qty)' :
-                                    'Custom';
-
-                          const periodtolabel = {
-                            "1": "Buy Once",
-                            '3': 'Trial Pack',
-                            '7': 'Mid Saver Pack',
-                            '15': 'Mid Saver Pack',
-                            '30': 'Super Saver Pack',
-                          }
-                          return (
-                            <div key={sub.id} className="text-sm">
-                              <div className="font-medium text-gray-700 mb-1">{`${scheduleLabel} - ${periodtolabel[sub.period]}`}</div>
-
-                              {/* Alternate Days Display - Alternate_days (1,3,5,7...) */}
-                              {sub.deliverySchedule === 'ALTERNATE_DAYS' && (sub.qty || sub.altQty) ? (
-                                <div className="flex items-center gap-2 text-xs">
-                                  <div className="flex items-center gap-1">
-                                    <div className="w-1.5 h-1.5 bg-secondary rounded-full"></div>
-                                    <span className="text-blue-700 font-medium">
-                                      {sub.qty} - {sub.depotProductVariant?.name || 'units'}
-                                    </span>
-                                  </div>
-                                  <span className="text-gray-400">•</span>
-                                  <div className="flex items-center gap-1">
-                                    <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-                                    <span className="text-green-700 font-medium">
-                                      {sub.altQty} - {sub.depotProductVariant?.name || 'units'}
-                                    </span>
-                                  </div>
-                                  <span className="text-gray-400 text-xs italic ml-1">skip day pattern</span>
-                                </div>
-                              ) : sub.deliverySchedule === 'DAY1_DAY2' && (sub.qty || sub.altQty) ? (
-                                /* Day1-Day2 Display - Daily with varying quantities */
-                                <div className="flex items-center gap-2 text-xs">
-                                  <div className="flex items-center gap-1">
-                                    <div className="w-1.5 h-1.5 bg-secondary rounded-full"></div>
-                                    <span className="text-blue-700 font-medium">
-                                      {sub.qty} - {sub.depotProductVariant?.name || 'units'}
-                                    </span>
-                                  </div>
-                                  <span className="text-gray-400">•</span>
-                                  <div className="flex items-center gap-1">
-                                    <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-                                    <span className="text-green-700 font-medium">
-                                      {sub.altQty} - {sub.depotProductVariant?.name || 'units'}
-                                    </span>
-                                  </div>
-                                  <span className="text-gray-400 text-xs italic ml-1">daily rotation</span>
-                                </div>
-                              ) : (
-                                /* Regular Schedule Display */
-                                sub.qty && (
-                                  <div className="text-xs text-gray-600">
-                                    {sub.qty} - {sub.depotProductVariant?.name || 'units'}
-                                    {sub.deliverySchedule === 'DAILY' ? ' daily' :
-                                      sub.deliverySchedule === 'WEEKDAYS' ? ' on weekdays' :
-                                        sub.deliverySchedule === 'WEEKENDS' ? ' on weekends' :
-                                          ' per delivery'}
-                                  </div>
-                                )
-                              )}
-
-                              {/* Compact Days Display for Custom Schedules */}
-                              {isSpecificDays && weekdaysArray.length > 0 && (
-                                <div className="flex flex-wrap gap-1 mt-1">
-                                  {weekdaysArray.map((day, idx) => (
-                                    <span
-                                      key={idx}
-                                      className="px-1.5 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-700"
-                                    >
-                                      {formatWeekdayToShort(day)}
-                                    </span>
-                                  ))}
-                                </div>
-                              )}
+                            <div className="flex items-center gap-1 font-medium">
+                              <IndianRupeeIcon className="h-4 w-4" />
+                              <span>{(order.payableamt || 0).toFixed(2)}</span>
                             </div>
-                          );
-                        })}
-                      </div>
-                    </TableCell>
+                          </div>
+                        </div>
+                      </TableCell>
 
-                    {/* Payment Status */}
-                    <TableCell className="px-4 py-3">
-                      <div className="flex flex-col gap-1">
-                        <div className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${order.paymentStatus === 'PAID'
-                          ? 'bg-green-100 text-green-800'
-                          : order.paymentStatus === 'PENDING'
-                            ? 'bg-amber-100 text-amber-800'
-                            : 'bg-red-100 text-red-800'
-                          }`}>
-                          {order.paymentStatus}
-                        </div>
-                        {console.log("order", order?.subscriptions?.[0]?.deliveryAddressId)}
-                        <p>{order?.subscriptions?.[0]?.deliveryAddressId ? "Home Delivery" : "Store Pickup"}</p>
-                        <div className="text-xs text-gray-500 mt-1">
-                          {order.paymentStatus === 'PAID'
-                            ? 'Payment completed'
-                            : order.paymentStatus === 'PENDING'
-                              ? 'Processing payment'
-                              : 'Payment required'}
-                        </div>
-                        
-                        {/* Delivery Instructions */}
-                        {firstSub?.deliveryInstructions && (
-                          <div className="mt-2 border-t pt-2">
-                            <div className="flex items-start gap-1.5">
-                              <MessageSquare className="h-3.5 w-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <div className="text-xs text-gray-600 cursor-help">
-                                      {truncateText(firstSub.deliveryInstructions, 40)}
+                      {/* Delivery Schedule */}
+                      <TableCell className="px-4 py-3">
+                        <div className="flex flex-col gap-1.5">
+                          {order.subscriptions.map((sub: Subscription) => {
+                            const { weekdaysArray, isSpecificDays } =
+                              formatDeliverySchedule(
+                                sub.deliverySchedule,
+                                sub.weekdays
+                              );
+                            const scheduleLabel =
+                              sub.deliverySchedule === "DAILY"
+                                ? "Daily"
+                                : sub.deliverySchedule === "WEEKDAYS"
+                                ? "Weekdays Only"
+                                : sub.deliverySchedule === "WEEKENDS"
+                                ? "Weekends"
+                                : sub.deliverySchedule === "ALTERNATE_DAYS"
+                                ? "Alternate_days"
+                                : sub.deliverySchedule === "DAY1_DAY2"
+                                ? "Daily (Varying Qty)"
+                                : "Custom";
+
+                            const periodtolabel = {
+                              "1": "Buy Once",
+                              "3": "Trial Pack",
+                              "7": "Mid Saver Pack",
+                              "15": "Mid Saver Pack",
+                              "30": "Super Saver Pack",
+                            };
+                            return (
+                              <div key={sub.id} className="text-sm">
+                                <div className="font-medium text-gray-700 mb-1">{`${scheduleLabel} - ${
+                                  periodtolabel[sub.period]
+                                }`}</div>
+
+                                {/* Alternate Days Display - Alternate_days (1,3,5,7...) */}
+                                {sub.deliverySchedule === "ALTERNATE_DAYS" &&
+                                (sub.qty || sub.altQty) ? (
+                                  <div className="flex items-center gap-2 text-xs">
+                                    <div className="flex items-center gap-1">
+                                      <div className="w-1.5 h-1.5 bg-secondary rounded-full"></div>
+                                      <span className="text-blue-700 font-medium">
+                                        {sub.qty} -{" "}
+                                        {sub.depotProductVariant?.name ||
+                                          "units"}
+                                      </span>
                                     </div>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="left" className="max-w-xs">
-                                    <p className="whitespace-pre-wrap">{firstSub.deliveryInstructions}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-
-                    {/* Dates */}
-                    <TableCell className="px-4 py-3">
-                      {firstSub ? (
-                        <div className="flex flex-col gap-1 text-sm">
-                          <div className="flex items-center gap-2">
-                            <CalendarIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                            <div className="flex flex-col">
-                              <span className="text-xs text-gray-500">Start</span>
-                              <span>{format(new Date(firstSub.startDate), 'dd MMM yyyy')}</span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 mt-1">
-                            <CalendarCheckIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                            <div className="flex flex-col">
-                              <span className="text-xs text-gray-500">End Date</span>
-                              <span>{firstSub.expiryDate ? format(new Date(firstSub.expiryDate), 'dd MMM yyyy') : 'N/A'}</span>
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <span className="text-sm text-gray-500">No subscription</span>
-                      )}
-                    </TableCell>
-
-                    {/* Assigned Agent */}
-                    <TableCell className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="bg-gray-100 rounded-full p-1.5">
-                          <UserCheckIcon className="h-4 w-4 text-gray-500" />
-                        </div>
-                        <span className="text-sm">
-                          {firstSub?.agency?.user?.name ||
-                            firstSub?.agency?.name ||
-                            <span className="text-gray-400">Unassigned</span>}
-                        </span>
-                      </div>
-                    </TableCell>
-
-                    {/* Actions */}
-                    <TableCell className="px-4 py-3 text-right">
-                      <div className="flex justify-end gap-1.5">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-8 w-8 rounded-full bg-white hover:bg-gray-50"
-                                onClick={() => handleOpenPaymentModal(order)}
-                                disabled={order.paymentStatus === 'PAID'}
-                              >
-                                <PackageIcon className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="top">
-                              <p>Update Payment</p>
-                            </TooltipContent>
-                          </Tooltip>
-
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-8 w-8 rounded-full bg-white hover:bg-gray-50"
-                                onClick={() => handleOpenAssignAgentModal(firstSub)}
-                                disabled={firstSub?.paymentStatus !== 'PAID'}
-                              >
-                                <UserPlus className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="top">
-                              <p>{firstSub?.paymentStatus !== 'PAID' ? "Complete payment first" : firstSub?.agencyId ? "Edit Agent & Instructions" : "Assign Agent"}</p>
-                            </TooltipContent>
-                          </Tooltip>
-
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-8 w-8 rounded-full bg-white hover:bg-gray-50"
-                                onClick={() => handleDownloadInvoice(order)}
-                                // disabled={downloadingInvoices.has(order.id) || order.paymentStatus !== 'PAID'}
-                              >
-                                {downloadingInvoices.has(order.id) ? (
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                                    <span className="text-gray-400">•</span>
+                                    <div className="flex items-center gap-1">
+                                      <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                                      <span className="text-green-700 font-medium">
+                                        {sub.altQty} -{" "}
+                                        {sub.depotProductVariant?.name ||
+                                          "units"}
+                                      </span>
+                                    </div>
+                                    <span className="text-gray-400 text-xs italic ml-1">
+                                      skip day pattern
+                                    </span>
+                                  </div>
+                                ) : sub.deliverySchedule === "DAY1_DAY2" &&
+                                  (sub.qty || sub.altQty) ? (
+                                  /* Day1-Day2 Display - Daily with varying quantities */
+                                  <div className="flex items-center gap-2 text-xs">
+                                    <div className="flex items-center gap-1">
+                                      <div className="w-1.5 h-1.5 bg-secondary rounded-full"></div>
+                                      <span className="text-blue-700 font-medium">
+                                        {sub.qty} -{" "}
+                                        {sub.depotProductVariant?.name ||
+                                          "units"}
+                                      </span>
+                                    </div>
+                                    <span className="text-gray-400">•</span>
+                                    <div className="flex items-center gap-1">
+                                      <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                                      <span className="text-green-700 font-medium">
+                                        {sub.altQty} -{" "}
+                                        {sub.depotProductVariant?.name ||
+                                          "units"}
+                                      </span>
+                                    </div>
+                                    <span className="text-gray-400 text-xs italic ml-1">
+                                      daily rotation
+                                    </span>
+                                  </div>
                                 ) : (
-                                  <Download className="h-4 w-4" />
+                                  /* Regular Schedule Display */
+                                  sub.qty && (
+                                    <div className="text-xs text-gray-600">
+                                      {sub.qty} -{" "}
+                                      {sub.depotProductVariant?.name || "units"}
+                                      {sub.deliverySchedule === "DAILY"
+                                        ? " daily"
+                                        : sub.deliverySchedule === "WEEKDAYS"
+                                        ? " on weekdays"
+                                        : sub.deliverySchedule === "WEEKENDS"
+                                        ? " on weekends"
+                                        : " per delivery"}
+                                    </div>
+                                  )
                                 )}
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="top">
-                              <p>
-                                {downloadingInvoices.has(order.id)
-                                  ? "Downloading..."
-                                  : order.paymentStatus !== 'PAID'
+
+                                {/* Compact Days Display for Custom Schedules */}
+                                {isSpecificDays && weekdaysArray.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mt-1">
+                                    {weekdaysArray.map((day, idx) => (
+                                      <span
+                                        key={idx}
+                                        className="px-1.5 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-700"
+                                      >
+                                        {formatWeekdayToShort(day)}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </TableCell>
+
+                      {/* Payment Status */}
+                      <TableCell className="px-4 py-3">
+                        <div className="flex flex-col gap-1">
+                          <div
+                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                              order.paymentStatus === "PAID"
+                                ? "bg-green-100 text-green-800"
+                                : order.paymentStatus === "PENDING"
+                                ? "bg-amber-100 text-amber-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {order.paymentStatus}
+                          </div>
+                          {console.log(
+                            "order",
+                            order?.subscriptions?.[0]?.deliveryAddressId
+                          )}
+                          <p>
+                            {order?.subscriptions?.[0]?.deliveryAddressId
+                              ? "Home Delivery"
+                              : "Store Pickup"}
+                          </p>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {order.paymentStatus === "PAID"
+                              ? "Payment completed"
+                              : order.paymentStatus === "PENDING"
+                              ? "Processing payment"
+                              : "Payment required"}
+                          </div>
+
+                          {/* Delivery Instructions */}
+                          {firstSub?.deliveryInstructions && (
+                            <div className="mt-2 border-t pt-2">
+                              <div className="flex items-start gap-1.5">
+                                <MessageSquare className="h-3.5 w-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div className="text-xs text-gray-600 cursor-help">
+                                        {truncateText(
+                                          firstSub.deliveryInstructions,
+                                          40
+                                        )}
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent
+                                      side="left"
+                                      className="max-w-xs"
+                                    >
+                                      <p className="whitespace-pre-wrap">
+                                        {firstSub.deliveryInstructions}
+                                      </p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+
+                      {/* Dates */}
+                      <TableCell className="px-4 py-3">
+                        {firstSub ? (
+                          <div className="flex flex-col gap-1 text-sm">
+                            <div className="flex items-center gap-2">
+                              <CalendarIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                              <div className="flex flex-col">
+                                <span className="text-xs text-gray-500">
+                                  Start
+                                </span>
+                                <span>
+                                  {format(
+                                    new Date(firstSub.startDate),
+                                    "dd MMM yyyy"
+                                  )}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <CalendarCheckIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                              <div className="flex flex-col">
+                                <span className="text-xs text-gray-500">
+                                  End Date
+                                </span>
+                                <span>
+                                  {firstSub.expiryDate
+                                    ? format(
+                                        new Date(firstSub.expiryDate),
+                                        "dd MMM yyyy"
+                                      )
+                                    : "N/A"}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-500">
+                            No subscription
+                          </span>
+                        )}
+                      </TableCell>
+
+                      {/* Assigned Agent */}
+                      <TableCell className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className="bg-gray-100 rounded-full p-1.5">
+                            <UserCheckIcon className="h-4 w-4 text-gray-500" />
+                          </div>
+                          <span className="text-sm">
+                            {firstSub?.agency?.user?.name ||
+                              firstSub?.agency?.name || (
+                                <span className="text-gray-400">
+                                  Unassigned
+                                </span>
+                              )}
+                          </span>
+                        </div>
+                      </TableCell>
+
+                      {/* Actions */}
+                      <TableCell className="px-4 py-3 text-right">
+                        <div className="flex justify-end gap-1.5">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8 rounded-full bg-white hover:bg-gray-50"
+                                  onClick={() => handleOpenPaymentModal(order)}
+                                  disabled={order.paymentStatus === "PAID"}
+                                >
+                                  <PackageIcon className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent side="top">
+                                <p>Update Payment</p>
+                              </TooltipContent>
+                            </Tooltip>
+
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8 rounded-full bg-white hover:bg-gray-50"
+                                  onClick={() =>
+                                    handleOpenAssignAgentModal(firstSub)
+                                  }
+                                  disabled={firstSub?.paymentStatus !== "PAID"}
+                                >
+                                  <UserPlus className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent side="top">
+                                <p>
+                                  {firstSub?.paymentStatus !== "PAID"
+                                    ? "Complete payment first"
+                                    : firstSub?.agencyId
+                                    ? "Edit Agent & Instructions"
+                                    : "Assign Agent"}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8 rounded-full bg-white hover:bg-gray-50"
+                                  onClick={() => handleDownloadInvoice(order)}
+                                  // disabled={downloadingInvoices.has(order.id) || order.paymentStatus !== 'PAID'}
+                                >
+                                  {downloadingInvoices.has(order.id) ? (
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                                  ) : (
+                                    <Download className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent side="top">
+                                <p>
+                                  {downloadingInvoices.has(order.id)
+                                    ? "Downloading..."
+                                    : order.paymentStatus !== "PAID"
                                     ? "Invoice available after payment"
-                                    : "Download Invoice"
-                                }
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            ) :
+                                    : "Download Invoice"}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+            ) : (
               <TableRow>
-                <TableCell colSpan={7} className="px-4 py-12 text-center text-gray-500">
+                <TableCell
+                  colSpan={7}
+                  className="px-4 py-12 text-center text-gray-500"
+                >
                   <div className="flex flex-col items-center justify-center gap-3">
                     <PackageIcon className="h-10 w-10 text-gray-300" />
                     <div className="text-gray-600">No subscriptions found</div>
-                    <div className="text-sm text-gray-500 mt-1">Start by creating a new subscription</div>
+                    <div className="text-sm text-gray-500 mt-1">
+                      Start by creating a new subscription
+                    </div>
                   </div>
                 </TableCell>
               </TableRow>
-            }
+            )}
           </TableBody>
         </Table>
       </div>
 
       {totalPages > 1 && (
         <div className="mt-6 flex justify-center items-center space-x-2">
-          <Button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} variant="outline">
+          <Button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            variant="outline"
+          >
             Previous
           </Button>
           <span className="text-sm">
             Page {currentPage} of {totalPages}
           </span>
-          <Button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} variant="outline">
+          <Button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            variant="outline"
+          >
             Next
           </Button>
         </div>
@@ -1528,7 +1938,7 @@ const AdminSubscriptionList: React.FC = () => {
       <BulkAgencyAssignmentModal
         isOpen={isBulkAssignModalOpen}
         onOpenChange={setIsBulkAssignModalOpen}
-        subscriptions={productOrders.flatMap(order => order.subscriptions)}
+        subscriptions={productOrders.flatMap((order) => order.subscriptions)}
         agencies={agencies}
         isLoadingAgencies={isLoadingAgencies}
         onBulkUpdateSubscriptions={handleBulkAssignAgency}

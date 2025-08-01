@@ -60,13 +60,6 @@ const productVariantSchema = z.object({
 const productSchema = z.object({
   maintainStock: z.boolean().default(false),
   name: z.string().min(1, "Product name is required"),
-  price: z.coerce
-    .number()
-    .positive({ message: "Price must be a positive number" }),
-  rate: z.coerce
-    .number()
-    .positive({ message: "Rate must be a positive number" }),
-  unit: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
   isDairyProduct: z.boolean().default(false),
   categoryId: z.coerce
@@ -127,9 +120,6 @@ const ProductForm: React.FC<ProductFormProps> = ({
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: "",
-      price: undefined,
-      rate: undefined,
-      unit: null,
       description: "",
       isDairyProduct: false,
       maintainStock: false,
@@ -158,13 +148,6 @@ const ProductForm: React.FC<ProductFormProps> = ({
     if (mode === "edit" && initialData && categories) {
       const resetValues = {
         name: initialData.name || "",
-        price:
-          initialData.price !== undefined
-            ? Number(initialData.price)
-            : undefined,
-        rate:
-          initialData.rate !== undefined ? Number(initialData.rate) : undefined,
-        unit: initialData.unit || null,
         description: (initialData as any).description || "",
         isDairyProduct: initialData.isDairyProduct || false,
         maintainStock: initialData.maintainStock || false,
@@ -236,11 +219,8 @@ const ProductForm: React.FC<ProductFormProps> = ({
     console.log("Submitting variants:", data.variants); // Debugging line
     const formData = new FormData();
     formData.append("name", data.name);
-    formData.append("price", String(data.price));
-    formData.append("rate", String(data.rate));
     formData.append("isDairyProduct", String(data.isDairyProduct));
     formData.append("maintainStock", String(data.maintainStock));
-    if (data.unit) formData.append("unit", data.unit);
     if (data.description) formData.append("description", data.description);
     if (data.categoryId) formData.append("categoryId", String(data.categoryId));
 
@@ -353,49 +333,6 @@ const ProductForm: React.FC<ProductFormProps> = ({
               <p className="text-red-500 text-xs mt-1">
                 {errors.description.message}
               </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="price">Price</Label>
-            <Input
-              id="price"
-              type="number"
-              step="0.01"
-              {...register("price")}
-              disabled={mutation.isPending}
-            />
-            {errors.price && (
-              <p className="text-red-500 text-xs mt-1">
-                {errors.price.message}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="rate">Rate</Label>
-            <Input
-              id="rate"
-              type="number"
-              step="0.01"
-              {...register("rate")}
-              disabled={mutation.isPending}
-            />
-            {errors.rate && (
-              <p className="text-red-500 text-xs mt-1">{errors.rate.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="unit">Unit</Label>
-            <Input
-              id="unit"
-              type="text"
-              {...register("unit")}
-              disabled={mutation.isPending}
-            />
-            {errors.unit && (
-              <p className="text-red-500 text-xs mt-1">{errors.unit.message}</p>
             )}
           </div>
 

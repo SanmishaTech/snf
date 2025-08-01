@@ -1125,12 +1125,22 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                             />
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap min-w-[100px]">
-                            <Input
-                              id={`orderItems.${index}.quantity`}
-                              type="number"
-                              min="1"
-                              {...register(`orderItems.${index}.quantity`, { valueAsNumber: true })}
-                              className="h-9 text-sm bg-white dark:bg-gray-700/50 border-gray-300 dark:border-gray-600 w-full"
+                            <Controller
+                              control={control}
+                              name={`orderItems.${index}.quantity`}
+                              render={({ field }) => (
+                                <Input
+                                  id={`orderItems.${index}.quantity`}
+                                  type="number"
+                                  min="1"
+                                  value={field.value || 1}
+                                  onChange={(e) => {
+                                    const value = parseInt(e.target.value, 10);
+                                    field.onChange(isNaN(value) || value < 1 ? 1 : value);
+                                  }}
+                                  className="h-9 text-sm bg-white dark:bg-gray-700/50 border-gray-300 dark:border-gray-600 w-full"
+                                />
+                              )}
                             />
                           </td>
                          
@@ -1273,12 +1283,22 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                         
                         <div>
                           <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Quantity</Label>
-                          <Input
-                            id={`orderItems.${index}.quantity`}
-                            type="number"
-                            min="1"
-                            {...register(`orderItems.${index}.quantity`, { valueAsNumber: true })}
-                            className="mt-1 bg-white dark:bg-gray-700"
+                          <Controller
+                            control={control}
+                            name={`orderItems.${index}.quantity`}
+                            render={({ field }) => (
+                              <Input
+                                id={`orderItems.${index}.quantity`}
+                                type="number"
+                                min="1"
+                                value={field.value || 1}
+                                onChange={(e) => {
+                                  const value = parseInt(e.target.value, 10);
+                                  field.onChange(isNaN(value) || value < 1 ? 1 : value);
+                                }}
+                                className="mt-1 bg-white dark:bg-gray-700"
+                              />
+                            )}
                           />
                         </div>
                       </div>
