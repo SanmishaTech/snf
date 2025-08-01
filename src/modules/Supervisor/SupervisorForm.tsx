@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useForm, SubmitHandler, Controller } from "react-hook-form"; 
+import { useForm, SubmitHandler, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
@@ -7,10 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoaderCircle } from "lucide-react";
 import { toast } from "sonner";
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"; 
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { get, post, put } from "@/services/apiService";
 import Validate from "@/lib/Handlevalidation";
-import { PasswordInput } from "@/components/ui/password-input"; 
+import { PasswordInput } from "@/components/ui/password-input";
 import {
   Select,
   SelectContent,
@@ -28,7 +28,11 @@ const baseSupervisorSchema = z.object({
   address1: z.string().min(1, "Address Line 1 is required"),
   address2: z.any().nullable().optional(),
   city: z.string().optional().nullable(),
-  pincode: z.coerce.number().int("Pincode must be an integer").positive("Pincode must be positive").refine(val => String(val).length === 6, "Pincode must be 6 digits"),
+  pincode: z.coerce
+    .number()
+    .int("Pincode must be an integer")
+    .positive("Pincode must be positive")
+    .refine((val) => String(val).length === 6, "Pincode must be 6 digits"),
   depotId: z.coerce.number().optional().nullable(),
   agencyId: z.coerce.number().optional().nullable(),
   status: z.enum(["ACTIVE", "INACTIVE"]).default("ACTIVE"),
@@ -37,7 +41,9 @@ const baseSupervisorSchema = z.object({
 const newUserSchema = z.object({
   userFullName: z.string().min(1, "User's full name is required"),
   userLoginEmail: z.string().email("Invalid login email for user"),
-  userPassword: z.string().min(6, "User password must be at least 6 characters"),
+  userPassword: z
+    .string()
+    .min(6, "User password must be at least 6 characters"),
 });
 
 const internalFormRepresentationSchema = baseSupervisorSchema.extend({
@@ -48,38 +54,48 @@ const internalFormRepresentationSchema = baseSupervisorSchema.extend({
 
 type SupervisorFormInputs = z.infer<typeof internalFormRepresentationSchema>;
 
-const createResolverSchema = baseSupervisorSchema.merge(newUserSchema); 
+const createResolverSchema = baseSupervisorSchema.merge(newUserSchema);
 
-const updateResolverSchema = baseSupervisorSchema; 
+const updateResolverSchema = baseSupervisorSchema;
 
 interface SupervisorFormProps {
   mode: "create" | "edit";
-  supervisorId?: string; 
-  initialData?: Partial<SupervisorFormInputs> | null; 
+  supervisorId?: string;
+  initialData?: Partial<SupervisorFormInputs> | null;
   onSuccess?: () => void;
   className?: string;
 }
 
-const SupervisorForm: React.FC<SupervisorFormProps> = ({ mode, supervisorId, onSuccess, initialData, className }) => {
+const SupervisorForm: React.FC<SupervisorFormProps> = ({
+  mode,
+  supervisorId,
+  onSuccess,
+  initialData,
+  className,
+}) => {
   const queryClient = useQueryClient();
-  const [isLoadingData, setIsLoadingData] = useState(mode === "edit" && supervisorId && !initialData);
+  const [isLoadingData, setIsLoadingData] = useState(
+    mode === "edit" && supervisorId && !initialData
+  );
+  // Add a state to track the agencyId that needs to be set
+  const [pendingAgencyId, setPendingAgencyId] = useState<number | null>(null);
 
   // Fetch depots for the dropdown
   const { data: depots = [] } = useQuery({
-    queryKey: ['depots'],
+    queryKey: ["depots"],
     queryFn: async () => {
-      const response = await get('/depots');
+      const response = await get("/depots");
       return response.data || response;
-    }
+    },
   });
 
   // Fetch agencies for the dropdown
-  const { data: agencies = [] } = useQuery({
-    queryKey: ['agencies'],
+  const { data: agencies = [], isLoading: isLoadingAgencies } = useQuery({
+    queryKey: ["agencies"],
     queryFn: async () => {
-      const response = await get('/agencies');
+      const response = await get("/agencies");
       return response.data || response;
-    }
+    },
   });
 
   const {
@@ -91,24 +107,26 @@ const SupervisorForm: React.FC<SupervisorFormProps> = ({ mode, supervisorId, onS
     watch,
     formState: { errors, isSubmitting },
   } = useForm<SupervisorFormInputs>({
-    mode: 'onChange', // Validate on every change for immediate error clearing
-    resolver: zodResolver(mode === "create" ? createResolverSchema : updateResolverSchema),
-    defaultValues: initialData || { 
-      name: '',
-      contactPersonName: '',
-      email: '',
-      mobile: '',
+    mode: "onChange", // Validate on every change for immediate error clearing
+    resolver: zodResolver(
+      mode === "create" ? createResolverSchema : updateResolverSchema
+    ),
+    defaultValues: initialData || {
+      name: "",
+      contactPersonName: "",
+      email: "",
+      mobile: "",
       alternateMobile: null,
-      address1: '',
-      address2: null, 
-      city: '',
+      address1: "",
+      address2: null,
+      city: "",
       pincode: undefined,
       depotId: undefined,
       agencyId: undefined,
       status: "ACTIVE",
-      userFullName: '', 
-      userLoginEmail: '', 
-      userPassword: '',
+      userFullName: "",
+      userLoginEmail: "",
+      userPassword: "",
     },
   });
 
@@ -125,10 +143,10 @@ const SupervisorForm: React.FC<SupervisorFormProps> = ({ mode, supervisorId, onS
       setIsLoadingData(true);
       const fetchSupervisor = async () => {
         try {
-          const supervisor = await get(`/supervisors/${supervisorId}`)
+          const supervisor = await get(`/supervisors/${supervisorId}`);
           console.log("Fetched supervisor data:", supervisor); // Debug log
           setValue("name", supervisor.name);
-          setValue("contactPersonName", supervisor.contactPersonName || '');
+          setValue("contactPersonName", supervisor.contactPersonName || "");
           setValue("mobile", supervisor.mobile);
           setValue("alternateMobile", supervisor.alternateMobile || null);
           setValue("address1", supervisor.address1);
@@ -138,9 +156,29 @@ const SupervisorForm: React.FC<SupervisorFormProps> = ({ mode, supervisorId, onS
           setValue("email", supervisor.email);
           setValue("depotId", supervisor.depotId || null);
           // Fix: Ensure agencyId is properly set, handle both agencyId and agency.id
-          const agencyIdValue = supervisor.agencyId || supervisor.agency?.id || null;
+          const agencyIdValue =
+            supervisor.agencyId || supervisor.agency?.id || null;
           console.log("Setting agencyId to:", agencyIdValue); // Debug log
-          setValue("agencyId", agencyIdValue);
+          console.log(
+            "Agencies loaded?",
+            agencies.length > 0,
+            "Agencies:",
+            agencies,
+            "isLoadingAgencies:",
+            isLoadingAgencies
+          ); // Debug log
+
+          if (agencyIdValue !== null) {
+            if (agencies.length > 0) {
+              // Agencies are already loaded, set the value directly
+              console.log("Agencies already loaded, setting agencyId directly");
+              setValue("agencyId", agencyIdValue);
+            } else {
+              // Agencies not loaded yet, store for later
+              console.log("Agencies not loaded yet, storing agencyId for later");
+              setPendingAgencyId(agencyIdValue);
+            }
+          }
           setValue("status", supervisor.user?.active ? "ACTIVE" : "INACTIVE");
         } catch (error: any) {
           console.error("Error fetching supervisor:", error); // Debug log
@@ -151,14 +189,29 @@ const SupervisorForm: React.FC<SupervisorFormProps> = ({ mode, supervisorId, onS
       };
       fetchSupervisor();
     } else if (initialData) {
-        Object.keys(initialData).forEach(key => {
-            setValue(key as keyof SupervisorFormInputs, initialData[key as keyof SupervisorFormInputs]);
-        });
-        setIsLoadingData(false);
+      Object.keys(initialData).forEach((key) => {
+        setValue(
+          key as keyof SupervisorFormInputs,
+          initialData[key as keyof SupervisorFormInputs]
+        );
+      });
+      setIsLoadingData(false);
     } else {
       setIsLoadingData(false);
     }
-  }, [supervisorId, mode, setValue, initialData]);
+  }, [supervisorId, mode, setValue, initialData, agencies, setPendingAgencyId]);
+
+  // Effect to handle setting agencyId once agencies are loaded
+  useEffect(() => {
+    if (!isLoadingAgencies && agencies.length > 0 && pendingAgencyId !== null) {
+      console.log(
+        "Agencies loaded, setting pending agencyId:",
+        pendingAgencyId
+      );
+      setValue("agencyId", pendingAgencyId);
+      setPendingAgencyId(null);
+    }
+  }, [isLoadingAgencies, agencies, pendingAgencyId, setValue]);
 
   const mutation = useMutation({
     mutationFn: async (data: SupervisorFormInputs) => {
@@ -187,7 +240,12 @@ const SupervisorForm: React.FC<SupervisorFormProps> = ({ mode, supervisorId, onS
         return post("/supervisors", createPayload);
       } else {
         // For update, only send supervisor fields. User fields are not updatable via this form.
-        const { userFullName, userLoginEmail, userPassword, ...supervisorData } = data;
+        const {
+          userFullName,
+          userLoginEmail,
+          userPassword,
+          ...supervisorData
+        } = data;
         // Make sure we explicitly include alternateMobile, depotId and status in the update payload
         const updatePayload = {
           name: supervisorData.name,
@@ -207,18 +265,26 @@ const SupervisorForm: React.FC<SupervisorFormProps> = ({ mode, supervisorId, onS
       }
     },
     onSuccess: () => {
-      toast.success(`Supervisor ${mode === "create" ? "created (with user)" : "updated"} successfully`);
+      toast.success(
+        `Supervisor ${
+          mode === "create" ? "created (with user)" : "updated"
+        } successfully`
+      );
       queryClient.invalidateQueries({ queryKey: ["supervisors"] });
       queryClient.invalidateQueries({ queryKey: ["users"] });
-      if (supervisorId && mode === 'edit') {
-        queryClient.invalidateQueries({ queryKey: ["supervisor", supervisorId] });
+      if (supervisorId && mode === "edit") {
+        queryClient.invalidateQueries({
+          queryKey: ["supervisor", supervisorId],
+        });
       }
       onSuccess?.();
     },
     onError: (error: any) => {
       Validate(error, setError);
       const defaultMessage = `Failed to ${mode} supervisor.`;
-      toast.error(error?.response?.data?.message || error.message || defaultMessage);
+      toast.error(
+        error?.response?.data?.message || error.message || defaultMessage
+      );
     },
   });
 
@@ -237,75 +303,151 @@ const SupervisorForm: React.FC<SupervisorFormProps> = ({ mode, supervisorId, onS
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className={`space-y-6 ${className}`}>
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className={`space-y-6 ${className}`}
+    >
       {/* Supervisor Details Section */}
       <div className="border-b pb-4 mb-4 mt-6">
-          <h3 className="text-lg font-medium leading-6 text-gray-900">Supervisor Details</h3>
+        <h3 className="text-lg font-medium leading-6 text-gray-900">
+          Supervisor Details
+        </h3>
       </div>
 
       <div className="grid gap-2 relative">
         <Label htmlFor="name">Supervisor Name</Label>
-        <Input id="name" type="text"  {...register("name")} disabled={isSubmitting} />
-        {errors.name && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.name.message}</span>}
+        <Input
+          id="name"
+          type="text"
+          {...register("name")}
+          disabled={isSubmitting}
+        />
+        {errors.name && (
+          <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">
+            {errors.name.message}
+          </span>
+        )}
       </div>
 
       <div className="grid gap-2 relative">
         <Label htmlFor="email">Email</Label>
-        <Input id="email" type="email"  {...register("email")} disabled={isSubmitting} />
-        {errors.email && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.email.message}</span>}
+        <Input
+          id="email"
+          type="email"
+          {...register("email")}
+          disabled={isSubmitting}
+        />
+        {errors.email && (
+          <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">
+            {errors.email.message}
+          </span>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="grid gap-2 relative">
           <Label htmlFor="mobile">Mobile Number</Label>
-          <Input max={10} maxLength={10} id="mobile" type="text"  {...register("mobile")} disabled={isSubmitting} />
-          {errors.mobile && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.mobile.message}</span>}
+          <Input
+            max={10}
+            maxLength={10}
+            id="mobile"
+            type="text"
+            {...register("mobile")}
+            disabled={isSubmitting}
+          />
+          {errors.mobile && (
+            <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">
+              {errors.mobile.message}
+            </span>
+          )}
         </div>
         <div className="grid gap-2 relative">
           <Label htmlFor="alternateMobile">Alternate Mobile (Optional)</Label>
-          <Input max={10} maxLength={10} id="alternateMobile" type="text"  {...register("alternateMobile")} disabled={isSubmitting} />
-          {errors.alternateMobile && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{String(errors.alternateMobile?.message)}</span>}
+          <Input
+            max={10}
+            maxLength={10}
+            id="alternateMobile"
+            type="text"
+            {...register("alternateMobile")}
+            disabled={isSubmitting}
+          />
+          {errors.alternateMobile && (
+            <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">
+              {String(errors.alternateMobile?.message)}
+            </span>
+          )}
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="grid gap-2 relative">
           <Label htmlFor="address1">Address Line 1</Label>
-          <Input id="address1" type="text"  {...register("address1")} disabled={isSubmitting} />
-          {errors.address1 && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.address1.message}</span>}
+          <Input
+            id="address1"
+            type="text"
+            {...register("address1")}
+            disabled={isSubmitting}
+          />
+          {errors.address1 && (
+            <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">
+              {errors.address1.message}
+            </span>
+          )}
         </div>
         <div className="grid gap-2 relative">
           <Label htmlFor="address2">Address Line 2 (Optional)</Label>
-          <Input id="address2" type="text"  {...register("address2")} disabled={isSubmitting} />
-          {errors.address2 && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{String(errors.address2?.message)}</span>}
+          <Input
+            id="address2"
+            type="text"
+            {...register("address2")}
+            disabled={isSubmitting}
+          />
+          {errors.address2 && (
+            <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">
+              {String(errors.address2?.message)}
+            </span>
+          )}
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="grid gap-2 relative">
           <Label htmlFor="city">City</Label>
-          <Input id="city" type="text"  {...register("city")} disabled={isSubmitting} />
-          {errors.city && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.city.message}</span>}
+          <Input
+            id="city"
+            type="text"
+            {...register("city")}
+            disabled={isSubmitting}
+          />
+          {errors.city && (
+            <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">
+              {errors.city.message}
+            </span>
+          )}
         </div>
-    <div className="grid gap-2 relative">
-  <Label htmlFor="pincode">Pin Code</Label>
-  <Input 
-    id="pincode" 
-    type="text" 
-    inputMode="numeric"
-    pattern="[0-9]{6}"
-    maxLength={6}
-    {...register("pincode", { 
-      required: "Pin code is required",
-      pattern: {
-        value: /^[0-9]{6}$/,
-        message: "Pin code must be exactly 6 digits"
-      }
-    })} 
-    disabled={isSubmitting} 
-  />
-  {errors.pincode && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.pincode.message}</span>}
-</div>
+        <div className="grid gap-2 relative">
+          <Label htmlFor="pincode">Pin Code</Label>
+          <Input
+            id="pincode"
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]{6}"
+            maxLength={6}
+            {...register("pincode", {
+              required: "Pin code is required",
+              pattern: {
+                value: /^[0-9]{6}$/,
+                message: "Pin code must be exactly 6 digits",
+              },
+            })}
+            disabled={isSubmitting}
+          />
+          {errors.pincode && (
+            <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">
+              {errors.pincode.message}
+            </span>
+          )}
+        </div>
         <div className="grid gap-2 relative">
           <Label htmlFor="depotId">Assigned Depot (Optional)</Label>
           <Controller
@@ -313,7 +455,12 @@ const SupervisorForm: React.FC<SupervisorFormProps> = ({ mode, supervisorId, onS
             control={control}
             render={({ field }) => {
               const currentValue = field.value ? String(field.value) : "none";
-              console.log("Depot field render - current value:", currentValue, "field.value:", field.value); // Debug log
+              console.log(
+                "Depot field render - current value:",
+                currentValue,
+                "field.value:",
+                field.value
+              ); // Debug log
               return (
                 <Select
                   key={`depot-${currentValue}`} // Force re-render when value changes
@@ -340,7 +487,11 @@ const SupervisorForm: React.FC<SupervisorFormProps> = ({ mode, supervisorId, onS
               );
             }}
           />
-          {errors.depotId && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{String(errors.depotId?.message)}</span>}
+          {errors.depotId && (
+            <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">
+              {String(errors.depotId?.message)}
+            </span>
+          )}
         </div>
         <div className="grid gap-2 relative">
           <Label htmlFor="agencyId">Assigned Agency (Optional)</Label>
@@ -349,7 +500,12 @@ const SupervisorForm: React.FC<SupervisorFormProps> = ({ mode, supervisorId, onS
             control={control}
             render={({ field }) => {
               const currentValue = field.value ? String(field.value) : "none";
-              console.log("Agency field render - current value:", currentValue, "field.value:", field.value); // Debug log
+              console.log(
+                "Agency field render - current value:",
+                currentValue,
+                "field.value:",
+                field.value
+              ); // Debug log
               return (
                 <Select
                   key={`agency-${currentValue}`} // Force re-render when value changes
@@ -376,33 +532,60 @@ const SupervisorForm: React.FC<SupervisorFormProps> = ({ mode, supervisorId, onS
               );
             }}
           />
-          {errors.agencyId && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{String(errors.agencyId?.message)}</span>}
+          {errors.agencyId && (
+            <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">
+              {String(errors.agencyId?.message)}
+            </span>
+          )}
         </div>
       </div>
 
       {/* User Account Details Section */}
       {mode === "create" && (
         <>
-          <div className="border-b pb-4 mb-4 pt-6"> 
-            <h3 className="text-lg font-medium leading-6 text-gray-900">Account Details</h3>
-           </div>
+          <div className="border-b pb-4 mb-4 pt-6">
+            <h3 className="text-lg font-medium leading-6 text-gray-900">
+              Account Details
+            </h3>
+          </div>
 
           <div className="grid gap-2 relative">
             <Label htmlFor="userLoginEmail">Login Email</Label>
-            <Input id="userLoginEmail" type="email"  {...register("userLoginEmail")} disabled={isSubmitting} />
-            {errors.userLoginEmail && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.userLoginEmail.message}</span>}
+            <Input
+              id="userLoginEmail"
+              type="email"
+              {...register("userLoginEmail")}
+              disabled={isSubmitting}
+            />
+            {errors.userLoginEmail && (
+              <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">
+                {errors.userLoginEmail.message}
+              </span>
+            )}
           </div>
 
           <div className="grid gap-2 relative">
             <Label htmlFor="userPassword">Password</Label>
-            <PasswordInput id="userPassword"  {...register("userPassword")} disabled={isSubmitting} />
-            {errors.userPassword && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.userPassword.message}</span>}
+            <PasswordInput
+              id="userPassword"
+              {...register("userPassword")}
+              disabled={isSubmitting}
+            />
+            {errors.userPassword && (
+              <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">
+                {errors.userPassword.message}
+              </span>
+            )}
           </div>
         </>
       )}
 
-      <div className="flex justify-end pt-4"> 
-        <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
+      <div className="flex justify-end pt-4">
+        <Button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full sm:w-auto"
+        >
           {isSubmitting ? (
             <>
               <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />

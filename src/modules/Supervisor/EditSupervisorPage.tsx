@@ -37,9 +37,11 @@ interface SupervisorData {
   city: string;
   pincode: number;
   depotId?: number | null;
+  agencyId?: number | null;
   userId: string | number;
   user?: SupervisorUser;
   depot?: SupervisorDepot;
+  agency?: { id: number; name: string; } | null;
 }
 
 const EditSupervisorPage: React.FC = () => {
@@ -129,6 +131,7 @@ const EditSupervisorPage: React.FC = () => {
     city: supervisorData.city,
     pincode: supervisorData.pincode,
     depotId: supervisorData.depotId || null,
+    agencyId: supervisorData.agencyId || null,
     status: supervisorData.user?.active ? "ACTIVE" : "INACTIVE",
   };
 
