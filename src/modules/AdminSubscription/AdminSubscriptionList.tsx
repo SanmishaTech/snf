@@ -1286,9 +1286,9 @@ const AdminSubscriptionList: React.FC = () => {
   };
   return (
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
-      <div className="flex justify-between items-center mb-6 max-sm:flex-col">
+      <div className="flex flex-wrap justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Admin - Subscriptions Management</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 mt-2">
           <Button
             variant={showUnassignedOnly ? "default" : "outline"}
             onClick={() => setShowUnassignedOnly(!showUnassignedOnly)}
@@ -1413,9 +1413,9 @@ const AdminSubscriptionList: React.FC = () => {
         </div>
       )}
 
-      <div className="mb-4 flex justify-between items-center">
+      <div className="mb-4 flex flex-wrap justify-between items-center">
         <span className="text-sm text-gray-600 dark:text-gray-400"></span>
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-wrap items-center space-x-2 mt-2">
           <span className="text-sm">Items per page:</span>
           <Select
             value={limit.toString()}
