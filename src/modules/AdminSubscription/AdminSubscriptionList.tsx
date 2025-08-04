@@ -1434,60 +1434,44 @@ const AdminSubscriptionList: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
-        <Table className="min-w-full">
-          <TableHeader className="bg-gray-50">
-            <TableRow className="border-b border-gray-200">
-              <TableHead className="px-4 py-3 font-medium text-gray-700">
-                Member
-              </TableHead>
-              <TableHead className="px-4 py-3 font-medium text-gray-700">
-                Subscription Details
-              </TableHead>
-              <TableHead className="px-4 py-3 font-medium text-gray-700">
-                Delivery
-              </TableHead>
-              <TableHead className="px-4 py-3 font-medium text-gray-700">
-                Payment & Delivery
-              </TableHead>
-              <TableHead className="px-4 py-3 font-medium text-gray-700">
-                Dates
-              </TableHead>
-              <TableHead className="px-4 py-3 font-medium text-gray-700">
-                Agent
-              </TableHead>
-              <TableHead className="px-4 py-3 font-medium text-gray-700 text-right">
-                Actions
-              </TableHead>
-            </TableRow>
-          </TableHeader>
+      <div className="bg-transparent">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {isLoading ? (
+            // Loading skeletons
+            Array.from({ length: limit }).map((_, i) => (
+              <div key={`skeleton-${i}`} className="bg-white rounded-xl border shadow-sm p-6">
+                <div className="space-y-4">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-2/3" />
+                </div>
+              </div>
+            ))
+          ) : productOrders.length > 0 ? (
+            productOrders
+              .filter((order) => {
+                if (!showUnassignedOnly) return true;
+                console.log("order", order);
 
-          <TableBody>
-            {isLoading ? (
-              renderSkeletons(7)
-            ) : productOrders.length > 0 ? (
-              productOrders
-                .filter((order) => {
-                  if (!showUnassignedOnly) return true;
-                  console.log("order", order);
+                // Show only orders that have at least one subscription without an assigned agency
+                return (
+                  order.subscriptions?.some(
+                    (subscription) => !subscription.agencyId
+                  ) || false
+                );
+              })
+              .map((order) => {
+                const firstSub = order.subscriptions?.[0];
 
-                  // Show only orders that have at least one subscription without an assigned agency
-                  return (
-                    order.subscriptions?.some(
-                      (subscription) => !subscription.agencyId
-                    ) || false
-                  );
-                })
-                .map((order) => {
-                  const firstSub = order.subscriptions?.[0];
-
-                  return (
-                    <TableRow
-                      key={order.id}
-                      className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                    >
+                return (
+                  <div
+                    key={order.id}
+                    className="bg-white rounded-xl border shadow-sm hover:shadow-md transition-shadow p-6"
+                  >
+                    <div className="space-y-4">
                       {/* Member Information */}
-                      <TableCell className="px-4 py-3">
+                      <div className="border-b pb-4">
                         <div className="flex items-center gap-3">
                           <div className="bg-gray-100 border-2 border-dashed rounded-xl w-10 h-10 flex items-center justify-center">
                             <UserIcon className="h-5 w-5 text-gray-400" />
@@ -1512,10 +1496,10 @@ const AdminSubscriptionList: React.FC = () => {
                             </div>
                           </div>
                         </div>
-                      </TableCell>
+                      </div>
 
                       {/* Subscription Details */}
-                      <TableCell className="px-4 py-3">
+                      <div>
                         <div className="flex flex-col gap-2">
                           <div className="flex flex-wrap gap-1.5">
                             {order.subscriptions.map((sub: Subscription) => (
@@ -1552,10 +1536,11 @@ const AdminSubscriptionList: React.FC = () => {
                             </div>
                           </div>
                         </div>
-                      </TableCell>
+                      </div>
 
                       {/* Delivery Schedule */}
-                      <TableCell className="px-4 py-3">
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-700 mb-2">Delivery Schedule</h3>
                         <div className="flex flex-col gap-1.5">
                           {order.subscriptions.map((sub: Subscription) => {
                             const { weekdaysArray, isSpecificDays } =
@@ -1673,10 +1658,11 @@ const AdminSubscriptionList: React.FC = () => {
                             );
                           })}
                         </div>
-                      </TableCell>
+                      </div>
 
                       {/* Payment Status */}
-                      <TableCell className="px-4 py-3">
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-700 mb-2">Payment Status</h3>
                         <div className="flex flex-col gap-1">
                           <div
                             className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
@@ -1735,10 +1721,11 @@ const AdminSubscriptionList: React.FC = () => {
                             </div>
                           )}
                         </div>
-                      </TableCell>
+                      </div>
 
                       {/* Dates */}
-                      <TableCell className="px-4 py-3">
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-700 mb-2">Subscription Dates</h3>
                         {firstSub ? (
                           <div className="flex flex-col gap-1 text-sm">
                             <div className="flex items-center gap-2">
@@ -1777,10 +1764,11 @@ const AdminSubscriptionList: React.FC = () => {
                             No subscription
                           </span>
                         )}
-                      </TableCell>
+                      </div>
 
                       {/* Assigned Agent */}
-                      <TableCell className="px-4 py-3">
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-700 mb-2">Assigned Agent</h3>
                         <div className="flex items-center gap-2">
                           <div className="bg-gray-100 rounded-full p-1.5">
                             <UserCheckIcon className="h-4 w-4 text-gray-500" />
@@ -1794,11 +1782,12 @@ const AdminSubscriptionList: React.FC = () => {
                               )}
                           </span>
                         </div>
-                      </TableCell>
+                      </div>
 
                       {/* Actions */}
-                      <TableCell className="px-4 py-3 text-right">
-                        <div className="flex justify-end gap-1.5">
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-700 mb-2">Actions</h3>
+                        <div className="flex justify-start gap-1.5">
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -1870,51 +1859,47 @@ const AdminSubscriptionList: React.FC = () => {
                             </Tooltip>
                           </TooltipProvider>
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={7}
-                  className="px-4 py-12 text-center text-gray-500"
-                >
-                  <div className="flex flex-col items-center justify-center gap-3">
-                    <PackageIcon className="h-10 w-10 text-gray-300" />
-                    <div className="text-gray-600">No subscriptions found</div>
-                    <div className="text-sm text-gray-500 mt-1">
-                      Start by creating a new subscription
+                      </div>
                     </div>
                   </div>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      {totalPages > 1 && (
-        <div className="mt-6 flex justify-center items-center space-x-2">
-          <Button
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            variant="outline"
-          >
-            Previous
-          </Button>
-          <span className="text-sm">
-            Page {currentPage} of {totalPages}
-          </span>
-          <Button
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            variant="outline"
-          >
-            Next
-          </Button>
+                );
+              })
+          ) : (
+            // Empty state
+            <div className="md:col-span-2 flex items-center justify-center p-12">
+              <div className="flex flex-col items-center justify-center gap-3">
+                <PackageIcon className="h-10 w-10 text-gray-300" />
+                <div className="text-gray-600">No subscriptions found</div>
+                <div className="text-sm text-gray-500 mt-1">
+                  Start by creating a new subscription
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+        
+        {totalPages > 1 && (
+          <div className="mt-6 flex justify-center items-center space-x-2">
+            <Button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              variant="outline"
+            >
+              Previous
+            </Button>
+            <span className="text-sm">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              variant="outline"
+            >
+              Next
+            </Button>
+          </div>
+        )}
+      </div>
 
       {selectedOrder && (
         <PaymentUpdateModal
