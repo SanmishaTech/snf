@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Users, Filter, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface Agency {
   id: number;
@@ -165,8 +166,21 @@ export const BulkAgencyAssignmentModal: React.FC<BulkAgencyAssignmentModalProps>
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-sm:max-w-[95vw] max-h-[90vh] max-sm:max-h-[95vh] flex flex-col p-0 sm:p-6">
-        <DialogHeader className="px-4 py-3 sm:px-6 sm:py-4">
+      <DialogContent
+        className={cn(
+          // width
+          "max-w-5xl max-sm:max-w-[95vw]",
+          // height - fixed height with scrolling
+          "h-[90vh] max-h-[600px] sm:max-h-[80vh]",
+          // flex layout support
+          "flex flex-col",
+          // padding
+          "p-0",
+          // prevent outer scrolling
+          "overflow-hidden"
+        )}
+      >
+        <DialogHeader className="px-4 py-3 sm:px-6 sm:py-4 flex-shrink-0 border-b">
           <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
             <Users className="h-4 w-4 sm:h-5 sm:w-5" />
             Bulk Agency Assignment
@@ -176,9 +190,9 @@ export const BulkAgencyAssignmentModal: React.FC<BulkAgencyAssignmentModalProps>
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden flex flex-col px-4 sm:px-0">
+        <div className="flex-1 flex flex-col px-4 sm:px-6 py-4 min-h-0 overflow-y-auto">
           {/* Statistics and Filters */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 p-3 sm:p-4 bg-gray-50 rounded-lg mb-3 sm:mb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 p-3 sm:p-4 bg-gray-50 rounded-lg mb-3 sm:mb-4 flex-shrink-0">
             <div className="text-center">
               <div className="text-lg sm:text-2xl font-bold text-blue-600">{totalPaidSubscriptions}</div>
               <div className="text-xs sm:text-sm text-gray-600">Total Paid</div>
@@ -198,48 +212,57 @@ export const BulkAgencyAssignmentModal: React.FC<BulkAgencyAssignmentModalProps>
           </div>
 
           {/* Filter Controls */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 flex-shrink-0" />
-              <Label className="text-sm">Filter:</Label>
-              <Select value={filterStatus} onValueChange={(value: any) => setFilterStatus(value)}>
-                <SelectTrigger className="w-32 sm:w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="unassigned">Unassigned Only</SelectItem>
-                  <SelectItem value="assigned">Assigned Only</SelectItem>
-                  <SelectItem value="all">All Paid</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Label className="text-sm">Assign to:</Label>
-              <Select 
-                value={selectedAgencyId} 
-                onValueChange={setSelectedAgencyId}
-                disabled={isLoadingAgencies}
-              >
-                <SelectTrigger className="w-40 sm:w-48">
-                  <SelectValue placeholder={isLoadingAgencies ? "Loading..." : "Select agency"} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="NONE">Remove Assignment</SelectItem>
-                  {agencies.map(agency => (
-                    <SelectItem key={agency.id} value={agency.id.toString()}>
-                      {getAgencyName(agency)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="flex-shrink-0">
+            <div className="flex flex-col gap-3 mb-3 sm:mb-4">
+              {/* First row - Filter */}
+              <div className="flex flex-wrap items-center gap-2">
+                <Filter className="h-4 w-4 flex-shrink-0" />
+                <Label className="text-sm whitespace-nowrap">Filter:</Label>
+                <Select value={filterStatus} onValueChange={(value: any) => setFilterStatus(value)}>
+                  <SelectTrigger className="w-36 sm:w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unassigned">Unassigned Only</SelectItem>
+                    <SelectItem value="assigned">Assigned Only</SelectItem>
+                    <SelectItem value="all">All Paid</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Second row - Assign to */}
+              <div className="flex flex-wrap items-center gap-2">
+                <Label className="text-sm whitespace-nowrap">Assign to:</Label>
+                <Select 
+                  value={selectedAgencyId} 
+                  onValueChange={setSelectedAgencyId}
+                  disabled={isLoadingAgencies}
+                >
+                  <SelectTrigger className="w-44 sm:w-48">
+                    <SelectValue placeholder={isLoadingAgencies ? "Loading..." : "Select agency"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">Remove Assignment</SelectItem>
+                    {agencies.map(agency => (
+                      <SelectItem key={agency.id} value={agency.id.toString()}>
+                        {getAgencyName(agency)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
           {/* Subscription List */}
-          <div className="flex-1 border rounded-md overflow-hidden">
-            <div className="max-h-[400px] overflow-y-auto overflow-x-auto">
-              <Table className="min-w-[700px] w-full">
+          <div className="flex-1 min-h-[150px] border rounded-md overflow-hidden bg-white">
+            {filteredSubscriptions.length === 0 ? (
+              <div className="flex items-center justify-center h-full min-h-[150px] text-gray-500 text-sm">
+                No subscriptions match the current filter
+              </div>
+            ) : (
+              <div className="h-full overflow-x-auto overflow-y-auto">
+                <Table className="min-w-[700px] w-full">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-10 sm:w-12 px-2 sm:px-4">
@@ -328,20 +351,14 @@ export const BulkAgencyAssignmentModal: React.FC<BulkAgencyAssignmentModalProps>
                     </TableCell>
                   </TableRow>
                 ))}
-                {filteredSubscriptions.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-gray-500 text-sm">
-                      No subscriptions match the current filter
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-              </Table>
-            </div>
+                </TableBody>
+                </Table>
+              </div>
+            )}
           </div>
         </div>
 
-        <DialogFooter className="flex flex-col sm:flex-row sm:justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
+        <DialogFooter className="flex flex-col sm:flex-row sm:justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4 border-t flex-shrink-0">
           <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 order-2 sm:order-1">
             <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
             {selectedSubscriptionIds.size} subscription(s) selected
