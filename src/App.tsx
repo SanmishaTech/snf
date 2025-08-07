@@ -1,5 +1,5 @@
-//Vipul
-import { useEffect } from "react";
+ //Vipul
+import React, { useEffect } from "react";
 import { appName } from "./config"; // Import appName from config
 import {
   BrowserRouter as Router,
@@ -100,6 +100,13 @@ const App = () => {
     document.title = appName; // Set the document title
   }, []);
 
+  // Lazy-load the SNF landing page to code-split the new feature
+  const SNFLandingPage = React.lazy(() => import("./modules/SNF/SNFLandingPage"));
+  // Lazy-load SNF Product Detail page
+  const SNFProductDetailPage = React.lazy(() => import("./modules/SNF/components/ProductDetailPage"));
+  // Lazy-load the PricingProvider wrapper for SNF
+  const SNFWrapper = React.lazy(() => import("./modules/SNF/SNFWrapper"));
+
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
       <MobileThemeEnforcer />
@@ -110,7 +117,60 @@ const App = () => {
           <Route path="/" element={<LandingPage />}>
             <Route path="products/:id" element={<ProductDetailWrapper />} />
           </Route>
-          
+
+          {/* New SNF routes - independent landing page and product detail, both lazy-loaded */}
+          <Route
+            path="/snf"
+            element={
+              <React.Suspense
+                fallback={
+                  <div className="p-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {Array.from({ length: 8 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className="animate-pulse rounded-lg border p-4 space-y-3"
+                          aria-busy="true"
+                          aria-label="Loading product"
+                        >
+                          <div className="h-32 bg-muted/40 rounded-md" />
+                          <div className="h-4 bg-muted/40 rounded w-3/4" />
+                          <div className="h-4 bg-muted/40 rounded w-1/2" />
+                          <div className="h-8 bg-muted/40 rounded" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                }
+              >
+                <SNFWrapper />
+              </React.Suspense>
+            }
+          />
+          <Route
+            path="/snf/product/:id"
+            element={
+              <React.Suspense
+                fallback={
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                      <div className="h-[420px] bg-muted/40 rounded-md animate-pulse" />
+                      <div className="space-y-3">
+                        <div className="h-6 bg-muted/40 rounded w-2/3 animate-pulse" />
+                        <div className="h-4 bg-muted/40 rounded w-1/3 animate-pulse" />
+                        <div className="h-4 bg-muted/40 rounded w-1/2 animate-pulse" />
+                        <div className="h-24 bg-muted/40 rounded animate-pulse" />
+                        <div className="h-10 bg-muted/40 rounded w-1/2 animate-pulse" />
+                      </div>
+                    </div>
+                  </div>
+                }
+              >
+                <SNFProductDetailPage />
+              </React.Suspense>
+            }
+          />
+
           {/* Auth routes with minimal layout */}
           <Route element={<AuthLayout />}>
             <Route path="/admin" element={<Login />} />
@@ -129,7 +189,7 @@ const App = () => {
             <Route path="/gratitude" element={<GratitudePage />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/refund-policy" element={<RefundPolicy />} />
-          <Route path="/shipping-policy" element={<ShippingPolicyPage />} />
+            <Route path="/shipping-policy" element={<ShippingPolicyPage />} />
             <Route path="/terms-and-conditions" element={<TermsAndConditionsPage />} />
             <Route path="/register" element={<Register />} />
           </Route>
@@ -151,8 +211,8 @@ const App = () => {
             <Route path="/admin/transfers" element={<TransferList />} />
             <Route path="/admin/transfers/create" element={<CreateTransferPage />} />
             <Route path="/admin/transfers/edit/:id" element={<EditTransferPage />} />
-            <Route path="/admin/vendors/create" element={<CreateVendorPage />} /> 
-            <Route path="/admin/vendors/edit/:id" element={<EditVendorPage />} /> 
+            <Route path="/admin/vendors/create" element={<CreateVendorPage />} />
+            <Route path="/admin/vendors/edit/:id" element={<EditVendorPage />} />
             <Route path="/admin/agencies" element={<AgencyList />} />
             <Route path="/admin/agencies/create" element={<CreateAgencyPage />} />
             <Route path="/admin/agencies/edit/:id" element={<EditAgencyPage />} />
@@ -185,14 +245,14 @@ const App = () => {
             <Route path="/admin/cities" element={<CityMasterListPage />} />
             <Route path="/admin/locations" element={<LocationMasterListPage />} />
             <Route path="/admin/areamasters" element={<AreaMasterListPage />} /> {/* Added for Area Master Management */}
-              <Route path="/admin/depots" element={<DepotMasterListPage />} /> {/* Added for Depot Master Management */}
+            <Route path="/admin/depots" element={<DepotMasterListPage />} /> {/* Added for Depot Master Management */}
             <Route path="/admin/teams" element={<Teams />} /> {/* Added for Teams Management */}
             <Route path="/admin/banners" element={<BannerListPage />} /> {/* Added for Banner Master Management */}
             <Route path="/admin/depot-variants" element={<DepotProductVariantListPage />} /> {/* Added for Depot Product Variant Management */}
           </Route>
 
           {/* Other routes using MainLayout (e.g., Vendor routes) - not protected by AdminProtectedRoute */}
-          <Route element={<MainLayout />}> 
+          <Route element={<MainLayout />}>
             {/* Vendor specific routes */}
             <Route path="/vendor/orders/:id" element={<OrderDetailsPage />} />
             <Route path="/vendor/orders/:id/record-delivery" element={<OrderDeliveryPage />} />
@@ -201,14 +261,12 @@ const App = () => {
           
           {/* Member specific routes with MemberLayout */}
           <Route element={<MemberLayout />}>
-          
             <Route path="/member/orders" element={<Orderlist />} />
             <Route path="/member/orders/:id" element={<OrderDetailsPage />} />
             <Route path="/member/products" element={<MemberProductDisplayPage />} /> {/* Member product display page */}
             <Route path="/member/products/:id" element={<ProductDetailPage />} /> {/* New route for member product detail */}
-             <Route path="/member/addresses" element={<AddressListPage />} />
+            <Route path="/member/addresses" element={<AddressListPage />} />
             <Route path="/member/wallet" element={<UserWallet />} />
-
             <Route path="/member/addresses/create" element={<CreateAddressPage />} />
             <Route path="/member/addresses/edit/:id" element={<EditAddressPage />} />
             <Route path="/member/subscriptions" element={<MySubscriptionsPage />} />
