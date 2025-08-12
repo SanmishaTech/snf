@@ -136,8 +136,8 @@ const getStatusOptions = (userRole: string) => {
         adminOnly: true
       },
       {
-        value: DeliveryStatus.DELIVER_TO_AGENT,
-        label: 'Deliver to Agent',
+        value: DeliveryStatus.TRANSFER_TO_AGENT,
+        label: 'Transfer to Agent',
         description: 'Delivery assigned to agent',
         color: 'bg-orange-100 text-orange-800',
         adminOnly: true

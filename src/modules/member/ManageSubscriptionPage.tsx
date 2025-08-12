@@ -147,7 +147,7 @@ interface DeliveryScheduleEntryFromAPI {
   | "SKIPPED"
   | "SKIP_BY_CUSTOMER"
   | "INDRAAI_DELIVERY"
-  | "DELIVER_TO_AGENT";
+  | "TRANSFER_TO_AGENT";
   quantity: number;
   // Add other fields if your backend sends them, e.g., product details for this specific delivery if they can vary
 }
@@ -198,7 +198,7 @@ const getStatusLabel = (status: Delivery["status"], originalStatus?: string, dat
     case "DELIVERED":
       if (originalStatus === "INDRAAI_DELIVERY") {
         return "DELIVERED (INDRAAI)";
-      } else if (originalStatus === "DELIVER_TO_AGENT") {
+      } else if (originalStatus === "TRANSFER_TO_AGENT") {
         return "DELIVERED (AGENT)";
       }
       return "DELIVERED";
@@ -294,7 +294,7 @@ const ManageSubscriptionPage: React.FC = () => {
             break;
           case "DELIVERED":
           case "INDRAAI_DELIVERY":
-          case "DELIVER_TO_AGENT":
+          case "TRANSFER_TO_AGENT":
             uiStatus = "DELIVERED";
             break;
           case "NOT_DELIVERED":

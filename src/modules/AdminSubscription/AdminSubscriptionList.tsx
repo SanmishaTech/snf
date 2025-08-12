@@ -583,11 +583,12 @@ const AssignAgentModal: React.FC<AssignAgentModalProps> = ({
       <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] sm:max-h-[85vh] flex flex-col p-4 sm:p-6">
         <DialogHeader className="space-y-2 sm:space-y-3">
           <DialogTitle className="text-lg sm:text-xl font-semibold pr-8">
-            Assign Agent for Order: {order.orderNo}
+            Update Agent Assignment for Order: {order.orderNo}
           </DialogTitle>
           <DialogDescription className="text-sm sm:text-base">
-            This will assign the agent to all {order.subscriptions.length} subscription(s) in this order for{" "}
-            <span className="font-medium">{order.member?.user?.name || "Unknown Member"}</span>
+            This will update the agent assignment for all {order.subscriptions.length} subscription(s) in this order for{" "}
+            <span className="font-medium">{order.member?.user?.name || "Unknown Member"}</span>.
+            Only future deliveries will be affected.
           </DialogDescription>
         </DialogHeader>
         <DialogClose
@@ -656,7 +657,7 @@ const AssignAgentModal: React.FC<AssignAgentModalProps> = ({
                 </div>
               ))}
             </div>
-  
+
           </div>
 
           {/* Delivery Address Section */}
@@ -717,7 +718,7 @@ const AssignAgentModal: React.FC<AssignAgentModalProps> = ({
           {/* Agent Selection */}
           <fieldset className="grid gap-3 sm:gap-4 border p-3 sm:p-4 rounded-md border-green-200 bg-green-50">
             <legend className="text-sm font-medium px-1 text-green-900">
-              Assign Agent to All Subscriptions in Order
+              Update Agent Assignment for Future Deliveries
             </legend>
 
             {/* Agent Selection - Mobile First Layout */}
@@ -779,7 +780,21 @@ const AssignAgentModal: React.FC<AssignAgentModalProps> = ({
             </div>
 
             {/* Info Message */}
-    
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+              <div className="flex items-start gap-2">
+                <div className="w-4 h-4 rounded-full bg-blue-500 flex-shrink-0 mt-0.5">
+                  <div className="w-2 h-2 bg-white rounded-full mx-auto mt-1"></div>
+                </div>
+                <div className="text-sm text-blue-800">
+                  <p className="font-medium mb-1">Agent Assignment Policy</p>
+                  <p className="text-xs leading-relaxed">
+                    This will assign the agent to all subscriptions in this order.
+                    <span className="font-medium"> Only future deliveries</span> will use the new agent assignment.
+                    Past and today's deliveries will keep their original agent assignments to preserve delivery history.
+                  </p>
+                </div>
+              </div>
+            </div>
           </fieldset>
         </div>
 
@@ -798,7 +813,7 @@ const AssignAgentModal: React.FC<AssignAgentModalProps> = ({
             disabled={isLoadingAgencies}
             className="w-full sm:w-auto order-1 sm:order-2"
           >
-            {isLoadingAgencies ? "Loading..." : `Assign Agent to Order`}
+            {isLoadingAgencies ? "Loading..." : `Update Agent Assignment`}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -811,6 +826,7 @@ const AdminSubscriptionList: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [limit, setLimit] = useState<number>(10);
   const [totalPages, setTotalPages] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<ProductOrder | null>(null);
   const [selectedOrderForAgent, setSelectedOrderForAgent] =
@@ -885,7 +901,7 @@ const AdminSubscriptionList: React.FC = () => {
 
   // Fetch product orders instead of subscriptions
   const fetchProductOrders = useCallback(
-    async (page = currentPage, currentLimit = 10, currentFilters = filters) => {
+    async (page = currentPage, currentLimit = 10, currentFilters = filters, unassignedFilter = showUnassignedOnly) => {
       setIsLoading(true);
 
       // Determine effective values for pagination and filters, providing fallbacks
@@ -922,6 +938,11 @@ const AdminSubscriptionList: React.FC = () => {
         }
       }
 
+      // Add unassigned filter to API params
+      if (unassignedFilter) {
+        apiParams["unassignedOnly"] = "true";
+      }
+
       // Add supervisor filtering if user is a supervisor
       if (currentUserRole === "SUPERVISOR" && currentSupervisorAgencyId) {
         apiParams["supervisorAgencyId"] = currentSupervisorAgencyId;
@@ -937,9 +958,31 @@ const AdminSubscriptionList: React.FC = () => {
         const response: ApiResponse = await get(
           `/product-orders?${queryParams}`
         );
+        // Debug logging (can be removed in production)
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Fetch response:', {
+            page: effectivePage,
+            limit: effectiveLimit,
+            totalCount: response.totalCount,
+            totalPages: response.totalPages,
+            currentPage: response.currentPage,
+            dataLength: response.data?.length || 0
+          });
+        }
         setProductOrders(response.data || []);
         setTotalPages(response.totalPages);
         setCurrentPage(response.currentPage);
+        setTotalCount(response.totalCount || 0);
+
+        // If we're on a page beyond the available pages, reset to page 1
+        if (response.currentPage > response.totalPages && response.totalPages > 0) {
+          setCurrentPage(1);
+          // Recursively call with page 1 if we're beyond available pages
+          if (effectivePage !== 1) {
+            fetchProductOrders(1, effectiveLimit, effectiveFilters, unassignedFilter);
+            return;
+          }
+        }
       } catch (err: any) {
         console.error("Failed to fetch subscriptions:", err);
         const errorMessage =
@@ -952,7 +995,7 @@ const AdminSubscriptionList: React.FC = () => {
         setIsLoading(false);
       }
     },
-    [currentPage, limit, filters, currentUserRole, currentSupervisorAgencyId]
+    [currentPage, limit, filters, currentUserRole, currentSupervisorAgencyId, showUnassignedOnly]
   );
 
   const fetchAgencies = useCallback(async () => {
@@ -989,7 +1032,7 @@ const AdminSubscriptionList: React.FC = () => {
       setIsLoading(false);
       return;
     }
-    fetchProductOrders(currentPage, limit, filters);
+    fetchProductOrders(currentPage, limit, filters, showUnassignedOnly);
   }, [
     fetchProductOrders,
     currentPage,
@@ -998,6 +1041,7 @@ const AdminSubscriptionList: React.FC = () => {
     currentUserRole,
     currentSupervisorAgencyId,
     isSupervisorInfoLoading,
+    showUnassignedOnly,
   ]); // fetchProductOrders is memoized, so this runs on mount and when filters/pagination affecting fetchProductOrders change
 
   // Fetch agencies once on mount, or when assign agent modal is opened (as per previous logic)
@@ -1008,13 +1052,13 @@ const AdminSubscriptionList: React.FC = () => {
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
-    fetchProductOrders(newPage, limit, filters);
+    fetchProductOrders(newPage, limit, filters, showUnassignedOnly);
   };
 
   const handleLimitChange = (newLimit: number) => {
     setLimit(newLimit);
     setCurrentPage(1); // Reset to page 1 when limit changes
-    fetchProductOrders(1, newLimit, filters);
+    fetchProductOrders(1, newLimit, filters, showUnassignedOnly);
   };
 
   const handleFilterChange = (
@@ -1030,7 +1074,7 @@ const AdminSubscriptionList: React.FC = () => {
   const handleFilterSubmit = (e?: React.FormEvent<HTMLFormElement>) => {
     if (e) e.preventDefault();
     setCurrentPage(1); // Reset to page 1 on new filter submission
-    fetchProductOrders(1, limit, filters);
+    fetchProductOrders(1, limit, filters, showUnassignedOnly);
   };
 
   // Clear a specific filter or all filters
@@ -1077,7 +1121,7 @@ const AdminSubscriptionList: React.FC = () => {
       // Use selectedOrder.id for the API call, which is the reliable source.
       await put(`/product-orders/${selectedOrder.id}/payment`, payload);
       toast.success("Payment updated successfully!");
-      fetchProductOrders(); // Refresh the list
+      fetchProductOrders(currentPage, limit, filters, showUnassignedOnly); // Refresh the list
       return true;
     } catch (error: any) {
       const errorMessage =
@@ -1116,7 +1160,7 @@ const AdminSubscriptionList: React.FC = () => {
       );
       console.log("handleOrderAgentAssignmentUpdate - API response:", response);
       toast.success(`Agent assigned to all ${selectedOrderForAgent.subscriptions.length} subscription(s) in order ${selectedOrderForAgent.orderNo}!`);
-      fetchProductOrders(); // Refresh list to show updated agent
+      fetchProductOrders(currentPage, limit, filters, showUnassignedOnly); // Refresh list to show updated agent
     } catch (error) {
       console.error("Error assigning agent to order - Full error:", error);
       toast.error("Failed to update order subscriptions.");
@@ -1156,7 +1200,7 @@ const AdminSubscriptionList: React.FC = () => {
       toast.success(
         `Successfully assigned agency to ${subscriptionIds.length} subscription(s)`
       );
-      fetchProductOrders(); // Refresh the list to show updated assignments
+      fetchProductOrders(currentPage, limit, filters, showUnassignedOnly); // Refresh the list to show updated assignments
     } catch (error) {
       console.error("Bulk agency assignment failed:", error);
       toast.error("Failed to assign agencies. Please try again.");
@@ -1317,7 +1361,10 @@ const AdminSubscriptionList: React.FC = () => {
         <div className="flex flex-wrap gap-2 mt-2">
           <Button
             variant={showUnassignedOnly ? "default" : "outline"}
-            onClick={() => setShowUnassignedOnly(!showUnassignedOnly)}
+            onClick={() => {
+              setShowUnassignedOnly(!showUnassignedOnly);
+              setCurrentPage(1); // Reset to page 1 when toggling filter
+            }}
             className="flex items-center gap-2"
           >
             <UserPlus className="h-4 w-4" />
@@ -1329,9 +1376,10 @@ const AdminSubscriptionList: React.FC = () => {
             <CalendarIcon className="h-4 w-4 text-gray-500" />
             <Select
               value={filters.expiryStatus || "NOT_EXPIRED"}
-              onValueChange={(value) =>
-                setFilters(prev => ({ ...prev, expiryStatus: value }))
-              }
+              onValueChange={(value) => {
+                setFilters(prev => ({ ...prev, expiryStatus: value }));
+                setCurrentPage(1); // Reset to page 1 when changing filter
+              }}
             >
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Expiry Status" />
@@ -1461,7 +1509,16 @@ const AdminSubscriptionList: React.FC = () => {
       )}
 
       <div className="mb-4 flex flex-wrap justify-between items-center">
-        <span className="text-sm text-gray-600 dark:text-gray-400"></span>
+        <span className="text-sm text-gray-600 dark:text-gray-400">
+          {!isLoading && totalCount > 0 && (
+            <>
+              Showing {((currentPage - 1) * limit) + 1}-{Math.min(currentPage * limit, totalCount)} of {totalCount} orders
+              {showUnassignedOnly && " (unassigned only)"}
+              {filters.expiryStatus === "EXPIRED" && " (expired only)"}
+              {filters.expiryStatus === "NOT_EXPIRED" && " (not expired)"}
+            </>
+          )}
+        </span>
         <div className="flex flex-wrap items-center space-x-2 mt-2">
           <span className="text-sm">Items per page:</span>
           <Select
@@ -1496,476 +1553,430 @@ const AdminSubscriptionList: React.FC = () => {
               </div>
             ))
           ) : productOrders.length > 0 ? (
-            productOrders
-              .filter((order) => {
-                // First apply unassigned filter if enabled
-                if (showUnassignedOnly) {
-                  const hasUnassignedSubscription = order.subscriptions?.some(
-                    (subscription) => !subscription.agencyId
-                  ) || false;
-                  if (!hasUnassignedSubscription) return false;
-                }
+            productOrders.map((order) => {
+              const firstSub = order.subscriptions?.[0];
 
-                // Apply expiry filter
-                const today = new Date();
-                today.setHours(0, 0, 0, 0); // Set to start of day for accurate comparison
-
-                if (filters.expiryStatus === "EXPIRED") {
-                  // Show only expired subscriptions (exclude cancelled)
-                  return order.subscriptions?.some(
-                    (subscription) => {
-                      // Exclude cancelled subscriptions
-                      if (subscription.paymentStatus === 'CANCELLED' || order.paymentStatus === 'CANCELLED') {
-                        return false;
-                      }
-                      if (!subscription.expiryDate) return false;
-                      const expiryDate = new Date(subscription.expiryDate);
-                      expiryDate.setHours(0, 0, 0, 0);
-                      return expiryDate < today;
-                    }
-                  ) || false;
-                } else if (filters.expiryStatus === "NOT_EXPIRED") {
-                  // Show only non-expired subscriptions (exclude cancelled)
-                  return order.subscriptions?.some(
-                    (subscription) => {
-                      // Exclude cancelled subscriptions
-                      if (subscription.paymentStatus === 'CANCELLED' || order.paymentStatus === 'CANCELLED') {
-                        return false;
-                      }
-                      if (!subscription.expiryDate) return true; // No expiry date means not expired
-                      const expiryDate = new Date(subscription.expiryDate);
-                      expiryDate.setHours(0, 0, 0, 0);
-                      return expiryDate >= today;
-                    }
-                  ) || false;
-                }
-                // If "ALL" is selected, show all orders including cancelled ones
-                return true;
-              })
-              .map((order) => {
-                const firstSub = order.subscriptions?.[0];
-
-                return (
-                  <div
-                    key={order.id}
-                    className={`bg-white rounded-xl border shadow-sm hover:shadow-md transition-shadow p-6 ${order.paymentStatus === 'CANCELLED' || order.subscriptions.some(sub => sub.paymentStatus === 'CANCELLED')
-                      ? 'opacity-60 bg-gray-50'
-                      : ''
-                      }`}
-                  >
-                    <div className="space-y-4">
-                      {/* Member Information */}
-                      <div className="border-b pb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="bg-gray-100 border-2 border-dashed rounded-xl w-10 h-10 flex items-center justify-center">
-                            <UserIcon className="h-5 w-5 text-gray-400" />
-                          </div>
-                          <div>
-                            <div className={`font-medium text-gray-900 flex items-center gap-2 ${order.paymentStatus === 'CANCELLED' || order.subscriptions.some(sub => sub.paymentStatus === 'CANCELLED')
-                              ? 'line-through text-gray-500'
-                              : ''
-                              }`}>
-                              {order.member?.user?.name || "N/A"}
-                              {(order.paymentStatus === 'CANCELLED' || order.subscriptions.some(sub => sub.paymentStatus === 'CANCELLED')) && (
-                                <span className="ml-2 px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full font-normal">
-                                  CANCELLED
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex flex-col gap-1 mt-1 text-xs text-gray-500">
-                              <div className="flex items-center gap-1.5">
-                                <PhoneIcon className="h-3.5 w-3.5" />
-                                <span>
-                                  {order?.member?.user?.mobile || "N/A"}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <MailIcon className="h-3.5 w-3.5" />
-                                <span className="truncate max-w-[120px]">
-                                  {order.member?.user?.email || "N/A"}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
+              return (
+                <div
+                  key={order.id}
+                  className={`bg-white rounded-xl border shadow-sm hover:shadow-md transition-shadow p-6 ${order.paymentStatus === 'CANCELLED' || order.subscriptions.some(sub => sub.paymentStatus === 'CANCELLED')
+                    ? 'opacity-60 bg-gray-50'
+                    : ''
+                    }`}
+                >
+                  <div className="space-y-4">
+                    {/* Member Information */}
+                    <div className="border-b pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-gray-100 border-2 border-dashed rounded-xl w-10 h-10 flex items-center justify-center">
+                          <UserIcon className="h-5 w-5 text-gray-400" />
                         </div>
-                      </div>
-
-                      {/* Subscription Details */}
-                      <div>
-                        <div className="flex flex-col gap-2">
-                          <div className="flex flex-wrap gap-1.5">
-                            {order.subscriptions.map((sub: Subscription) => (
-                              <div
-                                key={sub.id}
-                                className={`bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full flex items-center gap-1.5 text-xs ${sub.paymentStatus === 'CANCELLED' ? 'line-through opacity-60 bg-gray-100 text-gray-500' : ''
-                                  }`}
-                              >
-                                <PackageIcon className="h-3.5 w-3.5" />
-                                <span className="font-medium">
-                                  {sub.product?.name}
-                                </span>
-                                <span>
-                                  {sub.deliverySchedule === "ALTERNATE_DAYS"
-                                    ? `×${sub.qty}/${sub.altQty ?? "-"}`
-                                    : `×${sub.qty}`}
-                                </span>
-                                <span className="text-blue-600">
-                                  {sub.depotProductVariant?.name || ""}
-                                </span>
-                              </div>
-                            ))}
+                        <div>
+                          <div className={`font-medium text-gray-900 flex items-center gap-2 ${order.paymentStatus === 'CANCELLED' || order.subscriptions.some(sub => sub.paymentStatus === 'CANCELLED')
+                            ? 'line-through text-gray-500'
+                            : ''
+                            }`}>
+                            {order.member?.user?.name || "N/A"}
+                            {(order.paymentStatus === 'CANCELLED' || order.subscriptions.some(sub => sub.paymentStatus === 'CANCELLED')) && (
+                              <span className="ml-2 px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full font-normal">
+                                CANCELLED
+                              </span>
+                            )}
                           </div>
-                          <div className="flex items-center gap-3 text-sm mt-1">
-                            <div className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded">
-                              <ShoppingCartIcon className="h-4 w-4 text-gray-500" />
+                          <div className="flex flex-col gap-1 mt-1 text-xs text-gray-500">
+                            <div className="flex items-center gap-1.5">
+                              <PhoneIcon className="h-3.5 w-3.5" />
                               <span>
-                                {order.subscriptions.length} item
-                                {order.subscriptions.length > 1 ? "s" : ""}
+                                {order?.member?.user?.mobile || "N/A"}
                               </span>
                             </div>
-                            <div className="flex items-center gap-1 font-medium">
-                              <IndianRupeeIcon className="h-4 w-4" />
-                              <span>{(order.payableamt || 0).toFixed(2)}</span>
+                            <div className="flex items-center gap-1.5">
+                              <MailIcon className="h-3.5 w-3.5" />
+                              <span className="truncate max-w-[120px]">
+                                {order.member?.user?.email || "N/A"}
+                              </span>
                             </div>
                           </div>
                         </div>
                       </div>
+                    </div>
 
-                      {/* Delivery Schedule */}
-                      <div>
-                        <h3 className="text-sm font-semibold text-gray-700 mb-2">Delivery Schedule</h3>
-                        <div className="flex flex-col gap-1.5">
-                          {order.subscriptions.map((sub: Subscription) => {
-                            const { weekdaysArray, isSpecificDays } =
-                              formatDeliverySchedule(
-                                sub.deliverySchedule,
-                                sub.weekdays
-                              );
-                            const scheduleLabel =
-                              sub.deliverySchedule === "DAILY"
-                                ? "Daily"
-                                : sub.deliverySchedule === "WEEKDAYS"
-                                  ? "Weekdays Only"
-                                  : sub.deliverySchedule === "WEEKENDS"
-                                    ? "Weekends"
-                                    : sub.deliverySchedule === "ALTERNATE_DAYS"
-                                      ? "Alternate_days"
-                                      : sub.deliverySchedule === "DAY1_DAY2"
-                                        ? "Daily (Varying Qty)"
-                                        : "Custom";
-
-                            const periodtolabel = {
-                              "1": "Buy Once",
-                              "3": "Trial Pack",
-                              "7": "Mid Saver Pack",
-                              "15": "Mid Saver Pack",
-                              "30": "Super Saver Pack",
-                            };
-                            return (
-                              <div key={sub.id} className="text-sm">
-                                <div className="font-medium text-gray-700 mb-1">{`${scheduleLabel} - ${periodtolabel[sub.period]
-                                  }`}</div>
-
-                                {/* Alternate Days Display - Alternate_days (1,3,5,7...) */}
-                                {sub.deliverySchedule === "ALTERNATE_DAYS" &&
-                                  (sub.qty || sub.altQty) ? (
-                                  <div className="flex items-center gap-2 text-xs">
-                                    <div className="flex items-center gap-1">
-                                      <div className="w-1.5 h-1.5 bg-secondary rounded-full"></div>
-                                      <span className="text-blue-700 font-medium">
-                                        {sub.qty} -{" "}
-                                        {sub.depotProductVariant?.name ||
-                                          "units"}
-                                      </span>
-                                    </div>
-                                    <span className="text-gray-400">•</span>
-                                    <div className="flex items-center gap-1">
-                                      <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-                                      <span className="text-green-700 font-medium">
-                                        {sub.altQty} -{" "}
-                                        {sub.depotProductVariant?.name ||
-                                          "units"}
-                                      </span>
-                                    </div>
-                                    <span className="text-gray-400 text-xs italic ml-1">
-                                      skip day pattern
-                                    </span>
-                                  </div>
-                                ) : sub.deliverySchedule === "DAY1_DAY2" &&
-                                  (sub.qty || sub.altQty) ? (
-                                  /* Day1-Day2 Display - Daily with varying quantities */
-                                  <div className="flex items-center gap-2 text-xs">
-                                    <div className="flex items-center gap-1">
-                                      <div className="w-1.5 h-1.5 bg-secondary rounded-full"></div>
-                                      <span className="text-blue-700 font-medium">
-                                        {sub.qty} -{" "}
-                                        {sub.depotProductVariant?.name ||
-                                          "units"}
-                                      </span>
-                                    </div>
-                                    <span className="text-gray-400">•</span>
-                                    <div className="flex items-center gap-1">
-                                      <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-                                      <span className="text-green-700 font-medium">
-                                        {sub.altQty} -{" "}
-                                        {sub.depotProductVariant?.name ||
-                                          "units"}
-                                      </span>
-                                    </div>
-                                    <span className="text-gray-400 text-xs italic ml-1">
-                                      daily rotation
-                                    </span>
-                                  </div>
-                                ) : (
-                                  /* Regular Schedule Display */
-                                  sub.qty && (
-                                    <div className="text-xs text-gray-600">
-                                      {sub.qty} -{" "}
-                                      {sub.depotProductVariant?.name || "units"}
-                                      {sub.deliverySchedule === "DAILY"
-                                        ? " daily"
-                                        : sub.deliverySchedule === "WEEKDAYS"
-                                          ? " on weekdays"
-                                          : sub.deliverySchedule === "WEEKENDS"
-                                            ? " on weekends"
-                                            : " per delivery"}
-                                    </div>
-                                  )
-                                )}
-
-                                {/* Compact Days Display for Custom Schedules */}
-                                {isSpecificDays && weekdaysArray.length > 0 && (
-                                  <div className="flex flex-wrap gap-1 mt-1">
-                                    {weekdaysArray.map((day, idx) => (
-                                      <span
-                                        key={idx}
-                                        className="px-1.5 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-700"
-                                      >
-                                        {formatWeekdayToShort(day)}
-                                      </span>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Payment Status */}
-                      <div>
-                        <h3 className="text-sm font-semibold text-gray-700 mb-2">Payment Status</h3>
-                        <div className="flex flex-col gap-1">
-                          <div
-                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${order.paymentStatus === "PAID"
-                              ? "bg-green-100 text-green-800"
-                              : order.paymentStatus === "PENDING"
-                                ? "bg-amber-100 text-amber-800"
-                                : order.paymentStatus === "CANCELLED"
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-red-100 text-red-800"
-                              } ${order.paymentStatus === 'CANCELLED' ? 'line-through' : ''
-                              }`}
-                          >
-                            {order.paymentStatus}
-                          </div>
-                          {console.log(
-                            "order",
-                            order?.subscriptions?.[0]?.deliveryAddressId
-                          )}
-                          <p>
-                            {order?.subscriptions?.[0]?.deliveryAddressId
-                              ? "Home Delivery"
-                              : "Store Pickup"}
-                          </p>
-                          <div className="text-xs text-gray-500 mt-1">
-                            {order.paymentStatus === "PAID"
-                              ? "Payment completed"
-                              : order.paymentStatus === "PENDING"
-                                ? "Processing payment"
-                                : "Payment required"}
-                          </div>
-
-                          {/* Delivery Instructions */}
-                          {firstSub?.deliveryInstructions && (
-                            <div className="mt-2 border-t pt-2">
-                              <div className="flex items-start gap-1.5">
-                                <MessageSquare className="h-3.5 w-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <div className="text-xs text-gray-600 cursor-help">
-                                        {truncateText(
-                                          firstSub.deliveryInstructions,
-                                          40
-                                        )}
-                                      </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent
-                                      side="left"
-                                      className="max-w-xs"
-                                    >
-                                      <p className="whitespace-pre-wrap">
-                                        {firstSub.deliveryInstructions}
-                                      </p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              </div>
+                    {/* Subscription Details */}
+                    <div>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex flex-wrap gap-1.5">
+                          {order.subscriptions.map((sub: Subscription) => (
+                            <div
+                              key={sub.id}
+                              className={`bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full flex items-center gap-1.5 text-xs ${sub.paymentStatus === 'CANCELLED' ? 'line-through opacity-60 bg-gray-100 text-gray-500' : ''
+                                }`}
+                            >
+                              <PackageIcon className="h-3.5 w-3.5" />
+                              <span className="font-medium">
+                                {sub.product?.name}
+                              </span>
+                              <span>
+                                {sub.deliverySchedule === "ALTERNATE_DAYS"
+                                  ? `×${sub.qty}/${sub.altQty ?? "-"}`
+                                  : `×${sub.qty}`}
+                              </span>
+                              <span className="text-blue-600">
+                                {sub.depotProductVariant?.name || ""}
+                              </span>
                             </div>
-                          )}
+                          ))}
                         </div>
-                      </div>
-
-                      {/* Dates */}
-                      <div>
-                        <h3 className="text-sm font-semibold text-gray-700 mb-2">Subscription Dates</h3>
-                        {firstSub ? (
-                          <div className="flex flex-col gap-1 text-sm">
-                            <div className="flex items-center gap-2">
-                              <CalendarIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                              <div className="flex flex-col">
-                                <span className="text-xs text-gray-500">
-                                  Start
-                                </span>
-                                <span>
-                                  {format(
-                                    new Date(firstSub.startDate),
-                                    "dd MMM yyyy"
-                                  )}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 mt-1">
-                              <CalendarCheckIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                              <div className="flex flex-col">
-                                <span className="text-xs text-gray-500">
-                                  End Date
-                                </span>
-                                <span>
-                                  {firstSub.expiryDate
-                                    ? format(
-                                      new Date(firstSub.expiryDate),
-                                      "dd MMM yyyy"
-                                    )
-                                    : "N/A"}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-sm text-gray-500">
-                            No subscription
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Assigned Agent */}
-                      <div>
-                        <h3 className="text-sm font-semibold text-gray-700 mb-2">Assigned Agent</h3>
-                        <div className="flex items-center gap-2">
-                          <div className="bg-gray-100 rounded-full p-1.5">
-                            <UserCheckIcon className="h-4 w-4 text-gray-500" />
-                          </div>
-                          <span className="text-sm">
-                            {firstSub?.agency?.user?.name ||
-                              firstSub?.agency?.name || (
-                                <span className="text-gray-400">
-                                  Unassigned
-                                </span>
-                              )}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Actions */}
-                      <div>
-                        <h3 className="text-sm font-semibold text-gray-700 mb-2">Actions</h3>
-                        {(order.paymentStatus === 'CANCELLED' || order.subscriptions.some(sub => sub.paymentStatus === 'CANCELLED')) ? (
-                          <div className="flex items-center justify-center p-4 bg-gray-100 rounded-md">
-                            <span className="text-sm text-gray-500 font-medium">
-                              Order has been cancelled - No actions available
+                        <div className="flex items-center gap-3 text-sm mt-1">
+                          <div className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded">
+                            <ShoppingCartIcon className="h-4 w-4 text-gray-500" />
+                            <span>
+                              {order.subscriptions.length} item
+                              {order.subscriptions.length > 1 ? "s" : ""}
                             </span>
                           </div>
-                        ) : (
-                          <div className="flex justify-start gap-1.5">
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    size="icon"
-                                    className="h-8 w-8 rounded-full bg-white hover:bg-gray-50"
-                                    onClick={() => handleOpenPaymentModal(order)}
-                                    disabled={order.paymentStatus === "PAID"}
-                                  >
-                                    <PackageIcon className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent side="top">
-                                  <p>Update Payment</p>
-                                </TooltipContent>
-                              </Tooltip>
+                          <div className="flex items-center gap-1 font-medium">
+                            <IndianRupeeIcon className="h-4 w-4" />
+                            <span>{(order.payableamt || 0).toFixed(2)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
 
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    size="icon"
-                                    className="h-8 w-8 rounded-full bg-white hover:bg-gray-50"
-                                    onClick={() =>
-                                      handleOpenAssignAgentModal(order)
-                                    }
-                                    disabled={order.paymentStatus !== "PAID"}
-                                  >
-                                    <UserPlus className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent side="top">
-                                  <p>
-                                    {order.paymentStatus !== "PAID"
-                                      ? "Complete payment first"
-                                      : order.subscriptions.some(sub => sub.agencyId)
-                                        ? "Edit Agent & Instructions for Order"
-                                        : "Assign Agent to Order"}
-                                  </p>
-                                </TooltipContent>
-                              </Tooltip>
+                    {/* Delivery Schedule */}
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-2">Delivery Schedule</h3>
+                      <div className="flex flex-col gap-1.5">
+                        {order.subscriptions.map((sub: Subscription) => {
+                          const { weekdaysArray, isSpecificDays } =
+                            formatDeliverySchedule(
+                              sub.deliverySchedule,
+                              sub.weekdays
+                            );
+                          const scheduleLabel =
+                            sub.deliverySchedule === "DAILY"
+                              ? "Daily"
+                              : sub.deliverySchedule === "WEEKDAYS"
+                                ? "Weekdays Only"
+                                : sub.deliverySchedule === "WEEKENDS"
+                                  ? "Weekends"
+                                  : sub.deliverySchedule === "ALTERNATE_DAYS"
+                                    ? "Alternate_days"
+                                    : sub.deliverySchedule === "DAY1_DAY2"
+                                      ? "Daily (Varying Qty)"
+                                      : "Custom";
 
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    size="icon"
-                                    className="h-8 w-8 rounded-full bg-white hover:bg-gray-50"
-                                    onClick={() => handleDownloadInvoice(order)}
-                                  // disabled={downloadingInvoices.has(order.id) || order.paymentStatus !== 'PAID'}
+                          const periodtolabel = {
+                            "1": "Buy Once",
+                            "3": "Trial Pack",
+                            "7": "Mid Saver Pack",
+                            "15": "Mid Saver Pack",
+                            "30": "Super Saver Pack",
+                          };
+                          return (
+                            <div key={sub.id} className="text-sm">
+                              <div className="font-medium text-gray-700 mb-1">{`${scheduleLabel} - ${periodtolabel[sub.period]
+                                }`}</div>
+
+                              {/* Alternate Days Display - Alternate_days (1,3,5,7...) */}
+                              {sub.deliverySchedule === "ALTERNATE_DAYS" &&
+                                (sub.qty || sub.altQty) ? (
+                                <div className="flex items-center gap-2 text-xs">
+                                  <div className="flex items-center gap-1">
+                                    <div className="w-1.5 h-1.5 bg-secondary rounded-full"></div>
+                                    <span className="text-blue-700 font-medium">
+                                      {sub.qty} -{" "}
+                                      {sub.depotProductVariant?.name ||
+                                        "units"}
+                                    </span>
+                                  </div>
+                                  <span className="text-gray-400">•</span>
+                                  <div className="flex items-center gap-1">
+                                    <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                                    <span className="text-green-700 font-medium">
+                                      {sub.altQty} -{" "}
+                                      {sub.depotProductVariant?.name ||
+                                        "units"}
+                                    </span>
+                                  </div>
+                                  <span className="text-gray-400 text-xs italic ml-1">
+                                    skip day pattern
+                                  </span>
+                                </div>
+                              ) : sub.deliverySchedule === "DAY1_DAY2" &&
+                                (sub.qty || sub.altQty) ? (
+                                /* Day1-Day2 Display - Daily with varying quantities */
+                                <div className="flex items-center gap-2 text-xs">
+                                  <div className="flex items-center gap-1">
+                                    <div className="w-1.5 h-1.5 bg-secondary rounded-full"></div>
+                                    <span className="text-blue-700 font-medium">
+                                      {sub.qty} -{" "}
+                                      {sub.depotProductVariant?.name ||
+                                        "units"}
+                                    </span>
+                                  </div>
+                                  <span className="text-gray-400">•</span>
+                                  <div className="flex items-center gap-1">
+                                    <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                                    <span className="text-green-700 font-medium">
+                                      {sub.altQty} -{" "}
+                                      {sub.depotProductVariant?.name ||
+                                        "units"}
+                                    </span>
+                                  </div>
+                                  <span className="text-gray-400 text-xs italic ml-1">
+                                    daily rotation
+                                  </span>
+                                </div>
+                              ) : (
+                                /* Regular Schedule Display */
+                                sub.qty && (
+                                  <div className="text-xs text-gray-600">
+                                    {sub.qty} -{" "}
+                                    {sub.depotProductVariant?.name || "units"}
+                                    {sub.deliverySchedule === "DAILY"
+                                      ? " daily"
+                                      : sub.deliverySchedule === "WEEKDAYS"
+                                        ? " on weekdays"
+                                        : sub.deliverySchedule === "WEEKENDS"
+                                          ? " on weekends"
+                                          : " per delivery"}
+                                  </div>
+                                )
+                              )}
+
+                              {/* Compact Days Display for Custom Schedules */}
+                              {isSpecificDays && weekdaysArray.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {weekdaysArray.map((day, idx) => (
+                                    <span
+                                      key={idx}
+                                      className="px-1.5 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-700"
+                                    >
+                                      {formatWeekdayToShort(day)}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Payment Status */}
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-2">Payment Status</h3>
+                      <div className="flex flex-col gap-1">
+                        <div
+                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${order.paymentStatus === "PAID"
+                            ? "bg-green-100 text-green-800"
+                            : order.paymentStatus === "PENDING"
+                              ? "bg-amber-100 text-amber-800"
+                              : order.paymentStatus === "CANCELLED"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-red-100 text-red-800"
+                            } ${order.paymentStatus === 'CANCELLED' ? 'line-through' : ''
+                            }`}
+                        >
+                          {order.paymentStatus}
+                        </div>
+                        {console.log(
+                          "order",
+                          order?.subscriptions?.[0]?.deliveryAddressId
+                        )}
+                        <p>
+                          {order?.subscriptions?.[0]?.deliveryAddressId
+                            ? "Home Delivery"
+                            : "Store Pickup"}
+                        </p>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {order.paymentStatus === "PAID"
+                            ? "Payment completed"
+                            : order.paymentStatus === "PENDING"
+                              ? "Processing payment"
+                              : "Payment required"}
+                        </div>
+
+                        {/* Delivery Instructions */}
+                        {firstSub?.deliveryInstructions && (
+                          <div className="mt-2 border-t pt-2">
+                            <div className="flex items-start gap-1.5">
+                              <MessageSquare className="h-3.5 w-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="text-xs text-gray-600 cursor-help">
+                                      {truncateText(
+                                        firstSub.deliveryInstructions,
+                                        40
+                                      )}
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent
+                                    side="left"
+                                    className="max-w-xs"
                                   >
-                                    {downloadingInvoices.has(order.id) ? (
-                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
-                                    ) : (
-                                      <Download className="h-4 w-4" />
-                                    )}
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent side="top">
-                                  <p>
-                                    {downloadingInvoices.has(order.id)
-                                      ? "Downloading..."
-                                      : order.paymentStatus !== "PAID"
-                                        ? "Invoice available after payment"
-                                        : "Download Invoice"}
-                                  </p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                                    <p className="whitespace-pre-wrap">
+                                      {firstSub.deliveryInstructions}
+                                    </p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
                           </div>
                         )}
                       </div>
                     </div>
+
+                    {/* Dates */}
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-2">Subscription Dates</h3>
+                      {firstSub ? (
+                        <div className="flex flex-col gap-1 text-sm">
+                          <div className="flex items-center gap-2">
+                            <CalendarIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                            <div className="flex flex-col">
+                              <span className="text-xs text-gray-500">
+                                Start
+                              </span>
+                              <span>
+                                {format(
+                                  new Date(firstSub.startDate),
+                                  "dd MMM yyyy"
+                                )}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <CalendarCheckIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                            <div className="flex flex-col">
+                              <span className="text-xs text-gray-500">
+                                End Date
+                              </span>
+                              <span>
+                                {firstSub.expiryDate
+                                  ? format(
+                                    new Date(firstSub.expiryDate),
+                                    "dd MMM yyyy"
+                                  )
+                                  : "N/A"}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-500">
+                          No subscription
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Assigned Agent */}
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-2">Assigned Agent</h3>
+                      <div className="flex items-center gap-2">
+                        <div className="bg-gray-100 rounded-full p-1.5">
+                          <UserCheckIcon className="h-4 w-4 text-gray-500" />
+                        </div>
+                        <span className="text-sm">
+                          {firstSub?.agency?.user?.name ||
+                            firstSub?.agency?.name || (
+                              <span className="text-gray-400">
+                                Unassigned
+                              </span>
+                            )}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-2">Actions</h3>
+                      {(order.paymentStatus === 'CANCELLED' || order.subscriptions.some(sub => sub.paymentStatus === 'CANCELLED')) ? (
+                        <div className="flex items-center justify-center p-4 bg-gray-100 rounded-md">
+                          <span className="text-sm text-gray-500 font-medium">
+                            Order has been cancelled - No actions available
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex justify-start gap-1.5">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8 rounded-full bg-white hover:bg-gray-50"
+                                  onClick={() => handleOpenPaymentModal(order)}
+                                  disabled={order.paymentStatus === "PAID"}
+                                >
+                                  <PackageIcon className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent side="top">
+                                <p>Update Payment</p>
+                              </TooltipContent>
+                            </Tooltip>
+
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8 rounded-full bg-white hover:bg-gray-50"
+                                  onClick={() =>
+                                    handleOpenAssignAgentModal(order)
+                                  }
+                                  disabled={order.paymentStatus !== "PAID"}
+                                >
+                                  <UserPlus className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent side="top">
+                                <p>
+                                  {order.paymentStatus !== "PAID"
+                                    ? "Complete payment first"
+                                    : order.subscriptions.some(sub => sub.agencyId)
+                                      ? "Update Agent Assignment (Future Deliveries Only)"
+                                      : "Assign Agent to Order (Future Deliveries Only)"}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8 rounded-full bg-white hover:bg-gray-50"
+                                  onClick={() => handleDownloadInvoice(order)}
+                                // disabled={downloadingInvoices.has(order.id) || order.paymentStatus !== 'PAID'}
+                                >
+                                  {downloadingInvoices.has(order.id) ? (
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                                  ) : (
+                                    <Download className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent side="top">
+                                <p>
+                                  {downloadingInvoices.has(order.id)
+                                    ? "Downloading..."
+                                    : order.paymentStatus !== "PAID"
+                                      ? "Invoice available after payment"
+                                      : "Download Invoice"}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                );
-              })
+                </div>
+              );
+            })
           ) : (
             // Empty state
             <div className="md:col-span-2 flex items-center justify-center p-12">
