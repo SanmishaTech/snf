@@ -135,7 +135,7 @@ const App = () => {
           </Route>
 
           {/* New SNF routes - independent landing page and product detail, both lazy-loaded */}
-          <Route
+          {/* <Route
             path="/snf"
             element={
               <React.Suspense
@@ -162,7 +162,7 @@ const App = () => {
                 <SNFWrapper />
               </React.Suspense>
             }
-          />
+          /> */}
 
           <Route
             path="/snf/checkout"

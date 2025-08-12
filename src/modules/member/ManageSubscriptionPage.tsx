@@ -92,11 +92,10 @@ const formatDeliveryScheduleText = (
       scheduleText = "Alternate Days";
       break;
     case "SELECT_DAYS":
-      scheduleText = `Selected Days (${
-        selectedDays
+      scheduleText = `Selected Days (${selectedDays
           ?.map((s) => s.charAt(0).toUpperCase() + s.slice(1))
           .join(", ") || "N/A"
-      })`;
+        })`;
       break;
     case "VARYING":
       scheduleText = "Varying Quantities";
@@ -141,12 +140,14 @@ interface DeliveryScheduleEntryFromAPI {
   id: number;
   deliveryDate: string; // ISO string date
   status:
-    | "PENDING"
-    | "DELIVERED"
-    | "NOT_DELIVERED"
-    | "CANCELLED"
-    | "SKIPPED_BY_MEMBER"
-    | "SKIPPED_BY_ADMIN";
+  | "PENDING"
+  | "DELIVERED"
+  | "NOT_DELIVERED"
+  | "CANCELLED"
+  | "SKIPPED"
+  | "SKIP_BY_CUSTOMER"
+  | "INDRAAI_DELIVERY"
+  | "DELIVER_TO_AGENT";
   quantity: number;
   // Add other fields if your backend sends them, e.g., product details for this specific delivery if they can vary
 }
@@ -168,12 +169,13 @@ interface Delivery {
   id: number; // This is the DeliveryScheduleEntry ID
   date: Date;
   status:
-    | "PENDING"
-    | "SCHEDULED"
-    | "SKIPPED"
-    | "DELIVERED"
-    | "NOT_DELIVERED"
-    | "CANCELLED"; // Consolidated status for UI
+  | "PENDING"
+  | "SCHEDULED"
+  | "SKIPPED"
+  | "DELIVERED"
+  | "NOT_DELIVERED"
+  | "CANCELLED"; // Consolidated status for UI
+  originalStatus?: string; // Keep the original status for more detailed display
   originalQty?: number;
 }
 
@@ -182,6 +184,36 @@ interface ApiServiceError {
   status?: number;
   // Add other properties if your apiService error object has more that you need to access
 }
+
+// Helper function to get user-friendly status labels
+const getStatusLabel = (status: Delivery["status"], originalStatus?: string, date?: Date, today?: Date): string => {
+  switch (status) {
+    case "SKIPPED":
+      if (originalStatus === "SKIP_BY_CUSTOMER") {
+        return "SKIPPED BY YOU";
+      } else if (originalStatus === "SKIPPED") {
+        return "SKIPPED";
+      }
+      return "SKIPPED";
+    case "DELIVERED":
+      if (originalStatus === "INDRAAI_DELIVERY") {
+        return "DELIVERED (INDRAAI)";
+      } else if (originalStatus === "DELIVER_TO_AGENT") {
+        return "DELIVERED (AGENT)";
+      }
+      return "DELIVERED";
+    case "NOT_DELIVERED":
+      return "NOT DELIVERED";
+    case "CANCELLED":
+      return "CANCELLED";
+    case "SCHEDULED":
+      return "TODAY";
+    case "PENDING":
+      return "PENDING";
+    default:
+      return status;
+  }
+};
 
 const ManageSubscriptionPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -251,6 +283,7 @@ const ManageSubscriptionPage: React.FC = () => {
 
         switch (entry.status) {
           case "SKIPPED":
+          case "SKIP_BY_CUSTOMER":
             uiStatus = "SKIPPED";
             break;
           case "PENDING":
@@ -260,6 +293,8 @@ const ManageSubscriptionPage: React.FC = () => {
                 : "PENDING";
             break;
           case "DELIVERED":
+          case "INDRAAI_DELIVERY":
+          case "DELIVER_TO_AGENT":
             uiStatus = "DELIVERED";
             break;
           case "NOT_DELIVERED":
@@ -269,19 +304,21 @@ const ManageSubscriptionPage: React.FC = () => {
             uiStatus = "CANCELLED";
             break;
           default:
-            // Should not happen if backend sends valid statuses
+            // Fallback for any unknown status
+            console.warn(`Unknown delivery status: ${entry.status}`);
             uiStatus =
               deliveryDate < today
                 ? "DELIVERED"
                 : deliveryDate.getTime() === today.getTime()
-                ? "SCHEDULED"
-                : "PENDING";
+                  ? "SCHEDULED"
+                  : "PENDING";
         }
 
         return {
           id: entry.id,
           date: deliveryDate,
           status: uiStatus,
+          originalStatus: entry.status,
           originalQty: entry.quantity,
         };
       }
@@ -407,11 +444,10 @@ const ManageSubscriptionPage: React.FC = () => {
             <p>
               <strong>Payment:</strong>{" "}
               <span
-                className={`capitalize font-medium ${
-                  subscription.paymentStatus === "PAID"
+                className={`capitalize font-medium ${subscription.paymentStatus === "PAID"
                     ? "text-green-600"
                     : "text-orange-500"
-                }`}
+                  }`}
               >
                 {subscription.paymentStatus.toLowerCase()}
               </span>
@@ -425,15 +461,12 @@ const ManageSubscriptionPage: React.FC = () => {
           {subscription.deliveryAddress && (
             <p>
               <strong>Delivering to:</strong>{" "}
-              {`${
-                subscription.deliveryAddress?.streetArea &&
+              {`${subscription.deliveryAddress?.streetArea &&
                 subscription.deliveryAddress?.streetArea
-              }, ${
-                subscription.deliveryAddress?.landmark &&
+                }, ${subscription.deliveryAddress?.landmark &&
                 subscription.deliveryAddress?.landmark
-              }, ${subscription.deliveryAddress.city}, ${
-                subscription.deliveryAddress.state
-              } ${subscription.deliveryAddress.pincode}`}
+                }, ${subscription.deliveryAddress.city}, ${subscription.deliveryAddress.state
+                } ${subscription.deliveryAddress.pincode}`}
             </p>
           )}
           {subscription.amount !== undefined && (
@@ -478,24 +511,21 @@ const ManageSubscriptionPage: React.FC = () => {
                 console.log(
                   `Rendering delivery - ID: ${JSON.stringify(
                     delivery
-                  )}, Status: ${delivery.status}, Date: ${
-                    delivery.date ? delivery.date.toISOString() : "N/A"
-                  }, isAfterToday: ${
-                    delivery.date ? isAfter(delivery.date, today) : "N/A"
+                  )}, Status: ${delivery.status}, Date: ${delivery.date ? delivery.date.toISOString() : "N/A"
+                  }, isAfterToday: ${delivery.date ? isAfter(delivery.date, today) : "N/A"
                   }`
                 );
                 return (
                   <div
                     key={index}
-                    className={`flex items-center justify-between p-3 rounded-md border ${
-                      delivery.status === "SKIPPED"
+                    className={`flex items-center justify-between p-3 rounded-md border ${delivery.status === "SKIPPED"
                         ? "bg-red-50 border-red-200 dark:bg-red-900/30 dark:border-red-700"
                         : delivery.status === "DELIVERED"
-                        ? "bg-green-50 border-green-200 dark:bg-green-900/30 dark:border-green-700"
-                        : delivery.date.getTime() === today.getTime()
-                        ? "bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:border-blue-700"
-                        : "bg-gray-50 border-gray-200 dark:bg-gray-700/30 dark:border-gray-600"
-                    }`}
+                          ? "bg-green-50 border-green-200 dark:bg-green-900/30 dark:border-green-700"
+                          : delivery.date.getTime() === today.getTime()
+                            ? "bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:border-blue-700"
+                            : "bg-gray-50 border-gray-200 dark:bg-gray-700/30 dark:border-gray-600"
+                      }`}
                   >
                     <div className="flex items-center">
                       {delivery.status === "SKIPPED" && (
@@ -512,32 +542,28 @@ const ManageSubscriptionPage: React.FC = () => {
                       )}
                       {(delivery.status === "PENDING" ||
                         delivery.status === "SCHEDULED") && (
-                        <CalendarDays className="h-5 w-5 mr-2 text-gray-500 flex-shrink-0" />
-                      )}
+                          <CalendarDays className="h-5 w-5 mr-2 text-gray-500 flex-shrink-0" />
+                        )}
                       <div>
                         <span className="font-medium text-gray-800 dark:text-gray-100">
                           {format(delivery.date, "EEE, dd/MM/yyyy")}
                         </span>
                         <span
-                          className={`ml-2 text-xs font-semibold px-2 py-0.5 rounded-full ${
-                            delivery.status === "SKIPPED"
+                          className={`ml-2 text-xs font-semibold px-2 py-0.5 rounded-full ${delivery.status === "SKIPPED"
                               ? "bg-red-100 text-red-700 dark:bg-red-700 dark:text-red-100"
                               : delivery.status === "DELIVERED"
-                              ? "bg-green-100 text-green-700 dark:bg-primary dark:text-green-100"
-                              : delivery.status === "NOT_DELIVERED"
-                              ? "bg-orange-100 text-orange-700 dark:bg-orange-700 dark:text-orange-100"
-                              : delivery.status === "CANCELLED"
-                              ? "bg-gray-200 text-gray-600 dark:bg-gray-600 dark:text-gray-300"
-                              : delivery.date.getTime() === today.getTime() &&
-                                delivery.status === "SCHEDULED"
-                              ? "bg-blue-100 text-blue-700 dark:bg-blue-700 dark:text-blue-100"
-                              : "bg-gray-100 text-gray-700 dark:bg-gray-600 dark:text-gray-200"
-                          }`}
+                                ? "bg-green-100 text-green-700 dark:bg-primary dark:text-green-100"
+                                : delivery.status === "NOT_DELIVERED"
+                                  ? "bg-orange-100 text-orange-700 dark:bg-orange-700 dark:text-orange-100"
+                                  : delivery.status === "CANCELLED"
+                                    ? "bg-gray-200 text-gray-600 dark:bg-gray-600 dark:text-gray-300"
+                                    : delivery.date.getTime() === today.getTime() &&
+                                      delivery.status === "SCHEDULED"
+                                      ? "bg-blue-100 text-blue-700 dark:bg-blue-700 dark:text-blue-100"
+                                      : "bg-gray-100 text-gray-700 dark:bg-gray-600 dark:text-gray-200"
+                            }`}
                         >
-                          {delivery.date.getTime() === today.getTime() &&
-                          delivery.status === "SCHEDULED"
-                            ? "TODAY"
-                            : delivery.status}
+                          {getStatusLabel(delivery.status, delivery.originalStatus, delivery.date, today)}
                         </span>
                       </div>
                     </div>
@@ -562,7 +588,9 @@ const ManageSubscriptionPage: React.FC = () => {
                     {delivery.status === "SKIPPED" &&
                       isAfter(delivery.date, today) && (
                         <span className="text-xs text-red-500 italic ml-auto">
-                          Skipped by you
+                          {delivery.originalStatus === "SKIP_BY_CUSTOMER"
+                            ? "Skipped by you"
+                            : "Skipped"}
                         </span>
                       )}
                   </div>

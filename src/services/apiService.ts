@@ -337,11 +337,26 @@ export interface ApiDeliveryScheduleEntry {
   deliveryDate: string; // ISO date string
   quantity: number;
   status: DeliveryStatus;
+  agentId?: number; // Agency that handled the delivery
+  adminNotes?: string; // Admin notes for status changes
+  walletTransaction?: {
+    id: number;
+    amount: number;
+    type: 'CREDIT' | 'DEBIT';
+    status: 'PENDING' | 'PAID' | 'FAILED';
+    notes: string;
+    referenceNumber: string;
+    createdAt: string;
+  }; // Wallet transaction for skip by customer
   createdAt: string; // ISO date string
   updatedAt: string; // ISO date string
   product: ApiProduct;
   member: ApiMember;
   deliveryAddress: ApiDeliveryAddress;
-  subscription: ApiSubscriptionInfo;
+  subscription: ApiSubscriptionInfo & {
+    agencyId?: number;
+    agency?: { id: number; name: string; };
+  };
+  agent?: { id: number; name: string; }; // Agency that handled the delivery
   DepotProductVariant?: ApiDepotProductVariant;
 }

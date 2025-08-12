@@ -31,7 +31,7 @@ const getUserDetailsFromLocalStorage = (): { role: string | null; userId: string
       role = userObject.role || null;
       userId = userObject.id ? String(userObject.id) : null;
       name = userObject.name || null;
-      
+
       const agencyIdInUserObject = userObject.agencyId ? String(userObject.agencyId) : null;
       console.log('[StorageDebug] agencyId found in userObject:', agencyIdInUserObject);
 
@@ -51,8 +51,8 @@ const getUserDetailsFromLocalStorage = (): { role: string | null; userId: string
 
 // Define Agency interface
 interface ApiAgency {
-  id: string; 
-  name: string; 
+  id: string;
+  name: string;
 }
 
 interface WalletTransaction {
@@ -121,24 +121,23 @@ const getStatusOptions = (userRole: string) => {
   // Admin-only status options
   if (userRole === 'ADMIN') {
     baseOptions.push(
-      { 
-        value: DeliveryStatus.SKIP_BY_CUSTOMER, 
-        label: 'Skip by Customer (Credit to Wallet)', 
+      {
+        value: DeliveryStatus.SKIP_BY_CUSTOMER,
+        label: 'Skip by Customer (Credit to Wallet)',
         description: 'Customer requested skip - amount will be credited to wallet',
         color: 'bg-purple-100 text-purple-800',
-        requiresNote: true,
         adminOnly: true
       },
-      { 
-        value: DeliveryStatus.INDRAAI_DELIVERY, 
-        label: 'Indraai Delivery', 
+      {
+        value: DeliveryStatus.INDRAAI_DELIVERY,
+        label: 'Indraai Delivery',
         description: 'Special Indraai delivery method',
         color: 'bg-indigo-100 text-indigo-800',
         adminOnly: true
       },
-      { 
-        value: DeliveryStatus.DELIVER_TO_AGENT, 
-        label: 'Deliver to Agent', 
+      {
+        value: DeliveryStatus.DELIVER_TO_AGENT,
+        label: 'Deliver to Agent',
         description: 'Delivery assigned to agent',
         color: 'bg-orange-100 text-orange-800',
         adminOnly: true
@@ -159,13 +158,14 @@ const EnhancedDeliveryView: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<Record<string, boolean>>({});
-  
+
   // Admin status update modal state
   const [showStatusModal, setShowStatusModal] = useState<boolean>(false);
   const [modalDeliveryId, setModalDeliveryId] = useState<string>('');
   const [modalSelectedStatus, setModalSelectedStatus] = useState<DeliveryStatus>(DeliveryStatus.PENDING);
   const [modalNotes, setModalNotes] = useState<string>('');
   const [walletTransactions, setWalletTransactions] = useState<Record<string, WalletTransaction>>({});
+  const [adminNotes, setAdminNotes] = useState<Record<string, string>>({});
 
   const fetchDeliveries = useCallback(async (date: string, agencyIdForAdmin?: string) => {
     console.log(`[fetchDeliveries] Called. Date: ${date}, AdminAgencyID: ${agencyIdForAdmin}, UserRole: ${currentUser?.role}`);
@@ -202,6 +202,24 @@ const EnhancedDeliveryView: React.FC = () => {
       const data = await get<ApiDeliveryScheduleEntry[]>(fetchUrl);
       console.log('[fetchDeliveries] Raw data received:', data);
       setDeliveries(data || []);
+
+      // Initialize admin notes and wallet transactions from the fetched data
+      if (data && data.length > 0) {
+        const notesMap: Record<string, string> = {};
+        const transactionsMap: Record<string, WalletTransaction> = {};
+
+        data.forEach(delivery => {
+          if (delivery.adminNotes) {
+            notesMap[delivery.id] = delivery.adminNotes;
+          }
+          if (delivery.walletTransaction) {
+            transactionsMap[delivery.id] = delivery.walletTransaction;
+          }
+        });
+
+        setAdminNotes(notesMap);
+        setWalletTransactions(transactionsMap);
+      }
     } catch (err: any) {
       console.error('[fetchDeliveries] Error fetching deliveries:', err);
       setError(err.message || 'Failed to fetch deliveries.');
@@ -233,9 +251,9 @@ const EnhancedDeliveryView: React.FC = () => {
             console.warn('/agencies endpoint did not return an array or a known wrapped array structure.');
           }
 
-          setAgenciesList(agenciesArray.map(ag => ({ 
-            id: ag.id, 
-            name: (ag as any).user?.name || ag.name || `Agency ${ag.id}` 
+          setAgenciesList(agenciesArray.map(ag => ({
+            id: ag.id,
+            name: (ag as any).user?.name || ag.name || `Agency ${ag.id}`
           })));
         } catch (err: any) {
           setError(err.message || 'Failed to fetch agencies.');
@@ -284,6 +302,9 @@ const EnhancedDeliveryView: React.FC = () => {
       'Landmark': delivery.deliveryAddress?.landmark || 'N/A',
       'Delivery Instructions': delivery.subscription?.deliveryInstructions || 'N/A',
       'Status': delivery.status,
+      'Subscription Owner': delivery.subscription?.agency?.name || 'N/A',
+      'Handler Agency': delivery.agent?.name || 'Not assigned',
+      'Admin Notes': delivery.adminNotes || adminNotes[delivery.id] || 'N/A',
       'Phone': delivery.deliveryAddress.mobile || 'N/A',
     }));
 
@@ -300,6 +321,9 @@ const EnhancedDeliveryView: React.FC = () => {
       { wch: 15 }, // Landmark
       { wch: 30 }, // Delivery Instructions
       { wch: 15 }, // Status
+      { wch: 20 }, // Subscription Owner
+      { wch: 20 }, // Handler Agency
+      { wch: 30 }, // Admin Notes
       { wch: 15 }  // Phone
     ];
     worksheet['!cols'] = columnWidths;
@@ -315,7 +339,7 @@ const EnhancedDeliveryView: React.FC = () => {
 
   const handleQuickStatusUpdate = useCallback(async (deliveryId: string, newStatus: DeliveryStatus) => {
     console.log(`[QuickStatusUpdate] Attempting to update delivery ${deliveryId} to ${newStatus}`);
-    
+
     setUpdatingStatus(prev => ({ ...prev, [deliveryId]: true }));
     setError(null);
 
@@ -336,22 +360,30 @@ const EnhancedDeliveryView: React.FC = () => {
 
   const handleAdminStatusUpdate = useCallback(async (deliveryId: string, newStatus: DeliveryStatus, notes?: string) => {
     console.log(`[AdminStatusUpdate] Attempting to update delivery ${deliveryId} to ${newStatus} with notes: ${notes}`);
-    
+
     setUpdatingStatus(prev => ({ ...prev, [deliveryId]: true }));
     setError(null);
 
     try {
-      const response = await patch<AdminStatusUpdateResponse>(`/admin/deliveries/${deliveryId}/status`, { 
+      const response = await patch<AdminStatusUpdateResponse>(`/admin/deliveries/${deliveryId}/status`, {
         status: newStatus,
         notes: notes
       });
-      
+
       console.log(`[AdminStatusUpdate] Successfully updated status for ${deliveryId}`, response);
-      
-      // Update delivery status
+
+      // Update delivery status and admin notes
       setDeliveries(prevDeliveries =>
-        prevDeliveries.map(d => (d.id === deliveryId ? { ...d, status: newStatus } : d))
+        prevDeliveries.map(d => (d.id === deliveryId ? { ...d, status: newStatus, adminNotes: notes } : d))
       );
+
+      // Store admin notes if provided
+      if (notes) {
+        setAdminNotes(prev => ({
+          ...prev,
+          [deliveryId]: notes
+        }));
+      }
 
       // Store wallet transaction if present
       if (response.walletTransaction) {
@@ -369,7 +401,7 @@ const EnhancedDeliveryView: React.FC = () => {
       setError(err.response?.data?.error || err.message || 'Failed to update delivery status.');
       toast.error('Failed to update delivery status');
     }
-    
+
     setUpdatingStatus(prev => ({ ...prev, [deliveryId]: false }));
     setShowStatusModal(false);
     setModalNotes('');
@@ -506,6 +538,7 @@ const EnhancedDeliveryView: React.FC = () => {
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Delivery Instructions</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Handler</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
@@ -543,14 +576,47 @@ const EnhancedDeliveryView: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex flex-col space-y-2">
-                      <span className={clsx("px-2 inline-flex text-xs leading-5 font-semibold rounded-full", getStatusBadgeClass(delivery.status))}>
-                        {delivery.status.replace(/_/g, ' ')}
-                      </span>
+                      <div className="flex items-center space-x-2">
+                        <span className={clsx("px-2 inline-flex text-xs leading-5 font-semibold rounded-full", getStatusBadgeClass(delivery.status))}>
+                          {delivery.status.replace(/_/g, ' ')}
+                        </span>
+                        {delivery.status !== DeliveryStatus.PENDING && (
+                          <span className="text-xs text-gray-500" title="Status has been assigned and cannot be changed">
+                            🔒
+                          </span>
+                        )}
+                      </div>
+                      {/* Admin Notes Display */}
+                      {(delivery.adminNotes || adminNotes[delivery.id]) && (
+                        <div className="text-xs bg-blue-50 border border-blue-200 rounded p-2 mt-1">
+                          <div className="font-medium text-blue-800">Admin Notes:</div>
+                          <div className="text-blue-700">{delivery.adminNotes || adminNotes[delivery.id]}</div>
+                        </div>
+                      )}
                       {/* Wallet Transaction Display */}
-                      {walletTransactions[delivery.id] && (
-                        <div className="text-xs bg-green-50 border border-green-200 rounded p-2">
-                          <div className="font-medium text-green-800">Wallet Credit: ₹{walletTransactions[delivery.id].amount}</div>
-                          <div className="text-green-700">Ref: {walletTransactions[delivery.id].referenceNumber}</div>
+                      {(delivery.walletTransaction || walletTransactions[delivery.id]) && (
+                        <div className="text-xs bg-green-50 border border-green-200 rounded p-2 mt-1">
+                          <div className="font-medium text-green-800">
+                            Wallet Credit: ₹{(delivery.walletTransaction || walletTransactions[delivery.id]).amount}
+                          </div>
+                 
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex flex-col space-y-1">
+                      {/* Subscription Owner */}
+
+                      {/* Delivery Handler */}
+                      {delivery.agent && (
+                        <div className="text-xs text-blue-600">
+                          <span className="font-medium">Handler:</span> {delivery.agent.name}
+                        </div>
+                      )}
+                      {!delivery.agent && delivery.status !== DeliveryStatus.PENDING && (
+                        <div className="text-xs text-orange-600">
+                          <span className="font-medium">Handler:</span> Not assigned
                         </div>
                       )}
                     </div>
@@ -567,7 +633,7 @@ const EnhancedDeliveryView: React.FC = () => {
                               ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                               : "bg-green-600 text-white hover:bg-green-700 focus:ring-green-400"
                           )}
-                          title="Mark as Delivered"
+                          title={delivery.status !== DeliveryStatus.PENDING ? "Status already assigned" : "Mark as Delivered"}
                         >
                           {updatingStatus[delivery.id] ? (
                             <Spinner size="sm" color="white" className="mr-1 inline-block align-middle" />
@@ -583,7 +649,7 @@ const EnhancedDeliveryView: React.FC = () => {
                               ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                               : "bg-red-500 text-white hover:bg-red-600 focus:ring-red-400"
                           )}
-                          title="Mark as Not Delivered"
+                          title={delivery.status !== DeliveryStatus.PENDING ? "Status already assigned" : "Mark as Not Delivered"}
                         >
                           {updatingStatus[delivery.id] ? (
                             <Spinner size="sm" color="white" className="mr-1 inline-block align-middle" />
@@ -592,32 +658,34 @@ const EnhancedDeliveryView: React.FC = () => {
                         </button>
                       </div>
                     )}
-                    
+
                     {currentUser?.role === 'ADMIN' && (
                       <div className="space-y-1">
                         {/* Quick action buttons for common statuses */}
                         <div className="space-x-1">
                           <button
                             onClick={() => handleAdminStatusUpdate(delivery.id, DeliveryStatus.DELIVERED)}
-                            disabled={updatingStatus[delivery.id]}
+                            disabled={delivery.status !== DeliveryStatus.PENDING || updatingStatus[delivery.id]}
                             className={clsx(
                               "text-xs font-medium py-1 px-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1",
-                              updatingStatus[delivery.id]
+                              (delivery.status !== DeliveryStatus.PENDING || updatingStatus[delivery.id])
                                 ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                                 : "bg-green-600 text-white hover:bg-green-700 focus:ring-green-400"
                             )}
+                            title={delivery.status !== DeliveryStatus.PENDING ? "Status already assigned" : "Mark as Delivered"}
                           >
                             Delivered
                           </button>
                           <button
                             onClick={() => handleAdminStatusUpdate(delivery.id, DeliveryStatus.NOT_DELIVERED)}
-                            disabled={updatingStatus[delivery.id]}
+                            disabled={delivery.status !== DeliveryStatus.PENDING || updatingStatus[delivery.id]}
                             className={clsx(
                               "text-xs font-medium py-1 px-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1",
-                              updatingStatus[delivery.id]
+                              (delivery.status !== DeliveryStatus.PENDING || updatingStatus[delivery.id])
                                 ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                                 : "bg-red-500 text-white hover:bg-red-600 focus:ring-red-400"
                             )}
+                            title={delivery.status !== DeliveryStatus.PENDING ? "Status already assigned" : "Mark as Not Delivered"}
                           >
                             Not Delivered
                           </button>
@@ -625,13 +693,14 @@ const EnhancedDeliveryView: React.FC = () => {
                         {/* More options button */}
                         <button
                           onClick={() => openStatusModal(delivery.id, delivery.status)}
-                          disabled={updatingStatus[delivery.id]}
+                          disabled={delivery.status !== DeliveryStatus.PENDING || updatingStatus[delivery.id]}
                           className={clsx(
                             "text-xs font-medium py-1 px-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1 w-full",
-                            updatingStatus[delivery.id]
+                            (delivery.status !== DeliveryStatus.PENDING || updatingStatus[delivery.id])
                               ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                               : "bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-400"
                           )}
+                          title={delivery.status !== DeliveryStatus.PENDING ? "Status already assigned" : "More status options"}
                         >
                           More Options
                         </button>
@@ -651,72 +720,63 @@ const EnhancedDeliveryView: React.FC = () => {
           <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-1/2 lg:w-1/3 shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Update Delivery Status</h3>
-              
+
               <div className="mb-4">
                 <label htmlFor="statusSelect" className="block text-sm font-medium text-gray-700 mb-2">
                   Select Status:
                 </label>
-                <Select
-                  value={modalSelectedStatus}
-                  onValueChange={(value: DeliveryStatus) => setModalSelectedStatus(value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statusOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        <div className="flex items-center space-x-2">
-                          <span className={clsx("px-2 py-1 text-xs rounded-full", option.color)}>
-                            {option.label}
-                          </span>
-                          {option.adminOnly && <span className="text-xs text-blue-600">(Admin Only)</span>}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {selectedStatusOption?.description && (
-                  <p className="mt-1 text-sm text-gray-500">{selectedStatusOption.description}</p>
+                {deliveries.find(d => d.id === modalDeliveryId)?.status !== DeliveryStatus.PENDING ? (
+                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                    <p className="text-sm text-yellow-800">
+                      <strong>Status already assigned:</strong> This delivery already has a status of "{deliveries.find(d => d.id === modalDeliveryId)?.status.replace(/_/g, ' ')}" and cannot be changed.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <Select
+                      value={modalSelectedStatus}
+                      onValueChange={(value: DeliveryStatus) => setModalSelectedStatus(value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {statusOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            <div className="flex items-center space-x-2">
+                              <span className={clsx("px-2 py-1 text-xs rounded-full", option.color)}>
+                                {option.label}
+                              </span>
+                              {option.adminOnly && <span className="text-xs text-blue-600">(Admin Only)</span>}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {selectedStatusOption?.description && (
+                      <p className="mt-1 text-sm text-gray-500">{selectedStatusOption.description}</p>
+                    )}
+                  </>
                 )}
               </div>
 
-              {selectedStatusOption?.requiresNote && (
-                <div className="mb-4">
-                  <label htmlFor="statusNotes" className="block text-sm font-medium text-gray-700 mb-2">
-                    Notes (Required):
-                  </label>
-                  <textarea
-                    id="statusNotes"
-                    value={modalNotes}
-                    onChange={(e) => setModalNotes(e.target.value)}
-                    rows={3}
-                    className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="Enter reason for this status change..."
-                    required={selectedStatusOption?.requiresNote}
-                  />
-                </div>
-              )}
+
 
               <div className="flex items-center justify-end space-x-3 mt-6">
                 <button
                   onClick={closeStatusModal}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400"
                 >
-                  Cancel
+                  {deliveries.find(d => d.id === modalDeliveryId)?.status !== DeliveryStatus.PENDING ? 'Close' : 'Cancel'}
                 </button>
-                <button
-                  onClick={() => handleAdminStatusUpdate(modalDeliveryId, modalSelectedStatus, modalNotes)}
-                  disabled={selectedStatusOption?.requiresNote && !modalNotes.trim()}
-                  className={clsx(
-                    "px-4 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2",
-                    (selectedStatusOption?.requiresNote && !modalNotes.trim())
-                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      : "bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-400"
-                  )}
-                >
-                  Update Status
-                </button>
+                {deliveries.find(d => d.id === modalDeliveryId)?.status === DeliveryStatus.PENDING && (
+                  <button
+                    onClick={() => handleAdminStatusUpdate(modalDeliveryId, modalSelectedStatus, modalNotes)}
+                    className="px-4 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-400"
+                  >
+                    Update Status
+                  </button>
+                )}
               </div>
             </div>
           </div>

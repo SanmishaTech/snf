@@ -1,0 +1,1 @@
+import{j as r}from"./index-CbLoiRZv.js";import{P as i,C as o}from"./Footer-Cb69ot-i.js";import e from"./SNFLandingPage-CG2TBkfM.js";const n=()=>r.jsx(i,{children:r.jsx(o,{children:r.jsx(e,{})})});export{n as default};
