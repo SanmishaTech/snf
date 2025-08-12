@@ -111,6 +111,7 @@ export interface Product {
   isDairyProduct: boolean;
   maintainStock: boolean;
   categoryId?: number;
+  tags?: string;
   createdAt: Date;
   updatedAt: Date;
   category?: Category;
@@ -166,64 +167,14 @@ export interface ProductService {
   searchProducts(query: string, depotId: number): Promise<Product[]>;
 }
 
-/**
- * Cache entry structure
- */
-export interface CacheEntry<T> {
-  data: T;
-  timestamp: number;
-  ttl: number;
-}
-
-/**
- * Cache configuration
- */
-export interface CacheConfig {
-  products: CacheItemConfig;
-  variants: CacheItemConfig;
-  depotMapping: CacheItemConfig;
-}
-
-/**
- * Cache item configuration
- */
-export interface CacheItemConfig {
-  ttl: number;
-  maxSize: number;
-}
-
-/**
- * Cache manager interface
- */
-export interface CacheManager {
-  get<T>(key: string): Promise<T | null>;
-  set<T>(key: string, data: T, ttl?: number): Promise<void>;
-  invalidate(pattern: string): Promise<void>;
-  clear(): Promise<void>;
-  has(key: string): Promise<boolean>;
-  prefetch<T>(key: string, fetchFn: () => Promise<T>, ttl?: number): Promise<void>;
-  getOrSet<T>(key: string, fetchFn: () => Promise<T>, ttl?: number): Promise<T>;
-  getStats(): CacheStats;
-}
-
-/**
- * Cache statistics
- */
-export interface CacheStats {
-  hits: number;
-  misses: number;
-  size: number;
-  entries: number;
-}
 
 /**
  * Pricing error types
  */
-export type PricingErrorType = 
+export type PricingErrorType =
   | 'API_ERROR'
   | 'DEPOT_NOT_FOUND'
   | 'NETWORK_ERROR'
-  | 'CACHE_ERROR'
   | 'INVALID_PINCODE';
 
 /**
@@ -258,7 +209,6 @@ export interface PricingActions {
   setDepot: (depot: Depot) => Promise<void>;
   setLocation: (location: LocationData) => Promise<void>;
   refreshPricing: () => Promise<void>;
-  clearCache: () => Promise<void>;
   setError: (error: PricingError | GeolocationError | null) => void;
   setLoading: (loading: boolean) => void;
   setLocationPermission: (granted: boolean) => void;
@@ -293,13 +243,6 @@ export interface UseDepotReturn {
   refreshDepot: () => Promise<void>;
 }
 
-export interface UseCacheReturn {
-  get: <T>(key: string) => Promise<T | null>;
-  set: <T>(key: string, data: T, ttl?: number) => Promise<void>;
-  invalidate: (pattern: string) => Promise<void>;
-  clear: () => Promise<void>;
-  has: (key: string) => Promise<boolean>;
-}
 
 /**
  * Product with pricing information for display
@@ -307,8 +250,8 @@ export interface UseCacheReturn {
 export interface ProductWithPricing {
   product: Product;
   variants: DepotVariant[];
-  bestPrice: number;
-  originalPrice?: number;
+  buyOncePrice: number;
+  mrp: number;
   discount?: number;
   inStock: boolean;
   deliveryTime?: string;
@@ -401,7 +344,6 @@ export interface EventEmitter {
  */
 export interface PerformanceMetrics {
   apiResponseTime: number;
-  cacheHitRate: number;
   errorRate: number;
   lastUpdated: Date;
 }

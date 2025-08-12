@@ -127,17 +127,6 @@ const OrderReceivedPage = () => {
   }, [order]);
 
   const handleReceivedQuantityChange = (itemId: string, value: string) => {
-    const item = order?.items.find(i => i.id === itemId);
-
-    if (item && typeof item.deliveredQuantity !== 'undefined') {
-      const receivedQty = parseInt(value, 10);
-      if (!isNaN(receivedQty) && receivedQty > item.deliveredQuantity) {
-        toast.error(`Received quantity for ${item.productName} cannot exceed delivered quantity of ${item.deliveredQuantity}.`);
-        setReceivedQuantities(prev => ({ ...prev, [itemId]: String(item.deliveredQuantity) }));
-        return;
-      }
-    }
-
     setReceivedQuantities(prev => ({ ...prev, [itemId]: value }));
   };
 
@@ -178,10 +167,6 @@ const OrderReceivedPage = () => {
           return null; 
         }
         
-        if (itemDetail.deliveredQuantity !== undefined && receivedQuantity > itemDetail.deliveredQuantity) {
-          toast.info(`Received quantity for ${itemDetail.productName} (${receivedQuantity}) cannot exceed delivered quantity (${itemDetail.deliveredQuantity}).`);
-          return null;
-        }
         return {
           orderItemId: itemId,
           receivedQuantity: receivedQuantity,
@@ -192,8 +177,8 @@ const OrderReceivedPage = () => {
     if (itemsToSubmit.length === 0) {
       toast.info(
         currentUserProfile.role === 'AGENCY' 
-        ? "No quantities entered for your agency's items, or all quantities are invalid/exceed delivered amounts. Nothing to submit."
-        : "No quantities entered or all quantities are invalid/exceed delivered amounts. Nothing to submit."
+        ? "No quantities entered for your agency's items, or all quantities are invalid. Nothing to submit."
+        : "No quantities entered or all quantities are invalid. Nothing to submit."
       );
       return;
     }

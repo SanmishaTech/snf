@@ -14,7 +14,7 @@ export class ProductServiceImpl implements ProductService {
    */
   async getProducts(depotId?: number): Promise<Product[]> {
     try {
-      const url = new URL(`${this.API_BASE_URL}/products/public`);
+      const url = new URL(`${this.API_BASE_URL}/api/products/public`);
       if (depotId) {
         url.searchParams.append('depotId', depotId.toString());
       }
@@ -25,13 +25,32 @@ export class ProductServiceImpl implements ProductService {
         throw new Error(`API request failed: ${response.status}`);
       }
 
-      const result: ApiResponse<Product[]> = await response.json();
+      const result: ApiResponse<any> = await response.json();
       
       if (!result.success || !result.data) {
         return [];
       }
 
-      return result.data;
+      // Handle different response formats and filter to non-dairy products only
+      if (Array.isArray(result.data)) {
+        // Direct array of products
+        console.log('Raw products data:', result.data);
+        // Temporarily show all products for debugging
+        const filtered = result.data; // .filter((p: any) => p && p.isDairyProduct !== true);
+        console.log('Filtered non-dairy products:', filtered);
+        console.log('Total products:', result.data.length, 'Non-dairy:', filtered.length);
+        return filtered;
+      } else if (result.data.products && Array.isArray(result.data.products)) {
+        // Object with products array
+        console.log('Raw products data:', result.data.products);
+        // Temporarily show all products for debugging
+        const filtered = result.data.products; // .filter((p: any) => p && p.isDairyProduct !== true);
+        console.log('Filtered non-dairy products:', filtered);
+        console.log('Total products:', result.data.products.length, 'Non-dairy:', filtered.length);
+        return filtered;
+      }
+      
+      return [];
     } catch (error) {
       console.error('Error fetching products:', error);
       throw error;
@@ -43,59 +62,9 @@ export class ProductServiceImpl implements ProductService {
    */
   async getProductVariants(productId: number, depotId: number): Promise<DepotVariant[]> {
     try {
-      const url = new URL(`${this.API_BASE_URL}/public/depot-variants/${productId}`);
+      // Use the correct endpoint that returns variants for a product
+      const url = new URL(`${this.API_BASE_URL}/api/products/public`);
       url.searchParams.append('depotId', depotId.toString());
-
-      const response = await this.fetchWithRetry(url.toString());
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          return []; // No variants found
-        }
-        throw new Error(`API request failed: ${response.status}`);
-      }
-
-      const result: ApiResponse<any[]> = await response.json();
-      
-      if (!result.success || !result.data) {
-        return [];
-      }
-
-      // Transform the API response to match our DepotVariant interface
-      return result.data.map((variant: any) => ({
-        id: variant.id,
-        depotId: variant.depotId || variant.depot?.id,
-        productId: variant.productId || variant.product?.id,
-        name: variant.name,
-        hsnCode: variant.hsnCode,
-        minimumQty: variant.minimumQty || 1,
-        closingQty: variant.closingQty || 0,
-        notInStock: variant.notInStock || false,
-        isHidden: variant.isHidden || false,
-        buyOncePrice: variant.buyOncePrice,
-        price15Day: variant.price15Day,
-        price1Month: variant.price1Month,
-        price3Day: variant.price3Day,
-        price7Day: variant.price7Day,
-        mrp: variant.mrp || variant.price || 0,
-        purchasePrice: variant.purchasePrice,
-        createdAt: variant.createdAt || new Date(),
-        updatedAt: variant.updatedAt || new Date(),
-        depot: variant.depot,
-        product: variant.product,
-      }));
-    } catch (error) {
-      console.error('Error fetching product variants:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get all depot variants for a specific depot
-   */
-  async getDepotVariants(depotId: number): Promise<DepotVariant[]> {
-    try {
-      const url = new URL(`${this.API_BASE_URL}/public/depots/${depotId}/variants`);
 
       const response = await this.fetchWithRetry(url.toString());
       
@@ -112,12 +81,168 @@ export class ProductServiceImpl implements ProductService {
         return [];
       }
 
-      // Handle both array and object response formats
-      const variants = Array.isArray(result.data) ? result.data : result.data.variants || [];
+      // Find the specific product and extract its variants
+      let productVariants: any[] = [];
+      let parentProduct: any | null = null;
       
-      return variants.map((variant: any) => ({
+      if (Array.isArray(result.data)) {
+        // Direct array of products with variants
+        const product = result.data.find((p: any) => p.id === productId);
+        if (product && product.isDairyProduct === false && product.variants && Array.isArray(product.variants)) {
+          parentProduct = product;
+          productVariants = product.variants;
+        }
+      } else if (result.data.products && Array.isArray(result.data.products)) {
+        // Object with products array
+        const product = result.data.products.find((p: any) => p.id === productId);
+        // Temporarily allow all products for debugging
+        if (product && product.variants && Array.isArray(product.variants)) { // && product.isDairyProduct !== true
+          parentProduct = product;
+          productVariants = product.variants;
+        }
+      }
+
+      // If product was found but is dairy, return empty to indicate not available
+      if (!parentProduct) {
+        return [];
+      }
+
+      // Transform the API response to match our DepotVariant interface
+      return productVariants.map((variant: any) => ({
         id: variant.id,
-        depotId: variant.depotId || variant.depot?.id,
+        depotId: depotId,
+        productId: productId,
+        name: variant.name,
+        hsnCode: variant.hsnCode,
+        minimumQty: variant.minimumQty || 1,
+        closingQty: variant.closingQty || 0,
+        notInStock: variant.notInStock || false,
+        isHidden: variant.isHidden || false,
+        buyOncePrice: variant.buyOncePrice ? parseFloat(variant.buyOncePrice) : undefined,
+        price15Day: variant.price15Day ? parseFloat(variant.price15Day) : undefined,
+        price1Month: variant.price1Month ? parseFloat(variant.price1Month) : undefined,
+        price3Day: variant.price3Day ? parseFloat(variant.price3Day) : undefined,
+        price7Day: variant.price7Day ? parseFloat(variant.price7Day) : undefined,
+        mrp: parseFloat(variant.mrp) || 0,
+        purchasePrice: variant.purchasePrice ? parseFloat(variant.purchasePrice) : undefined,
+        createdAt: new Date(variant.createdAt || Date.now()),
+        updatedAt: new Date(variant.updatedAt || Date.now()),
+        depot: {
+          id: depotId,
+          name: 'Depot',
+          address: '',
+          isOnline: true,
+        },
+        product: parentProduct ? {
+          id: parentProduct.id,
+          name: parentProduct.name,
+          description: parentProduct.description,
+          attachmentUrl: parentProduct.attachmentUrl,
+          url: parentProduct.url,
+          isDairyProduct: parentProduct.isDairyProduct,
+          maintainStock: parentProduct.maintainStock,
+          categoryId: parentProduct.categoryId,
+          category: parentProduct.category,
+          createdAt: new Date(parentProduct.createdAt || Date.now()),
+          updatedAt: new Date(parentProduct.updatedAt || Date.now()),
+        } : {
+          id: productId,
+          name: 'Product',
+          description: '',
+          isDairyProduct: false,
+          maintainStock: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      }));
+    } catch (error) {
+      console.error('Error fetching product variants:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all depot variants for a specific depot
+   */
+  async getDepotVariants(depotId: number): Promise<DepotVariant[]> {
+    try {
+      // Use the correct endpoint that returns products with variants
+      const url = new URL(`${this.API_BASE_URL}/api/products/public`);
+      url.searchParams.append('depotId', depotId.toString());
+
+      const response = await this.fetchWithRetry(url.toString());
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          return []; // No variants found
+        }
+        throw new Error(`API request failed: ${response.status}`);
+      }
+
+      const result: ApiResponse<any> = await response.json();
+      
+      if (!result.success || !result.data) {
+        return [];
+      }
+
+      // Handle the response format from getPublicProductsWithVariants
+      let allVariants: any[] = [];
+      
+      if (Array.isArray(result.data)) {
+        // Direct array of products with variants
+        result.data.forEach((product: any) => {
+          // Temporarily allow all products for debugging
+          if (product.variants && Array.isArray(product.variants)) { // && product.isDairyProduct !== true
+            // Add product reference to each variant
+            const variantsWithProduct = product.variants.map((variant: any) => ({
+              ...variant,
+              product: {
+                id: product.id,
+                name: product.name,
+                description: product.description,
+                attachmentUrl: product.attachmentUrl,
+                url: product.url,
+                isDairyProduct: product.isDairyProduct,
+                maintainStock: product.maintainStock,
+                categoryId: product.categoryId,
+                category: product.category,
+                createdAt: product.createdAt,
+                updatedAt: product.updatedAt,
+              }
+            }));
+            allVariants = [...allVariants, ...variantsWithProduct];
+          }
+        });
+      } else if (result.data.products && Array.isArray(result.data.products)) {
+        // Object with depot and products structure
+        result.data.products.forEach((product: any) => {
+          // Temporarily allow all products for debugging
+          if (product.variants && Array.isArray(product.variants)) { // && product.isDairyProduct !== true
+            // Add product reference to each variant
+            const variantsWithProduct = product.variants.map((variant: any) => ({
+              ...variant,
+              product: {
+                id: product.id,
+                name: product.name,
+                description: product.description,
+                attachmentUrl: product.attachmentUrl,
+                url: product.url,
+                isDairyProduct: product.isDairyProduct,
+                maintainStock: product.maintainStock,
+                categoryId: product.categoryId,
+                category: product.category,
+                createdAt: product.createdAt,
+                updatedAt: product.updatedAt,
+              }
+            }));
+            allVariants = [...allVariants, ...variantsWithProduct];
+          }
+        });
+      }
+      
+      return allVariants.map((variant: any) => ({
+        id: variant.id,
+        depotId: depotId,
         productId: variant.productId || variant.product?.id,
         name: variant.name,
         hsnCode: variant.hsnCode,
@@ -125,15 +250,15 @@ export class ProductServiceImpl implements ProductService {
         closingQty: variant.closingQty || 0,
         notInStock: variant.notInStock || false,
         isHidden: variant.isHidden || false,
-        buyOncePrice: variant.buyOncePrice,
-        price15Day: variant.price15Day,
-        price1Month: variant.price1Month,
-        price3Day: variant.price3Day,
-        price7Day: variant.price7Day,
-        mrp: variant.mrp || variant.price || 0,
-        purchasePrice: variant.purchasePrice,
-        createdAt: variant.createdAt || new Date(),
-        updatedAt: variant.updatedAt || new Date(),
+        buyOncePrice: variant.buyOncePrice ? parseFloat(variant.buyOncePrice) : undefined,
+        price15Day: variant.price15Day ? parseFloat(variant.price15Day) : undefined,
+        price1Month: variant.price1Month ? parseFloat(variant.price1Month) : undefined,
+        price3Day: variant.price3Day ? parseFloat(variant.price3Day) : undefined,
+        price7Day: variant.price7Day ? parseFloat(variant.price7Day) : undefined,
+        mrp: parseFloat(variant.mrp) || 0,
+        purchasePrice: variant.purchasePrice ? parseFloat(variant.purchasePrice) : undefined,
+        createdAt: new Date(variant.createdAt || Date.now()),
+        updatedAt: new Date(variant.updatedAt || Date.now()),
         depot: variant.depot,
         product: variant.product,
       }));
@@ -190,7 +315,7 @@ export class ProductServiceImpl implements ProductService {
         closingQty: variant.closingQty || 0,
         notInStock: variant.notInStock || false,
         isHidden: variant.isHidden || false,
-        buyOncePrice: variant.buyOncePrice,
+        buyOncePrice: variant.buyOncePrice ? parseFloat(variant.buyOncePrice) : undefined,
         price15Day: variant.price15Day,
         price1Month: variant.price1Month,
         price3Day: variant.price3Day,
@@ -213,7 +338,7 @@ export class ProductServiceImpl implements ProductService {
    */
   async getPublicProducts(): Promise<Product[]> {
     try {
-      const url = new URL(`${this.API_BASE_URL}/products/public`);
+      const url = new URL(`${this.API_BASE_URL}/api/products/public`);
 
       const response = await this.fetchWithRetry(url.toString());
       
@@ -239,7 +364,7 @@ export class ProductServiceImpl implements ProductService {
    */
   async getProductsByCategory(categoryId: number, depotId?: number): Promise<Product[]> {
     try {
-      const url = new URL(`${this.API_BASE_URL}/products/public`);
+      const url = new URL(`${this.API_BASE_URL}/api/products/public`);
       url.searchParams.append('categoryId', categoryId.toString());
       if (depotId) {
         url.searchParams.append('depotId', depotId.toString());
@@ -257,7 +382,7 @@ export class ProductServiceImpl implements ProductService {
         return [];
       }
 
-      return result.data;
+      return (result.data as any[]).filter((p: any) => p && p.isDairyProduct !== true);
     } catch (error) {
       console.error('Error fetching products by category:', error);
       throw error;
@@ -269,7 +394,7 @@ export class ProductServiceImpl implements ProductService {
    */
   async searchProducts(query: string, depotId?: number): Promise<Product[]> {
     try {
-      const url = new URL(`${this.API_BASE_URL}/products/public`);
+      const url = new URL(`${this.API_BASE_URL}/api/products/public`);
       url.searchParams.append('search', query);
       if (depotId) {
         url.searchParams.append('depotId', depotId.toString());
@@ -287,7 +412,7 @@ export class ProductServiceImpl implements ProductService {
         return [];
       }
 
-      return result.data;
+      return (result.data as any[]).filter((p: any) => p && p.isDairyProduct === false);
     } catch (error) {
       console.error('Error searching products:', error);
       throw error;
@@ -299,7 +424,7 @@ export class ProductServiceImpl implements ProductService {
    */
   async getProductById(productId: number): Promise<Product | null> {
     try {
-      const url = new URL(`${this.API_BASE_URL}/products/${productId}`);
+      const url = new URL(`${this.API_BASE_URL}/api/products/${productId}`);
 
       const response = await this.fetchWithRetry(url.toString());
       
@@ -310,13 +435,23 @@ export class ProductServiceImpl implements ProductService {
         throw new Error(`API request failed: ${response.status}`);
       }
 
-      const result: ApiResponse<Product> = await response.json();
+      const result = await response.json();
       
-      if (!result.success || !result.data) {
-        return null;
+      // Handle both wrapped response format {success: true, data: {...}}
+      // and direct response format {...}
+      if (result && typeof result === 'object') {
+        if (result.success && result.data) {
+          // Wrapped format
+          const p = result.data as any;
+          return p && p.isDairyProduct !== true ? p : null;
+        } else if (result.id) {
+          // Direct format - the API returns the product directly
+          const p = result as any;
+          return p && p.isDairyProduct !== true ? p : null;
+        }
       }
 
-      return result.data;
+      return null;
     } catch (error) {
       console.error('Error fetching product by ID:', error);
       throw error;
@@ -332,7 +467,7 @@ export class ProductServiceImpl implements ProductService {
     }
 
     try {
-      const url = new URL(`${this.API_BASE_URL}/products/batch`);
+      const url = new URL(`${this.API_BASE_URL}/api/products/batch`);
       const response = await this.fetchWithRetry(url.toString(), {
         method: 'POST',
         headers: {
@@ -427,7 +562,7 @@ export class ProductServiceImpl implements ProductService {
    */
   async getCategories(): Promise<any[]> {
     try {
-      const url = new URL(`${this.API_BASE_URL}/categories/public`);
+      const url = new URL(`${this.API_BASE_URL}/api/admin/categories/public/AllCategories`);
 
       const response = await this.fetchWithRetry(url.toString());
       

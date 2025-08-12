@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { usePricingContext } from '../contexts/PricingContext';
+import { usePricing } from '../context/PricingContext';
 import { useProducts } from './useProducts';
 import { useDepot } from './useDepot';
 import { ProductWithPricing } from '../types';
@@ -22,10 +22,10 @@ export const useRealTimePricing = ({
   enableBackgroundRefresh = true,
   onPriceUpdate,
 }: UseRealTimePricingOptions = {}): UseRealTimePricingReturn => {
-  const { state: pricingState, actions: pricingActions } = usePricingContext();
+  const { state: pricingState, actions: pricingActions } = usePricing();
   const { depot } = useDepot(pricingState.currentDepot?.id ? undefined : pricingState.userLocation?.pincode);
   const { products, refresh: refreshProducts, error: productsError } = useProducts(depot?.id);
-  
+
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const isRefreshingRef = useRef(false);
   const lastRefreshTimeRef = useRef<Date | null>(null);
@@ -38,23 +38,23 @@ export const useRealTimePricing = ({
     try {
       isRefreshingRef.current = true;
       refreshErrorRef.current = null;
-      
+
       // Refresh products to get updated pricing
       await refreshProducts();
-      
+
       // Update last refresh time
       lastRefreshTimeRef.current = new Date();
-      
+
       // Notify callback if provided
       if (onPriceUpdate && products) {
         onPriceUpdate(products);
       }
-      
+
       // Note: setLastPriceUpdate is not available in PricingActions, so we'll skip this
     } catch (error) {
       console.error('Error refreshing prices:', error);
       refreshErrorRef.current = error as Error;
-      
+
       // Update pricing context with error
       pricingActions.setError({
         type: 'API_ERROR',
@@ -79,14 +79,14 @@ export const useRealTimePricing = ({
         intervalRef.current = null;
       }
     };
-  }, [enableBackgroundRefresh, depot, refreshInterval, refreshPrices]);
+  }, [enableBackgroundRefresh, depot, refreshInterval]); // Remove refreshPrices from dependencies
 
   // Refresh prices when depot changes
   useEffect(() => {
     if (depot) {
       refreshPrices();
     }
-  }, [depot, refreshPrices]);
+  }, [depot]); // Remove refreshPrices from dependencies to prevent infinite loops
 
   // Handle visibility change to pause/resume refresh when tab is not visible
   useEffect(() => {
@@ -101,7 +101,7 @@ export const useRealTimePricing = ({
         // Resume refresh when tab becomes visible
         if (enableBackgroundRefresh && depot) {
           intervalRef.current = setInterval(refreshPrices, refreshInterval);
-          
+
           // Also refresh immediately if it's been more than the refresh interval
           if (lastRefreshTimeRef.current) {
             const timeSinceLastRefresh = Date.now() - lastRefreshTimeRef.current.getTime();
@@ -118,7 +118,7 @@ export const useRealTimePricing = ({
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [enableBackgroundRefresh, depot, refreshInterval, refreshPrices]);
+  }, [enableBackgroundRefresh, depot, refreshInterval]); // Remove refreshPrices dependency
 
   // Handle online/offline status
   useEffect(() => {
@@ -147,14 +147,14 @@ export const useRealTimePricing = ({
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [depot, refreshPrices, pricingActions]);
+  }, [depot, pricingActions]); // Remove refreshPrices dependency
 
   return {
     isRefreshing: isRefreshingRef.current,
     lastRefreshTime: lastRefreshTimeRef.current,
     refreshPrices,
     refreshError: refreshErrorRef.current instanceof Error ? refreshErrorRef.current :
-                  productsError instanceof Error ? productsError : null,
+      productsError instanceof Error ? productsError : null,
   };
 };
 

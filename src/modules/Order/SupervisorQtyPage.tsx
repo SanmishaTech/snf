@@ -136,20 +136,6 @@ const SupervisorQtyPage = () => {
   }, [order]);
 
   const handleSupervisorQuantityChange = (itemId: string, value: string) => {
-    const item = order?.items.find(i => i.id === itemId);
-
-    if (item) {
-      const supervisorQty = parseInt(value, 10);
-      const maxAllowedQuantity = item.deliveredQuantity || item.quantity;
-
-      if (!isNaN(supervisorQty) && supervisorQty > maxAllowedQuantity) {
-        const limitType = item.deliveredQuantity ? 'delivered' : 'ordered';
-        toast.error(`Supervisor quantity for ${item.productName} cannot exceed ${limitType} quantity of ${maxAllowedQuantity}.`);
-        setSupervisorQuantities(prev => ({ ...prev, [itemId]: String(maxAllowedQuantity) }));
-        return;
-      }
-    }
-
     setSupervisorQuantities(prev => ({ ...prev, [itemId]: value }));
   };
 
@@ -171,15 +157,6 @@ const SupervisorQtyPage = () => {
           return null; 
         }
         
-        // Supervisor quantity should not exceed delivered quantity (if available)
-        // If no delivered quantity is recorded, supervisor can record up to the ordered quantity
-        const maxAllowedQuantity = itemDetail.deliveredQuantity || itemDetail.quantity;
-
-        if (supervisorQuantity > maxAllowedQuantity) {
-          const limitType = itemDetail.deliveredQuantity ? 'delivered' : 'ordered';
-          toast.info(`Supervisor quantity for ${itemDetail.productName} (${supervisorQuantity}) cannot exceed ${limitType} quantity (${maxAllowedQuantity}).`);
-          return null;
-        }
         return {
           orderItemId: itemId,
           supervisorQuantity: supervisorQuantity,
@@ -188,7 +165,7 @@ const SupervisorQtyPage = () => {
       .filter(item => item !== null) as { orderItemId: string; supervisorQuantity: number }[];
 
     if (itemsToSubmit.length === 0) {
-      toast.info("No quantities entered or all quantities are invalid/exceed allowed amounts. Nothing to submit.");
+      toast.info("No quantities entered or all quantities are invalid. Nothing to submit.");
       return;
     }
     recordSupervisorQtyMutation.mutate({ items: itemsToSubmit });
@@ -293,7 +270,6 @@ const SupervisorQtyPage = () => {
                                 onChange={(e) => handleSupervisorQuantityChange(item.id, e.target.value)}
                                 className="w-20 sm:w-24 text-right dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 text-xs sm:text-sm"
                                 min="0"
-                                max={item.deliveredQuantity || item.quantity || undefined}
                                 disabled={isRecorded}
                               />
                             {item.depotVariantName && <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[60px] sm:max-w-none">{item.depotVariantName}</span>}

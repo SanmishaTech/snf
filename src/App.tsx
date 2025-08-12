@@ -5,6 +5,7 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
+  Navigate,
 } from "react-router-dom";
 import { ThemeProvider } from "./providers/theme-provider"; // Import ThemeProvider
 import { MobileThemeEnforcer } from "./components/MobileThemeEnforcer"; // Import MobileThemeEnforcer
@@ -66,7 +67,7 @@ import CreateAddressPage from "./modules/Address/CreateAddressPage";
 import EditAddressPage from "./modules/Address/EditAddressPage";
 import { Toaster } from "sonner";
 import AdminSubscriptionList from "./modules/AdminSubscription/AdminSubscriptionList"; // Added for admin subscriptions list
-import AgencyDeliveryView from "./modules/agency-delivery/AgencyDeliveryView"; // Added for agency delivery management
+import EnhancedDeliveryView from "./modules/agency-delivery/EnhancedDeliveryView"; // Enhanced delivery management with admin features
 import WalletAdmin from "./modules/Wallet/AdminWalletPage";
 import AdminMembersListPage from "./modules/Wallet/AdminMembersListPage"; // Added for Admin Members List Page
 import AreaMasterListPage from "./modules/Areamaster/AreaMasterListPage"; // Added for Area Master Management
@@ -94,6 +95,8 @@ import "./App.css";
  
  
  
+import SNFOrdersListPage from "./modules/SNFOrders/SNFOrdersListPage";
+import SNFOrderDetailPage from "./modules/SNFOrders/SNFOrderDetailPage";
 
 const App = () => {
   useEffect(() => {
@@ -102,10 +105,23 @@ const App = () => {
 
   // Lazy-load the SNF landing page to code-split the new feature
   const SNFLandingPage = React.lazy(() => import("./modules/SNF/SNFLandingPage"));
-  // Lazy-load SNF Product Detail page
-  const SNFProductDetailPage = React.lazy(() => import("./modules/SNF/components/ProductDetailPage"));
+  // Lazy-load SNF Product Detail page wrapper with PricingProvider
+  const SNFProductDetailWrapper = React.lazy(() => import("./modules/SNF/SNFProductDetailWrapper"));
   // Lazy-load the PricingProvider wrapper for SNF
   const SNFWrapper = React.lazy(() => import("./modules/SNF/SNFWrapper"));
+  // Lazy-load the Checkout page wrapper for SNF
+  const SNFCheckoutWrapper = React.lazy(() => import("./modules/SNF/SNFCheckoutWrapper"));
+  // Lazy-load the Address page wrapper for SNF
+  const SNFAddressWrapper = React.lazy(() => import("./modules/SNF/SNFAddressWrapper"));
+
+  // Get user from localStorage to restrict access to admin-only routes
+  let user: any = null;
+  try {
+    const userString = localStorage.getItem("user");
+    user = userString ? JSON.parse(userString) : null;
+  } catch {
+    user = null;
+  }
 
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
@@ -147,6 +163,56 @@ const App = () => {
               </React.Suspense>
             }
           />
+
+          <Route
+            path="/snf/checkout"
+            element={
+              <React.Suspense
+                fallback={
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      <div className="lg:col-span-2 space-y-3">
+                        {Array.from({ length: 3 }).map((_, i) => (
+                          <div key={i} className="h-28 bg-muted/40 rounded-md animate-pulse" />
+                        ))}
+                      </div>
+                      <div className="space-y-3">
+                        <div className="h-36 bg-muted/40 rounded-md animate-pulse" />
+                        <div className="h-10 bg-muted/40 rounded-md animate-pulse" />
+                      </div>
+                    </div>
+                  </div>
+                }
+              >
+                <SNFCheckoutWrapper />
+              </React.Suspense>
+            }
+          />
+
+          <Route
+            path="/snf/address"
+            element={
+              <React.Suspense
+                fallback={
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      <div className="lg:col-span-2 space-y-3">
+                        {Array.from({ length: 3 }).map((_, i) => (
+                          <div key={i} className="h-28 bg-muted/40 rounded-md animate-pulse" />
+                        ))}
+                      </div>
+                      <div className="space-y-3">
+                        <div className="h-36 bg-muted/40 rounded-md animate-pulse" />
+                        <div className="h-10 bg-muted/40 rounded-md animate-pulse" />
+                      </div>
+                    </div>
+                  </div>
+                }
+              >
+                <SNFAddressWrapper />
+              </React.Suspense>
+            }
+          />
           <Route
             path="/snf/product/:id"
             element={
@@ -166,7 +232,7 @@ const App = () => {
                   </div>
                 }
               >
-                <SNFProductDetailPage />
+                <SNFProductDetailWrapper />
               </React.Suspense>
             }
           />
@@ -240,7 +306,7 @@ const App = () => {
             <Route path="/admin/products/:id" element={<ProductDetailPage />} /> {/* New route for product detail */}
             <Route path="/admin/subscriptions" element={<AdminSubscriptionList />} />
             <Route path="/depot-order-details" element={<DepotOrderDetails />} /> {/* Added for admin subscriptions list */}
-            <Route path="/admin/delivery" element={<AgencyDeliveryView />} /> {/* Added for agency delivery management */}
+            <Route path="/admin/delivery" element={<EnhancedDeliveryView />} /> {/* Enhanced delivery management with admin features */}
             <Route path="/admin/categories" element={<CategoryMasterListPage />} /> {/* Route for Category Master */}
             <Route path="/admin/cities" element={<CityMasterListPage />} />
             <Route path="/admin/locations" element={<LocationMasterListPage />} />
@@ -249,6 +315,8 @@ const App = () => {
             <Route path="/admin/teams" element={<Teams />} /> {/* Added for Teams Management */}
             <Route path="/admin/banners" element={<BannerListPage />} /> {/* Added for Banner Master Management */}
             <Route path="/admin/depot-variants" element={<DepotProductVariantListPage />} /> {/* Added for Depot Product Variant Management */}
+            <Route path="/admin/snf-orders" element={<SNFOrdersListPage />} />
+            <Route path="/admin/snf-orders/:id" element={<SNFOrderDetailPage />} />
           </Route>
 
           {/* Other routes using MainLayout (e.g., Vendor routes) - not protected by AdminProtectedRoute */}

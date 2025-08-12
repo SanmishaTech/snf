@@ -189,11 +189,11 @@ const HeroSection: React.FC<HeroSectionProps> = ({
           initial={{ opacity: 1, y: 20 }}
           animate={{ opacity: isLoaded ? 1 : 0, y: isLoaded ? 1 : 20 }}
           transition={{ duration: 0.6, delay: 1.0 }}
-          className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-20 
-                     lg:bottom-20 
-                     md:bottom-16 
-                     sm:bottom-12 
-                     max-sm:bottom-8"
+          className="absolute bottom-1 left-1/2 transform -translate-x-1/2 z-20 
+                     lg:bottom-1 
+                     md:bottom-10 
+                     sm:bottom-8 
+                     max-sm:bottom-6"
         >
           <button 
             onClick={handleJoinMilkClub}

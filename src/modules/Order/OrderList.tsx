@@ -397,7 +397,9 @@ const OrderList = () => {
                   <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Agency/Depot</TableHead>
                   <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Order Date</TableHead>
                   <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Delivery Date</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Total Amount</TableHead>
+                  {currentUserRole !== "AGENCY" && currentUserRole !== "SUPERVISOR" && (
+                    <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Total Amount</TableHead>
+                  )}
                   {currentUserRole === "ADMIN" && (
                     <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Quantities (O/D/R/S)</TableHead>
                   )}
@@ -461,7 +463,9 @@ const OrderList = () => {
                     </TableCell>
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{format(new Date(order.orderDate), "dd/MM/yyyy")}</TableCell>
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{format(new Date(order.deliveryDate), "dd/MM/yyyy")}</TableCell>
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{formatCurrency(order.totalAmount)}</TableCell>
+                    {currentUserRole !== "AGENCY" && currentUserRole !== "SUPERVISOR" && (
+                      <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{formatCurrency(order.totalAmount)}</TableCell>
+                    )}
                     {currentUserRole === "ADMIN" && (
                       <TableCell className="px-6 py-4 whitespace-nowrap text-sm">
                         <div className="flex flex-col space-y-1">

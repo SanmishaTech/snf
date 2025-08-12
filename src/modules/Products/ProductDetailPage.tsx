@@ -55,6 +55,7 @@ interface ProductData {
   description: string | null;
   attachmentUrl: string | null;
   isDairyProduct?: boolean;
+  tags?: string;
 }
 
 const ProductDetailPage: React.FC = () => {
@@ -145,6 +146,8 @@ const ProductDetailPage: React.FC = () => {
     queryKey: ['product', productId],
     queryFn: () => fetchProductById(productId!),
     enabled: !!productId,
+    staleTime: 0,
+    cacheTime: 0,
   });
 
   const selectedDepot = depots.find(d => d.id === selectedDepotId);
@@ -303,7 +306,6 @@ const ProductDetailPage: React.FC = () => {
     );
   }
 
-  // Product benefits data
   const benefits = [
     {
       icon: <Leaf className="w-6 h-6 text-green-600" />,
@@ -321,6 +323,9 @@ const ProductDetailPage: React.FC = () => {
       description: "Pause or modify anytime"
     }
   ];
+
+  // Get tags from backend, split by comma and filter empty ones
+  const tagList = product?.tags ? product.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : [];
 
   return (
     <div className="container min-w-full px-4 py-8 max-sm:py-2 bg-white">
@@ -355,6 +360,14 @@ const ProductDetailPage: React.FC = () => {
           {/* Product Details */}
           <div className="py-4">
             <h1 className="text-3xl md:text-4xl font-bold mb-1">{product.name}</h1>
+
+            <div className="mt-2">
+              {tagList.map(tag => (
+                <span key={tag} className="bg-blue-100 text-blue-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-full">
+                  {tag}
+                </span>
+              ))}
+            </div>
 
             {/* <StarRating rating={5} /> */}
 

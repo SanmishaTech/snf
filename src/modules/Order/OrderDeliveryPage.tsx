@@ -116,17 +116,6 @@ const OrderDeliveryPage = () => {
   }, [order]);
 
   const handleDeliveredQuantityChange = (itemId: string, value: string) => {
-    const item = order?.items.find(i => i.id === itemId);
-
-    if (item) {
-      const deliveredQty = parseInt(value, 10);
-      if (!isNaN(deliveredQty) && deliveredQty > item.quantity) {
-        toast.error(`Delivered quantity for ${item.productName} cannot exceed ordered quantity of ${item.quantity}.`);
-        setDeliveredQuantities(prev => ({ ...prev, [itemId]: String(item.quantity) }));
-        return;
-      }
-    }
-
     setDeliveredQuantities(prev => ({ ...prev, [itemId]: value }));
   };
 

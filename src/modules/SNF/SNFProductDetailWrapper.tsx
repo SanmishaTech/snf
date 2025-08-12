@@ -1,16 +1,16 @@
 import React from 'react';
 import { PricingProvider } from './context/PricingContext';
 import { CartProvider } from './context/CartContext';
-import SNFLandingPage from './SNFLandingPage';
+import ProductDetailPage from './components/ProductDetailPage';
 
-const SNFWrapper: React.FC = () => {
+const SNFProductDetailWrapper: React.FC = () => {
   return (
     <PricingProvider>
       <CartProvider>
-        <SNFLandingPage />
+        <ProductDetailPage />
       </CartProvider>
     </PricingProvider>
   );
 };
 
-export default SNFWrapper;
+export default SNFProductDetailWrapper;

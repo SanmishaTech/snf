@@ -1,34 +1,20 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Search, X, Star } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { products as mockProducts } from "@/modules/SNF/data/products";
+import { usePricing } from "@/modules/SNF/context/PricingContext.tsx";
+import type { Product, DepotVariant } from "@/modules/SNF/types";
 
-type PreviewProduct = {
-  id: string;
-  title: string;
+type SortKey = "relevance" | "price_asc" | "price_desc";
+
+type ResultItem = {
+  id: number;
+  name: string;
   description?: string;
-  image: string;
-  price: number;
-  discountPct?: number;
-  rating?: number;
+  imageUrl?: string;
   category?: string;
+  price: number; // best display price
+  mrp?: number; // highest MRP among available variants
 };
-
-type SortKey = "relevance" | "price_asc" | "price_desc" | "rating_desc";
-
-const PRICE = (p: PreviewProduct) =>
-  p.price * (1 - (p.discountPct || 0) / 100);
-
-const toPreview = (p: any): PreviewProduct => ({
-  id: p.id,
-  title: p.title,
-  description: p.description,
-  image: p.image,
-  price: p.price,
-  discountPct: p.discountPct,
-  rating: p.rating,
-  category: p.category,
-});
 
 const useRecentSearches = (limit = 5) => {
   const key = "snf_recent_searches";
@@ -74,12 +60,17 @@ const GlobalSearch: React.FC = () => {
   const { recent, save, remove, clear } = useRecentSearches();
   const navigate = useNavigate();
 
-  // Compute categories from dataset
+  const { state: pricingState } = usePricing();
+
+  // Compute categories from live products
   const categories = useMemo(() => {
     const s = new Set<string>();
-    mockProducts.forEach((p) => p.category && s.add(p.category));
+    pricingState.products.forEach((p: Product) => {
+      const catName = (p as any)?.category?.name;
+      if (catName) s.add(catName);
+    });
     return ["all", ...Array.from(s)];
-  }, []);
+  }, [pricingState.products]);
 
   // Debounced search (client-side on mock data)
   const [debouncedQ, setDebouncedQ] = useState("");
@@ -88,14 +79,57 @@ const GlobalSearch: React.FC = () => {
     return () => clearTimeout(t);
   }, [q]);
 
-  const results = useMemo(() => {
-    const items = mockProducts.map(toPreview);
+  const results = useMemo<ResultItem[]>(() => {
     const term = debouncedQ.trim().toLowerCase();
+
+    // Build product -> variants index once
+    const byProductId = new Map<number, DepotVariant[]>();
+    for (const v of pricingState.depotVariants) {
+      const arr = byProductId.get(v.productId) || [];
+      arr.push(v as DepotVariant);
+      byProductId.set(v.productId, arr);
+    }
+
+    const items: ResultItem[] = pricingState.products.map((p: Product) => {
+      const variants = byProductId.get(p.id) || [];
+      const available = variants.filter(v => !v.isHidden && !v.notInStock);
+
+      // Choose a single variant to represent price + MRP consistently (cheapest display price)
+      let chosenPrice = 0;
+      let chosenMrp: number | undefined = undefined;
+      let minDisplay = Number.POSITIVE_INFINITY;
+
+      for (const v of available) {
+        const display = Number(v.buyOncePrice ?? v.mrp ?? 0);
+        if (isFinite(display) && display > 0 && display < minDisplay) {
+          minDisplay = display;
+          chosenPrice = display;
+          chosenMrp = typeof v.mrp === 'number' && isFinite(v.mrp) && v.mrp > 0 ? v.mrp : undefined;
+        }
+      }
+
+      if (!isFinite(chosenPrice) || chosenPrice === 0) {
+        chosenPrice = 0;
+        chosenMrp = undefined;
+      }
+
+      const imageUrl = p.attachmentUrl ? `${import.meta.env.VITE_BACKEND_URL}${p.attachmentUrl}` : undefined;
+      const category = (p as any)?.category?.name;
+      return {
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        imageUrl,
+        category,
+        price: chosenPrice,
+        mrp: chosenMrp,
+      };
+    });
 
     let filtered = items.filter((p) => {
       const matchesTerm =
         !term ||
-        p.title.toLowerCase().includes(term) ||
+        p.name.toLowerCase().includes(term) ||
         (p.description || "").toLowerCase().includes(term) ||
         (p.category || "").toLowerCase().includes(term);
       const matchesCategory =
@@ -105,33 +139,26 @@ const GlobalSearch: React.FC = () => {
 
     switch (sort) {
       case "price_asc":
-        filtered = filtered.sort((a, b) => PRICE(a) - PRICE(b));
+        filtered = filtered.sort((a, b) => (a.price || 0) - (b.price || 0));
         break;
       case "price_desc":
-        filtered = filtered.sort((a, b) => PRICE(b) - PRICE(a));
-        break;
-      case "rating_desc":
-        filtered = filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        filtered = filtered.sort((a, b) => (b.price || 0) - (a.price || 0));
         break;
       case "relevance":
-      default:
-        // simple heuristic: startsWith > includes > rating/popularity if available later
+      default: {
         filtered = filtered.sort((a, b) => {
-          const ta = a.title.toLowerCase();
-          const tb = b.title.toLowerCase();
-          const pa =
-            (ta.startsWith(term) ? 2 : ta.includes(term) ? 1 : 0) +
-            (a.rating || 0) / 10;
-          const pb =
-            (tb.startsWith(term) ? 2 : tb.includes(term) ? 1 : 0) +
-            (b.rating || 0) / 10;
+          const ta = a.name.toLowerCase();
+          const tb = b.name.toLowerCase();
+          const pa = ta.startsWith(term) ? 2 : ta.includes(term) ? 1 : 0;
+          const pb = tb.startsWith(term) ? 2 : tb.includes(term) ? 1 : 0;
           return pb - pa;
         });
         break;
+      }
     }
-    // Limit results for preview dropdown
+
     return filtered.slice(0, 10);
-  }, [debouncedQ, categoryFilter, sort]);
+  }, [debouncedQ, categoryFilter, sort, pricingState.products, pricingState.depotVariants]);
 
   // Simulate loading state during debounce
   useEffect(() => {
@@ -165,10 +192,10 @@ const GlobalSearch: React.FC = () => {
   const logSearchQuery = (query: string, count: number) => {
     console.log("analytics.search_query", { query, count, sort, categoryFilter });
   };
-  const logImpressions = (ids: string[]) => {
+  const logImpressions = (ids: (string | number)[]) => {
     console.log("analytics.impressions", { ids, query: q });
   };
-  const logClick = (id: string, position: number) => {
+  const logClick = (id: string | number, position: number) => {
     console.log("analytics.click", { id, position, query: q });
   };
 
@@ -209,17 +236,17 @@ const GlobalSearch: React.FC = () => {
 
   const clearQuery = () => setQ("");
 
-  const priceLabel = (p: PreviewProduct) => {
-    const final = PRICE(p).toFixed(2);
-    return p.discountPct
-      ? (
+  const priceLabel = (p: ResultItem) => {
+    const display = (p.price || 0).toFixed(2);
+    if (p.mrp && p.mrp > p.price) {
+      return (
         <span className="text-sm">
-          <span className="font-medium">₹{final}</span>
-          <span className="ml-2 text-xs line-through text-muted-foreground">₹{p.price.toFixed(2)}</span>
-          <span className="ml-1 text-xs text-green-600">({p.discountPct}% off)</span>
+          <span className="font-medium">₹{display}</span>
+          <span className="ml-2 text-xs line-through text-muted-foreground">₹{p.mrp.toFixed(2)}</span>
         </span>
-        )
-      : <span className="text-sm font-medium">₹{final}</span>;
+      );
+    }
+    return <span className="text-sm font-medium">₹{display}</span>;
   };
 
   return (
@@ -259,7 +286,7 @@ const GlobalSearch: React.FC = () => {
           ref={listRef}
           id="search-suggestion-list"
           role="listbox"
-          className="absolute left-0 right-0 mt-2 bg-white rounded-lg shadow-lg z-50 max-h-[460px] overflow-y-auto border"
+          className="absolute left-0 right-0 mt-2 bg-white rounded-lg shadow-lg z-[60] max-h-[460px] overflow-y-auto border"
         >
           <div className="p-2 border-b flex items-center gap-2">
             <select
@@ -271,7 +298,7 @@ const GlobalSearch: React.FC = () => {
               <option value="relevance">Relevance</option>
               <option value="price_asc">Price: Low to High</option>
               <option value="price_desc">Price: High to Low</option>
-              <option value="rating_desc">Rating</option>
+              {/* Removed rating sort since live data does not provide ratings */}
             </select>
 
             <select
@@ -334,28 +361,27 @@ const GlobalSearch: React.FC = () => {
                 }}
                 className={`flex gap-3 px-3 py-2 rounded-md hover:bg-gray-50 focus:bg-gray-50 outline-none ${active === idx ? "ring-2 ring-primary" : ""}`}
               >
-                <img
-                  src={`${p.image}&w=120`}
-                  alt={p.title}
-                  width={80}
-                  height={60}
-                  className="w-20 h-16 object-cover rounded border"
-                  loading="lazy"
-                />
+                <div className="w-20 h-16 rounded border overflow-hidden bg-muted/20 grid place-items-center">
+                  {p.imageUrl ? (
+                    <img
+                      src={p.imageUrl}
+                      alt={p.name}
+                      width={80}
+                      height={60}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <span className="text-[10px] text-muted-foreground">No image</span>
+                  )}
+                </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium truncate">{p.title}</div>
+                  <div className="text-sm font-medium truncate">{p.name}</div>
                   {p.category && (
                     <div className="text-xs text-muted-foreground truncate">{p.category}</div>
                   )}
                   <div className="mt-1 flex items-center gap-2">
                     {priceLabel(p)}
-                    {typeof p.rating === "number" && (
-                      <span className="text-xs inline-flex items-center gap-1 text-yellow-600">
-                        <Star className="w-3 h-3 fill-yellow-500 stroke-yellow-600" />
-                        {p.rating?.toFixed(1)}
-                      </span>
-                    )}
-                    <span className="ml-auto text-xs text-green-700">In stock</span>
                   </div>
                 </div>
               </Link>

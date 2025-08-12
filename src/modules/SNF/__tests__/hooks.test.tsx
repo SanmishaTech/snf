@@ -406,11 +406,12 @@ describe('useProducts Hook', () => {
       expect(result.current.variants).toEqual(mockVariants);
     });
 
-    const productsWithPricing = result.current getProductsWithPricing();
+    const productsWithPricing = result.current.getProductsWithPricing();
     expect(productsWithPricing).toHaveLength(2);
     expect(productsWithPricing[0].product).toEqual(mockProducts[0]);
     expect(productsWithPricing[0].variants).toEqual([mockVariants[0]]);
-    expect(productsWithPricing[0].bestPrice).toBe(100);
+    expect(productsWithPricing[0].buyOncePrice).toBe(100);
+    expect(productsWithPricing[0].mrp).toBe(100);
     expect(productsWithPricing[0].inStock).toBe(true);
   });
 

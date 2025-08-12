@@ -1,11 +1,11 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { 
-  PricingState, 
-  PricingActions, 
-  PricingContextType, 
-  Product, 
-  Depot, 
-  LocationData, 
+import {
+  PricingState,
+  PricingActions,
+  PricingContextType,
+  Product,
+  Depot,
+  LocationData,
   ServiceAvailability,
   PricingError,
   GeolocationError
@@ -13,7 +13,6 @@ import {
 import { pricingReducer } from '../reducers/pricingReducer';
 import { depotMappingService } from '../services/depotMapping';
 import { productService } from '../services/api';
-import { cacheManager } from '../services/cache';
 
 // Initial state
 const initialState: PricingState = {
@@ -42,9 +41,6 @@ export const PricingProvider: React.FC<PricingProviderProps> = ({ children }) =>
   const actions: PricingActions = {
     setDepot: async (depot: Depot) => {
       dispatch({ type: 'SET_DEPOT', payload: depot });
-      
-      // Clear products cache when depot changes
-      await cacheManager.invalidate('products:*');
       
       // Load products for the new depot
       try {
@@ -111,10 +107,6 @@ export const PricingProvider: React.FC<PricingProviderProps> = ({ children }) =>
         dispatch({ type: 'SET_LOADING', payload: true });
         dispatch({ type: 'SET_ERROR', payload: null });
         
-        // Clear cache
-        await cacheManager.invalidate('products:*');
-        await cacheManager.invalidate('variants:*');
-        
         // Reload products
         const products = await productService.getProducts(state.currentDepot.id);
         dispatch({ type: 'SET_PRODUCTS', payload: products });
@@ -134,12 +126,6 @@ export const PricingProvider: React.FC<PricingProviderProps> = ({ children }) =>
       } finally {
         dispatch({ type: 'SET_LOADING', payload: false });
       }
-    },
-
-    clearCache: async () => {
-      await cacheManager.clear();
-      dispatch({ type: 'SET_PRODUCTS', payload: [] });
-      dispatch({ type: 'SET_DEPOT_VARIANTS', payload: [] });
     },
 
     setError: (error: PricingError | GeolocationError | null) => {
@@ -170,23 +156,6 @@ export const PricingProvider: React.FC<PricingProviderProps> = ({ children }) =>
     return () => clearInterval(interval);
   }, [state.currentDepot, state.isLoading]);
 
-  // Prefetch products when depot is set
-  useEffect(() => {
-    if (state.currentDepot && state.products.length === 0) {
-      const prefetchProducts = async () => {
-        try {
-          const cacheKey = `products:${state.currentDepot!.id}`;
-          await cacheManager.prefetch(cacheKey, () => 
-            productService.getProducts(state.currentDepot!.id)
-          );
-        } catch (error) {
-          console.warn('Failed to prefetch products:', error);
-        }
-      };
-      
-      prefetchProducts();
-    }
-  }, [state.currentDepot, state.products.length]);
 
   return (
     <PricingContext.Provider value={{ state, actions }}>

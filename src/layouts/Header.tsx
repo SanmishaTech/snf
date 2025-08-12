@@ -100,34 +100,36 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
   ref={headerRef}
   className={`fixed top-0 w-full z-50 transition-all duration-500 ease-out ${
     headerVisible ? 'translate-y-0' : '-translate-y-full'
-  } ${scrolled ? 'shadow-lg' : 'shadow-sm'}`}
+  } ${scrolled ? 'shadow-lg' : 'shadow-sm'} pt-[env(safe-area-inset-top)]`}
 >
       {/* Top Bar */}
       <div className="bg-white transition-colors duration-300">
     <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="flex justify-between items-center py-2">
+      <div className="flex justify-between items-center py-2 sm:py-2.5">
         {/* Logo */}
         <Link to="/" className="flex items-center">
-          <img src={Indraipng} alt="Logo" className="h-10 w-auto object-contain mr-2" />
+          <img src={Indraipng} alt="Logo" className="h-8 sm:h-10 w-auto object-contain mr-2" />
         </Link>
 
              {/* Right side: Social Icons & Top Links */}
-             <div className="flex items-center space-x-4">
-              <a href="/" aria-label="Sarkhot Logo">
+             <div className="flex items-center space-x-3 sm:space-x-4">
+              <a href="/" aria-label="Sarkhot Logo" className="hidden sm:inline-flex">
                 <img src={Sarkotlogo} alt="Sarkhot Logo" className="h-8 w-auto object-contain" />
               </a>
              <a
              target="_blank" 
              rel="noopener noreferrer"
              aria-label="Facebook" 
-             href="https://www.facebook.com/sarkhotnaturalfarms" className="text-gray-500 hover:text-green-600 transition-colors">
+             href="https://www.facebook.com/sarkhotnaturalfarms" className="hidden sm:inline-flex text-gray-500 hover:text-green-600 transition-colors"
+>
                 <Facebook size={18} />
               </a>
               <a
              target="_blank" 
              rel="noopener noreferrer"
              aria-label="Instagram" 
-             href="https://www.instagram.com/sarkhotnaturalfarms/" className="text-gray-500 hover:text-amber-600 transition-colors">
+             href="https://www.instagram.com/sarkhotnaturalfarms/" className="hidden sm:inline-flex text-gray-500 hover:text-amber-600 transition-colors"
+>
                 <Instagram size={18} />
               </a>
               <span className="hidden sm:block border-l border-gray-300 h-6 mx-2"></span>
@@ -227,7 +229,7 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
       {/* Main Navigation Bar */}
       <div className="bg-primary transition-colors duration-300">
     <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="flex justify-between items-center py-3">
+      <div className="flex justify-between items-center py-2.5 sm:py-3">
         {/* Desktop Navigation Links - WHITE AND BOLD */}
         <div className="hidden md:flex space-x-6 items-center">
           {navLinks.map((link) => (
@@ -243,7 +245,7 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
         </div>
 
             {/* Search Bar & Cart */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3 sm:space-x-4">
             {/* <div className="relative hidden sm:block">
                 <input 
                   type="search" 
@@ -271,9 +273,9 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white border-t border-gray-200 shadow-inner">
+        <div className="md:hidden bg-white border-t border-gray-200 shadow-inner max-h-[calc(100vh-var(--header-height))] overflow-y-auto overscroll-contain">
           <div className="container mx-auto px-4 py-4 space-y-2">
-            <div className="mb-4">
+            <div className="mb-3">
               <div className="relative">
                 <input 
                   type="search" 
@@ -294,14 +296,6 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
                 {link.name}
               </Link>
             ))}
-            {/* <Link 
-              to="/about" 
-              className="block py-3 px-4 text-gray-700 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors flex items-center group"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mr-3 opacity-0 group-hover:opacity-100 transition-opacity"></span>
-              About Us
-            </Link> */}
             {isLoggedIn && onLogout ? (
               <button 
                 onClick={() => { onLogout(); setMobileMenuOpen(false); }}
@@ -325,7 +319,7 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
       )}
       
       {/* Change Password Dialog */}
-      <UserChangePasswordDialog
+      		<UserChangePasswordDialog
         isOpen={isChangePasswordDialogOpen}
         onClose={() => setIsChangePasswordDialogOpen(false)}
       />

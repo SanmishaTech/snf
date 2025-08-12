@@ -2,23 +2,22 @@ export const appName = import.meta.env.VITE_APP_NAME || "SNF";
 
 // Get the current hostname (for production) or use environment variable
 const getBackendUrl = () => {
-  // In production build
-  if (import.meta.env.PROD) {
-    // If we have an explicit environment variable, use that
-    if (import.meta.env.VITE_BACKEND_URL) {
-      return import.meta.env.VITE_BACKEND_URL;
-    }
+  // Always prefer explicit env var if provided (both dev and prod)
+  const envUrl = import.meta.env.VITE_BACKEND_URL;
+  if (envUrl) {
+    return envUrl; // NOTE: should be base server URL, WITHOUT trailing '/api'
+  }
 
-    // Otherwise, derive from current hostname
+  // In production, derive from current hostname if no env var
+  if (import.meta.env.PROD) {
     const hostname = window.location.hostname;
-    console.log(hostname);
-    // If deployed to IP address or domain, use that
     if (hostname !== "localhost" && hostname !== "127.0.0.1") {
       return `http://${hostname}`;
     }
   }
+
   // Default for development
-  return "https://www.indraai.in/";
+  return "http://localhost:3000";
 };
 
 export const backendUrl = getBackendUrl();

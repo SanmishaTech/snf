@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Product, DepotVariant, ProductWithPricing, PricingError } from '../types';
 import { productService } from '../services/api';
-import { cacheManager } from '../services/cache';
 
 /**
  * Custom hook for managing products with pricing
@@ -18,39 +17,45 @@ export const useProducts = (depotId?: number) => {
 
   // Transform products and variants into ProductWithPricing
   const transformProducts = useCallback((productsData: Product[], variantsData: DepotVariant[]): ProductWithPricing[] => {
-    return productsData.map(product => {
-      const productVariants = variantsData.filter(variant => variant.productId === product.id);
-      
-      // Find the best price (lowest MRP)
-      const bestVariant = productVariants.reduce((best, current) => {
-        if (!best || current.mrp < best.mrp) {
-          return current;
+    return productsData
+.filter(p => p.isDairyProduct !== true)
+      .map(product => {
+        const productVariants = variantsData.filter(variant => variant.productId === product.id);
+        
+        // Find the variant with the lowest buyOncePrice or use MRP if buyOncePrice is not available
+        const bestVariant = productVariants.reduce((best, current) => {
+          if (!best) return current;
+          
+          const bestPrice = best.buyOncePrice ?? best.mrp;
+          const currentPrice = current.buyOncePrice ?? current.mrp;
+          
+          return currentPrice < bestPrice ? current : best;
+        }, null as DepotVariant | null);
+
+        // Check if any variant is in stock
+        const inStock = productVariants.some(variant => !variant.notInStock && variant.closingQty > 0);
+
+        // Calculate discount if applicable
+        let discount = 0;
+        const buyOncePrice = bestVariant?.buyOncePrice ?? bestVariant?.mrp;
+        const mrp = bestVariant?.mrp ?? 0;
+        
+        // If there's a buyOncePrice that's lower than MRP, calculate discount
+        if (buyOncePrice && buyOncePrice < mrp) {
+          discount = (mrp - buyOncePrice) / mrp;
         }
-        return best;
-      }, null as DepotVariant | null);
 
-      // Check if any variant is in stock
-      const inStock = productVariants.some(variant => !variant.notInStock && variant.closingQty > 0);
-
-      // Calculate discount if applicable
-      let discount = 0;
-      let originalPrice = bestVariant?.mrp || 0;
-      
-      // If there's a buyOncePrice that's lower than MRP, calculate discount
-      if (bestVariant?.buyOncePrice && bestVariant.buyOncePrice < bestVariant.mrp) {
-        discount = (bestVariant.mrp - bestVariant.buyOncePrice) / bestVariant.mrp;
-      }
-
-      return {
-        product,
-        variants: productVariants,
-        bestPrice: bestVariant?.buyOncePrice || bestVariant?.mrp || 0,
-        originalPrice: discount > 0 ? originalPrice : undefined,
-        discount: discount > 0 ? discount : undefined,
-        inStock,
-        deliveryTime: inStock ? 'Same day delivery' : 'Out of stock',
-      };
-    }).filter(productWithPricing => productWithPricing.variants.length > 0);
+        return {
+          product,
+          variants: productVariants,
+          buyOncePrice: buyOncePrice || 0,
+          mrp: mrp,
+          discount: discount > 0 ? discount : undefined,
+          inStock,
+          deliveryTime: inStock ? 'Same day delivery' : 'Out of stock',
+        };
+      })
+      .filter(productWithPricing => productWithPricing.variants.length > 0);
   }, []);
 
   // Fetch products and variants
@@ -63,28 +68,9 @@ export const useProducts = (depotId?: number) => {
     setError(null);
 
     try {
-      const cacheKey = `products:${depotId}`;
-      const variantsCacheKey = `variants:${depotId}`;
-
-      // Try to get from cache first
-      const cachedProducts = await cacheManager.get<Product[]>(cacheKey);
-      const cachedVariants = await cacheManager.get<DepotVariant[]>(variantsCacheKey);
-
-      let productsData: Product[];
-      let variantsData: DepotVariant[];
-
-      if (cachedProducts && cachedVariants) {
-        productsData = cachedProducts;
-        variantsData = cachedVariants;
-      } else {
-        // Fetch from API
-        productsData = await productService.getProducts(depotId);
-        variantsData = await productService.getDepotVariants(depotId);
-
-        // Cache the results
-        await cacheManager.set(cacheKey, productsData, 30 * 60 * 1000); // 30 minutes
-        await cacheManager.set(variantsCacheKey, variantsData, 15 * 60 * 1000); // 15 minutes
-      }
+      // Fetch from API directly
+      const productsData = await productService.getProducts(depotId);
+      const variantsData = await productService.getDepotVariants(depotId);
 
       setRawProducts(productsData);
       setVariants(variantsData);
@@ -112,10 +98,6 @@ export const useProducts = (depotId?: number) => {
       return;
     }
 
-    // Clear cache
-    await cacheManager.invalidate(`products:${depotId}`);
-    await cacheManager.invalidate(`variants:${depotId}`);
-
     // Fetch fresh data
     await fetchProducts();
   }, [depotId, fetchProducts]);
@@ -126,17 +108,6 @@ export const useProducts = (depotId?: number) => {
       fetchProducts();
     }
   }, [depotId, fetchProducts]);
-
-  // Auto-refresh products every 15 minutes
-  useEffect(() => {
-    if (!depotId) return;
-
-    const interval = setInterval(() => {
-      refreshProducts();
-    }, 15 * 60 * 1000); // 15 minutes
-
-    return () => clearInterval(interval);
-  }, [depotId, refreshProducts]);
 
   return {
     products,
@@ -169,47 +140,54 @@ export const useProduct = (productId?: number, depotId?: number) => {
     setError(null);
 
     try {
-      const cacheKey = `product:${productId}:${depotId}`;
+      // Fetch from API
+      const [productData, variantsData] = await Promise.all([
+        productService.getProductById(productId),
+        productService.getProductVariants(productId, depotId),
+      ]);
 
-      // Try to get from cache first
-      const cachedProduct = await cacheManager.get<ProductWithPricing>(cacheKey);
-
-      if (cachedProduct) {
-        setProduct(cachedProduct);
-      } else {
-        // Fetch from API
-        const [productData, variantsData] = await Promise.all([
-          productService.getProductById(productId),
-          productService.getProductVariants(productId, depotId),
-        ]);
-
-        if (!productData) {
-          throw {
-            type: 'API_ERROR',
-            message: 'Product not found',
-            code: 'PRODUCT_NOT_FOUND',
-            recoverable: false,
-          } as PricingError;
-        }
-
-        // Transform to ProductWithPricing
-        const productWithPricing: ProductWithPricing = {
-          product: productData,
-          variants: variantsData,
-          bestPrice: variantsData.length > 0 ? Math.min(...variantsData.map(v => v.buyOncePrice || v.mrp)) : 0,
-          originalPrice: variantsData.length > 0 ? Math.min(...variantsData.map(v => v.mrp)) : undefined,
-          discount: variantsData.length > 0 ? 
-            Math.max(...variantsData.map(v => v.buyOncePrice && v.buyOncePrice < v.mrp ? 
-              (v.mrp - v.buyOncePrice) / v.mrp : 0)) : undefined,
-          inStock: variantsData.some(v => !v.notInStock && v.closingQty > 0),
-          deliveryTime: variantsData.some(v => !v.notInStock && v.closingQty > 0) ? 'Same day delivery' : 'Out of stock',
-        };
-
-        setProduct(productWithPricing);
-
-        // Cache the result
-        await cacheManager.set(cacheKey, productWithPricing, 10 * 60 * 1000); // 10 minutes
+      if (!productData) {
+        throw {
+          type: 'API_ERROR',
+          message: 'Product not found',
+          code: 'PRODUCT_NOT_FOUND',
+          recoverable: false,
+        } as PricingError;
       }
+
+      console.log('Product data fetched:', productData);
+      console.log('Variants data fetched:', variantsData);
+
+      // Transform to ProductWithPricing
+      const bestVariant = variantsData.reduce((best, current) => {
+        if (!best) return current;
+        
+        const bestPrice = best.buyOncePrice ?? best.mrp;
+        const currentPrice = current.buyOncePrice ?? current.mrp;
+        
+        return currentPrice < bestPrice ? current : best;
+      }, null as DepotVariant | null);
+
+      const buyOncePrice = bestVariant?.buyOncePrice ?? bestVariant?.mrp;
+      const mrp = bestVariant?.mrp ?? 0;
+      
+      // Calculate discount if applicable
+      let discount = 0;
+      if (buyOncePrice && buyOncePrice < mrp) {
+        discount = (mrp - buyOncePrice) / mrp;
+      }
+
+      const productWithPricing: ProductWithPricing = {
+        product: productData,
+        variants: variantsData,
+        buyOncePrice: buyOncePrice || 0,
+        mrp: mrp,
+        discount: discount > 0 ? discount : undefined,
+        inStock: variantsData.some(v => !v.notInStock && v.closingQty > 0),
+        deliveryTime: variantsData.some(v => !v.notInStock && v.closingQty > 0) ? 'Same day delivery' : 'Out of stock',
+      };
+
+      setProduct(productWithPricing);
     } catch (err) {
       const pricingError = err as PricingError;
       setError(pricingError);
@@ -255,40 +233,45 @@ export const useProductSearch = (query: string, depotId?: number) => {
     setError(null);
 
     try {
-      const cacheKey = `search:${query}:${depotId}`;
+      // Fetch from API
+      const searchResults = await productService.searchProducts(query, depotId);
 
-      // Try to get from cache first
-      const cachedResults = await cacheManager.get<ProductWithPricing[]>(cacheKey);
+      // Get variants for each product
+      const productsWithVariants = await Promise.all(
+        searchResults.map(async (product) => {
+          const variants = await productService.getProductVariants(product.id, depotId);
+          // Find the variant with the lowest buyOncePrice or use MRP if buyOncePrice is not available
+          const bestVariant = variants.reduce((best, current) => {
+            if (!best) return current;
+            
+            const bestPrice = best.buyOncePrice ?? best.mrp;
+            const currentPrice = current.buyOncePrice ?? current.mrp;
+            
+            return currentPrice < bestPrice ? current : best;
+          }, null as DepotVariant | null);
 
-      if (cachedResults) {
-        setResults(cachedResults);
-      } else {
-        // Fetch from API
-        const searchResults = await productService.searchProducts(query, depotId);
+          const buyOncePrice = bestVariant?.buyOncePrice ?? bestVariant?.mrp;
+          const mrp = bestVariant?.mrp ?? 0;
+          
+          // Calculate discount if applicable
+          let discount = 0;
+          if (buyOncePrice && buyOncePrice < mrp) {
+            discount = (mrp - buyOncePrice) / mrp;
+          }
 
-        // Get variants for each product
-        const productsWithVariants = await Promise.all(
-          searchResults.map(async (product) => {
-            const variants = await productService.getProductVariants(product.id, depotId);
-            return {
-              product,
-              variants,
-              bestPrice: variants.length > 0 ? Math.min(...variants.map(v => v.buyOncePrice || v.mrp)) : 0,
-              originalPrice: variants.length > 0 ? Math.min(...variants.map(v => v.mrp)) : undefined,
-              discount: variants.length > 0 ? 
-                Math.max(...variants.map(v => v.buyOncePrice && v.buyOncePrice < v.mrp ? 
-                  (v.mrp - v.buyOncePrice) / v.mrp : 0)) : undefined,
-              inStock: variants.some(v => !v.notInStock && v.closingQty > 0),
-              deliveryTime: variants.some(v => !v.notInStock && v.closingQty > 0) ? 'Same day delivery' : 'Out of stock',
-            };
-          })
-        );
+          return {
+            product,
+            variants,
+            buyOncePrice: buyOncePrice || 0,
+            mrp: mrp,
+            discount: discount > 0 ? discount : undefined,
+            inStock: variants.some(v => !v.notInStock && v.closingQty > 0),
+            deliveryTime: variants.some(v => !v.notInStock && v.closingQty > 0) ? 'Same day delivery' : 'Out of stock',
+          };
+        })
+      );
 
-        setResults(productsWithVariants);
-
-        // Cache the results
-        await cacheManager.set(cacheKey, productsWithVariants, 5 * 60 * 1000); // 5 minutes
-      }
+      setResults(productsWithVariants);
     } catch (err) {
       const pricingError: PricingError = {
         type: 'API_ERROR',
@@ -310,7 +293,7 @@ export const useProductSearch = (query: string, depotId?: number) => {
     }, 300); // 300ms debounce
 
     return () => clearTimeout(timeoutId);
-  }, [query, searchProducts]);
+  }, [query, depotId, searchProducts]);
 
   return {
     results,
@@ -342,40 +325,45 @@ export const useProductsByCategory = (categoryId?: number, depotId?: number) => 
     setError(null);
 
     try {
-      const cacheKey = `category:${categoryId}:${depotId}`;
+      // Fetch from API
+      const categoryProducts = await productService.getProductsByCategory(categoryId, depotId);
 
-      // Try to get from cache first
-      const cachedProducts = await cacheManager.get<ProductWithPricing[]>(cacheKey);
+      // Get variants for each product
+      const productsWithVariants = await Promise.all(
+        categoryProducts.map(async (product) => {
+          const variants = await productService.getProductVariants(product.id, depotId);
+          // Find the variant with the lowest buyOncePrice or use MRP if buyOncePrice is not available
+          const bestVariant = variants.reduce((best, current) => {
+            if (!best) return current;
+            
+            const bestPrice = best.buyOncePrice ?? best.mrp;
+            const currentPrice = current.buyOncePrice ?? current.mrp;
+            
+            return currentPrice < bestPrice ? current : best;
+          }, null as DepotVariant | null);
 
-      if (cachedProducts) {
-        setProducts(cachedProducts);
-      } else {
-        // Fetch from API
-        const categoryProducts = await productService.getProductsByCategory(categoryId, depotId);
+          const buyOncePrice = bestVariant?.buyOncePrice ?? bestVariant?.mrp;
+          const mrp = bestVariant?.mrp ?? 0;
+          
+          // Calculate discount if applicable
+          let discount = 0;
+          if (buyOncePrice && buyOncePrice < mrp) {
+            discount = (mrp - buyOncePrice) / mrp;
+          }
 
-        // Get variants for each product
-        const productsWithVariants = await Promise.all(
-          categoryProducts.map(async (product) => {
-            const variants = await productService.getProductVariants(product.id, depotId);
-            return {
-              product,
-              variants,
-              bestPrice: variants.length > 0 ? Math.min(...variants.map(v => v.buyOncePrice || v.mrp)) : 0,
-              originalPrice: variants.length > 0 ? Math.min(...variants.map(v => v.mrp)) : undefined,
-              discount: variants.length > 0 ? 
-                Math.max(...variants.map(v => v.buyOncePrice && v.buyOncePrice < v.mrp ? 
-                  (v.mrp - v.buyOncePrice) / v.mrp : 0)) : undefined,
-              inStock: variants.some(v => !v.notInStock && v.closingQty > 0),
-              deliveryTime: variants.some(v => !v.notInStock && v.closingQty > 0) ? 'Same day delivery' : 'Out of stock',
-            };
-          })
-        );
+          return {
+            product,
+            variants,
+            buyOncePrice: buyOncePrice || 0,
+            mrp: mrp,
+            discount: discount > 0 ? discount : undefined,
+            inStock: variants.some(v => !v.notInStock && v.closingQty > 0),
+            deliveryTime: variants.some(v => !v.notInStock && v.closingQty > 0) ? 'Same day delivery' : 'Out of stock',
+          };
+        })
+      );
 
-        setProducts(productsWithVariants);
-
-        // Cache the results
-        await cacheManager.set(cacheKey, productsWithVariants, 10 * 60 * 1000); // 10 minutes
-      }
+      setProducts(productsWithVariants);
     } catch (err) {
       const pricingError: PricingError = {
         type: 'API_ERROR',

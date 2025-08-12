@@ -3,7 +3,6 @@ import { PricingContextType, PricingState, Depot, LocationData, Product, DepotVa
 import { geolocationService } from '../services/geolocation';
 import { depotMappingService } from '../services/depotMapping';
 import { productService } from '../services/api';
-import { cache } from '../services/cache';
 
 // Initial state
 const initialState: PricingState = {
@@ -213,35 +212,17 @@ export const PricingProvider: React.FC<PricingProviderProps> = ({ children }) =>
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
 
-      // Try to get from cache first
-      const cacheKey = `products_${depotId}`;
-      const cachedProducts = await cache.get<Product[]>(cacheKey);
-      
-      if (cachedProducts) {
-        dispatch({ type: 'SET_PRODUCTS', payload: cachedProducts });
-      } else {
-        // Fetch from API
-        const products = await productService.getProducts(depotId);
-        dispatch({ type: 'SET_PRODUCTS', payload: products });
-        await cache.set(cacheKey, products);
-      }
+      // Fetch from API
+      const products = await productService.getProducts(depotId);
+      dispatch({ type: 'SET_PRODUCTS', payload: products });
 
-      // Load variants
-      const variantsCacheKey = `variants_${depotId}`;
-      const cachedVariants = await cache.get<DepotVariant[]>(variantsCacheKey);
-      
-      if (cachedVariants) {
-        dispatch({ type: 'SET_DEPOT_VARIANTS', payload: cachedVariants });
-      } else {
-        // Fetch from API
-        const variants = await productService.getDepotVariants(depotId);
-        dispatch({ type: 'SET_DEPOT_VARIANTS', payload: variants });
-        await cache.set(variantsCacheKey, variants);
-      }
+      // Fetch variants from API
+      const variants = await productService.getDepotVariants(depotId);
+      dispatch({ type: 'SET_DEPOT_VARIANTS', payload: variants });
     } catch (error) {
       console.error('Error loading products and variants:', error);
-      dispatch({ 
-        type: 'SET_ERROR', 
+      dispatch({
+        type: 'SET_ERROR',
         payload: {
           type: 'API_ERROR',
           message: 'Failed to load products. Please try again.',
@@ -271,8 +252,8 @@ export const PricingProvider: React.FC<PricingProviderProps> = ({ children }) =>
         }
       } catch (error) {
         console.error('Error setting location:', error);
-        dispatch({ 
-          type: 'SET_ERROR', 
+        dispatch({
+          type: 'SET_ERROR',
           payload: {
             type: 'API_ERROR',
             message: 'Failed to set location. Please try again.',
@@ -284,18 +265,7 @@ export const PricingProvider: React.FC<PricingProviderProps> = ({ children }) =>
 
     refreshPricing: useCallback(async () => {
       if (state.currentDepot) {
-        // Clear cache for current depot
-        await cache.invalidate(`products_${state.currentDepot.id}`);
-        await cache.invalidate(`variants_${state.currentDepot.id}`);
-        
         // Reload data
-        await loadProductsAndVariants(state.currentDepot.id);
-      }
-    }, [state.currentDepot, loadProductsAndVariants]),
-
-    clearCache: useCallback(async () => {
-      await cache.clear();
-      if (state.currentDepot) {
         await loadProductsAndVariants(state.currentDepot.id);
       }
     }, [state.currentDepot, loadProductsAndVariants]),

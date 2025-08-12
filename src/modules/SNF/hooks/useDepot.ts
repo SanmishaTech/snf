@@ -90,7 +90,7 @@ export const useDepot = (pincode?: string): UseDepotReturn => {
     if (pincode) {
       refreshDepot();
     }
-  }, [pincode, refreshDepot]);
+  }, [pincode]); // Remove refreshDepot from dependencies to prevent infinite loops
 
   // Auto-refresh depot every 30 minutes
   useEffect(() => {
@@ -101,7 +101,7 @@ export const useDepot = (pincode?: string): UseDepotReturn => {
     }, 30 * 60 * 1000); // 30 minutes
 
     return () => clearInterval(interval);
-  }, [pincode, depot, refreshDepot]);
+  }, [pincode, depot]); // Remove refreshDepot from dependencies
 
   return {
     depot,

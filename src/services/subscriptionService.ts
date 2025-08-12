@@ -86,3 +86,7 @@ export const cancelSubscription = async (id: string): Promise<Subscription> => {
 export const renewSubscription = async (id: string): Promise<Subscription> => {
   return post<Subscription>(`${API_URL}/${id}/renew`, {});
 };
+
+export const cancelOrderSubscriptions = async (orderId: string): Promise<any> => {
+  return patch<any>(`/product-orders/${orderId}/cancel-subscriptions`, {});
+};

@@ -2,9 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { usePricing } from '../context/PricingContext';
 import { geolocationService } from '../services/geolocation';
 import { depotMappingService } from '../services/depotMapping';
-import { cache } from '../services/cache';
 import { productService } from '../services/api';
-import { UseLocationReturn, UseDepotReturn, UseCacheReturn, LocationData, GeolocationError, Depot, PricingError } from '../types';
+import { UseLocationReturn, UseDepotReturn, LocationData, GeolocationError, Depot, PricingError } from '../types';
 
 /**
  * Hook for managing user location with automatic detection and manual entry
@@ -130,62 +129,6 @@ export const useDepot = (): UseDepotReturn => {
   };
 };
 
-/**
- * Hook for managing cache operations
- */
-export const useCache = (): UseCacheReturn => {
-  const { actions } = usePricing();
-
-  const get = useCallback(async <T>(key: string): Promise<T | null> => {
-    try {
-      return await cache.get<T>(key);
-    } catch (error) {
-      console.error('Error getting from cache:', error);
-      return null;
-    }
-  }, []);
-
-  const set = useCallback(async <T>(key: string, data: T, ttl?: number): Promise<void> => {
-    try {
-      await cache.set(key, data, ttl);
-    } catch (error) {
-      console.error('Error setting cache:', error);
-    }
-  }, []);
-
-  const invalidate = useCallback(async (pattern: string): Promise<void> => {
-    try {
-      await cache.invalidate(pattern);
-    } catch (error) {
-      console.error('Error invalidating cache:', error);
-    }
-  }, []);
-
-  const clear = useCallback(async (): Promise<void> => {
-    try {
-      await cache.clear();
-    } catch (error) {
-      console.error('Error clearing cache:', error);
-    }
-  }, []);
-
-  const has = useCallback(async (key: string): Promise<boolean> => {
-    try {
-      return await cache.has(key);
-    } catch (error) {
-      console.error('Error checking cache:', error);
-      return false;
-    }
-  }, []);
-
-  return {
-    get,
-    set,
-    invalidate,
-    clear,
-    has,
-  };
-};
 
 /**
  * Hook for managing product pricing with real-time updates

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, act, waitFor } from '@testing-library/react';
-import { PricingProvider, usePricingContext } from '../context/PricingContext';
+import { PricingProvider, usePricingContext } from '../contexts/PricingContext';
 import { Depot, Product, DepotVariant, LocationData } from '../types';
 
 // Mock the services
@@ -21,19 +21,10 @@ vi.mock('../services/geolocation', () => ({
   },
 }));
 
-vi.mock('../services/productService', () => ({
+vi.mock('../services/api', () => ({
   productService: {
     getProducts: vi.fn(),
     getDepotVariants: vi.fn(),
-  },
-}));
-
-vi.mock('../services/cache', () => ({
-  cacheManager: {
-    get: vi.fn(),
-    set: vi.fn(),
-    invalidate: vi.fn(),
-    clear: vi.fn(),
   },
 }));
 
@@ -113,12 +104,6 @@ const TestComponent = () => {
         Refresh Pricing
       </button>
       
-      <button
-        data-testid="clear-cache"
-        onClick={() => actions.clearCache()}
-      >
-        Clear Cache
-      </button>
       
       <button
         data-testid="set-error"

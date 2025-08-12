@@ -82,7 +82,7 @@ const LandingPage = () => {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await fetch("/api/products/public");
+        const response = await fetch("/products/public");
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }

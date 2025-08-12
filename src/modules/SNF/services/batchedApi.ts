@@ -43,7 +43,7 @@ export class BatchedApiService {
     }
 
     const requestPromise = this.executeBatchedRequest(
-      `${this.API_BASE_URL}/public/products/batch`,
+      `${this.API_BASE_URL}/api/public/products/batch`,
       { productIds },
       cacheKey,
       30 * 60 * 1000 // 30 minutes cache
@@ -351,7 +351,7 @@ export class BatchedApiService {
       return [cached];
     }
 
-    const response = await fetch(`${this.API_BASE_URL}/public/products/${productId}`);
+    const response = await fetch(`${this.API_BASE_URL}/api/public/products/${productId}`);
     
     if (!response.ok) {
       if (response.status === 404) {

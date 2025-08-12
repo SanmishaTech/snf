@@ -58,6 +58,7 @@ const productVariantSchema = z.object({
 });
 
 const productSchema = z.object({
+  tags: z.string().optional().nullable(),
   maintainStock: z.boolean().default(false),
   name: z.string().min(1, "Product name is required"),
   description: z.string().optional().nullable(),
@@ -149,6 +150,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
       const resetValues = {
         name: initialData.name || "",
         description: (initialData as any).description || "",
+        tags: (initialData as any).tags || "",
         isDairyProduct: initialData.isDairyProduct || false,
         maintainStock: initialData.maintainStock || false,
         variants: initialData.variants || [],
@@ -222,6 +224,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
     formData.append("isDairyProduct", String(data.isDairyProduct));
     formData.append("maintainStock", String(data.maintainStock));
     if (data.description) formData.append("description", data.description);
+    if (data.tags) formData.append("tags", data.tags);
     if (data.categoryId) formData.append("categoryId", String(data.categoryId));
 
     if (data.attachmentUrl && data.attachmentUrl.length > 0) {
@@ -297,6 +300,21 @@ const ProductForm: React.FC<ProductFormProps> = ({
               </p>
             )}
           </div>
+
+          <div className="md:col-span-2 space-y-2">
+            <Label htmlFor="tags">Tags</Label>
+            <Input
+              id="tags"
+              type="text"
+              {...register("tags")}
+              disabled={mutation.isPending}
+              placeholder="e.g. organic, fresh, featured"
+            />
+            {errors.tags && (
+              <p className="text-red-500 text-xs mt-1">{errors.tags.message}</p>
+            )}
+          </div>
+
           {/* Maintain Stock Checkbox */}
           <div className="flex items-center space-x-2">
             <Controller

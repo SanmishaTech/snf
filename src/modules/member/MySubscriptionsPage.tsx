@@ -1,6 +1,7 @@
-import React, { useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import React, { useEffect, useState } from "react";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { get } from "../../services/apiService"; // Corrected to import 'get' named export
+import { cancelSubscription, cancelOrderSubscriptions } from "../../services/subscriptionService";
 import {
   Card,
   CardContent,
@@ -9,10 +10,21 @@ import {
   CardFooter,
 } from "@/components/ui/card"; // Added CardFooter
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, PackageSearch, Download } from "lucide-react"; // Added PackageSearch for empty state and Download for invoice
+import { Loader2, PackageSearch, Download, X, AlertTriangle } from "lucide-react"; // Added PackageSearch for empty state and Download for invoice
 import { Button } from "@/components/ui/button"; // Added Button
 import { Link } from "react-router-dom"; // Added Link
 import { format } from "date-fns";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 interface Product {
   id: string;
@@ -61,7 +73,7 @@ export interface MemberSubscription {
   expiryDate: string; // ISO string date
   period: "DAYS_7" | "DAYS_15" | "DAYS_30" | "DAYS_90";
   status: string; // e.g., 'ACTIVE', 'PENDING_PAYMENT', 'CANCELLED', 'COMPLETED', 'PAUSED'
-  paymentStatus?: "PENDING" | "PAID" | "FAILED";
+  paymentStatus?: "PENDING" | "PAID" | "FAILED" | "CANCELLED";
   agency?: Agency | null;
   amount?: number;
   deliveryAddress?: Address | null;
@@ -131,11 +143,10 @@ const formatDeliverySchedule = (
       scheduleText = "Alternate Days";
       break;
     case "SELECT_DAYS":
-      scheduleText = `Selected Days (${
-        selectedDays
-          ?.map((s) => s.charAt(0).toUpperCase() + s.slice(1))
-          .join(", ") || "N/A"
-      })`;
+      scheduleText = `Selected Days (${selectedDays
+        ?.map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+        .join(", ") || "N/A"
+        })`;
       break;
     case "VARYING":
       scheduleText = "Varying Quantities";
@@ -154,6 +165,8 @@ const formatDeliverySchedule = (
 
 const MySubscriptionsPage: React.FC = () => {
   const queryClient = useQueryClient();
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [subscriptionToCancel, setSubscriptionToCancel] = useState<MemberSubscription | null>(null);
 
   // Get current user info from localStorage
   const getCurrentUser = () => {
@@ -189,6 +202,60 @@ const MySubscriptionsPage: React.FC = () => {
     staleTime: 2 * 60 * 1000, // 2 minutes (reduced for better user switching)
     gcTime: 5 * 60 * 1000, // 5 minutes (reduced for better memory management)
   });
+
+  // Mutation for cancelling subscriptions
+  const cancelSubscriptionMutation = useMutation({
+    mutationFn: async (subscriptionId: string) => {
+      return await cancelSubscription(subscriptionId);
+    },
+    onSuccess: () => {
+      toast.success("Subscription cancelled successfully!");
+      // Refetch subscriptions to update the UI
+      queryClient.invalidateQueries({ queryKey: ["mySubscriptions", userId] });
+      setCancelDialogOpen(false);
+      setSubscriptionToCancel(null);
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to cancel subscription");
+      setCancelDialogOpen(false);
+      setSubscriptionToCancel(null);
+    },
+  });
+
+  // Mutation for cancelling all subscriptions in an order
+  const cancelOrderSubscriptionsMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      return await cancelOrderSubscriptions(orderId);
+    },
+    onSuccess: () => {
+      toast.success("All order subscriptions cancelled successfully!");
+      // Refetch subscriptions to update the UI
+      queryClient.invalidateQueries({ queryKey: ["mySubscriptions", userId] });
+      setCancelDialogOpen(false);
+      setSubscriptionToCancel(null);
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to cancel order subscriptions");
+      setCancelDialogOpen(false);
+      setSubscriptionToCancel(null);
+    },
+  });
+
+  const handleCancelClick = (subscription: MemberSubscription) => {
+    setSubscriptionToCancel(subscription);
+    setCancelDialogOpen(true);
+  };
+
+  const handleCancelConfirm = () => {
+    if (!subscriptionToCancel) return;
+
+    // Always cancel the entire order if it exists, otherwise cancel just the subscription
+    if (subscriptionToCancel.productOrder?.id) {
+      cancelOrderSubscriptionsMutation.mutate(subscriptionToCancel.productOrder.id);
+    } else {
+      cancelSubscriptionMutation.mutate(subscriptionToCancel.id);
+    }
+  };
 
   // Clear all queries when user changes (detected by userId change)
   useEffect(() => {
@@ -266,6 +333,8 @@ const MySubscriptionsPage: React.FC = () => {
                 </CardDescription> */}
               </CardHeader>
               <CardContent className="space-y-2 text-sm text-gray-700 dark:text-gray-300 p-4 flex-grow">
+                {/* Debug info - remove this later */}
+
                 <p>
                   <strong>Quantity:</strong> {sub.qty}{" "}
                   {sub.product.depotVariant?.unit || sub.product.unit || "unit"}
@@ -304,11 +373,10 @@ const MySubscriptionsPage: React.FC = () => {
                   <p>
                     <strong>Payment:</strong>{" "}
                     <span
-                      className={`capitalize font-medium ${
-                        sub.paymentStatus === "PAID"
-                          ? "text-green-600"
-                          : "text-orange-500"
-                      }`}
+                      className={`capitalize font-medium ${sub.paymentStatus === "PAID"
+                        ? "text-green-600"
+                        : "text-orange-500"
+                        }`}
                     >
                       {sub.paymentStatus.toLowerCase()}
                     </span>
@@ -326,7 +394,7 @@ const MySubscriptionsPage: React.FC = () => {
                     {sub.deliveryAddress.recipientName ? ", " : ""}
                     {sub.deliveryAddress.plotBuilding || ""}
                     {sub.deliveryAddress.plotBuilding &&
-                    sub.deliveryAddress.streetArea
+                      sub.deliveryAddress.streetArea
                       ? ", "
                       : ""}
                     {sub.deliveryAddress.streetArea || ""},{" "}
@@ -344,66 +412,91 @@ const MySubscriptionsPage: React.FC = () => {
                 )}
               </CardContent>
               <CardFooter className="p-4 pt-0">
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2">
-                  {sub.paymentStatus === "PAID" && (
-                    <Link
-                      to={`/manage-subscription/${sub.id}`}
-                      className="w-full sm:flex-1"
-                    >
-                      <Button variant="outline" className="w-full">
-                        Manage
+                {/* Hide all buttons if subscription is cancelled */}
+                {sub.paymentStatus !== 'CANCELLED' && sub.status !== 'CANCELLED' && (
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2">
+                    {sub.paymentStatus === "PAID" && (
+                      <Link
+                        to={`/manage-subscription/${sub.id}`}
+                        className="w-full sm:flex-1"
+                      >
+                        <Button variant="outline" className="w-full">
+                          Manage
+                        </Button>
+                      </Link>
+                    )}
+                    {sub.productOrder?.invoicePath && (
+                      <Button
+                        onClick={async () => {
+                          try {
+                            const baseUrl =
+                              import.meta.env.VITE_BACKEND_URL ||
+                              "https://www.indraai.in";
+                            const invoiceUrl = `${baseUrl}/invoices/${sub.productOrder.invoicePath}`;
+
+                            // Fetch the file as blob to force download
+                            const response = await fetch(invoiceUrl);
+                            if (!response.ok) throw new Error("Download failed");
+
+                            const blob = await response.blob();
+                            const url = window.URL.createObjectURL(blob);
+
+                            // Create a temporary anchor element for download
+                            const link = document.createElement("a");
+                            link.href = url;
+                            link.download = `invoice-${sub.productOrder?.invoiceNo ||
+                              sub.productOrder?.orderNo
+                              }.pdf`;
+                            document.body.appendChild(link);
+                            link.click();
+
+                            // Cleanup
+                            document.body.removeChild(link);
+                            window.URL.revokeObjectURL(url);
+                          } catch (error) {
+                            console.error("Download failed:", error);
+                            // Fallback to opening in new tab if download fails
+                            const baseUrl =
+                              import.meta.env.VITE_BACKEND_URL ||
+                              "https://www.indraai.in";
+                            const invoiceUrl = `${baseUrl}/invoices/${sub.productOrder.invoicePath}`;
+                            window.open(invoiceUrl, "_blank");
+                          }
+                        }}
+                        variant="outline"
+                        className="w-full sm:flex-1 flex items-center justify-center gap-2"
+                      >
+                        <Download className="h-4 w-4" />
+                        <span className="text-sm sm:text-base">
+                          Download Invoice
+                        </span>
                       </Button>
-                    </Link>
-                  )}
-                  {sub.productOrder?.invoicePath && (
-                    <Button
-                      onClick={async () => {
-                        try {
-                          const baseUrl =
-                            import.meta.env.VITE_BACKEND_URL ||
-                            "https://www.indraai.in";
-                          const invoiceUrl = `${baseUrl}/invoices/${sub.productOrder.invoicePath}`;
-
-                          // Fetch the file as blob to force download
-                          const response = await fetch(invoiceUrl);
-                          if (!response.ok) throw new Error("Download failed");
-
-                          const blob = await response.blob();
-                          const url = window.URL.createObjectURL(blob);
-
-                          // Create a temporary anchor element for download
-                          const link = document.createElement("a");
-                          link.href = url;
-                          link.download = `invoice-${
-                            sub.productOrder?.invoiceNo ||
-                            sub.productOrder?.orderNo
-                          }.pdf`;
-                          document.body.appendChild(link);
-                          link.click();
-
-                          // Cleanup
-                          document.body.removeChild(link);
-                          window.URL.revokeObjectURL(url);
-                        } catch (error) {
-                          console.error("Download failed:", error);
-                          // Fallback to opening in new tab if download fails
-                          const baseUrl =
-                            import.meta.env.VITE_BACKEND_URL ||
-                            "https://www.indraai.in";
-                          const invoiceUrl = `${baseUrl}/invoices/${sub.productOrder.invoicePath}`;
-                          window.open(invoiceUrl, "_blank");
-                        }
-                      }}
-                      variant="outline"
-                      className="w-full sm:flex-1 flex items-center justify-center gap-2"
-                    >
-                      <Download className="h-4 w-4" />
-                      <span className="text-sm sm:text-base">
-                        Download Invoice
-                      </span>
-                    </Button>
-                  )}
-                </div>
+                    )}
+                    {/* Cancel Button - show only for unpaid or pending subscriptions */}
+                    {(sub.status !== 'CANCELLED' && sub.status !== 'COMPLETED' &&
+                      (sub.paymentStatus === 'PENDING' || sub.paymentStatus === 'FAILED' || !sub.paymentStatus)) && (
+                        <Button
+                          onClick={() => handleCancelClick(sub)}
+                          variant="destructive"
+                          size="sm"
+                          className="w-full sm:w-auto flex items-center justify-center gap-2"
+                        >
+                          <X className="h-4 w-4" />
+                          <span className="text-sm">
+                            Cancel Order
+                          </span>
+                        </Button>
+                      )}
+                  </div>
+                )}
+                {/* Show cancelled status message when subscription is cancelled */}
+                {(sub.paymentStatus === 'CANCELLED' || sub.status === 'CANCELLED') && (
+                  <div className="flex items-center justify-center p-3 bg-gray-100 dark:bg-gray-800 rounded-md">
+                    <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                      This subscription has been cancelled
+                    </span>
+                  </div>
+                )}
               </CardFooter>
             </Card>
           ))}
@@ -421,6 +514,63 @@ const MySubscriptionsPage: React.FC = () => {
           {/* e.g., <Button asChild className="mt-6"> <Link to="/products">Explore Products</Link> </Button> */}
         </div>
       )}
+
+      {/* Cancel Confirmation Dialog */}
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Cancel Order
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>
+                Are you sure you want to cancel{" "}
+                {subscriptionToCancel?.productOrder?.id ? (
+                  <>
+                    the entire order #{subscriptionToCancel.productOrder.orderNo}?
+                  </>
+                ) : (
+                  <>
+                    the subscription for{" "}
+                    <span className="font-semibold">
+                      {subscriptionToCancel?.product.name}
+                    </span>
+                    ?
+                  </>
+                )}
+              </p>
+              {subscriptionToCancel?.productOrder?.id && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
+                  <p className="text-sm font-medium text-amber-900">
+                    📋 Order Cancellation
+                  </p>
+                  <p className="text-sm text-amber-700 mt-1">
+                    This will cancel all subscriptions in order #{subscriptionToCancel.productOrder.orderNo},
+                    including the subscription for {subscriptionToCancel.product.name}.
+                  </p>
+                </div>
+              )}
+              <p className="text-sm text-muted-foreground">
+                ⚠️ This action cannot be undone. The {subscriptionToCancel?.productOrder?.id ? 'order' : 'subscription'} will be cancelled immediately.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel>Keep {subscriptionToCancel?.productOrder?.id ? 'Order' : 'Subscription'}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCancelConfirm}
+              className="bg-destructive hover:bg-destructive/90"
+              disabled={cancelSubscriptionMutation.isPending || cancelOrderSubscriptionsMutation.isPending}
+            >
+              {(cancelSubscriptionMutation.isPending || cancelOrderSubscriptionsMutation.isPending) && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Cancel {subscriptionToCancel?.productOrder?.id ? 'Entire Order' : 'Subscription'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

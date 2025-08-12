@@ -35,8 +35,6 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
         return 'Service Unavailable';
       case 'NETWORK_ERROR':
         return 'Network Error';
-      case 'CACHE_ERROR':
-        return 'Cache Error';
       default:
         return 'Something Went Wrong';
     }
@@ -58,8 +56,6 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
         return 'We couldn\'t find a depot that serves your area. Please check your pincode or try a nearby location.';
       case 'NETWORK_ERROR':
         return 'Please check your internet connection and try again.';
-      case 'CACHE_ERROR':
-        return 'There was a problem loading cached data. Please refresh the page and try again.';
       default:
         return (error as any).message || 'An unexpected error occurred. Please try again.';
     }
@@ -135,8 +131,6 @@ export const ErrorCard: React.FC<ErrorCardProps> = ({
         return 'Service Not Available in Your Area';
       case 'NETWORK_ERROR':
         return 'Network Connection Error';
-      case 'CACHE_ERROR':
-        return 'Data Loading Error';
       default:
         return 'Something Went Wrong';
     }
@@ -158,8 +152,6 @@ export const ErrorCard: React.FC<ErrorCardProps> = ({
         return 'Unfortunately, we don\'t currently deliver to your area. Please check if you entered the correct pincode.';
       case 'NETWORK_ERROR':
         return 'Please check your internet connection and try again. Make sure you\'re online to browse our products.';
-      case 'CACHE_ERROR':
-        return 'There was a problem loading product data. Please refresh the page to try again.';
       default:
         return (error as any).message || 'An unexpected error occurred while loading the page. Please try refreshing.';
     }
@@ -175,8 +167,6 @@ export const ErrorCard: React.FC<ErrorCardProps> = ({
         return 'Enter Pincode';
       case 'API_ERROR':
       case 'NETWORK_ERROR':
-      case 'CACHE_ERROR':
-        return 'Retry';
       case 'DEPOT_NOT_FOUND':
         return 'Check Pincode';
       default:

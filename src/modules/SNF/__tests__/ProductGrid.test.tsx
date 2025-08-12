@@ -67,8 +67,8 @@ const mockVariant: DepotVariant = {
 const mockProductWithPricing: ProductWithPricing = {
   product: mockProduct,
   variants: [mockVariant],
-  bestPrice: 100,
-  originalPrice: 120,
+  buyOncePrice: 100,
+  mrp: 120,
   discount: 20,
   inStock: true,
   deliveryTime: 'Same day delivery',
@@ -90,7 +90,8 @@ const mockProductsWithPricing: ProductWithPricing[] = [
         mrp: 200,
       },
     ],
-    bestPrice: 200,
+    buyOncePrice: 200,
+    mrp: 200,
     inStock: true,
   },
   {
@@ -108,7 +109,8 @@ const mockProductsWithPricing: ProductWithPricing[] = [
         notInStock: true,
       },
     ],
-    bestPrice: 150,
+    buyOncePrice: 150,
+    mrp: 150,
     inStock: false,
   },
 ];
