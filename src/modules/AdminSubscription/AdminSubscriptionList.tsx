@@ -954,6 +954,16 @@ const AdminSubscriptionList: React.FC = () => {
         ...apiParams,
       }).toString();
 
+      // Debug logging for filters
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Frontend sending filters:', {
+          effectiveFilters,
+          apiParams,
+          queryParams,
+          unassignedFilter
+        });
+      }
+
       try {
         const response: ApiResponse = await get(
           `/product-orders?${queryParams}`
@@ -1555,13 +1565,29 @@ const AdminSubscriptionList: React.FC = () => {
           ) : productOrders.length > 0 ? (
             productOrders.map((order) => {
               const firstSub = order.subscriptions?.[0];
+              
+              // Check if order is expired
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const isExpired = order.subscriptions.some(sub => {
+                if (!sub.expiryDate) return false;
+                const expiryDate = new Date(sub.expiryDate);
+                expiryDate.setHours(0, 0, 0, 0);
+                return expiryDate < today;
+              });
+              
+              // Check if order is cancelled
+              const isCancelled = order.paymentStatus === 'CANCELLED' || order.subscriptions.some(sub => sub.paymentStatus === 'CANCELLED');
 
               return (
                 <div
                   key={order.id}
-                  className={`bg-white rounded-xl border shadow-sm hover:shadow-md transition-shadow p-6 ${order.paymentStatus === 'CANCELLED' || order.subscriptions.some(sub => sub.paymentStatus === 'CANCELLED')
-                    ? 'opacity-60 bg-gray-50'
-                    : ''
+                  className={`rounded-xl border shadow-sm hover:shadow-md transition-shadow p-6 ${
+                    isCancelled
+                      ? 'opacity-60 bg-gray-50 border-gray-300'
+                      : isExpired
+                        ? 'bg-red-50 border-red-200 opacity-75'
+                        : 'bg-white'
                     }`}
                 >
                   <div className="space-y-4">
@@ -1572,14 +1598,22 @@ const AdminSubscriptionList: React.FC = () => {
                           <UserIcon className="h-5 w-5 text-gray-400" />
                         </div>
                         <div>
-                          <div className={`font-medium text-gray-900 flex items-center gap-2 ${order.paymentStatus === 'CANCELLED' || order.subscriptions.some(sub => sub.paymentStatus === 'CANCELLED')
-                            ? 'line-through text-gray-500'
-                            : ''
+                          <div className={`font-medium flex items-center gap-2 ${
+                            isCancelled
+                              ? 'line-through text-gray-500'
+                              : isExpired
+                                ? 'text-red-700'
+                                : 'text-gray-900'
                             }`}>
                             {order.member?.user?.name || "N/A"}
-                            {(order.paymentStatus === 'CANCELLED' || order.subscriptions.some(sub => sub.paymentStatus === 'CANCELLED')) && (
+                            {isCancelled && (
                               <span className="ml-2 px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full font-normal">
                                 CANCELLED
+                              </span>
+                            )}
+                            {isExpired && !isCancelled && (
+                              <span className="ml-2 px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full font-normal">
+                                EXPIRED
                               </span>
                             )}
                           </div>
@@ -1608,7 +1642,12 @@ const AdminSubscriptionList: React.FC = () => {
                           {order.subscriptions.map((sub: Subscription) => (
                             <div
                               key={sub.id}
-                              className={`bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full flex items-center gap-1.5 text-xs ${sub.paymentStatus === 'CANCELLED' ? 'line-through opacity-60 bg-gray-100 text-gray-500' : ''
+                              className={`px-2.5 py-1 rounded-full flex items-center gap-1.5 text-xs ${
+                                sub.paymentStatus === 'CANCELLED' 
+                                  ? 'line-through opacity-60 bg-gray-100 text-gray-500'
+                                  : isExpired
+                                    ? 'bg-red-100 text-red-700'
+                                    : 'bg-blue-50 text-blue-700'
                                 }`}
                             >
                               <PackageIcon className="h-3.5 w-3.5" />
@@ -1644,7 +1683,12 @@ const AdminSubscriptionList: React.FC = () => {
 
                     {/* Delivery Schedule */}
                     <div>
-                      <h3 className="text-sm font-semibold text-gray-700 mb-2">Delivery Schedule</h3>
+                      <h3 className={`text-sm font-semibold mb-2 ${isExpired ? 'text-red-700' : 'text-gray-700'}`}>
+                        Delivery Schedule
+                        {isExpired && (
+                          <span className="ml-2 text-xs text-red-600 font-normal">(Expired)</span>
+                        )}
+                      </h3>
                       <div className="flex flex-col gap-1.5">
                         {order.subscriptions.map((sub: Subscription) => {
                           const { weekdaysArray, isSpecificDays } =
@@ -1768,13 +1812,14 @@ const AdminSubscriptionList: React.FC = () => {
                       <h3 className="text-sm font-semibold text-gray-700 mb-2">Payment Status</h3>
                       <div className="flex flex-col gap-1">
                         <div
-                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${order.paymentStatus === "PAID"
-                            ? "bg-green-100 text-green-800"
-                            : order.paymentStatus === "PENDING"
-                              ? "bg-amber-100 text-amber-800"
-                              : order.paymentStatus === "CANCELLED"
-                                ? "bg-red-100 text-red-800"
-                                : "bg-red-100 text-red-800"
+                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                            order.paymentStatus === "PAID"
+                              ? isExpired ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"
+                              : order.paymentStatus === "PENDING"
+                                ? isExpired ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-800"
+                                : order.paymentStatus === "CANCELLED"
+                                  ? "bg-red-100 text-red-800"
+                                  : "bg-red-100 text-red-800"
                             } ${order.paymentStatus === 'CANCELLED' ? 'line-through' : ''
                             }`}
                         >
@@ -1789,12 +1834,14 @@ const AdminSubscriptionList: React.FC = () => {
                             ? "Home Delivery"
                             : "Store Pickup"}
                         </p>
-                        <div className="text-xs text-gray-500 mt-1">
-                          {order.paymentStatus === "PAID"
-                            ? "Payment completed"
-                            : order.paymentStatus === "PENDING"
-                              ? "Processing payment"
-                              : "Payment required"}
+                        <div className={`text-xs mt-1 ${isExpired ? 'text-red-600' : 'text-gray-500'}`}>
+                          {isExpired && !isCancelled
+                            ? "Subscription expired"
+                            : order.paymentStatus === "PAID"
+                              ? "Payment completed"
+                              : order.paymentStatus === "PENDING"
+                                ? "Processing payment"
+                                : "Payment required"}
                         </div>
 
                         {/* Delivery Instructions */}
@@ -1830,16 +1877,16 @@ const AdminSubscriptionList: React.FC = () => {
 
                     {/* Dates */}
                     <div>
-                      <h3 className="text-sm font-semibold text-gray-700 mb-2">Subscription Dates</h3>
+                      <h3 className={`text-sm font-semibold mb-2 ${isExpired ? 'text-red-700' : 'text-gray-700'}`}>Subscription Dates</h3>
                       {firstSub ? (
                         <div className="flex flex-col gap-1 text-sm">
                           <div className="flex items-center gap-2">
-                            <CalendarIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                            <CalendarIcon className={`h-4 w-4 flex-shrink-0 ${isExpired ? 'text-red-500' : 'text-gray-500'}`} />
                             <div className="flex flex-col">
-                              <span className="text-xs text-gray-500">
+                              <span className={`text-xs ${isExpired ? 'text-red-500' : 'text-gray-500'}`}>
                                 Start
                               </span>
-                              <span>
+                              <span className={isExpired ? 'text-red-700' : ''}>
                                 {format(
                                   new Date(firstSub.startDate),
                                   "dd MMM yyyy"
@@ -1848,18 +1895,21 @@ const AdminSubscriptionList: React.FC = () => {
                             </div>
                           </div>
                           <div className="flex items-center gap-2 mt-1">
-                            <CalendarCheckIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                            <CalendarCheckIcon className={`h-4 w-4 flex-shrink-0 ${isExpired ? 'text-red-500' : 'text-gray-500'}`} />
                             <div className="flex flex-col">
-                              <span className="text-xs text-gray-500">
+                              <span className={`text-xs ${isExpired ? 'text-red-500' : 'text-gray-500'}`}>
                                 End Date
                               </span>
-                              <span>
+                              <span className={isExpired ? 'text-red-700 font-medium' : ''}>
                                 {firstSub.expiryDate
                                   ? format(
                                     new Date(firstSub.expiryDate),
                                     "dd MMM yyyy"
                                   )
                                   : "N/A"}
+                                {isExpired && (
+                                  <span className="ml-2 text-xs text-red-600">(Expired)</span>
+                                )}
                               </span>
                             </div>
                           </div>
@@ -1873,15 +1923,15 @@ const AdminSubscriptionList: React.FC = () => {
 
                     {/* Assigned Agent */}
                     <div>
-                      <h3 className="text-sm font-semibold text-gray-700 mb-2">Assigned Agent</h3>
+                      <h3 className={`text-sm font-semibold mb-2 ${isExpired ? 'text-red-700' : 'text-gray-700'}`}>Assigned Agent</h3>
                       <div className="flex items-center gap-2">
-                        <div className="bg-gray-100 rounded-full p-1.5">
-                          <UserCheckIcon className="h-4 w-4 text-gray-500" />
+                        <div className={`rounded-full p-1.5 ${isExpired ? 'bg-red-100' : 'bg-gray-100'}`}>
+                          <UserCheckIcon className={`h-4 w-4 ${isExpired ? 'text-red-500' : 'text-gray-500'}`} />
                         </div>
-                        <span className="text-sm">
+                        <span className={`text-sm ${isExpired ? 'text-red-700' : ''}`}>
                           {firstSub?.agency?.user?.name ||
                             firstSub?.agency?.name || (
-                              <span className="text-gray-400">
+                              <span className={isExpired ? 'text-red-400' : 'text-gray-400'}>
                                 Unassigned
                               </span>
                             )}
@@ -1891,11 +1941,17 @@ const AdminSubscriptionList: React.FC = () => {
 
                     {/* Actions */}
                     <div>
-                      <h3 className="text-sm font-semibold text-gray-700 mb-2">Actions</h3>
-                      {(order.paymentStatus === 'CANCELLED' || order.subscriptions.some(sub => sub.paymentStatus === 'CANCELLED')) ? (
+                      <h3 className={`text-sm font-semibold mb-2 ${isExpired ? 'text-red-700' : 'text-gray-700'}`}>Actions</h3>
+                      {isCancelled ? (
                         <div className="flex items-center justify-center p-4 bg-gray-100 rounded-md">
                           <span className="text-sm text-gray-500 font-medium">
                             Order has been cancelled - No actions available
+                          </span>
+                        </div>
+                      ) : isExpired ? (
+                        <div className="flex items-center justify-center p-4 bg-red-100 rounded-md">
+                          <span className="text-sm text-red-700 font-medium">
+                            Subscription has expired - Limited actions available
                           </span>
                         </div>
                       ) : (
@@ -1906,39 +1962,22 @@ const AdminSubscriptionList: React.FC = () => {
                                 <Button
                                   variant="outline"
                                   size="icon"
-                                  className="h-8 w-8 rounded-full bg-white hover:bg-gray-50"
+                                  className={`h-8 w-8 rounded-full ${
+                                    isExpired 
+                                      ? 'bg-red-50 hover:bg-red-100 border-red-200' 
+                                      : 'bg-white hover:bg-gray-50'
+                                  }`}
                                   onClick={() => handleOpenPaymentModal(order)}
-                                  disabled={order.paymentStatus === "PAID"}
+                                  disabled={order.paymentStatus === "PAID" || isExpired}
                                 >
-                                  <PackageIcon className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent side="top">
-                                <p>Update Payment</p>
-                              </TooltipContent>
-                            </Tooltip>
-
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  className="h-8 w-8 rounded-full bg-white hover:bg-gray-50"
-                                  onClick={() =>
-                                    handleOpenAssignAgentModal(order)
-                                  }
-                                  disabled={order.paymentStatus !== "PAID"}
-                                >
-                                  <UserPlus className="h-4 w-4" />
+                                  <PackageIcon className={`h-4 w-4 ${isExpired ? 'text-red-400' : ''}`} />
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent side="top">
                                 <p>
-                                  {order.paymentStatus !== "PAID"
-                                    ? "Complete payment first"
-                                    : order.subscriptions.some(sub => sub.agencyId)
-                                      ? "Update Agent Assignment (Future Deliveries Only)"
-                                      : "Assign Agent to Order (Future Deliveries Only)"}
+                                  {isExpired 
+                                    ? "Cannot update payment for expired subscription"
+                                    : "Update Payment"}
                                 </p>
                               </TooltipContent>
                             </Tooltip>
@@ -1948,14 +1987,49 @@ const AdminSubscriptionList: React.FC = () => {
                                 <Button
                                   variant="outline"
                                   size="icon"
-                                  className="h-8 w-8 rounded-full bg-white hover:bg-gray-50"
+                                  className={`h-8 w-8 rounded-full ${
+                                    isExpired 
+                                      ? 'bg-red-50 hover:bg-red-100 border-red-200' 
+                                      : 'bg-white hover:bg-gray-50'
+                                  }`}
+                                  onClick={() =>
+                                    handleOpenAssignAgentModal(order)
+                                  }
+                                  disabled={order.paymentStatus !== "PAID" || isExpired}
+                                >
+                                  <UserPlus className={`h-4 w-4 ${isExpired ? 'text-red-400' : ''}`} />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent side="top">
+                                <p>
+                                  {isExpired
+                                    ? "Cannot assign agent to expired subscription"
+                                    : order.paymentStatus !== "PAID"
+                                      ? "Complete payment first"
+                                      : order.subscriptions.some(sub => sub.agencyId)
+                                        ? "Update Agent Assignment (Future Deliveries Only)"
+                                        : "Assign Agent to Order (Future Deliveries Only)"}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className={`h-8 w-8 rounded-full ${
+                                    isExpired 
+                                      ? 'bg-red-50 hover:bg-red-100 border-red-200' 
+                                      : 'bg-white hover:bg-gray-50'
+                                  }`}
                                   onClick={() => handleDownloadInvoice(order)}
-                                // disabled={downloadingInvoices.has(order.id) || order.paymentStatus !== 'PAID'}
+                                  disabled={downloadingInvoices.has(order.id)}
                                 >
                                   {downloadingInvoices.has(order.id) ? (
                                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
                                   ) : (
-                                    <Download className="h-4 w-4" />
+                                    <Download className={`h-4 w-4 ${isExpired ? 'text-red-400' : ''}`} />
                                   )}
                                 </Button>
                               </TooltipTrigger>
@@ -1963,9 +2037,11 @@ const AdminSubscriptionList: React.FC = () => {
                                 <p>
                                   {downloadingInvoices.has(order.id)
                                     ? "Downloading..."
-                                    : order.paymentStatus !== "PAID"
-                                      ? "Invoice available after payment"
-                                      : "Download Invoice"}
+                                    : isExpired
+                                      ? "Download Invoice (Expired Subscription)"
+                                      : order.paymentStatus !== "PAID"
+                                        ? "Invoice available after payment"
+                                        : "Download Invoice"}
                                 </p>
                               </TooltipContent>
                             </Tooltip>
