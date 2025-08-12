@@ -858,7 +858,7 @@ const AdminSubscriptionList: React.FC = () => {
       deliveryStatus: "",
       agencyId: "",
       productId: "",
-      expiryStatus: "NOT_EXPIRED", // Default to not expired
+      expiryStatus: "ALL", // Default to show all records
       // Add other filter keys as needed, initialized to empty or default values
     }
   );
@@ -1385,7 +1385,7 @@ const AdminSubscriptionList: React.FC = () => {
           <div className="flex items-center gap-2">
             <CalendarIcon className="h-4 w-4 text-gray-500" />
             <Select
-              value={filters.expiryStatus || "NOT_EXPIRED"}
+              value={filters.expiryStatus || "ALL"}
               onValueChange={(value) => {
                 setFilters(prev => ({ ...prev, expiryStatus: value }));
                 setCurrentPage(1); // Reset to page 1 when changing filter
@@ -1395,9 +1395,9 @@ const AdminSubscriptionList: React.FC = () => {
                 <SelectValue placeholder="Expiry Status" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="ALL">All</SelectItem>
                 <SelectItem value="NOT_EXPIRED">Not Expired</SelectItem>
                 <SelectItem value="EXPIRED">Expired</SelectItem>
-                <SelectItem value="ALL">All</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -1526,6 +1526,7 @@ const AdminSubscriptionList: React.FC = () => {
               {showUnassignedOnly && " (unassigned only)"}
               {filters.expiryStatus === "EXPIRED" && " (expired only)"}
               {filters.expiryStatus === "NOT_EXPIRED" && " (not expired)"}
+              {filters.expiryStatus === "ALL" && " (all records)"}
             </>
           )}
         </span>
