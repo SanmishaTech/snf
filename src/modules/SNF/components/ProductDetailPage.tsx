@@ -40,7 +40,7 @@ const ProductDetailPage: React.FC = () => {
   // Fetch product with variants using the hook
   const { product: productData, error: fetchError, isLoading } = useProduct(
     id ? parseInt(id) : undefined,
-    depotId
+    depotId || 1 // Fallback to depot ID 1 if no depot is set
   );
   
   // State for selected variant
@@ -333,7 +333,7 @@ const ProductDetailPage: React.FC = () => {
                     const catName = productData.product.category?.name;
                     const catId = productData.product.categoryId;
                     if (catName && label === catName && catId) {
-                      return `/snf?tag=category:${catId}`;
+                      return `/snf/category/${catId}`;
                     }
                     const normalized = label.trim().toLowerCase();
                     if (normalized === 'non-dairy') return '/snf?tag=non-dairy';

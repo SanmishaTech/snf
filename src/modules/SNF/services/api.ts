@@ -62,7 +62,7 @@ export class ProductServiceImpl implements ProductService {
    */
   async getProductVariants(productId: number, depotId: number): Promise<DepotVariant[]> {
     try {
-      // Use the correct endpoint that returns variants for a product
+      // Use the public products endpoint with depotId to get products with variants
       const url = new URL(`${this.API_BASE_URL}/api/products/public`);
       url.searchParams.append('depotId', depotId.toString());
 
@@ -88,21 +88,20 @@ export class ProductServiceImpl implements ProductService {
       if (Array.isArray(result.data)) {
         // Direct array of products with variants
         const product = result.data.find((p: any) => p.id === productId);
-        if (product && product.isDairyProduct === false && product.variants && Array.isArray(product.variants)) {
+        if (product && product.variants && Array.isArray(product.variants)) {
           parentProduct = product;
           productVariants = product.variants;
         }
       } else if (result.data.products && Array.isArray(result.data.products)) {
         // Object with products array
         const product = result.data.products.find((p: any) => p.id === productId);
-        // Temporarily allow all products for debugging
-        if (product && product.variants && Array.isArray(product.variants)) { // && product.isDairyProduct !== true
+        if (product && product.variants && Array.isArray(product.variants)) {
           parentProduct = product;
           productVariants = product.variants;
         }
       }
 
-      // If product was found but is dairy, return empty to indicate not available
+      // If no product found, return empty array
       if (!parentProduct) {
         return [];
       }
@@ -143,6 +142,7 @@ export class ProductServiceImpl implements ProductService {
           maintainStock: parentProduct.maintainStock,
           categoryId: parentProduct.categoryId,
           category: parentProduct.category,
+          tags: parentProduct.tags,
           createdAt: new Date(parentProduct.createdAt || Date.now()),
           updatedAt: new Date(parentProduct.updatedAt || Date.now()),
         } : {
@@ -365,6 +365,7 @@ export class ProductServiceImpl implements ProductService {
   async getProductsByCategory(categoryId: number, depotId?: number): Promise<Product[]> {
     try {
       const url = new URL(`${this.API_BASE_URL}/api/products/public`);
+      // Backend may ignore categoryId; we still send it for forward compatibility
       url.searchParams.append('categoryId', categoryId.toString());
       if (depotId) {
         url.searchParams.append('depotId', depotId.toString());
@@ -376,13 +377,24 @@ export class ProductServiceImpl implements ProductService {
         throw new Error(`API request failed: ${response.status}`);
       }
 
-      const result: ApiResponse<Product[]> = await response.json();
+      const result: ApiResponse<any> = await response.json();
       
       if (!result.success || !result.data) {
         return [];
       }
 
-      return (result.data as any[]).filter((p: any) => p && p.isDairyProduct !== true);
+      // Normalize possible shapes then filter by categoryId client-side
+      const rawProducts: any[] = Array.isArray(result.data)
+        ? result.data
+        : Array.isArray((result.data as any).products)
+          ? (result.data as any).products
+          : [];
+
+      return rawProducts.filter((p: any) => {
+        const pid = p?.categoryId;
+        const pcid = p?.category?.id;
+        return pid === categoryId || pcid === categoryId;
+      });
     } catch (error) {
       console.error('Error fetching products by category:', error);
       throw error;
@@ -412,7 +424,7 @@ export class ProductServiceImpl implements ProductService {
         return [];
       }
 
-      return (result.data as any[]).filter((p: any) => p && p.isDairyProduct === false);
+      return (result.data as any[]);
     } catch (error) {
       console.error('Error searching products:', error);
       throw error;
@@ -442,12 +454,10 @@ export class ProductServiceImpl implements ProductService {
       if (result && typeof result === 'object') {
         if (result.success && result.data) {
           // Wrapped format
-          const p = result.data as any;
-          return p && p.isDairyProduct !== true ? p : null;
+          return result.data as any;
         } else if (result.id) {
           // Direct format - the API returns the product directly
-          const p = result as any;
-          return p && p.isDairyProduct !== true ? p : null;
+          return result as any;
         }
       }
 

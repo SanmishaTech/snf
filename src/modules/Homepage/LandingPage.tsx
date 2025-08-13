@@ -1,47 +1,33 @@
 // Landing page for milk subscription service
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
-import Login from "../Auth/Login";
-import Register from "../Auth/Register";
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { formatCurrency } from "@/lib/formatter.js";
-import { motion } from "framer-motion";
-import Cows from "./images/picture.png";
-import {
-  FaTruck,
-  FaGlassWhiskey,
-  FaTimes,
-  FaHeart,
-  FaShieldAlt,
-} from "react-icons/fa";
-import { FaCow, FaBars } from "react-icons/fa6";
-import { GiMilkCarton, GiGrassMushroom } from "react-icons/gi";
-import { cn } from "@/lib/utils";
+import { useNavigate, useLocation } from "react-router-dom";
+ 
 import { Leaf } from "lucide-react"; // For AppFooter
+ 
 // import Banner from '@/images/banner1.webp'; // Replaced by dynamic banners
 import * as apiService from "@/services/apiService";
 import HeroSection from "./Coursel";
 import type { Banner as ApiBanner } from "../BannerMaster/BannerListPage"; // Renamed to avoid conflict if Banner is used locally
 import Header from "@/layouts/Header";
-import Productdetail from "@/modules/Products/ProductDetailPage";
+  // Removed local product filtering state; navigation to /snf is used instead
 import { Whychoose } from "./UIcomponents/whychoose";
 import A2MilkSection from "./UIcomponents/A2milkbenifits";
-interface Product {
-  id: string | number;
-  name: string;
-  rate: number;
-  url?: string | null;
-  unit?: string;
-}
+import { productService } from "@/modules/SNF/services/api";
+// Product interface kept previously for landing fetch; no longer used
 
 interface CarouselImage {
   id: string; // Made 'id' required as per lint error indication
   src: string;
   alt: string;
   title?: string;
-  mobileSrc?: string; // Optional mobile image source
+  mobileSrc: string; // Required to match HeroImage
 }
+
+type LandingCategory = {
+  id: string;
+  name: string;
+  imageUrl?: string;
+};
 
 /**
  * The main landing page component for the milk subscription service.
@@ -52,19 +38,20 @@ interface CarouselImage {
  */
 const LandingPage = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("login");
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const location = useLocation();
+ 
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const [heroBanners, setHeroBanners] = useState<CarouselImage[]>([]);
   const [isLoadingBanners, setIsLoadingBanners] = useState(true);
   const [bannerError, setBannerError] = useState<string | null>(null);
   // helper for admin check
-  const adminRoles: string[] = ["ADMIN", "SUPER_ADMIN", "ADMINISTRATOR"];
+ 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
+  const [categories, setCategories] = useState<LandingCategory[]>([]);
+  const [catLoading, setCatLoading] = useState<boolean>(false);
+  const [catError, setCatError] = useState<string | null>(null);
+ 
 
   // Mobile image mapping - Add your mobile images here
   const mobileImageMap: Record<string, string> = {
@@ -75,27 +62,50 @@ const LandingPage = () => {
   };
 
   const BACKEND_URL =
-    import.meta.env.VITE_BACKEND_URL || "https://www.indraai.in";
+    import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      setIsLoading(true);
-      setError(null);
+    // Redirect legacy category tag links like /?tag=category:ID to the new category route
+    const params = new URLSearchParams(location.search || "");
+    const tagRaw = params.get("tag");
+    if (tagRaw && tagRaw.toLowerCase().startsWith("category:")) {
+      const idStr = tagRaw.split(":")[1] || "";
+      const idNum = parseInt(idStr, 10);
+      if (Number.isFinite(idNum)) {
+        navigate(`/snf/category/${idNum}`, { replace: true });
+        return; // avoid running the rest on this render
+      }
+    }
+
+    // Load user details
+    // Fetch categories for landing page navigation
+    const fetchCategories = async () => {
+      setCatLoading(true);
+      setCatError(null);
       try {
-        const response = await fetch("/products/public");
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data: Product[] = await response.json();
-        setProducts(data);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "An unknown error occurred");
+        const data = await productService.getCategories();
+        const normalized: LandingCategory[] = (Array.isArray(data) ? data : []).map((c: any) => ({
+          id: String(c.id ?? c._id ?? c.slug ?? ""),
+          name: c.name || c.title || "Category",
+          imageUrl: c.imageUrl || c.attachmentUrl || c.iconUrl || c.url || undefined,
+        }));
+        const sortedCats = [...normalized].sort((a, b) => {
+          const aMilk = typeof a.name === "string" && a.name.toLowerCase().includes("milk") ? 1 : 0;
+          const bMilk = typeof b.name === "string" && b.name.toLowerCase().includes("milk") ? 1 : 0;
+          if (aMilk !== bMilk) return bMilk - aMilk;
+          return (a.name || "").localeCompare(b.name || "");
+        });
+        setCategories(sortedCats);
+      } catch (e: any) {
+        setCatError(e?.message || "Failed to load categories");
       } finally {
-        setIsLoading(false);
+        setCatLoading(false);
       }
     };
 
-    fetchProducts();
+    fetchCategories();
+
+    
     const userDetailsString = localStorage.getItem("user");
     if (userDetailsString) {
       try {
@@ -143,20 +153,16 @@ const LandingPage = () => {
           const transformedBanners = responseData.banners
             .filter((banner) => banner.imagePath)
             .map((banner) => {
-              // Check if there's a mobile image mapping for this banner
               const mobileImagePath =
-                mobileImageMap[banner.id] ||
-                (banner.mobileImagePath
-                  ? `${BACKEND_URL}${banner.mobileImagePath}`
-                  : `${BACKEND_URL}${banner.imagePath}`);
+                mobileImageMap[banner.id] || `${BACKEND_URL}${banner.imagePath}`;
 
               return {
                 id: banner.id,
                 src: `${BACKEND_URL}${banner.imagePath}`,
                 alt: banner.caption || `Indraai Milk Banner ${banner.id}`,
                 title: banner.description || undefined,
-                mobileSrc: mobileImagePath, // Now always has a value
-              };
+                mobileSrc: mobileImagePath,
+              } as CarouselImage;
             });
           setHeroBanners(transformedBanners);
         } else {
@@ -198,7 +204,7 @@ const LandingPage = () => {
         setBannerError(errorMsg);
 
         // Use Unsplash images as fallback on error
-        const unsplashBanners: CarouselImage[] = [
+          const unsplashBanners: CarouselImage[] = [
           {
             id: "unsplash-1",
             src: "https://images.unsplash.com/photo-1528821128474-27f963b062bf?q=80&w=2070&auto=format&fit=crop",
@@ -245,7 +251,7 @@ const LandingPage = () => {
     <div className="flex flex-col min-h-screen bg-background">
       <Header
         isLoggedIn={isLoggedIn}
-        userName={userName}
+        userName={userName || undefined}
         onLogout={handleLogout}
         showWallet={showWallet}
       />
@@ -301,9 +307,97 @@ const LandingPage = () => {
               of Indraai.
             </p>
           </div>
-          <div id="product-detail-section">
-            <Productdetail />
-          </div>
+          {/* Browse by Category - navigates to SNF page with category preselected */}
+          <section className="mb-12">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl md:text-2xl font-semibold">Browse by Category</h3>
+              {catError && (
+                <button
+                  className="text-sm underline"
+                  onClick={() => {
+                    // simple retry
+                    (async () => {
+                      setCatLoading(true);
+                      setCatError(null);
+                      try {
+                        const data = await productService.getCategories();
+                        const normalized: LandingCategory[] = (Array.isArray(data) ? data : []).map((c: any) => ({
+                          id: String(c.id ?? c._id ?? c.slug ?? ""),
+                          name: c.name || c.title || "Category",
+                          imageUrl: c.imageUrl || c.attachmentUrl || c.iconUrl || c.url || undefined,
+                        }));
+                        const sortedCats = [...normalized].sort((a, b) => {
+                          const aMilk = typeof a.name === "string" && a.name.toLowerCase().includes("milk") ? 1 : 0;
+                          const bMilk = typeof b.name === "string" && b.name.toLowerCase().includes("milk") ? 1 : 0;
+                          if (aMilk !== bMilk) return bMilk - aMilk;
+                          return (a.name || "").localeCompare(b.name || "");
+                        });
+                        setCategories(sortedCats);
+                      } catch (e: any) {
+                        setCatError(e?.message || "Failed to load categories");
+                      } finally {
+                        setCatLoading(false);
+                      }
+                    })();
+                  }}
+                >
+                  Retry
+                </button>
+              )}
+            </div>
+            {catLoading ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <div key={i} className="animate-pulse">
+                    <div className="aspect-square w-full rounded-lg bg-muted/30" />
+                    <div className="h-3 w-2/3 bg-muted/40 rounded mt-3" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                {categories.map((cat) => {
+                  const catIdNum = parseInt(cat.id, 10);
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => navigate(`/snf/category/${catIdNum}`)}
+                      className={`group text-left`}
+                      aria-label={`View ${cat.name} products`}
+                    >
+                      <div className="relative aspect-square w-full overflow-hidden rounded-full border bg-accent/10">
+                        {cat.imageUrl ? (
+                          <img
+                            src={`${import.meta.env.VITE_BACKEND_URL}${cat.imageUrl}`}
+                            alt={cat.name}
+                            className="h-full w-full object-cover rounded-full transition-transform duration-300 group-hover:scale-[1.03]"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="h-full w-full grid place-items-center text-muted-foreground bg-gradient-to-br from-muted/30 to-transparent rounded-full">
+                            {cat.name?.charAt(0) || "C"}
+                          </div>
+                        )}
+                      </div>
+                      <div className="mt-3 text-center">
+                        <p className={`text-sm font-medium line-clamp-2 group-hover:text-primary`}>
+                          {cat.name}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
+                {categories.length === 0 && !catError && (
+                  <p className="col-span-2 sm:col-span-3 lg:col-span-6 text-muted-foreground">
+                    No categories available.
+                  </p>
+                )}
+              </div>
+            )}
+          </section>
+
+          <div id="product-detail-section" />
 
           <div className="block">
             <Whychoose />

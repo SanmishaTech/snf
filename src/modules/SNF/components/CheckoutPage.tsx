@@ -13,6 +13,8 @@ import { snfOrderService } from "@/services/snfOrderService";
 import { get } from "@/services/apiService";
 import { DeliveryLocationService, DeliveryLocation } from "@/services/deliveryLocationService";
 import { toast } from "sonner";
+import AddressSelector from "./AddressSelector";
+import { type DeliveryAddress } from "../hooks/useAddresses";
 
 const currency = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -25,16 +27,7 @@ const CheckoutPage: React.FC = () => {
   const totalQty = state.items.reduce((n, it) => n + it.quantity, 0);
   const navigate = useNavigate();
 
-  const [customer, setCustomer] = useState({
-    name: "",
-    email: "",
-    mobile: "",
-    addressLine1: "",
-    addressLine2: "",
-    city: "",
-    state: "",
-    pincode: "",
-  });
+  const [selectedAddress, setSelectedAddress] = useState<DeliveryAddress | null>(null);
   const [loading, setLoading] = useState(false);
   const [deliveryLocation, setDeliveryLocation] = useState<DeliveryLocation | null>(null);
   const [walletBalance, setWalletBalance] = useState<number>(0);
@@ -45,11 +38,6 @@ const CheckoutPage: React.FC = () => {
   useEffect(() => {
     const location = DeliveryLocationService.getCurrentLocation();
     setDeliveryLocation(location);
-    
-    // If we have a delivery location with pincode, pre-fill the pincode field
-    if (location?.pincode) {
-      setCustomer(prev => ({ ...prev, pincode: location.pincode }));
-    }
   }, []);
 
   // Fetch wallet balance for breakdown and deduction
@@ -77,12 +65,7 @@ const CheckoutPage: React.FC = () => {
     fetchWallet();
   }, []);
 
-  const isFormValid =
-    customer.name.trim() !== "" &&
-    customer.mobile.trim() !== "" &&
-    customer.addressLine1.trim() !== "" &&
-    customer.city.trim() !== "" &&
-    customer.pincode.trim() !== "";
+  const isFormValid = selectedAddress !== null;
 
   const handlePlaceOrder = async () => {
     if (state.items.length === 0 || !isFormValid || loading) return;
@@ -104,16 +87,21 @@ const CheckoutPage: React.FC = () => {
       }));
       const deliveryFee = 0;
       const walletDeduction = Math.max(0, Math.min(walletBalance || 0, subtotal + deliveryFee));
+      if (!selectedAddress) {
+        toast.error("Please select a delivery address");
+        return;
+      }
+
       const payload = {
         customer: {
-          name: customer.name.trim(),
-          email: customer.email?.trim() || null,
-          mobile: customer.mobile.trim(),
-          addressLine1: customer.addressLine1.trim(),
-          addressLine2: customer.addressLine2?.trim() || null,
-          city: customer.city.trim(),
-          state: customer.state?.trim() || null,
-          pincode: customer.pincode.trim(),
+          name: selectedAddress.recipientName,
+          email: null, // Email not stored in address
+          mobile: selectedAddress.mobile,
+          addressLine1: selectedAddress.plotBuilding,
+          addressLine2: selectedAddress.streetArea,
+          city: selectedAddress.city,
+          state: selectedAddress.state,
+          pincode: selectedAddress.pincode,
         },
         items: itemsPayload,
         subtotal,
@@ -125,6 +113,7 @@ const CheckoutPage: React.FC = () => {
         paymentStatus: "PENDING",
         paymentDate: null,
         depotId: depotId || null, // Include depot ID from delivery location
+        deliveryAddressId: selectedAddress.id, // Include the selected address ID
       };
       const res = await snfOrderService.createOrder(payload);
       toast.success(`Order created: ${res.data.orderNo}`);
@@ -268,82 +257,41 @@ const CheckoutPage: React.FC = () => {
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Customer Details</CardTitle>
-                    <CardDescription>Enter shipping/contact details</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="space-y-1">
-                      <Label htmlFor="name">Full Name *</Label>
-                      <Input
-                        id="name"
-                        value={customer.name}
-                        onChange={(e) => setCustomer((c) => ({ ...c, name: e.target.value }))}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="mobile">Mobile *</Label>
-                      <Input
-                        id="mobile"
-                        type="tel"
-                        value={customer.mobile}
-                        onChange={(e) => setCustomer((c) => ({ ...c, mobile: e.target.value }))}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={customer.email}
-                        onChange={(e) => setCustomer((c) => ({ ...c, email: e.target.value }))}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="address1">Address Line 1 *</Label>
-                      <Input
-                        id="address1"
-                        value={customer.addressLine1}
-                        onChange={(e) => setCustomer((c) => ({ ...c, addressLine1: e.target.value }))}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="address2">Address Line 2</Label>
-                      <Input
-                        id="address2"
-                        value={customer.addressLine2}
-                        onChange={(e) => setCustomer((c) => ({ ...c, addressLine2: e.target.value }))}
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <AddressSelector
+                  selectedAddressId={selectedAddress?.id}
+                  onAddressSelect={setSelectedAddress}
+                />
+
+                {selectedAddress && (
+                  <Card className="border-green-200 bg-green-50/30">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-green-800">
+                        Selected Delivery Address
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-sm">
                       <div className="space-y-1">
-                        <Label htmlFor="city">City *</Label>
-                        <Input
-                          id="city"
-                          value={customer.city}
-                          onChange={(e) => setCustomer((c) => ({ ...c, city: e.target.value }))}
-                        />
+                        <p className="font-medium">{selectedAddress.recipientName}</p>
+                        <p className="text-muted-foreground">
+                          {selectedAddress.plotBuilding}
+                          {selectedAddress.plotBuilding && selectedAddress.streetArea ? ", " : ""}
+                          {selectedAddress.streetArea}
+                        </p>
+                        {selectedAddress.landmark && (
+                          <p className="text-muted-foreground text-xs">
+                            Landmark: {selectedAddress.landmark}
+                          </p>
+                        )}
+                        <p className="text-muted-foreground">
+                          {selectedAddress.city}, {selectedAddress.state} - {selectedAddress.pincode}
+                        </p>
+                        <p className="text-muted-foreground text-xs">
+                          Mobile: {selectedAddress.mobile}
+                        </p>
                       </div>
-                      <div className="space-y-1">
-                        <Label htmlFor="state">State</Label>
-                        <Input
-                          id="state"
-                          value={customer.state}
-                          onChange={(e) => setCustomer((c) => ({ ...c, state: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label htmlFor="pincode">Pincode *</Label>
-                        <Input
-                          id="pincode"
-                          value={customer.pincode}
-                          onChange={(e) => setCustomer((c) => ({ ...c, pincode: e.target.value }))}
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                )}
 
                 <Card>
                   <CardHeader className="pb-2">
@@ -402,6 +350,11 @@ const CheckoutPage: React.FC = () => {
                     >
                       {loading ? "Placing order..." : "Proceed to payment"}
                     </Button>
+                    {!selectedAddress && state.items.length > 0 && (
+                      <p className="text-xs text-red-600 text-center">
+                        Please select a delivery address to continue
+                      </p>
+                    )}
                     <p className="text-xs text-muted-foreground text-center">
                       By placing your order, you agree to our terms and policies.
                     </p>

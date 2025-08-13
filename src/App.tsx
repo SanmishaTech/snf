@@ -113,6 +113,7 @@ const App = () => {
   const SNFCheckoutWrapper = React.lazy(() => import("./modules/SNF/SNFCheckoutWrapper"));
   // Lazy-load the Address page wrapper for SNF
   const SNFAddressWrapper = React.lazy(() => import("./modules/SNF/SNFAddressWrapper"));
+  const SNFCategoryPageWrapper = React.lazy(() => import("./modules/SNF/SNFCategoryPageWrapper"));
 
   // Get user from localStorage to restrict access to admin-only routes
   let user: any = null;
@@ -135,8 +136,8 @@ const App = () => {
           </Route>
 
           {/* New SNF routes - independent landing page and product detail, both lazy-loaded */}
-          {/* <Route
-            path="/snf"
+           <Route
+            path="/snf" 
             element={
               <React.Suspense
                 fallback={
@@ -162,7 +163,7 @@ const App = () => {
                 <SNFWrapper />
               </React.Suspense>
             }
-          /> */}
+          /> 
 
           <Route
             path="/snf/checkout"
@@ -233,6 +234,35 @@ const App = () => {
                 }
               >
                 <SNFProductDetailWrapper />
+              </React.Suspense>
+            }
+          />
+
+          <Route
+            path="/snf/category/:categoryId"
+            element={
+              <React.Suspense
+                fallback={
+                  <div className="p-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {Array.from({ length: 8 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className="animate-pulse rounded-lg border p-4 space-y-3"
+                          aria-busy="true"
+                          aria-label="Loading product"
+                        >
+                          <div className="h-32 bg-muted/40 rounded-md" />
+                          <div className="h-4 bg-muted/40 rounded w-3/4" />
+                          <div className="h-4 bg-muted/40 rounded w-1/2" />
+                          <div className="h-8 bg-muted/40 rounded" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                }
+              >
+                <SNFCategoryPageWrapper />
               </React.Suspense>
             }
           />

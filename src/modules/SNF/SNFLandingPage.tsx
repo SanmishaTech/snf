@@ -340,15 +340,10 @@ const SNFContent: React.FC = () => {
                 const catIdNum = parseInt(cat.id, 10);
                 const isSelected = selectedCats.includes(catIdNum);
                 return (
-                  <button
+                  <a
                     key={cat.id}
                     id={`category-${catIdNum}`}
-                    type="button"
-                    onClick={() => {
-                      setSelectedCats((prev) =>
-                        prev.includes(catIdNum) ? prev.filter((x) => x !== catIdNum) : [catIdNum]
-                      );
-                    }}
+                    href={`/snf/category/${catIdNum}`}
                     className="group text-left"
                     aria-label={`Filter by category ${cat.name}`}
                   >
@@ -371,7 +366,7 @@ const SNFContent: React.FC = () => {
                         {cat.name}
                       </p>
                     </div>
-                  </button>
+                  </a>
                 );
               })}
               {categories.length === 0 && !catError && (

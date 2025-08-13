@@ -18,17 +18,16 @@ export const useProducts = (depotId?: number) => {
   // Transform products and variants into ProductWithPricing
   const transformProducts = useCallback((productsData: Product[], variantsData: DepotVariant[]): ProductWithPricing[] => {
     return productsData
-.filter(p => p.isDairyProduct !== true)
       .map(product => {
         const productVariants = variantsData.filter(variant => variant.productId === product.id);
-        
+
         // Find the variant with the lowest buyOncePrice or use MRP if buyOncePrice is not available
         const bestVariant = productVariants.reduce((best, current) => {
           if (!best) return current;
-          
+
           const bestPrice = best.buyOncePrice ?? best.mrp;
           const currentPrice = current.buyOncePrice ?? current.mrp;
-          
+
           return currentPrice < bestPrice ? current : best;
         }, null as DepotVariant | null);
 
@@ -39,7 +38,7 @@ export const useProducts = (depotId?: number) => {
         let discount = 0;
         const buyOncePrice = bestVariant?.buyOncePrice ?? bestVariant?.mrp;
         const mrp = bestVariant?.mrp ?? 0;
-        
+
         // If there's a buyOncePrice that's lower than MRP, calculate discount
         if (buyOncePrice && buyOncePrice < mrp) {
           discount = (mrp - buyOncePrice) / mrp;
@@ -74,7 +73,7 @@ export const useProducts = (depotId?: number) => {
 
       setRawProducts(productsData);
       setVariants(variantsData);
-      
+
       // Transform and set products with pricing
       const productsWithPricing = transformProducts(productsData, variantsData);
       setProducts(productsWithPricing);
@@ -158,19 +157,53 @@ export const useProduct = (productId?: number, depotId?: number) => {
       console.log('Product data fetched:', productData);
       console.log('Variants data fetched:', variantsData);
 
+      // Handle case where no variants are found
+      if (variantsData.length === 0) {
+        console.warn(`No depot variants found for product ${productId} in depot ${depotId}`);
+        // Create a default variant based on product data
+        const defaultVariant: DepotVariant = {
+          id: 0,
+          depotId: depotId,
+          productId: productId,
+          name: 'Default',
+          hsnCode: '',
+          minimumQty: 1,
+          closingQty: 0,
+          notInStock: true,
+          isHidden: false,
+          buyOncePrice: undefined,
+          price15Day: undefined,
+          price1Month: undefined,
+          price3Day: undefined,
+          price7Day: undefined,
+          mrp: 0,
+          purchasePrice: undefined,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          depot: {
+            id: depotId,
+            name: 'Depot',
+            address: '',
+            isOnline: true,
+          },
+          product: productData,
+        };
+        variantsData = [defaultVariant];
+      }
+
       // Transform to ProductWithPricing
       const bestVariant = variantsData.reduce((best, current) => {
         if (!best) return current;
-        
+
         const bestPrice = best.buyOncePrice ?? best.mrp;
         const currentPrice = current.buyOncePrice ?? current.mrp;
-        
+
         return currentPrice < bestPrice ? current : best;
       }, null as DepotVariant | null);
 
       const buyOncePrice = bestVariant?.buyOncePrice ?? bestVariant?.mrp;
       const mrp = bestVariant?.mrp ?? 0;
-      
+
       // Calculate discount if applicable
       let discount = 0;
       if (buyOncePrice && buyOncePrice < mrp) {
@@ -243,16 +276,16 @@ export const useProductSearch = (query: string, depotId?: number) => {
           // Find the variant with the lowest buyOncePrice or use MRP if buyOncePrice is not available
           const bestVariant = variants.reduce((best, current) => {
             if (!best) return current;
-            
+
             const bestPrice = best.buyOncePrice ?? best.mrp;
             const currentPrice = current.buyOncePrice ?? current.mrp;
-            
+
             return currentPrice < bestPrice ? current : best;
           }, null as DepotVariant | null);
 
           const buyOncePrice = bestVariant?.buyOncePrice ?? bestVariant?.mrp;
           const mrp = bestVariant?.mrp ?? 0;
-          
+
           // Calculate discount if applicable
           let discount = 0;
           if (buyOncePrice && buyOncePrice < mrp) {
@@ -335,16 +368,16 @@ export const useProductsByCategory = (categoryId?: number, depotId?: number) => 
           // Find the variant with the lowest buyOncePrice or use MRP if buyOncePrice is not available
           const bestVariant = variants.reduce((best, current) => {
             if (!best) return current;
-            
+
             const bestPrice = best.buyOncePrice ?? best.mrp;
             const currentPrice = current.buyOncePrice ?? current.mrp;
-            
+
             return currentPrice < bestPrice ? current : best;
           }, null as DepotVariant | null);
 
           const buyOncePrice = bestVariant?.buyOncePrice ?? bestVariant?.mrp;
           const mrp = bestVariant?.mrp ?? 0;
-          
+
           // Calculate discount if applicable
           let discount = 0;
           if (buyOncePrice && buyOncePrice < mrp) {

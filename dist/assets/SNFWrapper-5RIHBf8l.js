@@ -1,1 +1,0 @@
-import{j as r}from"./index-C5xHoMb0.js";import{P as i,C as o}from"./Footer-D_bDYD-E.js";import e from"./SNFLandingPage-CmOJqokE.js";const n=()=>r.jsx(i,{children:r.jsx(o,{children:r.jsx(e,{})})});export{n as default};
