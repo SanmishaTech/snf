@@ -4,11 +4,14 @@ import { Link } from "react-router-dom";
 import { ProductWithPricing, DepotVariant } from "../types";
 import { Check, ChevronDown, Search, X, Minus, Plus } from "lucide-react";
 
+const DEFAULT_DEPOT_ID = 1;
+
 interface ProductCardProps {
   product: ProductWithPricing;
   onAddToCart: (product: ProductWithPricing, variant: DepotVariant, qty?: number) => void;
   // optional: let parent control initial variant
   initialVariantId?: number | null;
+  showVariants?: boolean; // New prop to control variant display
 }
 
 const VARIANT_PILLS_THRESHOLD = 4;
@@ -17,6 +20,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   product,
   onAddToCart,
   initialVariantId = null,
+  showVariants = true,
 }) => {
   const [selectedVariantId, setSelectedVariantId] = useState<number | null>(initialVariantId);
   const [isVariantDropdownOpen, setIsVariantDropdownOpen] = useState(false);
@@ -80,8 +84,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   //   (selectedVariant as any)?.notInStock ||
   //   ((selectedVariant as any)?.closingQty !== undefined && (selectedVariant as any).closingQty <= 0);
   
-  const isOutOfStock = false;
-    const hasMultipleVariants = (allVariants?.length || 0) > 1;
+  const isOutOfStock = false; // As per requirements, all products are always in stock
+  const hasMultipleVariants = showVariants && (allVariants?.length || 0) > 1;
   const showPills = hasMultipleVariants && allVariants.length <= VARIANT_PILLS_THRESHOLD;
 
   const handleVariantSelect = (variantId: number) => {
@@ -90,8 +94,26 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   };
 
   const handleAddToCart = () => {
-    if (selectedVariant) {
-      onAddToCart(product, selectedVariant, qty);
+    // If variants are hidden or no variant selected, create a default variant
+    const variantToUse = selectedVariant || {
+      id: 0,
+      name: 'Default',
+      buyOncePrice: product.buyOncePrice,
+      mrp: product.mrp,
+      productId: product.product.id,
+      depotId: DEFAULT_DEPOT_ID,
+      hsnCode: '',
+      minimumQty: 1,
+      closingQty: 999,
+      notInStock: false,
+      isHidden: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      depot: { id: DEFAULT_DEPOT_ID, name: 'Default Depot', address: '', isOnline: true },
+      product: product.product
+    } as DepotVariant;
+    
+    onAddToCart(product, variantToUse, qty);
 
       // Enhanced fly-to-cart animation starting from the Add to Cart button
       try {
@@ -189,7 +211,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         // no-op if animation fails
       }
     }
-  };
+  
 
   const incrementQty = () => setQty((q) => Math.min(99, q + 1));
   const decrementQty = () => setQty((q) => Math.max(1, q - 1));
@@ -225,7 +247,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           loading="lazy"
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
         />
-        {discount > 0 && (
+        {showVariants && discount > 0 && (
           <div className="absolute left-2 top-2 rounded-full bg-destructive/90 text-white text-xs px-2.5 py-1 shadow-sm font-medium">
             -{Math.round(discount * 100)}%
           </div>
@@ -368,7 +390,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* Price Display */}
         <div className="flex items-baseline gap-1">
           <span className="text-sm md:text-base font-semibold">₹{displayPrice > 0 ? displayPrice.toFixed(2) : "N/A"}</span>
-          {discount > 0 && mrpPrice > 0 && (
+          {showVariants && discount > 0 && mrpPrice > 0 && (
             <span className="text-xs md:text-sm text-muted-foreground line-through">₹{mrpPrice.toFixed(2)}</span>
           )}
         </div>
@@ -419,15 +441,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           >
             {isOutOfStock ? "Notify Me" : "Add to Cart"}
           </Button>
-{/* 
-          <Link
-            to={`/snf/product/${product.product.id}${selectedVariant ? `?variant=${selectedVariant.id}` : ""}`}
-            className="inline-flex items-center justify-center rounded-md border border-border px-2 py-1.5 text-[12px] hover:bg-accent transition-colors h-8"
-          >
-            View
-          </Link> */}
+ 
         </div>
       </div>
     </article>
-  );
+  )
 };

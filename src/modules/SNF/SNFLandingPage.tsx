@@ -12,6 +12,7 @@ import { productService } from "./services/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCart } from "./context/CartContext";
+import { useDeliveryLocation } from "./hooks/useDeliveryLocation";
 import type { Category as FilterCategory } from "./components/CategoryFilters.tsx";
 
 export type SortKey = "relevance" | "price_asc" | "price_desc" | "popularity_desc";
@@ -29,9 +30,10 @@ const SNFContent: React.FC = () => {
   const [catLoading, setCatLoading] = useState<boolean>(false);
   const [catError, setCatError] = useState<string | null>(null);
 
-  const { state: pricingState } = usePricing();
+  const { state: pricingState, actions: pricingActions } = usePricing();
   const { addItem, state: cartState } = useCart();
-  
+  const { currentDepotId } = useDeliveryLocation();
+
   // Use pricing context data directly instead of individual hooks
   // const location = pricingState.userLocation;
   const products = pricingState.products.map(product => {
@@ -94,12 +96,44 @@ const SNFContent: React.FC = () => {
     fetchCategories();
   }, []);
 
+  // Load products when depot changes
+  useEffect(() => {
+    const loadProductsForDepot = async () => {
+      if (currentDepotId && (!pricingState.currentDepot || pricingState.currentDepot.id !== currentDepotId)) {
+        try {
+          // Create a depot object for the pricing context
+          const depot = {
+            id: currentDepotId,
+            name: `Depot ${currentDepotId}`,
+            address: '',
+            pincode: '',
+            isActive: true,
+          };
+          
+          await pricingActions.setDepot(depot);
+        } catch (error) {
+          console.error('Failed to load products for depot:', error);
+        }
+      }
+    };
+
+    loadProductsForDepot();
+  }, [currentDepotId, pricingState.currentDepot, pricingActions]);
+
   // Show pincode entry if PricingContext failed to get location
   useEffect(() => {
     if (!pricingState.userLocation && !pricingState.isLoading) {
       // Optionally, you may surface a pincode prompt here
     }
   }, [pricingState.userLocation, pricingState.isLoading]);
+
+  // Log when products are refetched due to location/depot changes
+  useEffect(() => {
+    if (pricingState.currentDepot) {
+      console.log(`Products loaded for depot: ${pricingState.currentDepot.name} (${pricingState.currentDepot.id})`);
+      console.log(`Total products: ${pricingState.products.length}, Total variants: ${pricingState.depotVariants.length}`);
+    }
+  }, [pricingState.currentDepot, pricingState.products.length, pricingState.depotVariants.length]);
 
   // Handle hash navigation for anchors like #products or #category-<id>
   useEffect(() => {

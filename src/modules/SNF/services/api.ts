@@ -589,7 +589,8 @@ export class ProductServiceImpl implements ProductService {
       return result.data;
     } catch (error) {
       console.error('Error fetching categories:', error);
-      throw error;
+      // Return empty array on error instead of throwing
+      return [];
     }
   }
 }

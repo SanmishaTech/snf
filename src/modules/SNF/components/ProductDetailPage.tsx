@@ -9,6 +9,10 @@ import { Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useCart } from "../context/CartContext";
+import { ProductCard } from "./ProductCard";
+import { productService } from "../services/api";
+import { useDeliveryLocation } from "../hooks/useDeliveryLocation";
+import { ProductWithPricing, DepotVariant } from "../types";
 
 type GalleryImage = {
   src: string;
@@ -32,17 +36,18 @@ const ProductDetailPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const topRef = useRef<HTMLDivElement | null>(null);
-  
+
+  const { currentDepotId } = useDeliveryLocation();
+
   // Get depot from pricing context
   const { state: pricingState } = usePricing();
-  const depotId = pricingState.currentDepot?.id;
-  
+
   // Fetch product with variants using the hook
   const { product: productData, error: fetchError, isLoading } = useProduct(
     id ? parseInt(id) : undefined,
-    depotId || 1 // Fallback to depot ID 1 if no depot is set
+    currentDepotId // Use depot ID from stored delivery location
   );
-  
+
   // State for selected variant
   const [selectedVariantId, setSelectedVariantId] = useState<number | null>(
     searchParams.get('variant') ? parseInt(searchParams.get('variant')!) : null
@@ -51,7 +56,7 @@ const ProductDetailPage: React.FC = () => {
   const addBtnWrapRef = useRef<HTMLDivElement | null>(null);
   const stickyAddBtnWrapRef = useRef<HTMLDivElement | null>(null);
   const { addItem } = useCart();
-  
+
   // Get selected variant
   const selectedVariant = useMemo(() => {
     if (!productData) return null;
@@ -61,12 +66,12 @@ const ProductDetailPage: React.FC = () => {
     // Default to first available variant
     return productData.variants.find(v => !v.notInStock && !v.isHidden) || productData.variants[0];
   }, [selectedVariantId, productData]);
-  
+
   // Calculate display price using mrp and buyOncePrice
   const displayPrice = selectedVariant ? (selectedVariant.buyOncePrice || selectedVariant.mrp || 0) : 0;
   const mrpPrice = selectedVariant?.mrp || 0;
   const discount = mrpPrice > displayPrice ? ((mrpPrice - displayPrice) / mrpPrice) : 0;
-  
+
   const gallery = useMemo(() => (
     productData ? buildGallery(productData.product.attachmentUrl || '') : []
   ), [productData]);
@@ -75,53 +80,53 @@ const ProductDetailPage: React.FC = () => {
   const productTags = useMemo(() => {
     if (!productData) return [] as string[];
     const tagSet = new Set<string>(); // Use Set to avoid duplicates
-    
+
     // Get tags from the backend tags field (comma-separated string)
     if (productData.product.tags) {
       const backendTags = productData.product.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
-      
+
       // Check if we have specific dairy-related tags that make "milk" redundant
       const hasSpecificDairyTags = backendTags.some(tag => {
         const lowerTag = tag.toLowerCase();
         return lowerTag.includes('dairy') ||
-               lowerTag.includes('vegan') ||
-               lowerTag.includes('vegetarian') ||
-               lowerTag.includes('pasteurized') ||
-               lowerTag.includes('organic') ||
-               lowerTag.includes('fresh');
+          lowerTag.includes('vegan') ||
+          lowerTag.includes('vegetarian') ||
+          lowerTag.includes('pasteurized') ||
+          lowerTag.includes('organic') ||
+          lowerTag.includes('fresh');
       });
-      
+
       // Filter and process backend tags
       backendTags.forEach(tag => {
         const lowerTag = tag.toLowerCase();
-        
+
         // Skip generic "milk" tag if we have more specific dairy-related tags
         if (lowerTag === 'milk' && hasSpecificDairyTags) {
           // Skip adding generic "milk" tag
           return;
         }
-        
+
         // Add all other tags (including milk if no specific dairy tags exist)
         tagSet.add(tag);
       });
     }
-    
+
     // Add category as a tag if available and not already included
     if (productData.product.category?.name && !tagSet.has(productData.product.category.name)) {
       tagSet.add(productData.product.category.name);
     }
-    
+
     // Check if dairy information is already covered by backend tags
     const tagArray = Array.from(tagSet);
     const hasDairyTag = tagArray.some(tag => {
       const lowerTag = tag.toLowerCase();
-      return lowerTag.includes('dairy') || 
-             lowerTag.includes('vegan') ||
-             lowerTag.includes('vegetarian') ||
-             lowerTag.includes('pasteurized') ||
-             lowerTag === 'milk';
+      return lowerTag.includes('dairy') ||
+        lowerTag.includes('vegan') ||
+        lowerTag.includes('vegetarian') ||
+        lowerTag.includes('pasteurized') ||
+        lowerTag === 'milk';
     });
-    
+
     // Only add dairy information if not already covered by backend tags
     if (!hasDairyTag) {
       if (productData.product.isDairyProduct) {
@@ -130,7 +135,7 @@ const ProductDetailPage: React.FC = () => {
         tagSet.add('Non-Dairy');
       }
     }
-    
+
     return Array.from(tagSet);
   }, [productData]);
 
@@ -148,7 +153,7 @@ const ProductDetailPage: React.FC = () => {
       topRef.current?.focus();
     }
   }, [isLoading, productData, fetchError]);
-  
+
   // Auto-select variant from URL or first available
   useEffect(() => {
     if (productData && !selectedVariantId) {
@@ -330,14 +335,15 @@ const ProductDetailPage: React.FC = () => {
                   title={productData.product.name}
                   tags={productTags}
                   tagHref={(label) => {
-                    const catName = productData.product.category?.name;
                     const catId = productData.product.categoryId;
-                    if (catName && label === catName && catId) {
-                      return `/snf/category/${catId}`;
-                    }
                     const normalized = label.trim().toLowerCase();
-                    if (normalized === 'non-dairy') return '/snf?tag=non-dairy';
-                    if (normalized === 'contains dairy') return '/snf?tag=contains-dairy';
+
+                    // If we have a category ID, use the category page with tag parameter
+                    if (catId) {
+                      return `/snf/category/${catId}?tag=${encodeURIComponent(normalized)}`;
+                    }
+
+                    // Fallback to main page with tag if no category
                     return `/snf?tag=${encodeURIComponent(normalized)}`;
                   }}
                 />
@@ -384,9 +390,8 @@ const ProductDetailPage: React.FC = () => {
                             disabled={!isAvailable}
                             onClick={() => setSelectedVariantId(variant.id)}
                             title={`${variant.name}${lowStock ? ` • Only ${variant.closingQty} left` : ''}`}
-                            className={`relative h-10 min-w-[3rem] inline-flex items-center justify-center rounded-md border px-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring hover:bg-accent ${
-                              isSelected ? 'ring-2 ring-primary border-primary bg-accent' : 'bg-background'
-                            } ${!isAvailable ? 'opacity-50 cursor-not-allowed line-through' : ''}`}
+                            className={`relative h-10 min-w-[3rem] inline-flex items-center justify-center rounded-md border px-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring hover:bg-accent ${isSelected ? 'ring-2 ring-primary border-primary bg-accent' : 'bg-background'
+                              } ${!isAvailable ? 'opacity-50 cursor-not-allowed line-through' : ''}`}
                           >
                             <span className="truncate max-w-[6rem]">{variant.name}</span>
                             {isSelected && (
@@ -406,7 +411,7 @@ const ProductDetailPage: React.FC = () => {
                 )}
 
                 {/* Price Display */}
-              
+
                 {/* Stock Status */}
                 <div className="flex items-center gap-3 text-sm">
                   {selectedVariant && !selectedVariant.notInStock ? (
@@ -460,49 +465,58 @@ const ProductDetailPage: React.FC = () => {
 
                 {/* Product Info */}
                 <ul className="list-disc pl-5 text-sm space-y-1">
-                  
+
                   <li>Quality checked and packed with care</li>
                   <li>Free delivery on qualifying orders</li>
-               
+
                 </ul>
 
                 {/* Description */}
                 <div className="prose prose-sm max-w-none dark:prose-invert">
                   <h3>Description</h3>
-                    <div
+                  <div
                     dangerouslySetInnerHTML={{
                       __html: productData.product.description || 'No description available',
                     }}
-                    />
-                  
-           
+                  />
+
+
                 </div>
 
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-3 pt-2">
                   <div ref={addBtnWrapRef} className="flex-1">
-                    <SNFButton 
-                      className="w-full" 
+                    <SNFButton
+                      className="w-full"
                       disabled={!selectedVariant || selectedVariant.notInStock}
-                      aria-label={`Add ${productData.product.name} to cart`} 
+                      aria-label={`Add ${productData.product.name} to cart`}
                       fullWidth
                       onClick={() => addBtnWrapRef.current && handleAddToCart(addBtnWrapRef.current)}
                     >
                       {selectedVariant?.notInStock ? 'Out of Stock' : 'Add to Cart'}
                     </SNFButton>
                   </div>
-                  <SNFButton 
-                    className="flex-1 hover:bg-black" 
-                    variant="secondary" 
+                  <SNFButton
+                    className="flex-1 hover:bg-black"
+                    variant="secondary"
                     disabled={!selectedVariant || selectedVariant.notInStock}
-                    aria-label="Buy now" 
+                    aria-label="Buy now"
                     fullWidth
+                    onClick={() => {
+                      if (!productData || !selectedVariant) return;
+                      const params = new URLSearchParams({
+                        productId: productData.product.id.toString(),
+                        variantId: selectedVariant.id.toString(),
+                        quantity: quantity.toString(),
+                      });
+                      navigate(`/snf/buy-now?${params.toString()}`);
+                    }}
                   >
                     Buy Now
                   </SNFButton>
                 </div>
 
-            
+
               </section>
             </article>
 
@@ -521,7 +535,7 @@ const ProductDetailPage: React.FC = () => {
             {/* Suggested products */}
             <section className="mt-12">
               <h2 className="text-xl font-semibold mb-3">Related products</h2>
-              <SuggestedProducts currentId={productData.product.id} />
+              <SuggestedProducts currentId={productData.product.id} currentProduct={productData} />
             </section>
           </>
         )}
@@ -539,7 +553,7 @@ const ProductDetailPage: React.FC = () => {
             </div>
             <div className="flex gap-2">
               <div ref={stickyAddBtnWrapRef}>
-                <SNFButton 
+                <SNFButton
                   disabled={selectedVariant.notInStock}
                   aria-label={`Add ${productData.product.name} to cart (sticky)`}
                   onClick={() => stickyAddBtnWrapRef.current && handleAddToCart(stickyAddBtnWrapRef.current)}
@@ -547,11 +561,20 @@ const ProductDetailPage: React.FC = () => {
                   {selectedVariant.notInStock ? 'Out of Stock' : 'Add to Cart'}
                 </SNFButton>
               </div>
-              <SNFButton 
-              className="hover:bg-black"
-                variant="secondary" 
+              <SNFButton
+                className="hover:bg-black"
+                variant="secondary"
                 disabled={selectedVariant.notInStock}
                 aria-label="Buy now (sticky)"
+                onClick={() => {
+                  if (!productData || !selectedVariant) return;
+                  const params = new URLSearchParams({
+                    productId: productData.product.id.toString(),
+                    variantId: selectedVariant.id.toString(),
+                    quantity: quantity.toString(),
+                  });
+                  navigate(`/snf/buy-now?${params.toString()}`);
+                }}
               >
                 Buy Now
               </SNFButton>
@@ -658,13 +681,146 @@ const DeliveryEstimator: React.FC = () => {
   );
 };
 
-const SuggestedProducts: React.FC<{ currentId: number }> = ({ currentId }) => {
-  // TODO: Fetch related products from API
+const SuggestedProducts: React.FC<{ currentId: number; currentProduct?: ProductWithPricing }> = ({ currentId, currentProduct }) => {
+  const [relatedProducts, setRelatedProducts] = useState<ProductWithPricing[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const { state: pricingState } = usePricing();
+  const { addItem } = useCart();
+  const { currentDepotId: depotId } = useDeliveryLocation();
+
+  useEffect(() => {
+    const fetchRelatedProducts = async () => {
+      if (!currentProduct) return;
+
+      setIsLoading(true);
+      try {
+        // Get all products from the same depot
+        const allProducts = await productService.getProducts(depotId);
+        const allVariants = await productService.getDepotVariants(depotId);
+
+        // Transform products to ProductWithPricing format
+        const productsWithPricing = allProducts
+          .filter(p => p.id !== currentId) // Exclude current product
+          .map(product => {
+            const productVariants = allVariants.filter(variant => variant.productId === product.id);
+
+            const bestVariant = productVariants.reduce((best, current) => {
+              if (!best) return current;
+              const bestPrice = best.buyOncePrice ?? best.mrp;
+              const currentPrice = current.buyOncePrice ?? current.mrp;
+              return currentPrice < bestPrice ? current : best;
+            }, null as DepotVariant | null);
+
+            const buyOncePrice = bestVariant?.buyOncePrice ?? bestVariant?.mrp;
+            const mrp = bestVariant?.mrp ?? 0;
+            let discount = 0;
+            if (buyOncePrice && buyOncePrice < mrp) {
+              discount = (mrp - buyOncePrice) / mrp;
+            }
+
+            return {
+              product,
+              variants: productVariants,
+              buyOncePrice: buyOncePrice || 0,
+              mrp: mrp,
+              discount: discount > 0 ? discount : undefined,
+              inStock: productVariants.some(v => !v.notInStock && v.closingQty > 0),
+              deliveryTime: productVariants.some(v => !v.notInStock && v.closingQty > 0) ? 'Same day delivery' : 'Out of stock',
+            };
+          })
+          .filter(p => p.variants.length > 0);
+
+        // Get current product's category and tags for filtering
+        const currentCategory = currentProduct.product.categoryId;
+        const currentTags = currentProduct.product.tags ?
+          currentProduct.product.tags.split(',').map(tag => tag.trim().toLowerCase()) : [];
+
+        // Score products based on similarity
+        const scoredProducts = productsWithPricing.map(p => {
+          let score = 0;
+
+          // Same category gets highest score
+          if (p.product.categoryId === currentCategory) {
+            score += 10;
+          }
+
+          // Matching tags get points
+          if (p.product.tags) {
+            const productTags = p.product.tags.split(',').map(tag => tag.trim().toLowerCase());
+            const matchingTags = productTags.filter(tag => currentTags.includes(tag));
+            score += matchingTags.length * 3;
+          }
+
+          // Similar dairy status
+          if (p.product.isDairyProduct === currentProduct.product.isDairyProduct) {
+            score += 2;
+          }
+
+          return { ...p, score };
+        });
+
+        // Sort by score and take top 6
+        const topRelated = scoredProducts
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 6);
+
+        setRelatedProducts(topRelated);
+      } catch (error) {
+        console.error('Error fetching related products:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRelatedProducts();
+  }, [currentId, currentProduct, depotId]);
+
+  const handleAddToCart = (product: ProductWithPricing, variant: DepotVariant, qty = 1) => {
+    try {
+      addItem(product as any, variant, qty);
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <div key={index} className="rounded-lg border bg-card overflow-hidden animate-pulse">
+            <div className="aspect-square bg-muted/30" />
+            <div className="p-3 space-y-2">
+              <div className="h-4 bg-muted rounded" />
+              <div className="h-3 bg-muted rounded w-3/4" />
+              <div className="h-5 bg-muted rounded w-16" />
+              <div className="h-8 bg-muted rounded" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (relatedProducts.length === 0) {
+    return (
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4">
+        <div className="col-span-full text-center text-muted-foreground py-8">
+          No related products found
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4">
-      <div className="col-span-full text-center text-muted-foreground py-8">
-        Related products will appear here
-      </div>
+      {relatedProducts.map((product) => (
+        <ProductCard
+          key={product.product.id}
+          product={product}
+          onAddToCart={handleAddToCart}
+          showVariants={false}
+        />
+      ))}
     </div>
   );
 };
@@ -712,9 +868,8 @@ const Gallery: React.FC<{ gallery: GalleryImage[]; title: string; tags?: string[
           key={active}
           src={current.src}
           alt={`${title} - image ${active + 1}`}
-          className={`absolute inset-0 w-full h-full object-cover transition-[opacity,transform] duration-300 ease-out cursor-zoom-in ${
-            entering ? "opacity-100 scale-100" : "opacity-0 scale-[1.02]"
-          }`}
+          className={`absolute inset-0 w-full h-full object-cover transition-[opacity,transform] duration-300 ease-out cursor-zoom-in ${entering ? "opacity-100 scale-100" : "opacity-0 scale-[1.02]"
+            }`}
           width={1200}
           height={420}
           loading="lazy"
@@ -727,9 +882,8 @@ const Gallery: React.FC<{ gallery: GalleryImage[]; title: string; tags?: string[
             key={`prev-${prevIndex}`}
             src={gallery[prevIndex].src}
             alt={`${title} - previous image ${prevIndex + 1}`}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ease-out ${
-              prevFading ? "opacity-0" : "opacity-100"
-            }`}
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ease-out ${prevFading ? "opacity-0" : "opacity-100"
+              }`}
             width={1200}
             height={420}
             aria-hidden="true"
@@ -743,9 +897,8 @@ const Gallery: React.FC<{ gallery: GalleryImage[]; title: string; tags?: string[
           <button
             key={`thumb-${i}`}
             onClick={() => switchTo(i)}
-            className={`relative h-16 rounded border overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-              i === active ? "ring-2 ring-primary" : ""
-            }`}
+            className={`relative h-16 rounded border overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${i === active ? "ring-2 ring-primary" : ""
+              }`}
             aria-label={`Show image ${i + 1}`}
           >
             <img
@@ -765,7 +918,7 @@ const Gallery: React.FC<{ gallery: GalleryImage[]; title: string; tags?: string[
           {tags.map((t, i) => (
             <Link
               key={`p-tag-${i}`}
-              to={tagHref ? tagHref(t, i) : "/snf#products"}
+              to={tagHref ? tagHref(t, i) : "/category/#"}
               className="px-2.5 py-1 rounded-full border text-xs bg-background hover:bg-accent transition-colors"
             >
               {t}
@@ -803,9 +956,8 @@ const VariantAndQty: React.FC = () => {
             <button
               key={v}
               onClick={() => setVariant(v)}
-              className={`px-3 py-1.5 rounded border text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                variant === v ? "bg-accent" : "bg-background"
-              }`}
+              className={`px-3 py-1.5 rounded border text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${variant === v ? "bg-accent" : "bg-background"
+                }`}
               aria-pressed={variant === v}
               aria-label={`Select ${v} variant`}
             >

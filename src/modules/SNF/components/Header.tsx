@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { geolocationService } from "@/modules/SNF/services/geolocation";
 import { DeliveryLocationService, DeliveryLocation } from "@/services/deliveryLocationService";
+import { usePricing } from "@/modules/SNF/context/PricingContext";
 import { CartDropdown } from "./CartDropdown";
 import WalletButton from "@/modules/Wallet/Components/Walletmenu";
 
@@ -24,6 +25,9 @@ export const Header: React.FC<HeaderProps> = (_props) => {
   const [loading, setLoading] = useState<"geo" | "pin" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const isValidPin = /^\d{6}$/.test(pincode);
+  
+  // Get pricing context to trigger product refetch when location changes
+  const { actions: pricingActions } = usePricing();
 
   useEffect(() => {
     const onScroll = () => setSticky(window.scrollY > 8);
@@ -56,6 +60,34 @@ export const Header: React.FC<HeaderProps> = (_props) => {
         setPincode(location.pincode);
         setOpen(false);
         console.log(`Location updated: ${location.pincode} -> Depot: ${location.depotName} (${location.depotId})`);
+        
+        // Trigger product refetch in PricingContext with new location and depot
+        if (location.depotId && location.depotName) {
+          try {
+            // Create location data for PricingContext
+            const locationData = {
+              pincode: location.pincode,
+              latitude: 0, // We don't have exact coordinates from pincode
+              longitude: 0,
+              address: `${location.areaName || ''}, ${location.pincode}`.trim().replace(/^,\s*/, ''),
+            };
+            
+            // Create depot data for PricingContext
+            const depotData = {
+              id: parseInt(location.depotId),
+              name: location.depotName,
+              address: location.areaName || '',
+              pincode: location.pincode,
+              isActive: true,
+            };
+            
+            // Use the new setLocationWithDepot action to avoid duplicate API calls
+            await pricingActions.setLocationWithDepot(locationData, depotData);
+          } catch (pricingError) {
+            console.error('Failed to update pricing context:', pricingError);
+            // Don't show error to user as location was successfully set
+          }
+        }
       } else {
         setError("We don't deliver to this pincode yet. Check back soon!");
       }
@@ -80,10 +112,25 @@ export const Header: React.FC<HeaderProps> = (_props) => {
         setPincode(location.pincode);
         setOpen(false);
         console.log(`Location detected: ${location.pincode} -> Depot: ${location.depotName} (${location.depotId})`);
+        
+        // Trigger product refetch in PricingContext with detected location
+        try {
+          await pricingActions.setLocation(data);
+        } catch (pricingError) {
+          console.error('Failed to update pricing context:', pricingError);
+          // Don't show error to user as location was successfully detected
+        }
       } else {
         // Still set the pincode even if no depot is found
         setPincode(data.pincode);
         setError("We don't deliver to this location yet. Check back soon!");
+        
+        // Still update PricingContext with the detected location even if no depot
+        try {
+          await pricingActions.setLocation(data);
+        } catch (pricingError) {
+          console.error('Failed to update pricing context:', pricingError);
+        }
       }
     } catch (e: any) {
       setError(e?.message || "Unable to get location");

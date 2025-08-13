@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useReducer } from "react";
 import type { ProductWithPricing, DepotVariant } from "../types";
+import { CartValidationService } from "../services/cartValidation";
 
 // Types
 export interface CartItem {
@@ -10,6 +11,9 @@ export interface CartItem {
   price: number; // unit price
   quantity: number;
   imageUrl?: string;
+  depotId: number; // Track which depot this item was added from
+  isAvailable?: boolean; // Track availability in current depot
+  unavailableReason?: string; // Reason why item is unavailable
 }
 
 interface CartState {
@@ -22,7 +26,9 @@ type CartAction =
   | { type: "INCREMENT"; payload: { variantId: number } }
   | { type: "DECREMENT"; payload: { variantId: number } }
   | { type: "CLEAR" }
-  | { type: "SET"; payload: CartState };
+  | { type: "SET"; payload: CartState }
+  | { type: "UPDATE_AVAILABILITY"; payload: { variantId: number; isAvailable: boolean; unavailableReason?: string } }
+  | { type: "VALIDATE_CART"; payload: { items: CartItem[] } };
 
 interface CartContextType {
   state: CartState;
@@ -31,8 +37,12 @@ interface CartContextType {
   increment: (variantId: number) => void;
   decrement: (variantId: number) => void;
   clear: () => void;
+  validateCart: (currentDepotId: number) => Promise<void>;
+  getAvailableItems: () => CartItem[];
+  getUnavailableItems: () => CartItem[];
   totalQuantity: number;
   subtotal: number;
+  availableSubtotal: number;
 }
 
 const initialState: CartState = {
@@ -54,6 +64,10 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         next[existingIndex] = {
           ...next[existingIndex],
           quantity: next[existingIndex].quantity + action.payload.quantity,
+          // Update depot info if adding from different depot
+          depotId: action.payload.depotId,
+          isAvailable: action.payload.isAvailable,
+          unavailableReason: action.payload.unavailableReason,
         };
         return { items: next };
       }
@@ -80,6 +94,22 @@ function cartReducer(state: CartState, action: CartAction): CartState {
               : it
           ),
       };
+    }
+    case "UPDATE_AVAILABILITY": {
+      return {
+        items: state.items.map((it) =>
+          it.variantId === action.payload.variantId
+            ? { 
+                ...it, 
+                isAvailable: action.payload.isAvailable,
+                unavailableReason: action.payload.unavailableReason 
+              }
+            : it
+        ),
+      };
+    }
+    case "VALIDATE_CART": {
+      return { items: action.payload.items };
     }
     case "CLEAR":
       return { items: [] };
@@ -124,6 +154,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     [state.items]
   );
 
+  const availableSubtotal = useMemo(
+    () => state.items
+      .filter(item => item.isAvailable !== false)
+      .reduce((sum, it) => sum + it.price * it.quantity, 0),
+    [state.items]
+  );
+
   const totalQuantity = useMemo(
     () => state.items.reduce((sum, it) => sum + it.quantity, 0),
     [state.items]
@@ -143,6 +180,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       price: typeof price === "number" ? price : 0,
       quantity: Math.max(1, Math.min(99, quantity || 1)),
       imageUrl,
+      depotId: variant.depotId,
+      isAvailable: true, // Assume available when adding
     };
     dispatch({ type: "ADD_ITEM", payload: item });
   };
@@ -152,6 +191,23 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const decrement = (variantId: number) => dispatch({ type: "DECREMENT", payload: { variantId } });
   const clear = () => dispatch({ type: "CLEAR" });
 
+  const validateCart = async (currentDepotId: number) => {
+    try {
+      const validationResult = await CartValidationService.validateCartItems(state.items, currentDepotId);
+      dispatch({ type: "VALIDATE_CART", payload: { items: validationResult.validatedItems } });
+    } catch (error) {
+      console.error('Error validating cart:', error);
+    }
+  };
+
+  const getAvailableItems = (): CartItem[] => {
+    return state.items.filter(item => item.isAvailable !== false);
+  };
+
+  const getUnavailableItems = (): CartItem[] => {
+    return state.items.filter(item => item.isAvailable === false);
+  };
+
   const value: CartContextType = {
     state,
     addItem,
@@ -159,7 +215,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     increment,
     decrement,
     clear,
+    validateCart,
+    getAvailableItems,
+    getUnavailableItems,
     subtotal,
+    availableSubtotal,
     totalQuantity,
   };
 

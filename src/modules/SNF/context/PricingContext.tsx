@@ -263,6 +263,12 @@ export const PricingProvider: React.FC<PricingProviderProps> = ({ children }) =>
       }
     }, [loadProductsAndVariants]),
 
+    setLocationWithDepot: useCallback(async (location: LocationData, depot: Depot) => {
+      dispatch({ type: 'SET_LOCATION', payload: location });
+      dispatch({ type: 'SET_DEPOT', payload: depot });
+      await loadProductsAndVariants(depot.id);
+    }, [loadProductsAndVariants]),
+
     refreshPricing: useCallback(async () => {
       if (state.currentDepot) {
         // Reload data

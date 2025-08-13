@@ -227,8 +227,17 @@ const MySubscriptionsPage: React.FC = () => {
     mutationFn: async (orderId: string) => {
       return await cancelOrderSubscriptions(orderId);
     },
-    onSuccess: () => {
-      toast.success("All order subscriptions cancelled successfully!");
+    onSuccess: (data: any) => {
+      let message = "All order subscriptions cancelled successfully!";
+      
+      // Add wallet refund information to the success message
+      if (data.walletRefund?.success && data.walletRefund.refundAmount > 0) {
+        message += ` ₹${data.walletRefund.refundAmount.toFixed(2)} has been refunded to your wallet.`;
+      } else if (data.walletRefund?.refundAmount === 0) {
+        message += " No wallet refund was applicable.";
+      }
+      
+      toast.success(message);
       // Refetch subscriptions to update the UI
       queryClient.invalidateQueries({ queryKey: ["mySubscriptions", userId] });
       setCancelDialogOpen(false);

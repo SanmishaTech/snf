@@ -1,22 +1,50 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ShoppingCart, Trash2, Minus, Plus } from "lucide-react";
+import { ShoppingCart, Trash2, Minus, Plus, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import { useCart } from "../context/CartContext";
+import { useDeliveryLocation } from "../hooks/useDeliveryLocation";
 
 const currency = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
 
 export const CartDropdown: React.FC = () => {
-  const { state, subtotal, totalQuantity, increment, decrement, removeItem } = useCart();
+  const { 
+    state, 
+    subtotal, 
+    availableSubtotal, 
+    totalQuantity, 
+    increment, 
+    decrement, 
+    removeItem, 
+    validateCart,
+    getAvailableItems,
+    getUnavailableItems 
+  } = useCart();
+  const { currentDepotId } = useDeliveryLocation();
   const [bump, setBump] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+
+  const availableItems = getAvailableItems();
+  const unavailableItems = getUnavailableItems();
 
   useEffect(() => {
     setBump(true);
     const t = setTimeout(() => setBump(false), 300);
     return () => clearTimeout(t);
   }, [totalQuantity]);
+
+  // Validate cart when depot changes
+  useEffect(() => {
+    if (state.items.length > 0 && currentDepotId) {
+      setIsValidating(true);
+      validateCart(currentDepotId).finally(() => {
+        setIsValidating(false);
+      });
+    }
+  }, [currentDepotId, validateCart, state.items.length]);
 
   return (
     <Popover>

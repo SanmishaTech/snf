@@ -13,6 +13,14 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Table,
   TableBody,
@@ -45,6 +53,8 @@ import {
   PlusCircle,
   MoreHorizontal,
   Eye,
+  Filter,
+  X,
 } from "lucide-react";
 import CustomPagination from "@/components/common/custom-pagination";
 import ConfirmDialog from "@/components/common/confirm-dialog";
@@ -56,6 +66,7 @@ interface Product {
   url?: string | null;
   date: string;
   quantity: number;
+  tags?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -72,10 +83,12 @@ const fetchProducts = async (
   sortBy: string,
   sortOrder: string,
   search: string,
-  recordsPerPage: number
+  recordsPerPage: number,
+  tags?: string[]
 ): Promise<ApiResponse | Product[]> => {
+  const tagsParam = tags && tags.length > 0 ? `&tags=${tags.join(',')}` : '';
   const response = await get(
-    `/products?page=${page}&sortBy=${sortBy}&sortOrder=${sortOrder}&search=${search}&limit=${recordsPerPage}`
+    `/products?page=${page}&sortBy=${sortBy}&sortOrder=${sortOrder}&search=${search}&limit=${recordsPerPage}${tagsParam}`
   );
   if (Array.isArray(response)) {
     return response;
@@ -93,6 +106,7 @@ const ProductList: React.FC = () => {
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState("desc");
   const [search, setSearch] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -128,9 +142,10 @@ const ProductList: React.FC = () => {
       sortOrder,
       search,
       recordsPerPage,
+      selectedTags,
     ] as const,
     queryFn: () =>
-      fetchProducts(currentPage, sortBy, sortOrder, search, recordsPerPage),
+      fetchProducts(currentPage, sortBy, sortOrder, search, recordsPerPage, selectedTags),
     placeholderData: (previousData) => previousData,
   });
 
@@ -143,6 +158,18 @@ const ProductList: React.FC = () => {
   const totalProducts: number = Array.isArray(apiResponse)
     ? apiResponse.length
     : (apiResponse as ApiResponse)?.totalRecords || 0;
+
+  // Extract available tags from products
+  const availableTags = React.useMemo(() => {
+    const tagSet = new Set<string>();
+    products.forEach(product => {
+      if (product.tags) {
+        const productTags = product.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+        productTags.forEach(tag => tagSet.add(tag));
+      }
+    });
+    return Array.from(tagSet).sort();
+  }, [products]);
 
   const deleteMutation = useMutation<void, Error, number>({
     mutationFn: (productId: number) => del(`/products/${productId}`),
@@ -205,6 +232,26 @@ const ProductList: React.FC = () => {
     setCurrentPage(1);
   };
 
+  const handleTagToggle = (tag: string) => {
+    setSelectedTags(prev => {
+      const newTags = prev.includes(tag) 
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag];
+      setCurrentPage(1); // Reset to first page when filtering
+      return newTags;
+    });
+  };
+
+  const handleRemoveTag = (tag: string) => {
+    setSelectedTags(prev => prev.filter(t => t !== tag));
+    setCurrentPage(1);
+  };
+
+  const handleClearAllTags = () => {
+    setSelectedTags([]);
+    setCurrentPage(1);
+  };
+
   if (isError) {
     return (
       <div className="text-red-500 p-4">
@@ -221,7 +268,7 @@ const ProductList: React.FC = () => {
             <CardTitle>Products</CardTitle>
             <CardDescription>Manage your product inventory.</CardDescription>
           </div>
-          <div className="mb-4 flex items-center gap-4">
+          <div className="mb-4 flex items-center gap-4 flex-wrap">
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -229,8 +276,60 @@ const ProductList: React.FC = () => {
                 value={search}
                 onChange={handleSearchChange}
                 className="pl-8 w-full"
+                placeholder="Search products..."
               />
             </div>
+            
+            {/* Tag Filter */}
+            {availableTags.length > 0 && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <Filter size={16} />
+                    Tags
+                    {selectedTags.length > 0 && (
+                      <Badge variant="secondary" className="ml-1">
+                        {selectedTags.length}
+                      </Badge>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80" align="start">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium">Filter by Tags</h4>
+                      {selectedTags.length > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleClearAllTags}
+                        >
+                          Clear All
+                        </Button>
+                      )}
+                    </div>
+                    <div className="max-h-48 overflow-y-auto space-y-2">
+                      {availableTags.map((tag) => (
+                        <div key={tag} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`tag-${tag}`}
+                            checked={selectedTags.includes(tag)}
+                            onCheckedChange={() => handleTagToggle(tag)}
+                          />
+                          <Label
+                            htmlFor={`tag-${tag}`}
+                            className="text-sm font-normal cursor-pointer"
+                          >
+                            {tag}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
+
             <Button
               onClick={() => navigate("/admin/products/create")}
               className="bg-blue-600 hover:bg-blue-700 text-white"
@@ -239,6 +338,24 @@ const ProductList: React.FC = () => {
               Add Product
             </Button>
           </div>
+
+          {/* Selected Tags Display */}
+          {selectedTags.length > 0 && (
+            <div className="mb-4 flex items-center gap-2 flex-wrap">
+              <span className="text-sm text-muted-foreground">Filtered by:</span>
+              {selectedTags.map((tag) => (
+                <Badge
+                  key={tag}
+                  variant="secondary"
+                  className="gap-1 cursor-pointer hover:bg-secondary/80"
+                  onClick={() => handleRemoveTag(tag)}
+                >
+                  {tag}
+                  <X size={12} />
+                </Badge>
+              ))}
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           {isLoading && products.length === 0 ? (
@@ -279,6 +396,7 @@ const ProductList: React.FC = () => {
                     >
                       Name {getSortIndicator("name")}
                     </TableHead>
+                    <TableHead className="min-w-[200px]">Tags</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>

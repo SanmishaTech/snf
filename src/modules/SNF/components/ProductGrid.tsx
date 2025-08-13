@@ -6,9 +6,10 @@ interface ProductGridProps {
   products: ProductWithPricing[];
   onAddToCart: (p: ProductWithPricing, variant?: DepotVariant, qty?: number) => void;
   isLoading?: boolean;
+  showVariants?: boolean; // New prop to control variant display
 }
 
-export const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToCart, isLoading = false }) => {
+export const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToCart, isLoading = false, showVariants = true }) => {
   if (isLoading) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-6 sm:gap-x-5 sm:gap-y-8">
@@ -43,6 +44,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToCart,
           key={p.product.id}
           product={p}
           onAddToCart={onAddToCart}
+          showVariants={showVariants}
         />
       ))}
       {products.length === 0 && (

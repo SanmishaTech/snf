@@ -165,6 +165,7 @@ export interface ProductService {
   getProductVariants(productId: number, depotId: number): Promise<DepotVariant[]>;
   getProductsByCategory(categoryId: number, depotId: number): Promise<Product[]>;
   searchProducts(query: string, depotId: number): Promise<Product[]>;
+  getCategories(): Promise<Category[]>;
 }
 
 
@@ -208,6 +209,7 @@ export interface PricingState {
 export interface PricingActions {
   setDepot: (depot: Depot) => Promise<void>;
   setLocation: (location: LocationData) => Promise<void>;
+  setLocationWithDepot: (location: LocationData, depot: Depot) => Promise<void>;
   refreshPricing: () => Promise<void>;
   setError: (error: PricingError | GeolocationError | null) => void;
   setLoading: (loading: boolean) => void;

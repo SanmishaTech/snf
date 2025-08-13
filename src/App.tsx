@@ -111,6 +111,8 @@ const App = () => {
   const SNFWrapper = React.lazy(() => import("./modules/SNF/SNFWrapper"));
   // Lazy-load the Checkout page wrapper for SNF
   const SNFCheckoutWrapper = React.lazy(() => import("./modules/SNF/SNFCheckoutWrapper"));
+  // Lazy-load the Buy Now page wrapper for SNF
+  const SNFBuyNowWrapper = React.lazy(() => import("./modules/SNF/SNFBuyNowWrapper"));
   // Lazy-load the Address page wrapper for SNF
   const SNFAddressWrapper = React.lazy(() => import("./modules/SNF/SNFAddressWrapper"));
   const SNFCategoryPageWrapper = React.lazy(() => import("./modules/SNF/SNFCategoryPageWrapper"));
@@ -186,6 +188,29 @@ const App = () => {
                 }
               >
                 <SNFCheckoutWrapper />
+              </React.Suspense>
+            }
+          />
+
+          <Route
+            path="/snf/buy-now"
+            element={
+              <React.Suspense
+                fallback={
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      <div className="lg:col-span-2 space-y-3">
+                        <div className="h-32 bg-muted/40 rounded-md animate-pulse" />
+                      </div>
+                      <div className="space-y-3">
+                        <div className="h-36 bg-muted/40 rounded-md animate-pulse" />
+                        <div className="h-10 bg-muted/40 rounded-md animate-pulse" />
+                      </div>
+                    </div>
+                  </div>
+                }
+              >
+                <SNFBuyNowWrapper />
               </React.Suspense>
             }
           />

@@ -34,7 +34,19 @@ export class DeliveryLocationService {
    */
   static setCurrentLocation(location: DeliveryLocation): void {
     try {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(location));
+      const oldValue = localStorage.getItem(this.STORAGE_KEY);
+      const newValue = JSON.stringify(location);
+      localStorage.setItem(this.STORAGE_KEY, newValue);
+      
+      // Trigger storage event for same-tab updates
+      const event = new StorageEvent('storage', {
+        key: this.STORAGE_KEY,
+        newValue,
+        oldValue,
+        storageArea: localStorage,
+        url: window.location.href,
+      });
+      window.dispatchEvent(event);
     } catch (error) {
       console.warn('Failed to store delivery location:', error);
     }
@@ -44,7 +56,18 @@ export class DeliveryLocationService {
    * Clear the current delivery location
    */
   static clearCurrentLocation(): void {
+    const oldValue = localStorage.getItem(this.STORAGE_KEY);
     localStorage.removeItem(this.STORAGE_KEY);
+    
+    // Trigger storage event for same-tab updates
+    const event = new StorageEvent('storage', {
+      key: this.STORAGE_KEY,
+      newValue: null,
+      oldValue,
+      storageArea: localStorage,
+      url: window.location.href,
+    });
+    window.dispatchEvent(event);
   }
 
   /**
