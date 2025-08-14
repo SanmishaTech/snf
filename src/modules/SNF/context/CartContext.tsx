@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useReducer } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useReducer, useCallback } from "react";
 import type { ProductWithPricing, DepotVariant } from "../types";
 import { CartValidationService } from "../services/cartValidation";
 
@@ -12,6 +12,8 @@ export interface CartItem {
   quantity: number;
   imageUrl?: string;
   depotId: number; // Track which depot this item was added from
+  originalDepotId?: number; // Track the original depot this item was first added from
+  originalVariantId?: number; // Track the original variant ID from the first depot
   isAvailable?: boolean; // Track availability in current depot
   unavailableReason?: string; // Reason why item is unavailable
 }
@@ -66,6 +68,9 @@ function cartReducer(state: CartState, action: CartAction): CartState {
           quantity: next[existingIndex].quantity + action.payload.quantity,
           // Update depot info if adding from different depot
           depotId: action.payload.depotId,
+          // Preserve original depot info if it exists, otherwise use new one
+          originalDepotId: next[existingIndex].originalDepotId || action.payload.originalDepotId,
+          originalVariantId: next[existingIndex].originalVariantId || action.payload.originalVariantId,
           isAvailable: action.payload.isAvailable,
           unavailableReason: action.payload.unavailableReason,
         };
@@ -181,6 +186,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       quantity: Math.max(1, Math.min(99, quantity || 1)),
       imageUrl,
       depotId: variant.depotId,
+      originalDepotId: variant.depotId, // Store original depot ID
+      originalVariantId: variant.id, // Store original variant ID
       isAvailable: true, // Assume available when adding
     };
     dispatch({ type: "ADD_ITEM", payload: item });
@@ -191,14 +198,37 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const decrement = (variantId: number) => dispatch({ type: "DECREMENT", payload: { variantId } });
   const clear = () => dispatch({ type: "CLEAR" });
 
-  const validateCart = async (currentDepotId: number) => {
+  const validateCart = useCallback(async (currentDepotId: number) => {
+    console.log('[CartContext] Starting cart validation for depot:', currentDepotId);
+    
+    // Get current items from state at the time of validation
+    const currentItems = state.items;
+    
+    if (currentItems.length === 0) {
+      console.log('[CartContext] No items to validate');
+      return;
+    }
+    
     try {
-      const validationResult = await CartValidationService.validateCartItems(state.items, currentDepotId);
+      const validationResult = await CartValidationService.validateCartItems(currentItems, currentDepotId);
+      
+      console.log('[CartContext] Validation completed:', {
+        total: validationResult.validatedItems.length,
+        available: validationResult.availableItems.length,
+        unavailable: validationResult.unavailableItems.length
+      });
       dispatch({ type: "VALIDATE_CART", payload: { items: validationResult.validatedItems } });
     } catch (error) {
-      console.error('Error validating cart:', error);
+      console.error('[CartContext] Error validating cart:', error);
+      // Mark all items as potentially unavailable on error
+      const errorItems = currentItems.map(item => ({
+        ...item,
+        isAvailable: false,
+        unavailableReason: 'Unable to verify availability'
+      }));
+      dispatch({ type: "VALIDATE_CART", payload: { items: errorItems } });
     }
-  };
+  }, [state.items]); // Include state.items in dependencies to get fresh items
 
   const getAvailableItems = (): CartItem[] => {
     return state.items.filter(item => item.isAvailable !== false);

@@ -20,7 +20,7 @@ export class GeolocationServiceImpl implements GeolocationService {
 
   private readonly GEOCODING_API_URL = 'https://api.opencagedata.com/geocode/v1/json';
   private readonly GEOCODING_API_KEY = import.meta.env.VITE_GEOCODING_API_KEY || '';
-  
+
   // Fallback pincode mappings for known areas when API is not available
   private readonly KNOWN_AREA_PINCODES: { [key: string]: string } = {
     // Mumbai and surrounding areas
@@ -56,7 +56,7 @@ export class GeolocationServiceImpl implements GeolocationService {
         const permission = await navigator.permissions.query({ name: 'geolocation' });
         return permission.state;
       }
-      
+
       // Fallback: try to get current position to check permission
       return await this.checkPermissionByPosition();
     } catch (error) {
@@ -83,7 +83,7 @@ export class GeolocationServiceImpl implements GeolocationService {
         const permission = await navigator.permissions.query({ name: 'geolocation' });
         return permission.state;
       }
-      
+
       // Fallback: try to get current position
       await this.getCurrentPosition();
       return 'granted';
@@ -114,7 +114,7 @@ export class GeolocationServiceImpl implements GeolocationService {
       return await this.reverseGeocode(position.coords.latitude, position.coords.longitude);
     } catch (error) {
       const geolocationError = error as GeolocationError;
-      
+
       // Enhance error messages with user-friendly explanations
       switch (geolocationError.code) {
         case 1: // PERMISSION_DENIED
@@ -124,7 +124,7 @@ export class GeolocationServiceImpl implements GeolocationService {
             code: 'PERMISSION_DENIED',
             details: geolocationError,
           } as GeolocationError;
-        
+
         case 2: // POSITION_UNAVAILABLE
           throw {
             type: 'POSITION_UNAVAILABLE',
@@ -132,7 +132,7 @@ export class GeolocationServiceImpl implements GeolocationService {
             code: 'POSITION_UNAVAILABLE',
             details: geolocationError,
           } as GeolocationError;
-        
+
         case 3: // TIMEOUT
           throw {
             type: 'TIMEOUT',
@@ -140,7 +140,7 @@ export class GeolocationServiceImpl implements GeolocationService {
             code: 'TIMEOUT',
             details: geolocationError,
           } as GeolocationError;
-        
+
         default:
           throw {
             type: 'TIMEOUT',
@@ -194,7 +194,7 @@ export class GeolocationServiceImpl implements GeolocationService {
         let city = 'Unknown';
         let state = 'Maharashtra';
         let address = 'Unknown Address';
-        
+
         // Set proper city/state for known pincodes
         if (pincode === '421202' || pincode === '421201' || pincode === '421203') {
           city = 'Dombivli';
@@ -206,7 +206,7 @@ export class GeolocationServiceImpl implements GeolocationService {
           city = 'Mumbai';
           address = 'Mumbai';
         }
-        
+
         return {
           latitude,
           longitude,
@@ -224,13 +224,13 @@ export class GeolocationServiceImpl implements GeolocationService {
       url.searchParams.append('limit', '1');
 
       const response = await fetch(url.toString());
-      
+
       if (!response.ok) {
         throw new Error(`Geocoding API request failed: ${response.status}`);
       }
 
       const data = await response.json();
-      
+
       if (data.results.length === 0) {
         throw new Error('No results found for the given coordinates');
       }
@@ -249,7 +249,7 @@ export class GeolocationServiceImpl implements GeolocationService {
       };
     } catch (error) {
       console.warn('Reverse geocoding failed, using fallback:', error);
-      
+
       // Fallback to basic location data
       return {
         latitude,
@@ -273,31 +273,31 @@ export class GeolocationServiceImpl implements GeolocationService {
       console.log(`Using known area pincode for ${roundedKey}: ${this.KNOWN_AREA_PINCODES[roundedKey]}`);
       return this.KNOWN_AREA_PINCODES[roundedKey];
     }
-    
+
     // More precise check for Dombivli area (19.2-19.3 lat, 72.9-73.1 lon)
     if (latitude >= 19.15 && latitude <= 19.35 && longitude >= 72.85 && longitude <= 73.15) {
       console.log('Detected Dombivli/Kalyan area, returning 421202');
       return '421202';
     }
-    
+
     // Mumbai metropolitan region
     if (latitude >= 18.9 && latitude <= 19.5 && longitude >= 72.7 && longitude <= 73.2) {
       console.log('Detected Mumbai metropolitan region, returning default Mumbai pincode');
       return '400001';
     }
-    
+
     // If no match found, generate a mock pincode (last resort)
     console.warn('No known area match found for coordinates, generating mock pincode');
     const latStr = Math.abs(latitude).toString().replace('.', '');
     const lonStr = Math.abs(longitude).toString().replace('.', '');
     const combined = latStr + lonStr;
-    
+
     // Take first 6 digits, pad with zeros if needed
     let pincode = combined.substring(0, 6);
     while (pincode.length < 6) {
       pincode += '0';
     }
-    
+
     return pincode;
   }
 
@@ -316,7 +316,7 @@ export class GeolocationServiceImpl implements GeolocationService {
     try {
       if (!this.GEOCODING_API_KEY) {
         console.warn('GEOCODING_API_KEY not configured. Using fallback for known pincodes.');
-        
+
         // Known pincode mappings for accurate location data
         const knownPincodes: { [key: string]: LocationData } = {
           '421202': {
@@ -356,13 +356,13 @@ export class GeolocationServiceImpl implements GeolocationService {
             address: 'Mumbai GPO',
           },
         };
-        
+
         // Check if we have this pincode in our known mappings
         if (knownPincodes[pincode]) {
           console.log(`Using known mapping for pincode ${pincode}`);
           return knownPincodes[pincode];
         }
-        
+
         // Fallback to generated mock location data
         return {
           latitude: this.generateMockLatitude(pincode),
@@ -382,13 +382,13 @@ export class GeolocationServiceImpl implements GeolocationService {
       url.searchParams.append('limit', '1');
 
       const response = await fetch(url.toString());
-      
+
       if (!response.ok) {
         throw new Error(`Geocoding API request failed: ${response.status}`);
       }
 
       const data = await response.json();
-      
+
       if (data.results.length === 0) {
         throw {
           type: 'INVALID_PINCODE',
@@ -416,7 +416,7 @@ export class GeolocationServiceImpl implements GeolocationService {
       }
 
       console.warn('Forward geocoding failed, using fallback:', error);
-      
+
       // Fallback to mock location data
       return {
         latitude: this.generateMockLatitude(pincode),
@@ -465,7 +465,7 @@ export class GeolocationServiceImpl implements GeolocationService {
           recoverable: true,
         });
       }
-      return () => {}; // Return empty function
+      return () => { }; // Return empty function
     }
 
     const watchId = navigator.geolocation.watchPosition(
@@ -514,12 +514,12 @@ export class GeolocationServiceImpl implements GeolocationService {
     const R = 6371; // Earth's radius in kilometers
     const dLat = this.toRadians(lat2 - lat1);
     const dLon = this.toRadians(lon2 - lon1);
-    
-    const a = 
+
+    const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(this.toRadians(lat1)) * Math.cos(this.toRadians(lat2)) *
       Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    
+
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }

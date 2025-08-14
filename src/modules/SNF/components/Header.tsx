@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { geolocationService } from "@/modules/SNF/services/geolocation";
 import { DeliveryLocationService, DeliveryLocation } from "@/services/deliveryLocationService";
 import { usePricing } from "@/modules/SNF/context/PricingContext";
+import { useCart } from "@/modules/SNF/context/CartContext";
 import { CartDropdown } from "./CartDropdown";
 import WalletButton from "@/modules/Wallet/Components/Walletmenu";
 
@@ -28,6 +29,9 @@ export const Header: React.FC<HeaderProps> = (_props) => {
   
   // Get pricing context to trigger product refetch when location changes
   const { actions: pricingActions } = usePricing();
+  
+  // Get cart context to validate cart when depot changes
+  const { validateCart, state: cartState } = useCart();
 
   useEffect(() => {
     const onScroll = () => setSticky(window.scrollY > 8);
@@ -83,6 +87,12 @@ export const Header: React.FC<HeaderProps> = (_props) => {
             
             // Use the new setLocationWithDepot action to avoid duplicate API calls
             await pricingActions.setLocationWithDepot(locationData, depotData);
+            
+            // Validate cart items for the new depot if cart has items
+            if (cartState.items.length > 0) {
+              console.log(`[Header] Validating cart for new depot: ${depotData.id}`);
+              await validateCart(depotData.id);
+            }
           } catch (pricingError) {
             console.error('Failed to update pricing context:', pricingError);
             // Don't show error to user as location was successfully set
@@ -116,6 +126,12 @@ export const Header: React.FC<HeaderProps> = (_props) => {
         // Trigger product refetch in PricingContext with detected location
         try {
           await pricingActions.setLocation(data);
+          
+          // Validate cart items for the new depot if cart has items
+          if (cartState.items.length > 0 && location.depotId) {
+            console.log(`[Header] Validating cart for detected depot: ${location.depotId}`);
+            await validateCart(parseInt(location.depotId));
+          }
         } catch (pricingError) {
           console.error('Failed to update pricing context:', pricingError);
           // Don't show error to user as location was successfully detected

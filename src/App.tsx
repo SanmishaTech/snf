@@ -113,6 +113,9 @@ const App = () => {
   const SNFCheckoutWrapper = React.lazy(() => import("./modules/SNF/SNFCheckoutWrapper"));
   // Lazy-load the Buy Now page wrapper for SNF
   const SNFBuyNowWrapper = React.lazy(() => import("./modules/SNF/SNFBuyNowWrapper"));
+  
+  // Lazy-load the Cart Debug page wrapper for SNF
+  const SNFCartDebugWrapper = React.lazy(() => import("./modules/SNF/SNFCartDebugWrapper"));
   // Lazy-load the Address page wrapper for SNF
   const SNFAddressWrapper = React.lazy(() => import("./modules/SNF/SNFAddressWrapper"));
   const SNFCategoryPageWrapper = React.lazy(() => import("./modules/SNF/SNFCategoryPageWrapper"));
@@ -188,6 +191,17 @@ const App = () => {
                 }
               >
                 <SNFCheckoutWrapper />
+              </React.Suspense>
+            }
+          />
+
+          <Route
+            path="/snf/debug/cart"
+            element={
+              <React.Suspense
+                fallback={<div className="p-6">Loading debug...</div>}
+              >
+                <SNFCartDebugWrapper />
               </React.Suspense>
             }
           />
