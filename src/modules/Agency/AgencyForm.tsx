@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm, SubmitHandler, Controller } from "react-hook-form"; 
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -7,10 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoaderCircle } from "lucide-react";
 import { toast } from "sonner";
-import { useMutation, useQueryClient } from "@tanstack/react-query"; 
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"; 
 import { get, post, put } from "@/services/apiService";
 import Validate from "@/lib/Handlevalidation";
 import { PasswordInput } from "@/components/ui/password-input"; 
+import { getAllDepotsList } from "@/services/depotService";
 import {
   Select,
   SelectContent,
@@ -29,6 +30,11 @@ const baseAgencySchema = z.object({
   address2: z.any().nullable().optional(),
   city: z.string().optional().nullable(),
   pincode: z.coerce.number().int("Pincode must be an integer").positive("Pincode must be positive").refine(val => String(val).length === 6, "Pincode must be 6 digits"),
+  depotId: z.union([
+    z.number().int().positive(),
+    z.null(),
+    z.undefined()
+  ]).optional(), // Optional depot assignment
   status: z.enum(["ACTIVE", "INACTIVE"]).default("ACTIVE"),
 });
 
@@ -60,6 +66,13 @@ interface AgencyFormProps {
 
 const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, initialData, className }) => {
   const queryClient = useQueryClient();
+  const [pendingDepotId, setPendingDepotId] = useState<number | null>(null);
+
+  // Query to fetch depots for selection
+  const { data: depots = [], isLoading: isDepotsLoading } = useQuery({
+    queryKey: ['depots', 'list'],
+    queryFn: getAllDepotsList,
+  });
 
   const {
     register,
@@ -82,6 +95,7 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
       address2: null, 
       city: '',
       pincode: undefined, // Or a suitable default number like 0 if your schema allows
+      depotId: null,
       status: "ACTIVE",
       userFullName: '', 
       userLoginEmail: '', 
@@ -90,6 +104,13 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
   });
 
   const agencyName = watch("name");
+  const depotId = watch("depotId");
+  
+  // Debug logging
+  useEffect(() => {
+    console.log("Debug - Current depotId:", depotId, "Type:", typeof depotId);
+    console.log("Debug - Available depots:", depots.map(d => ({ id: d.id, name: d.name })));
+  }, [depotId, depots]);
 
   useEffect(() => {
     if (mode === "create" && agencyName) {
@@ -103,6 +124,8 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
         try {
           const agency = await get(`/agencies/${agencyId}`)
           console.log("Partner Data:", agency)
+          console.log("Setting depot ID to:", agency.depotId)
+          
           setValue("name", agency.name);
           setValue("contactPersonName", agency.contactPersonName || '');
           setValue("mobile", agency.mobile);
@@ -113,6 +136,16 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
           setValue("pincode", agency.pincode);
           setValue("email", agency.email);
           setValue("status", agency.user?.active ? "ACTIVE" : "INACTIVE");
+          
+          // Set depot ID separately - ensure it's set as a number, not null if it exists
+          const depotValue = agency.depotId ? Number(agency.depotId) : null;
+          console.log("Setting depotId to:", depotValue, "(type:", typeof depotValue, ")");
+          
+          // Store the depot ID to be set once depots are loaded
+          if (depotValue) {
+            setPendingDepotId(depotValue);
+          }
+          setValue("depotId", depotValue);
         } catch (error: any) {
           toast.error("Failed to fetch agency details");
         }
@@ -120,10 +153,26 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
       fetchAgency();
     } else if (initialData) {
         Object.keys(initialData).forEach(key => {
-            setValue(key as keyof AgencyFormInputs, initialData[key as keyof AgencyFormInputs]);
+            const value = initialData[key as keyof AgencyFormInputs];
+            setValue(key as keyof AgencyFormInputs, value);
+            
+            // If depotId is provided in initialData and depots aren't loaded yet, store it
+            if (key === 'depotId' && value && depots.length === 0) {
+              setPendingDepotId(value as number);
+            }
         });
     }
   }, [agencyId, mode, setValue, initialData]);
+
+  // Set the depot value once depots are loaded and we have a pending depot ID
+  useEffect(() => {
+    if (pendingDepotId && depots.length > 0) {
+      console.log("Setting pending depot ID:", pendingDepotId);
+      setValue("depotId", pendingDepotId);
+      // Don't clear pendingDepotId immediately to ensure the value sticks
+      setTimeout(() => setPendingDepotId(null), 100);
+    }
+  }, [pendingDepotId, depots, setValue]);
 
   const mutation = useMutation({
     mutationFn: async (data: AgencyFormInputs) => {
@@ -141,6 +190,7 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
           address2: data.address2,
           city: data.city,
           pincode: data.pincode,
+          depotId: data.depotId,
           userFullName: data.userFullName,
           userLoginEmail: data.userLoginEmail,
           userPassword: data.userPassword,
@@ -162,6 +212,7 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
           address2: agencyData.address2,
           city: agencyData.city,
           pincode: agencyData.pincode,
+          depotId: agencyData.depotId,
           status: agencyData.status,
         };
         return put(`/agencies/${agencyId}`, updatePayload);
@@ -251,6 +302,63 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
           <Input id="pincode" type="number"  {...register("pincode")} disabled={isSubmitting} />
           {errors.pincode && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.pincode.message}</span>}
         </div>
+      </div>
+
+      {/* Depot Selection - Optional */}
+      <div className="grid gap-2 relative">
+        <Label htmlFor="depotId">Assigned Depot (Optional)</Label>
+        <Controller
+          name="depotId"
+          control={control}
+          render={({ field }) => {
+            // Convert field value to string for Select component
+            let selectValue = "none";
+            if (field.value !== null && field.value !== undefined) {
+              selectValue = String(field.value);
+            }
+            
+            console.log("Select Debug - field.value:", field.value, "selectValue:", selectValue);
+            console.log("Select Debug - isDepotsLoading:", isDepotsLoading, "depots.length:", depots.length);
+            console.log("Select Debug - matching depot:", depots.find((d: any) => String(d.id) === selectValue));
+            
+            // Don't render the select until depots are loaded
+            // Also wait if we have a depotId value but depots haven't loaded yet
+            if (isDepotsLoading || (field.value && depots.length === 0)) {
+              return (
+                <div className="w-full h-9 px-3 py-2 border rounded-md bg-muted animate-pulse">
+                  Loading depots...
+                </div>
+              );
+            }
+            
+            return (
+              <Select
+                onValueChange={(value) => {
+                  console.log("Select onChange - value:", value);
+                  const newValue = value === "none" ? null : Number(value);
+                  console.log("Select onChange - newValue:", newValue);
+                  field.onChange(newValue);
+                }}
+                value={selectValue}
+                defaultValue={selectValue}
+                disabled={isSubmitting}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a depot (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none"><em>No Depot</em></SelectItem>
+                  {depots.map((depot: any) => (
+                    <SelectItem key={depot.id} value={String(depot.id)}>
+                      {depot.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            );
+          }}
+        />
+        {errors.depotId && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.depotId.message}</span>}
       </div>
 
       {/* <div className="grid gap-2 relative">

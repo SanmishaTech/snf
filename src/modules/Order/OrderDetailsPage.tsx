@@ -39,6 +39,7 @@ interface OrderItem {
   unit?: string; 
   depotId?: string;
   depotName?: string;
+  depotCityName?: string; // derived from depot.city
   depotVariantId?: string;
   depotVariantName?: string;
 }
@@ -97,6 +98,7 @@ const OrderDetailsPage = () => {
         unit: item.product?.unit || undefined,
         depotId: item.depot?.id ? String(item.depot.id) : undefined,
         depotName: item.depot?.name || undefined,
+        depotCityName: item.depot?.city?.name || item.depot?.cityName || (typeof item.depot?.city === 'string' ? item.depot.city : undefined),
         depotVariantId: item.depotVariant?.id ? String(item.depotVariant.id) : undefined,
         depotVariantName: item.depotVariant?.name || undefined,
       }));
@@ -124,6 +126,23 @@ const OrderDetailsPage = () => {
     }
     return order.items;
   }, [order, currentUserProfile, shouldShowSupervisorColumn]);
+
+  // Group items by city derived from depot
+  const itemsGroupedByCity = useMemo(() => {
+    const groups: { city: string; items: (OrderItem & { deliveredQuantity?: number; receivedQuantity?: number; supervisorQuantity?: number; })[] }[] = [];
+    if (!itemsToDisplay || itemsToDisplay.length === 0) return groups;
+    const map: Record<string, (typeof groups)[number]['items']> = {};
+    for (const it of itemsToDisplay) {
+      const city = it.depotCityName || 'Unknown City';
+      if (!map[city]) map[city] = [];
+      map[city].push(it);
+    }
+    const sortedCities = Object.keys(map).sort((a, b) => a.localeCompare(b));
+    for (const city of sortedCities) {
+      groups.push({ city, items: map[city] });
+    }
+    return groups;
+  }, [itemsToDisplay]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -287,87 +306,117 @@ const OrderDetailsPage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto border rounded-lg">
-                  <table className={cn(
-                    "w-full",
-                    (currentUserProfile?.role === 'SUPERVISOR' || currentUserProfile?.role === 'ADMIN')
-                      ? "min-w-[800px]"
-                      : "min-w-[600px]"
-                  )}>
-                    <thead className="bg-gray-50 dark:bg-gray-900">
-                      <tr>
-                        <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
-                          Product
-                        </th>
-                        <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 w-20 sm:w-24">
-                          Ordered
-                        </th>
-                        <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 w-20 sm:w-24">
-                          Delivered
-                        </th>
-                        <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 w-20 sm:w-24">
-                          Received
-                        </th>
-                        {shouldShowSupervisorColumn && (
-                          <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 w-20 sm:w-24">
-                            Supervisor
-                          </th>
-                        )}
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                      {itemsToDisplay.map((item) => (
-                        <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                          <td className="px-2 sm:px-4 py-3 sm:py-4">
-                            <div className="flex items-center">
-                              <div className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 rounded-md bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                                <Package className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
-                              </div>
-                              <div className="ml-2 sm:ml-4 min-w-0 flex-1">
-                                <p className="font-medium text-xs sm:text-sm text-gray-900 dark:text-gray-100 truncate">
-                                  {item.productName} {item.depotVariantName && `(${item.depotVariantName})`}
-                                </p>
-                                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                  {item.depotName && <div className="truncate">Depot: {item.depotName}</div>}
-                                  {item.agencyName && <div className="truncate text-secondary dark:text-blue-400">Agency: {item.agencyName}</div>}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-2 sm:px-4 py-3 sm:py-4 text-right text-xs sm:text-sm">
-                            <div className="font-medium">{item.quantity}</div>
-                            {item.depotVariantName && <div className="text-xs text-gray-500 dark:text-gray-400 truncate">({item.depotVariantName})</div>}
-                          </td>
-                          <td className="px-2 sm:px-4 py-3 sm:py-4 text-right text-xs sm:text-sm">
-                            {typeof item.deliveredQuantity === 'number' ? (
-                              <>
-                                <div className="font-medium">{item.deliveredQuantity}</div>
-                                {item.depotVariantName && <div className="text-xs text-gray-500 dark:text-gray-400 truncate">({item.depotVariantName})</div>}
-                              </>
-                            ) : <span className="text-gray-400">-</span>}
-                          </td>
-                          <td className="px-2 sm:px-4 py-3 sm:py-4 text-right text-xs sm:text-sm">
-                            {typeof item.receivedQuantity === 'number' ? (
-                              <>
-                                <div className="font-medium">{item.receivedQuantity}</div>
-                                {item.depotVariantName && <div className="text-xs text-gray-500 dark:text-gray-400 truncate">({item.depotVariantName})</div>}
-                              </>
-                            ) : <span className="text-gray-400">-</span>}
-                          </td>
-                          {shouldShowSupervisorColumn && (
-                            <td className="px-2 sm:px-4 py-3 sm:py-4 text-right text-xs sm:text-sm">
-                              {typeof item.supervisorQuantity === 'number' ? (
-                                <>
-                                  <div className="font-medium">{item.supervisorQuantity}</div>
-                                  {item.depotVariantName && <div className="text-xs text-gray-500 dark:text-gray-400 truncate">({item.depotVariantName})</div>}
-                                </>
-                              ) : <span className="text-gray-400">-</span>}
-                            </td>
-                          )}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="space-y-6">
+                  {itemsGroupedByCity.map(({ city, items }) => {
+                    const totalOrdered = items.reduce((s, it) => s + (it.quantity ?? 0), 0);
+                    const totalDelivered = items.reduce((s, it) => s + (typeof it.deliveredQuantity === 'number' ? it.deliveredQuantity : 0), 0);
+                    const totalReceived = items.reduce((s, it) => s + (typeof it.receivedQuantity === 'number' ? it.receivedQuantity : 0), 0);
+                    const totalSupervisor = items.reduce((s, it) => s + (typeof it.supervisorQuantity === 'number' ? it.supervisorQuantity : 0), 0);
+                    return (
+                      <div key={city} className="rounded-xl border overflow-hidden">
+                        <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-800">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{city}</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">{items.length} item{items.length !== 1 ? 's' : ''}</span>
+                          </div>
+                          <div className="flex items-center gap-3 text-xs">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">Ordered: {totalOrdered}</span>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">Delivered: {totalDelivered}</span>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">Received: {totalReceived}</span>
+                            {shouldShowSupervisorColumn && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">Supervisor: {totalSupervisor}</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="overflow-x-auto">
+                          <table className={cn(
+                            "w-full",
+                            (currentUserProfile?.role === 'SUPERVISOR' || currentUserProfile?.role === 'ADMIN')
+                              ? "min-w-[800px]"
+                              : "min-w-[600px]"
+                          )}>
+                            <thead className="bg-gray-50 dark:bg-gray-900">
+                              <tr>
+                                <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
+                                  Product
+                                </th>
+                                <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 w-20 sm:w-24">
+                                  Ordered
+                                </th>
+                                <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 w-20 sm:w-24">
+                                  Delivered
+                                </th>
+                                <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 w-20 sm:w-24">
+                                  Received
+                                </th>
+                                {shouldShowSupervisorColumn && (
+                                  <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 w-20 sm:w-24">
+                                    Supervisor
+                                  </th>
+                                )}
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                              {items.map((item) => (
+                                <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                  <td className="px-2 sm:px-4 py-3 sm:py-4">
+                                    <div className="flex items-center">
+                                      <div className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 rounded-md bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                                        <Package className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
+                                      </div>
+                                      <div className="ml-2 sm:ml-4 min-w-0 flex-1">
+                                        <p className="font-medium text-xs sm:text-sm text-gray-900 dark:text-gray-100 truncate">
+                                          {item.productName} {item.depotVariantName && `(${item.depotVariantName})`}
+                                        </p>
+                                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                          {item.depotName && <div className="truncate">Depot: {item.depotName}</div>}
+                                          {item.agencyName && <div className="truncate text-secondary dark:text-blue-400">Agency: {item.agencyName}</div>}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-2 sm:px-4 py-3 sm:py-4 text-right text-xs sm:text-sm">
+                                    <div className="font-medium">{item.quantity}</div>
+                                    {item.depotVariantName && <div className="text-xs text-gray-500 dark:text-gray-400 truncate">({item.depotVariantName})</div>}
+                                  </td>
+                                  <td className="px-2 sm:px-4 py-3 sm:py-4 text-right text-xs sm:text-sm">
+                                    {typeof item.deliveredQuantity === 'number' ? (
+                                      <>
+                                        <div className="font-medium">{item.deliveredQuantity}</div>
+                                        {item.depotVariantName && <div className="text-xs text-gray-500 dark:text-gray-400 truncate">({item.depotVariantName})</div>}
+                                      </>
+                                    ) : <span className="text-gray-400">-</span>}
+                                  </td>
+                                  <td className="px-2 sm:px-4 py-3 sm:py-4 text-right text-xs sm:text-sm">
+                                    {typeof item.receivedQuantity === 'number' ? (
+                                      <>
+                                        <div className="font-medium">{item.receivedQuantity}</div>
+                                        {item.depotVariantName && <div className="text-xs text-gray-500 dark:text-gray-400 truncate">({item.depotVariantName})</div>}
+                                      </>
+                                    ) : <span className="text-gray-400">-</span>}
+                                  </td>
+                                  {shouldShowSupervisorColumn && (
+                                    <td className="px-2 sm:px-4 py-3 sm:py-4 text-right text-xs sm:text-sm">
+                                      {typeof item.supervisorQuantity === 'number' ? (
+                                        <>
+                                          <div className="font-medium">{item.supervisorQuantity}</div>
+                                          {item.depotVariantName && <div className="text-xs text-gray-500 dark:text-gray-400 truncate">({item.depotVariantName})</div>}
+                                        </>
+                                      ) : <span className="text-gray-400">-</span>}
+                                    </td>
+                                  )}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {itemsGroupedByCity.length === 0 && (
+                    <div className="text-sm text-gray-500 dark:text-gray-400">No items to display.</div>
+                  )}
                 </div>
               </CardContent>
             </Card>

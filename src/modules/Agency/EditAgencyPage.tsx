@@ -31,6 +31,7 @@ interface AgencyData {
   address2?: string | null;
   city: string;
   pincode: number;
+  depotId?: number | null;
   userId: string | number;
   user?: AgencyUser;
 }
@@ -121,6 +122,7 @@ const EditAgencyPage: React.FC = () => {
     address2: agencyData.address2 || null,
     city: agencyData.city,
     pincode: agencyData.pincode,
+    depotId: agencyData.depotId || null,
     status: agencyData.user?.active ? "ACTIVE" : "INACTIVE",
   };
 
@@ -155,6 +157,7 @@ type AgencyFormInputs = {
   address2?: string | null;
   city: string;
   pincode?: number; 
+  depotId?: number | null;
   status?: "ACTIVE" | "INACTIVE";
   userFullName?: string; 
   userLoginEmail?: string; 

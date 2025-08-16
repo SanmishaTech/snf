@@ -16,10 +16,10 @@ import { toast } from 'sonner';
 import DepotMasterForm, { DepotFormData } from './DepotMasterForm';
 import { Pagination } from '@/components/common/Pagination';
 
-interface Depot extends Omit<DepotFormData, 'agencyId'> {
+interface Depot extends DepotFormData {
   id: string;
+  city: string;
   createdAt: string;
-  agency?: { id: number; name: string };
 }
 
 const API_BASE_URL = '/admin/depots';
@@ -89,11 +89,7 @@ const DepotMasterListPage: React.FC = () => {
   };
 
   const handleEdit = (depot: Depot) => {
-    const depotToEdit = {
-      ...depot,
-      agencyId: depot.agency?.id,
-    };
-    setEditingDepot(depotToEdit as any);
+    setEditingDepot(depot);
     setIsFormOpen(true);
   };
 
@@ -200,6 +196,9 @@ const DepotMasterListPage: React.FC = () => {
                       <TableHead onClick={() => handleSort('address')} className="cursor-pointer px-4 py-3 whitespace-nowrap">
                         <div className="flex items-center">Address <SortIndicator column='address' /></div>
                       </TableHead>
+                      <TableHead onClick={() => handleSort('city')} className="cursor-pointer px-4 py-3 whitespace-nowrap">
+                        <div className="flex items-center">City <SortIndicator column='city' /></div>
+                      </TableHead>
                       <TableHead className="px-4 py-3 whitespace-nowrap">Contact Person</TableHead>
                       <TableHead className="px-4 py-3 whitespace-nowrap">Contact Number</TableHead>
                       <TableHead onClick={() => handleSort('createdAt')} className="cursor-pointer px-4 py-3 whitespace-nowrap">
@@ -213,6 +212,7 @@ const DepotMasterListPage: React.FC = () => {
                       <TableRow key={depot.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 border-b last:border-b-0">
                         <TableCell className="font-medium px-4 py-3 whitespace-nowrap">{depot.name}</TableCell>
                         <TableCell className="px-4 py-3 whitespace-nowrap">{depot.address}</TableCell>
+                        <TableCell className="px-4 py-3 whitespace-nowrap">{depot.city}</TableCell>
                         <TableCell className="px-4 py-3 whitespace-nowrap">{depot.contactPerson || '-'}</TableCell>
                         <TableCell className="px-4 py-3 whitespace-nowrap">{depot.contactNumber || '-'}</TableCell>
                         <TableCell className="px-4 py-3 whitespace-nowrap">{new Date(depot.createdAt).toLocaleDateString()}</TableCell>

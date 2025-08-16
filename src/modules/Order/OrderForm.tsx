@@ -63,6 +63,11 @@ interface Vendor {
 interface Agency {
   id: string;
   name: string;
+  depotId?: number | string | null;
+  depot?: {
+    id: number | string;
+    name: string;
+  } | null;
 }
 
 interface Depot {
@@ -1059,18 +1064,48 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                             <Controller
                               control={control}
                               name={`orderItems.${index}.agencyId`}
-                              render={({ field: agencyField }) => (
-                                <Select onValueChange={agencyField.onChange} value={agencyField.value || ""}>
-                                  <SelectTrigger className="h-9 text-sm bg-white dark:bg-gray-700 min-w-full">
-                                    <SelectValue placeholder="Select Agency" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {agencies.map(agency => (
-                                      <SelectItem key={agency.id} value={agency.id}>{agency.name}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              )}
+                              render={({ field: agencyField }) => {
+                                // Filter agencies based on selected depot
+                                const currentItem = watchedOrderItems[index];
+                                const filteredAgencies = currentItem?.depotId 
+                                  ? agencies.filter(agency => 
+                                      // Show agencies that are assigned to the selected depot
+                                      String(agency.depotId) === String(currentItem.depotId) || 
+                                      String(agency.depot?.id) === String(currentItem.depotId)
+                                    )
+                                  : agencies; // If no depot selected, show all agencies
+                                
+                                // Check if current selection is valid
+                                const isValidSelection = !agencyField.value || filteredAgencies.some(a => a.id === agencyField.value);
+                                
+                                // Use the field value if valid, otherwise empty string
+                                const effectiveValue = isValidSelection ? agencyField.value : "";
+                                
+                                return (
+                                  <Select 
+                                    onValueChange={agencyField.onChange} 
+                                    value={effectiveValue || ""}
+                                  >
+                                    <SelectTrigger className={cn("h-9 text-sm bg-white dark:bg-gray-700 min-w-full", 
+                                      errors.orderItems?.[index]?.agencyId && "border-red-500")}>
+                                      <SelectValue placeholder={filteredAgencies.length === 0 ? "No agencies for this depot" : "Select Agency"} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {filteredAgencies.length === 0 ? (
+                                        <div className="px-2 py-1.5 text-sm text-gray-500 dark:text-gray-400">
+                                          No agencies available for selected depot
+                                        </div>
+                                      ) : (
+                                        filteredAgencies.map(agency => (
+                                          <SelectItem key={agency.id} value={agency.id}>
+                                            {agency.name}
+                                          </SelectItem>
+                                        ))
+                                      )}
+                                    </SelectContent>
+                                  </Select>
+                                );
+                              }}
                             />
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap min-w-[200px]">
@@ -1213,18 +1248,48 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                           <Controller
                             control={control}
                             name={`orderItems.${index}.agencyId`}
-                            render={({ field: agencyField }) => (
-                              <Select onValueChange={agencyField.onChange} value={agencyField.value || ""}>
-                                <SelectTrigger className="mt-1 bg-white dark:bg-gray-700">
-                                  <SelectValue placeholder="Select Agency" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {agencies.map(agency => (
-                                    <SelectItem key={agency.id} value={agency.id}>{agency.name}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            )}
+                            render={({ field: agencyField }) => {
+                              // Filter agencies based on selected depot
+                              const currentItem = watchedOrderItems[index];
+                              const filteredAgencies = currentItem?.depotId 
+                                ? agencies.filter(agency => 
+                                    // Show agencies that are assigned to the selected depot
+                                    String(agency.depotId) === String(currentItem.depotId) || 
+                                    String(agency.depot?.id) === String(currentItem.depotId)
+                                  )
+                                : agencies; // If no depot selected, show all agencies
+                              
+                              // Check if current selection is valid
+                              const isValidSelection = !agencyField.value || filteredAgencies.some(a => a.id === agencyField.value);
+                              
+                              // Use the field value if valid, otherwise empty string
+                              const effectiveValue = isValidSelection ? agencyField.value : "";
+                              
+                              return (
+                                <Select 
+                                  onValueChange={agencyField.onChange} 
+                                  value={effectiveValue || ""}
+                                >
+                                  <SelectTrigger className={cn("mt-1 bg-white dark:bg-gray-700", 
+                                    errors.orderItems?.[index]?.agencyId && "border-red-500")}>
+                                    <SelectValue placeholder={filteredAgencies.length === 0 ? "No agencies for this depot" : "Select Agency"} />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {filteredAgencies.length === 0 ? (
+                                      <div className="px-2 py-1.5 text-sm text-gray-500 dark:text-gray-400">
+                                        No agencies available for selected depot
+                                      </div>
+                                    ) : (
+                                      filteredAgencies.map(agency => (
+                                        <SelectItem key={agency.id} value={agency.id}>
+                                          {agency.name}
+                                        </SelectItem>
+                                      ))
+                                    )}
+                                  </SelectContent>
+                                </Select>
+                              );
+                            }}
                           />
                         </div>
                         

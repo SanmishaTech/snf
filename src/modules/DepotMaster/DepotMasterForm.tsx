@@ -24,27 +24,22 @@ import { Loader2, PlusCircle, Save } from 'lucide-react';
 const depotBaseSchema = z.object({
   name: z.string().min(1, 'Depot name is required').max(100, 'Name must be 100 characters or less'),
   address: z.string().min(1, 'Address is required').max(255, 'Address must be 255 characters or less'),
+  city: z.string().min(1, 'City is required').max(255, 'City must be 255 characters or less'),
   contactPerson: z.string().max(100, 'Contact person must be 100 characters or less').optional().or(z.literal('')),
   contactNumber: z.string().max(20, 'Contact number must be 20 characters or less').optional().or(z.literal('')),
   userFullName: z.string().optional(),
   userLoginEmail: z.string().email('Invalid email address').optional().or(z.literal('')),
   userPassword: z.string().optional(),
   isOnline: z.boolean().optional(),
-  agencyId: z.preprocess((val) => (val ? Number(val) : null), z.number().optional().nullable()),
 });
 
 export type DepotFormData = z.infer<typeof depotBaseSchema>;
-
-interface Agency {
-    id: number;
-    name: string;
-}
 
 interface DepotMasterFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmitSuccess: () => void;
-  initialData?: DepotFormData & { id?: string; agencyId?: number | null };
+  initialData?: DepotFormData & { id?: string; };
 }
 
 const DepotMasterForm: React.FC<DepotMasterFormProps> = ({ isOpen, onClose, onSubmitSuccess, initialData }) => {
@@ -68,7 +63,6 @@ const DepotMasterForm: React.FC<DepotMasterFormProps> = ({ isOpen, onClose, onSu
       }
     }
   });
-  const [agencies, setAgencies] = useState<Agency[]>([]);
   const {
     register,
     handleSubmit,
@@ -82,31 +76,16 @@ const DepotMasterForm: React.FC<DepotMasterFormProps> = ({ isOpen, onClose, onSu
 
   useEffect(() => {
     if (isOpen) {
-      const fetchAgencies = async () => {
-        try {
-          const response = await get('/agencies');
-          setAgencies(response.data || []);
-        } catch (error) {
-          console.error('Failed to fetch agencies:', error);
-          toast.error('Failed to load agencies for selection.');
-        }
-      };
-      fetchAgencies();
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (isOpen) {
       const defaultValues = {
         name: '',
         address: '',
+        city: '',
         contactPerson: '',
         contactNumber: '',
         userFullName: '',
         userLoginEmail: '',
         userPassword: '',
         isOnline: false,
-        agencyId: null,
       };
 
       if (initialData) {
@@ -115,7 +94,7 @@ const DepotMasterForm: React.FC<DepotMasterFormProps> = ({ isOpen, onClose, onSu
         reset(defaultValues);
       }
     }
-  }, [agencies, initialData, isOpen, reset]);
+  }, [initialData, isOpen, reset]);
 
   const onSubmit = async (data: DepotFormData) => {
     console.log('Submitting data:', data);
@@ -160,6 +139,11 @@ const DepotMasterForm: React.FC<DepotMasterFormProps> = ({ isOpen, onClose, onSu
             {errors.address && <p className="text-sm text-red-600 mt-1">{errors.address.message}</p>}
           </div>
           <div className="grid gap-2">
+            <Label htmlFor="city">City <span className="text-red-500">*</span></Label>
+            <Input id="city" {...register('city')} placeholder="e.g. New York" />
+            {errors.city && <p className="text-sm text-red-600 mt-1">{errors.city.message}</p>}
+          </div>
+          <div className="grid gap-2">
             <Label htmlFor="contactPerson">Contact Person</Label>
             <Input id="contactPerson" {...register('contactPerson')} placeholder="e.g. John Doe" />
             {errors.contactPerson && <p className="text-sm text-red-600 mt-1">{errors.contactPerson.message}</p>}
@@ -185,33 +169,6 @@ const DepotMasterForm: React.FC<DepotMasterFormProps> = ({ isOpen, onClose, onSu
             <Label htmlFor="isOnline" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
               Depot is Online
             </Label>
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="agencyId">Assign Agency</Label>
-            <Controller
-                name="agencyId"
-                control={control}
-                render={({ field }) => (
-                    <Select
-                        onValueChange={(value) => field.onChange(value === 'null' ? null : value)}
-                        value={field.value ? String(field.value) : 'null'}
-                    >
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select an agency" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="null">None</SelectItem>
-                            {agencies.map((agency) => (
-                                <SelectItem key={agency.id} value={String(agency.id)}>
-                                    {agency.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                )}
-            />
-            {errors.agencyId && <p className="text-sm text-red-600 mt-1">{errors.agencyId.message}</p>}
           </div>
 
           {/* Admin user fields: only shown when creating */}

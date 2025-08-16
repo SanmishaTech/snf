@@ -4,6 +4,7 @@ export interface Depot {
   id: number;
   name: string;
   address: string;
+  city: string;
   contactPerson?: string;
   contactNumber?: string;
 }
