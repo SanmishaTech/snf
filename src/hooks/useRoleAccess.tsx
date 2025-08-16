@@ -28,7 +28,8 @@ export function useRoleAccess(): RoleAccessMethods {
   // Check if the user has admin role
   const checkIsAdmin = (): boolean => {
     if (!user || !user.role) return false;
-    return user.role.includes('admin');
+    const role = user.role.toString().toUpperCase();
+    return role === 'ADMIN' || role === 'SUPER_ADMIN' || role.includes('ADMIN');
   };
 
   // Pre-computed property for common check

@@ -302,8 +302,8 @@ const EnhancedDeliveryView: React.FC = () => {
       'Landmark': delivery.deliveryAddress?.landmark || 'N/A',
       'Delivery Instructions': delivery.subscription?.deliveryInstructions || 'N/A',
       'Status': delivery.status,
-      'Subscription Owner': delivery.subscription?.agency?.name || 'N/A',
-      'Handler Agency': delivery.agent?.name || 'Not assigned',
+      'Agency': delivery.subscription?.agency?.name || 'N/A',
+      'Handler': delivery.agent?.name || 'Not assigned',
       'Admin Notes': delivery.adminNotes || adminNotes[delivery.id] || 'N/A',
       'Phone': delivery.deliveryAddress.mobile || 'N/A',
     }));
@@ -321,8 +321,8 @@ const EnhancedDeliveryView: React.FC = () => {
       { wch: 15 }, // Landmark
       { wch: 30 }, // Delivery Instructions
       { wch: 15 }, // Status
-      { wch: 20 }, // Subscription Owner
-      { wch: 20 }, // Handler Agency
+      { wch: 20 }, // Agency
+      { wch: 20 }, // Handler
       { wch: 30 }, // Admin Notes
       { wch: 15 }  // Phone
     ];

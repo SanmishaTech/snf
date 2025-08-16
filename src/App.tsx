@@ -88,7 +88,9 @@ import PurchasePaymentViewPage from "./modules/PurchasePayment/PurchasePaymentVi
 import TransferList from "./modules/Transfer/TransferList";
 import CreateTransferPage from "./modules/Transfer/CreateTransferPage";
 import EditTransferPage from "./modules/Transfer/EditTransferPage";
-
+import DeliveryReport from "./modules/Reports/DeliveryAgenciesReport"
+import DeliverySummariesReport from "./modules/Reports/DeliverySummariesReport"
+import SubscriptionReports from "./modules/Reports/SubscriptionReports"
 import DepotOrderDetails from "./modules/Order/DepotOrderDetails";
 import "./App.css";
 // MembershipList wrapper component to handle showing all memberships
@@ -97,6 +99,7 @@ import "./App.css";
  
 import SNFOrdersListPage from "./modules/SNFOrders/SNFOrdersListPage";
 import SNFOrderDetailPage from "./modules/SNFOrders/SNFOrderDetailPage";
+import PurchaseOrderReport from "./modules/Reports/PurchaseOrderReport";
 
 const App = () => {
   useEffect(() => {
@@ -386,6 +389,11 @@ const App = () => {
             <Route path="/admin/depot-variants" element={<DepotProductVariantListPage />} /> {/* Added for Depot Product Variant Management */}
             <Route path="/admin/snf-orders" element={<SNFOrdersListPage />} />
             <Route path="/admin/snf-orders/:id" element={<SNFOrderDetailPage />} />
+            <Route path="/admin/reports/purchase-orders" element={<PurchaseOrderReport />} /> {/* Purchase Order Report */}
+            <Route path="/admin/reports/delivery-agencies" element={<DeliveryReport />} /> {/* Delivery Agencies Report */}
+            <Route path="/admin/reports/delivery-summaries" element={<DeliverySummariesReport />} /> {/* Delivery Summaries Report */}
+            <Route path="/admin/reports/subscriptions" element={<SubscriptionReports />} /> {/* Subscription Reports */}
+
           </Route>
 
           {/* Other routes using MainLayout (e.g., Vendor routes) - not protected by AdminProtectedRoute */}

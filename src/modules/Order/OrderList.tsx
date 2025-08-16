@@ -47,6 +47,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import OrderDetailsPanel from "./OrderDetailsPanel";
 
 interface OrderItem {
   id: string;
@@ -134,6 +135,9 @@ const OrderList = () => {
   const [isAgencyInfoLoading, setIsAgencyInfoLoading] = useState<boolean>(false);
   const [currentSupervisorAgencyId, setCurrentSupervisorAgencyId] = useState<string | null>(null);
   const [isSupervisorInfoLoading, setIsSupervisorInfoLoading] = useState<boolean>(false);
+
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   const currentUserRole = currentUserDetails?.role;
 
@@ -419,7 +423,11 @@ const OrderList = () => {
                   const quantities = getOrderQuantitiesSummary(order.items);
                   
                   return (
-                  <TableRow key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-750">
+                  <TableRow
+                    key={order.id}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-750 cursor-pointer"
+                    onClick={() => { setSelectedOrder(order); setDetailsOpen(true); }}
+                  >
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{order.poNumber}</TableCell>
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{order.vendor.name}</TableCell>
                     <TableCell className="px-6 py-4 text-sm text-gray-500 dark:text-gray-300">
@@ -520,7 +528,7 @@ const OrderList = () => {
                         </TooltipProvider>
                       )}
                     </TableCell>
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu modal={false} >
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="h-8 w-8 p-0">
@@ -619,10 +627,20 @@ const OrderList = () => {
                       </DropdownMenu>
                     </TableCell>
                   </TableRow>
-                )})}
-              </TableBody>
-            </Table>
-          )}
+                )
+              })}
+            </TableBody>
+          </Table>
+        )}
+
+        {selectedOrder && (
+          <OrderDetailsPanel
+            order={selectedOrder}
+            open={detailsOpen}
+            onOpenChange={(open) => setDetailsOpen(open)}
+            onClose={() => { setDetailsOpen(false); setSelectedOrder(null); }}
+          />
+        )}
         </CardContent>
       </Card>
 

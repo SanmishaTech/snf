@@ -10,6 +10,7 @@ import {
   FileText,
   Briefcase,
   ChevronDown,
+  BarChart3,
 } from "lucide-react";
 
 import { NavUser } from "@/components/common/nav-user";
@@ -158,12 +159,12 @@ const initialData = {
           icon: Briefcase,
           groupLabel: "Indraai",
         },
-        {
-          title: "SNF Orders",
-          url: "/admin/snf-orders",
-          icon: FileText,
-          groupLabel: "Indraai",
-        },
+        // {
+        //   title: "SNF Orders",
+        //   url: "/admin/snf-orders",
+        //   icon: FileText,
+        //   groupLabel: "Indraai",
+        // },
         {
           title: "Subscriptions",
           url: "/admin/subscriptions",
@@ -183,6 +184,31 @@ const initialData = {
           icon: Briefcase,
           groupLabel: "Member",
         },
+        // Reports section
+        {
+          title: "Purchase Order Report",
+          url: "/admin/reports/purchase-orders",
+          icon: BarChart3,
+          groupLabel: "Reports",
+        },
+        {
+          title: "Delivery Agency Report",
+          url: "/admin/reports/delivery-agencies",
+          icon: BarChart3,
+          groupLabel: "Reports",
+        },
+        {
+          title: "Delivery Summaries",
+          url: "/admin/reports/delivery-summaries",
+          icon: BarChart3,
+          groupLabel: "Reports",
+        },
+        {
+          title: "Subscription Reports",
+          url: "/admin/reports/subscriptions",
+          icon: BarChart3,
+          groupLabel: "Reports",
+        },
         // {
         //   title: "Users",
         //   url: "/admin/users",
@@ -201,6 +227,17 @@ const initialData = {
           groupLabel: "Master",
           isActive: false,
           items: [{ title: "Farmer", url: "/admin/vendors", icon: Briefcase }],
+        },
+        {
+          title: "Reports",
+          url: "#",
+          icon: BarChart3,
+          groupLabel: "Reports",
+          isActive: false,
+          items: [
+            { title: "Purchase Order Report", url: "/admin/reports/purchase-orders" },
+            { title: "Delivery Summaries", url: "/admin/reports/delivery-summaries" },
+          ],
         },
       ],
       navMain: [] as any[],
