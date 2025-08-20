@@ -3,16 +3,48 @@ import { ProductService, Product, DepotVariant, ApiResponse, PaginatedResponse }
 /**
  * API service layer for fetching products and depot variants
  * Uses only MRP pricing from depot variants as specified
+ * Includes a simple cache to avoid redundant API calls within a short timeframe
  */
 export class ProductServiceImpl implements ProductService {
   private readonly API_BASE_URL = import.meta.env.VITE_BACKEND_URL || '/api';
   private readonly DEFAULT_TIMEOUT = 10000; // 10 seconds
   private readonly MAX_RETRIES = 2;
+  private cache: { [key: string]: { timestamp: number; data: any } } = {};
+  private readonly CACHE_TTL = 2000; // 2 seconds
+
+  private getCacheKey(depotId?: number): string {
+    return `depot-${depotId || 'all'}`;
+  }
+
+  private getFromCache(key: string): any | null {
+    const cached = this.cache[key];
+    if (cached && (Date.now() - cached.timestamp < this.CACHE_TTL)) {
+      return cached.data;
+    }
+    return null;
+  }
+
+  private setCache(key: string, data: any): void {
+    this.cache[key] = { timestamp: Date.now(), data };
+  }
+
+  public invalidateCache(depotId?: number): void {
+    const key = this.getCacheKey(depotId);
+    console.log(`[Cache] Invalidating cache for key: ${key}`);
+    delete this.cache[key];
+  }
 
   /**
    * Get public products with optional depot filtering
    */
   async getProducts(depotId?: number): Promise<Product[]> {
+    const cacheKey = this.getCacheKey(depotId);
+    const cachedData = this.getFromCache(cacheKey);
+    if (cachedData) {
+      console.log(`[Cache] Returning cached products for depot ${depotId}`);
+      return cachedData.products;
+    }
+
     try {
       const url = new URL(`${this.API_BASE_URL}/api/products/public`);
       if (depotId) {
@@ -31,132 +63,18 @@ export class ProductServiceImpl implements ProductService {
         return [];
       }
 
-      // Handle different response formats and filter to non-dairy products only
+      let products: Product[] = [];
       if (Array.isArray(result.data)) {
-        // Direct array of products
-        console.log('Raw products data:', result.data);
-        // Temporarily show all products for debugging
-        const filtered = result.data; // .filter((p: any) => p && p.isDairyProduct !== true);
-        console.log('Filtered non-dairy products:', filtered);
-        console.log('Total products:', result.data.length, 'Non-dairy:', filtered.length);
-        return filtered;
+        products = result.data;
       } else if (result.data.products && Array.isArray(result.data.products)) {
-        // Object with products array
-        console.log('Raw products data:', result.data.products);
-        // Temporarily show all products for debugging
-        const filtered = result.data.products; // .filter((p: any) => p && p.isDairyProduct !== true);
-        console.log('Filtered non-dairy products:', filtered);
-        console.log('Total products:', result.data.products.length, 'Non-dairy:', filtered.length);
-        return filtered;
+        products = result.data.products;
       }
-      
-      return [];
+
+      this.setCache(cacheKey, { products, variants: [] }); // Store products in cache
+
+      return products;
     } catch (error) {
       console.error('Error fetching products:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get product variants for a specific product and depot
-   */
-  async getProductVariants(productId: number, depotId: number): Promise<DepotVariant[]> {
-    try {
-      // Use the public products endpoint with depotId to get products with variants
-      const url = new URL(`${this.API_BASE_URL}/api/products/public`);
-      url.searchParams.append('depotId', depotId.toString());
-
-      const response = await this.fetchWithRetry(url.toString());
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          return []; // No variants found
-        }
-        throw new Error(`API request failed: ${response.status}`);
-      }
-
-      const result: ApiResponse<any> = await response.json();
-      
-      if (!result.success || !result.data) {
-        return [];
-      }
-
-      // Find the specific product and extract its variants
-      let productVariants: any[] = [];
-      let parentProduct: any | null = null;
-      
-      if (Array.isArray(result.data)) {
-        // Direct array of products with variants
-        const product = result.data.find((p: any) => p.id === productId);
-        if (product && product.variants && Array.isArray(product.variants)) {
-          parentProduct = product;
-          productVariants = product.variants;
-        }
-      } else if (result.data.products && Array.isArray(result.data.products)) {
-        // Object with products array
-        const product = result.data.products.find((p: any) => p.id === productId);
-        if (product && product.variants && Array.isArray(product.variants)) {
-          parentProduct = product;
-          productVariants = product.variants;
-        }
-      }
-
-      // If no product found, return empty array
-      if (!parentProduct) {
-        return [];
-      }
-
-      // Transform the API response to match our DepotVariant interface
-      return productVariants.map((variant: any) => ({
-        id: variant.id,
-        depotId: depotId,
-        productId: productId,
-        name: variant.name,
-        hsnCode: variant.hsnCode,
-        minimumQty: variant.minimumQty || 1,
-        closingQty: variant.closingQty || 0,
-        notInStock: variant.notInStock || false,
-        isHidden: variant.isHidden || false,
-        buyOncePrice: variant.buyOncePrice ? parseFloat(variant.buyOncePrice) : undefined,
-        price15Day: variant.price15Day ? parseFloat(variant.price15Day) : undefined,
-        price1Month: variant.price1Month ? parseFloat(variant.price1Month) : undefined,
-        price3Day: variant.price3Day ? parseFloat(variant.price3Day) : undefined,
-        price7Day: variant.price7Day ? parseFloat(variant.price7Day) : undefined,
-        mrp: parseFloat(variant.mrp) || 0,
-        purchasePrice: variant.purchasePrice ? parseFloat(variant.purchasePrice) : undefined,
-        createdAt: new Date(variant.createdAt || Date.now()),
-        updatedAt: new Date(variant.updatedAt || Date.now()),
-        depot: {
-          id: depotId,
-          name: 'Depot',
-          address: '',
-          isOnline: true,
-        },
-        product: parentProduct ? {
-          id: parentProduct.id,
-          name: parentProduct.name,
-          description: parentProduct.description,
-          attachmentUrl: parentProduct.attachmentUrl,
-          url: parentProduct.url,
-          isDairyProduct: parentProduct.isDairyProduct,
-          maintainStock: parentProduct.maintainStock,
-          categoryId: parentProduct.categoryId,
-          category: parentProduct.category,
-          tags: parentProduct.tags,
-          createdAt: new Date(parentProduct.createdAt || Date.now()),
-          updatedAt: new Date(parentProduct.updatedAt || Date.now()),
-        } : {
-          id: productId,
-          name: 'Product',
-          description: '',
-          isDairyProduct: false,
-          maintainStock: false,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      }));
-    } catch (error) {
-      console.error('Error fetching product variants:', error);
       throw error;
     }
   }

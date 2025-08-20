@@ -230,11 +230,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const rawAttachment = product?.product?.attachmentUrl;
   const producturl = rawAttachment ? `${import.meta.env.VITE_BACKEND_URL}${rawAttachment}` : "";
   return (
-    <article className="group rounded-md border border-border/60 bg-card text-card-foreground overflow-hidden shadow-sm hover:shadow-md hover:border-border transition-all duration-200 h-full flex flex-col">
+    <article className="group rounded-2xl border bg-card text-card-foreground overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 h-full flex flex-col">
       {/* Product Image with Link */}
       <Link
         to={`/snf/product/${product.product.id}`}
-        className="block relative aspect-square min-h-[88px] sm:min-h-[96px] bg-muted/30 overflow-hidden"
+        className="block relative aspect-square min-h-[88px] sm:min-h-[96px] bg-muted/30 overflow-hidden rounded-b-none"
       >
         <img
           ref={imgRef}
@@ -259,7 +259,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         )}
       </Link>
 
-      <div className="p-2 md:p-2.5 space-y-2 md:space-y-2.5 flex-1 flex flex-col">
+      <div className="p-2.5 space-y-2.5 flex-1 flex flex-col">
         {/* Product Name */}
         <h3 className="font-semibold text-[12px] md:text-[13px] leading-tight line-clamp-1 min-h-[1.25rem]">
           <Link to={`/snf/product/${product.product.id}`} className="hover:text-primary transition-colors">
@@ -285,7 +285,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                       onClick={() => handleVariantSelect(variant.id)}
                       disabled={!isAvailable}
                       className={[
-                        "inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] transition-colors",
+                        "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] transition-colors shadow-sm",
                         isSelected ? "bg-primary/10 border-primary text-primary" : "hover:bg-accent",
                         !isAvailable ? "opacity-50 cursor-not-allowed" : "",
                       ].join(" ")}
@@ -303,7 +303,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setIsVariantDropdownOpen((o) => !o)}
-                  className="w-full flex items-center justify-between px-2 py-1.5 border rounded-md text-[13px] hover:bg-accent transition-colors"
+                  className="w-full flex items-center justify-between px-2.5 py-1.5 border rounded-md text-[13px] hover:bg-accent transition-colors shadow-sm"
                   aria-expanded={isVariantDropdownOpen}
                 >
                   <span className="flex items-center gap-2">
@@ -397,22 +397,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
           {!isOutOfStock && (
             <div className="mt-auto flex items-stretch w-full relative z-10">
-              <div className="flex items-center border rounded-md w-full overflow-hidden">
+              <div className="flex items-center border rounded-full w-full overflow-hidden bg-background/60 shadow-inner">
                 <button
                   type="button"
-                  className="px-2 py-1 hover:bg-accent disabled:opacity-50"
+                  className="px-3 py-2 hover:bg-accent disabled:opacity-50"
                   onClick={(e) => { e.stopPropagation(); e.preventDefault(); decrementQty(); }}
                   disabled={qty <= 1}
                   aria-label="Decrease quantity"
                 >
-                  <Minus className="h-3 w-3" />
+                  <Minus className="h-3.5 w-3.5" />
                 </button>
-                <div className="flex-1 min-w-0 text-center text-[12px] md:text-sm font-medium select-none py-1">
+                <div className="flex-1 min-w-0 text-center text-[12px] md:text-sm font-medium select-none py-1.5">
                   {qty}
                 </div>
                 <button
                   type="button"
-                  className="px-2 py-1 hover:bg-accent disabled:opacity-50"
+                  className="px-3 py-2 hover:bg-accent disabled:opacity-50"
                   onClick={(e) => { e.stopPropagation(); e.preventDefault(); incrementQty(); }}
                   aria-label="Increase quantity"
                   disabled={
@@ -421,7 +421,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                       : false
                   }
                 >
-                  <Plus className="h-3 w-3" />
+                  <Plus className="h-3.5 w-3.5" />
                 </button>
               </div>
             </div>
@@ -429,12 +429,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
 
         {/* Action Row */}
-        <div className="flex items-center gap-1 pt-1 mt-1">
+        <div className="flex items-center gap-1.5 pt-1 mt-1">
           {/* Optional quantity stepper (hide if OOS) */}
           
           <Button
             ref={addBtnRef}
-            className="flex-1 h-7 text-[12px]"
+            className="flex-1 h-9 rounded-full text-[12px] shadow-sm"
             onClick={handleAddToCart}
             disabled={isOutOfStock}
             variant={isOutOfStock ? "outline" : "default"}

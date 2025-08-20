@@ -47,6 +47,12 @@ export class CartValidationService {
     }
 
     try {
+      // Invalidate cache to ensure fresh data
+      if (typeof (productService as any).invalidateCache === 'function') {
+        (productService as any).invalidateCache(currentDepotId);
+        console.log('[CartValidation] Cache invalidated for depot:', currentDepotId);
+      }
+      
       // Get all variants for the current depot
       console.log('[CartValidation] Fetching depot variants for depot:', currentDepotId);
       
@@ -166,25 +172,30 @@ export class CartValidationService {
               isHidden: v.isHidden
             })));
             
-            // Try to find matching variant (prioritize available ones)
+            // Try to find matching variant
             let equivalentVariant = productVariants.find(variant => {
               const normalizedDepotVariant = this.normalizeVariantName(variant.name);
-              const isMatch = normalizedDepotVariant === normalizedCartVariant && 
-                     !variant.notInStock && 
-                     !variant.isHidden &&
-                     (variant.closingQty === undefined || variant.closingQty >= cartItem.quantity);
               
-              if (normalizedDepotVariant === normalizedCartVariant) {
+              // Check each availability condition separately for better debugging
+              const nameMatches = normalizedDepotVariant === normalizedCartVariant;
+              
+              // STOCK MANAGEMENT: Currently disabled as no stock management system is in place
+              // When enabling stock management, uncomment and use these checks:
+              // const inStock = !variant.notInStock;
+              // const notHidden = !variant.isHidden;
+              // const hasEnoughQty = variant.closingQty === undefined || variant.closingQty >= cartItem.quantity;
+              // const isMatch = nameMatches && inStock && notHidden && hasEnoughQty;
+              
+              // For now, only check name match (all items considered in stock)
+              const isMatch = nameMatches;
+              
+              if (nameMatches) {
                 console.log(`[CartValidation] Name match found for variant ${variant.id}:`, {
+                  variantName: variant.name,
+                  normalizedName: normalizedDepotVariant,
                   matches: true,
                   available: isMatch,
-                  reason: !isMatch ? {
-                    notInStock: variant.notInStock,
-                    isHidden: variant.isHidden,
-                    insufficientQty: variant.closingQty !== undefined && variant.closingQty < cartItem.quantity,
-                    closingQty: variant.closingQty,
-                    requestedQty: cartItem.quantity
-                  } : 'available'
+                  note: 'Stock checks disabled - all items considered available'
                 });
               }
               
@@ -193,15 +204,15 @@ export class CartValidationService {
             
             // If not found with stock, try to find any matching variant
             if (!equivalentVariant) {
-              console.log('[CartValidation] No available variant found, trying to find any matching variant...');
-              equivalentVariant = productVariants.find(variant => {
-                const normalizedDepotVariant = this.normalizeVariantName(variant.name);
-                const isMatch = normalizedDepotVariant === normalizedCartVariant;
-                if (isMatch) {
-                  console.log(`[CartValidation] Found matching variant ${variant.id} (but may have stock issues)`);
-                }
-                return isMatch;
-              });
+              // Stricter validation: Do not hot-swap to a variant that is out of stock.
+              // We will still check if a match exists to provide a better "unavailable" message.
+              const outOfStockEquivalent = productVariants.find(variant =>
+                this.normalizeVariantName(variant.name) === normalizedCartVariant
+              );
+
+              if (outOfStockEquivalent) {
+                console.log(`[CartValidation] Found a matching variant for ${cartItem.name} but it is unavailable. Won't hot-swap.`);
+              }
             }
             
             // Add debug logging for non-matches
@@ -221,18 +232,44 @@ export class CartValidationService {
             }
 
             if (equivalentVariant) {
-              currentVariant = equivalentVariant;
-              swappedVariant = true;
-              console.log(`[CartValidation] Hot-swapped variant for ${cartItem.name} (${cartItem.variantName}): ${cartItem.variantId} -> ${equivalentVariant.id} (${equivalentVariant.name})`);
+              console.log(`[CartValidation] Hot-swapping to variant: ${equivalentVariant.id}`)
+              currentVariant = equivalentVariant; // Set currentVariant so we don't fall through to the error cases
+              
+              // STOCK MANAGEMENT: Currently disabled - all matched variants are considered available
+              // When enabling stock management, uncomment these checks:
+              // const hasStock = equivalentVariant.closingQty === undefined || equivalentVariant.closingQty >= cartItem.quantity;
+              // const isAvailable = !equivalentVariant.notInStock && !equivalentVariant.isHidden && hasStock;
+              
+              // For now, all matched variants are available
+              const isAvailable = true;
+              
+              updatedItem = {
+                ...cartItem,
+                variantId: equivalentVariant.id,
+                variantName: equivalentVariant.name,
+                price: equivalentVariant.buyOncePrice || equivalentVariant.mrp || 0,
+                depotId: currentDepotId,
+                isAvailable: isAvailable,
+                unavailableReason: undefined, // No stock management, so no unavailable reasons
+                // Preserve original depot info for restoration
+                originalDepotId: cartItem.originalDepotId || cartItem.depotId,
+                originalVariantId: cartItem.originalVariantId || cartItem.variantId,
+              };
+              
+              // All hot-swapped items are available when stock management is disabled
+              availableItems.push(updatedItem);
             } else {
-              // Log all available variants for debugging
-              console.log(`[CartValidation] Could not find matching variant for ${cartItem.name} (${cartItem.variantName})`);
-              console.log(`[CartValidation] Available variants for this product:`, productVariants.map(v => ({
-                id: v.id,
-                name: v.name,
-                notInStock: v.notInStock,
-                isHidden: v.isHidden
-              })));
+              // No equivalent variant found - mark as unavailable
+              updatedItem = {
+                ...cartItem,
+                isAvailable: false,
+                unavailableReason: 'Not available in this area',
+                depotId: currentDepotId,
+                // Preserve original depot info for restoration
+                originalDepotId: cartItem.originalDepotId || cartItem.depotId,
+                originalVariantId: cartItem.originalVariantId || cartItem.variantId,
+              };
+              unavailableItems.push(updatedItem);
             }
           } else {
             console.log(`[CartValidation] No variants found for product ${cartItem.productId} (${cartItem.name}) in depot ${currentDepotId}`);
@@ -250,85 +287,71 @@ export class CartValidationService {
             productVariants = productNameMap.get(normalizedProductName) || [];
           }
           
-          const hasOutOfStockVariant = productVariants.some(v => v.notInStock);
+          // Check if there's a matching variant by name (even if out of stock)
+          const normalizedCartVariant = this.normalizeVariantName(cartItem.variantName);
+          const matchingVariant = productVariants.find(v => 
+            this.normalizeVariantName(v.name) === normalizedCartVariant
+          );
+          
+          let unavailableReason = 'Not available in your area';
+          if (matchingVariant) {
+            if (matchingVariant.notInStock) {
+              unavailableReason = `${cartItem.variantName} is out of stock in this area`;
+            } else if (matchingVariant.isHidden) {
+              unavailableReason = `${cartItem.variantName} is currently unavailable in this area`;
+            } else if (matchingVariant.closingQty !== undefined && matchingVariant.closingQty < cartItem.quantity) {
+              unavailableReason = `Only ${matchingVariant.closingQty} ${cartItem.variantName} available in this area`;
+            }
+          } else if (productVariants.length > 0) {
+            // Product exists but this specific variant doesn't
+            unavailableReason = `${cartItem.variantName} variant not available in this area`;
+          }
           
           updatedItem = {
             ...cartItem,
             isAvailable: false,
-            unavailableReason: hasOutOfStockVariant 
-              ? 'Currently out of stock in this area' 
-              : 'Not available in your area',
+            unavailableReason,
             depotId: currentDepotId, // Update current depot ID
             // Preserve original depot info for restoration
             originalDepotId: cartItem.originalDepotId || cartItem.depotId,
             originalVariantId: cartItem.originalVariantId || cartItem.variantId,
           };
           unavailableItems.push(updatedItem);
-        } else if (currentVariant.notInStock || currentVariant.isHidden) {
+        } 
+        // STOCK MANAGEMENT: The following stock checks are currently disabled
+        // When enabling stock management, uncomment these blocks:
+        /*
+        else if (currentVariant.notInStock || currentVariant.isHidden) {
           // Variant exists but is out of stock or hidden
           updatedItem = {
             ...cartItem,
-            variantId: currentVariant.id, // Update to current depot's variant ID even if out of stock
+            variantId: currentVariant.id,
             isAvailable: false,
             unavailableReason: currentVariant.notInStock ? 'Out of stock' : 'Currently unavailable',
             depotId: currentDepotId,
-            // Preserve original depot info for restoration
             originalDepotId: cartItem.originalDepotId || cartItem.depotId,
             originalVariantId: cartItem.originalVariantId || cartItem.variantId,
           };
           unavailableItems.push(updatedItem);
         } else if (currentVariant.closingQty !== undefined && currentVariant.closingQty < cartItem.quantity) {
           // Variant exists but insufficient quantity
-          // Special handling: If this is the original depot, keep item available
-          // (user added it when it was in stock, let them keep it until checkout)
-          const isInOriginalDepot = (cartItem.originalDepotId || cartItem.depotId) === currentDepotId;
+          const stockMessage = currentVariant.closingQty === 0 
+            ? 'Out of stock in this area' 
+            : `Only ${currentVariant.closingQty} available in this area`;
           
-          if (isInOriginalDepot) {
-            // Keep item available in original depot even if stock depleted
-            console.log(`[CartValidation] Keeping item available in original depot despite low stock:`, {
-              variantName: currentVariant.name,
-              closingQty: currentVariant.closingQty,
-              requestedQty: cartItem.quantity,
-              reason: 'Item was added from this depot originally'
-            });
-            
-            const currentPrice = currentVariant.buyOncePrice || currentVariant.mrp || 0;
-            updatedItem = {
-              ...cartItem,
-              variantId: currentVariant.id,
-              variantName: currentVariant.name,
-              isAvailable: true, // Keep available in original depot
-              unavailableReason: undefined,
-              price: currentPrice,
-              depotId: currentDepotId,
-              originalDepotId: cartItem.originalDepotId || cartItem.depotId,
-              originalVariantId: cartItem.originalVariantId || cartItem.variantId,
-            };
-            availableItems.push(updatedItem);
-          } else {
-            // Different depot - show as unavailable due to stock
-            const stockMessage = currentVariant.closingQty === 0 
-              ? 'Out of stock in this area' 
-              : `Only ${currentVariant.closingQty} available in this area`;
-            
-            updatedItem = {
-              ...cartItem,
-              variantId: currentVariant.id,
-              isAvailable: false,
-              unavailableReason: stockMessage,
-              depotId: currentDepotId,
-              originalDepotId: cartItem.originalDepotId || cartItem.depotId,
-              originalVariantId: cartItem.originalVariantId || cartItem.variantId,
-            };
-            console.log(`[CartValidation] Variant ${currentVariant.id} has insufficient stock in different depot:`, {
-              variantName: currentVariant.name,
-              closingQty: currentVariant.closingQty,
-              requestedQty: cartItem.quantity,
-              message: stockMessage
-            });
-            unavailableItems.push(updatedItem);
-          }
-        } else {
+          updatedItem = {
+            ...cartItem,
+            variantId: currentVariant.id,
+            isAvailable: false,
+            unavailableReason: stockMessage,
+            depotId: currentDepotId,
+            originalDepotId: cartItem.originalDepotId || cartItem.depotId,
+            originalVariantId: cartItem.originalVariantId || cartItem.variantId,
+          };
+          unavailableItems.push(updatedItem);
+        } 
+        */
+        else {
           // Variant is available - update with current depot's variant info
           const currentPrice = currentVariant.buyOncePrice || currentVariant.mrp || 0;
           updatedItem = {
@@ -489,13 +512,22 @@ export class CartValidationService {
   }
 
   /**
-   * Simple normalization for variant name matching
-   * Removes all spaces and converts to lowercase for comparison
+   * Enhanced normalization for variant name matching
+   * Handles common variations in naming (e.g., 1Ltr vs 1Ltrs, 500ml vs 500ML)
    */
   private static normalizeVariantName(name: string): string {
     return name
       .toLowerCase()
-      .replace(/\s+/g, ''); // Remove ALL spaces for comparison
+      .replace(/\s+/g, '') // Remove ALL spaces
+      .replace(/litres?/gi, 'ltr') // Normalize litre/litres/ltr/ltrs to 'ltr'
+      .replace(/ltrs?/gi, 'ltr') // Normalize ltr/ltrs to 'ltr'
+      .replace(/mls?/gi, 'ml') // Normalize ml/mls to 'ml'
+      .replace(/grams?/gi, 'g') // Normalize gram/grams to 'g'
+      .replace(/gms?/gi, 'g') // Normalize gm/gms to 'g'
+      .replace(/kgs?/gi, 'kg') // Normalize kg/kgs to 'kg'
+      .replace(/kilograms?/gi, 'kg') // Normalize kilogram/kilograms to 'kg'
+      .replace(/pcs?/gi, 'pc') // Normalize pc/pcs to 'pc'
+      .replace(/pieces?/gi, 'pc'); // Normalize piece/pieces to 'pc'
   }
 
   /**

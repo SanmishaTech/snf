@@ -92,6 +92,13 @@ export const Header: React.FC<HeaderProps> = (_props) => {
             if (cartState.items.length > 0) {
               console.log(`[Header] Validating cart for new depot: ${depotData.id}`);
               await validateCart(depotData.id);
+              
+              // Show toast if there are unavailable items
+              const unavailableCount = cartState.items.filter(item => item.isAvailable === false).length;
+              if (unavailableCount > 0) {
+                const { toast } = await import('sonner');
+                toast.info(`${unavailableCount} item${unavailableCount > 1 ? 's' : ''} in your cart ${unavailableCount > 1 ? 'are' : 'is'} not available in ${location.depotName}`);
+              }
             }
           } catch (pricingError) {
             console.error('Failed to update pricing context:', pricingError);
@@ -131,6 +138,13 @@ export const Header: React.FC<HeaderProps> = (_props) => {
           if (cartState.items.length > 0 && location.depotId) {
             console.log(`[Header] Validating cart for detected depot: ${location.depotId}`);
             await validateCart(parseInt(location.depotId));
+            
+            // Show toast if there are unavailable items
+            const unavailableCount = cartState.items.filter(item => item.isAvailable === false).length;
+            if (unavailableCount > 0) {
+              const { toast } = await import('sonner');
+              toast.info(`${unavailableCount} item${unavailableCount > 1 ? 's' : ''} in your cart ${unavailableCount > 1 ? 'are' : 'is'} not available in ${location.depotName}`);
+            }
           }
         } catch (pricingError) {
           console.error('Failed to update pricing context:', pricingError);

@@ -53,22 +53,43 @@ const initialState: CartState = {
 
 const STORAGE_KEY = "snf.cart";
 
+// Helper function to normalize variant names for comparison
+function normalizeVariantName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/\s+/g, '') // Remove ALL spaces
+    .replace(/litres?/gi, 'ltr') // Normalize litre/litres/ltr/ltrs to 'ltr'
+    .replace(/ltrs?/gi, 'ltr') // Normalize ltr/ltrs to 'ltr'
+    .replace(/mls?/gi, 'ml') // Normalize ml/mls to 'ml'
+    .replace(/grams?/gi, 'g') // Normalize gram/grams to 'g'
+    .replace(/gms?/gi, 'g') // Normalize gm/gms to 'g'
+    .replace(/kgs?/gi, 'kg') // Normalize kg/kgs to 'kg'
+    .replace(/kilograms?/gi, 'kg') // Normalize kilogram/kilograms to 'kg'
+    .replace(/pcs?/gi, 'pc') // Normalize pc/pcs to 'pc'
+    .replace(/pieces?/gi, 'pc'); // Normalize piece/pieces to 'pc'
+}
+
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
     case "SET":
       return action.payload;
     case "ADD_ITEM": {
+      // Find existing item by product ID and normalized variant name
+      // This ensures same products from different depots are treated as one item
       const existingIndex = state.items.findIndex(
-        (it) => it.variantId === action.payload.variantId
+        (it) => it.productId === action.payload.productId && 
+                normalizeVariantName(it.variantName) === normalizeVariantName(action.payload.variantName)
       );
       if (existingIndex >= 0) {
         const next = [...state.items];
         next[existingIndex] = {
           ...next[existingIndex],
           quantity: next[existingIndex].quantity + action.payload.quantity,
-          // Update depot info if adding from different depot
+          // Update to use the new depot's variant info
+          variantId: action.payload.variantId,
+          price: action.payload.price,
           depotId: action.payload.depotId,
-          // Preserve original depot info if it exists, otherwise use new one
+          // Preserve original depot info only if not already set
           originalDepotId: next[existingIndex].originalDepotId || action.payload.originalDepotId,
           originalVariantId: next[existingIndex].originalVariantId || action.payload.originalVariantId,
           isAvailable: action.payload.isAvailable,
@@ -79,6 +100,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       return { items: [...state.items, action.payload] };
     }
     case "REMOVE_ITEM": {
+      // Remove by variant ID (this is fine as it's removing the specific cart item)
       return { items: state.items.filter((it) => it.variantId !== action.payload.variantId) };
     }
     case "INCREMENT": {
@@ -217,7 +239,23 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         available: validationResult.availableItems.length,
         unavailable: validationResult.unavailableItems.length
       });
-      dispatch({ type: "VALIDATE_CART", payload: { items: validationResult.validatedItems } });
+      
+      // Only update cart if items actually changed to prevent unnecessary re-renders
+      const hasChanges = validationResult.validatedItems.some((newItem, index) => {
+        const oldItem = currentItems[index];
+        return oldItem && (
+          oldItem.variantId !== newItem.variantId ||
+          oldItem.isAvailable !== newItem.isAvailable ||
+          oldItem.unavailableReason !== newItem.unavailableReason ||
+          oldItem.price !== newItem.price
+        );
+      });
+      
+      if (hasChanges) {
+        dispatch({ type: "VALIDATE_CART", payload: { items: validationResult.validatedItems } });
+      } else {
+        console.log('[CartContext] No changes needed after validation');
+      }
     } catch (error) {
       console.error('[CartContext] Error validating cart:', error);
       // Mark all items as potentially unavailable on error
