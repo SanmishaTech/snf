@@ -182,7 +182,9 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   const [deliveryOption, setDeliveryOption] = useState("daily");
   const [startDate, setStartDate] = useState<Date | undefined>(() => {
     const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 3);
+    tomorrow.setDate(tomorrow.getDate() + 2);
+    tomorrow.setHours(12, 0, 0, 0); // Set to noon to avoid timezone edge cases
+    console.log('[DATE DEBUG] Initial startDate set to:', tomorrow.toString(), 'UTC ISO:', tomorrow.toISOString());
     return tomorrow;
   });
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -768,12 +770,12 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     if (!startDate) {
       errors.startDate = "Start date is required.";
     } else {
-      // Minimum date should be +3 days from current date
+      // Minimum date should be +2 days from current date
       const minDate = new Date();
-      minDate.setDate(minDate.getDate() + 3);
+      minDate.setDate(minDate.getDate() + 2);
       minDate.setHours(0, 0, 0, 0);
       if (startDate < minDate) {
-        errors.startDate = "Start date must be at least 3 days from today.";
+        errors.startDate = "Start date must be at least 2 days from today.";
       }
     }
 
@@ -1277,10 +1279,24 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         .map((variant) => {
           const deliverySchedule = variant.deliveryOption;
 
+          // Format date in local timezone to avoid shifts
+          const localYear = startDate.getFullYear();
+          const localMonth = String(startDate.getMonth() + 1).padStart(2, '0');
+          const localDay = String(startDate.getDate()).padStart(2, '0');
+          const formattedStartDate = `${localYear}-${localMonth}-${localDay}`;
+          
+          console.log('Formatting date for variant:', {
+            startDate,
+            localYear,
+            localMonth,
+            localDay,
+            formattedStartDate
+          });
+
           const sub: SubscriptionDetail = {
             productId: parseInt(variant.variantId, 10),
             period: selectedPeriod,
-            startDate: startDate.toISOString(),
+            startDate: formattedStartDate, // Use manually formatted date
             deliverySchedule,
             qty: variant.quantity,
             internalScheduleLogicType: deliverySchedule,
@@ -1299,10 +1315,32 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         });
     } else {
       const deliverySchedule = deliveryOption;
+      // Format date in local timezone to avoid shifts
+      const localYear = startDate.getFullYear();
+      const localMonth = String(startDate.getMonth() + 1).padStart(2, '0');
+      const localDay = String(startDate.getDate()).padStart(2, '0');
+      const formattedStartDate = `${localYear}-${localMonth}-${localDay}`;
+      
+      console.log('[DATE DEBUG] Non-variant subscription date formatting:', {
+        rawStartDate: startDate.toString(),
+        localDateParts: { year: localYear, month: localMonth, day: localDay },
+        formattedForBackend: formattedStartDate,
+        utcIsoString: startDate.toISOString(),
+        userTimezoneOffset: startDate.getTimezoneOffset() / -60
+      });
+      
+      console.log('Formatting date for non-variant:', {
+        startDate,
+        localYear,
+        localMonth,
+        localDay,
+        formattedStartDate
+      });
+
       const sub: SubscriptionDetail = {
         productId: parseInt(productId, 10),
         period: selectedPeriod,
-        startDate: startDate.toISOString(),
+        startDate: formattedStartDate, // Use manually formatted date
         deliverySchedule,
         qty: quantity,
         internalScheduleLogicType: deliverySchedule,
@@ -2540,6 +2578,16 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                             mode="single"
                             selected={startDate}
                             onSelect={(date) => {
+                              console.log('[DATE DEBUG] User selected date from calendar:', {
+                                selectedDate: date?.toString(),
+                                selectedDateISO: date?.toISOString(),
+                                selectedDateString: date?.toDateString(),
+                                selectedDay: date?.getDate(),
+                                selectedMonth: date?.getMonth() + 1,
+                                selectedYear: date?.getFullYear(),
+                                userTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                                timezoneOffset: date?.getTimezoneOffset()
+                              });
                               setStartDate(date);
                               setCalendarOpen(false);
                               if (formErrors.startDate)
@@ -2550,9 +2598,9 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                             }}
                             initialFocus
                             disabled={(date) => {
-                              // Disable dates before +3 days from current date
+                              // Disable dates before +2 days from current date
                               const minDate = new Date();
-                              minDate.setDate(minDate.getDate() + 3);
+                              minDate.setDate(minDate.getDate() + 2);
                               minDate.setHours(0, 0, 0, 0);
                               return date < minDate;
                             }}

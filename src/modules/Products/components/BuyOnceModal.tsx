@@ -120,7 +120,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
   selectedDepot,
 }) => {
   const [quantity, setQuantity] = useState(1);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(addDays(new Date(), 3));
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(addDays(new Date(), 2));
 
   const [userAddresses, setUserAddresses] = useState<AddressData[]>([]);
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
@@ -656,7 +656,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
       subscriptions: [
         {
           productId: selectedVariantId, // Use selected depot variant ID
-          period: 1, // This signifies a "buy once" order
+          period: 0, // This signifies a "buy once" order (single delivery, no subscription period)
           startDate: selectedDate.toISOString(),
           deliverySchedule: 'DAILY', // Single delivery
           qty: quantity,
@@ -1292,7 +1292,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                       setSelectedDate(undefined);
                     }
                   }}
-                  min={formatDateForInput(new Date())} // Disable past dates
+                  min={formatDateForInput(addDays(new Date(), 2))} // Disable dates before +2 days from current date
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
                 />
                 {!selectedDate && (
