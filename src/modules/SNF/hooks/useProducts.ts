@@ -140,7 +140,7 @@ export const useProduct = (productId?: number, depotId?: number) => {
 
     try {
       // Fetch from API
-      const [productData, variantsData] = await Promise.all([
+      const [productData, initialVariantsData] = await Promise.all([
         productService.getProductById(productId),
         productService.getProductVariants(productId, depotId),
       ]);
@@ -155,9 +155,10 @@ export const useProduct = (productId?: number, depotId?: number) => {
       }
 
       console.log('Product data fetched:', productData);
-      console.log('Variants data fetched:', variantsData);
+      console.log('Variants data fetched:', initialVariantsData);
 
       // Handle case where no variants are found
+      let variantsData = initialVariantsData;
       if (variantsData.length === 0) {
         console.warn(`No depot variants found for product ${productId} in depot ${depotId}`);
         // Create a default variant based on product data

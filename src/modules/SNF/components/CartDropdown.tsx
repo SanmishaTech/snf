@@ -263,12 +263,11 @@ export const CartDropdown: React.FC = () => {
             </div>
           )}
           
-          <div className="grid grid-cols-2 gap-2">
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/snf">Continue shopping</Link>
-            </Button>
+          <div className="grid grid-cols-1 gap-2 ">
+            
             <Button 
-              size="sm" 
+            className="w-full"
+              size="lg" 
               disabled={availableItems.length === 0} 
               asChild
             >
@@ -279,7 +278,7 @@ export const CartDropdown: React.FC = () => {
           </div>
           
           {/* Debug button - remove in production */}
-          {process.env.NODE_ENV === 'development' && (
+          {/* {process.env.NODE_ENV === 'development' && (
             <div className="pt-2 border-t">
               <Button 
                 variant="outline" 
@@ -291,7 +290,7 @@ export const CartDropdown: React.FC = () => {
                 {isValidating ? 'Validating...' : 'Revalidate Cart'}
               </Button>
             </div>
-          )}
+          )} */}
         </div>
       </PopoverContent>
     </Popover>

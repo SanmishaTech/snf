@@ -65,9 +65,17 @@ export class ProductServiceImpl implements ProductService {
 
       let products: Product[] = [];
       if (Array.isArray(result.data)) {
-        products = result.data;
+        // Strip out variants array from each product to get clean product objects
+        products = result.data.map((product: any) => {
+          const { variants, ...cleanProduct } = product;
+          return cleanProduct;
+        });
       } else if (result.data.products && Array.isArray(result.data.products)) {
-        products = result.data.products;
+        // Strip out variants array from each product to get clean product objects
+        products = result.data.products.map((product: any) => {
+          const { variants, ...cleanProduct } = product;
+          return cleanProduct;
+        });
       }
 
       this.setCache(cacheKey, { products, variants: [] }); // Store products in cache
@@ -109,8 +117,8 @@ export class ProductServiceImpl implements ProductService {
       if (Array.isArray(result.data)) {
         // Direct array of products with variants
         result.data.forEach((product: any) => {
-          // Temporarily allow all products for debugging
-          if (product.variants && Array.isArray(product.variants)) { // && product.isDairyProduct !== true
+          // Allow all products for now
+          if (product.variants && Array.isArray(product.variants)) {
             // Add product reference to each variant
             const variantsWithProduct = product.variants.map((variant: any) => ({
               ...variant,
@@ -134,8 +142,8 @@ export class ProductServiceImpl implements ProductService {
       } else if (result.data.products && Array.isArray(result.data.products)) {
         // Object with depot and products structure
         result.data.products.forEach((product: any) => {
-          // Temporarily allow all products for debugging
-          if (product.variants && Array.isArray(product.variants)) { // && product.isDairyProduct !== true
+          // Allow all products for now
+          if (product.variants && Array.isArray(product.variants)) {
             // Add product reference to each variant
             const variantsWithProduct = product.variants.map((variant: any) => ({
               ...variant,
@@ -161,7 +169,7 @@ export class ProductServiceImpl implements ProductService {
       return allVariants.map((variant: any) => ({
         id: variant.id,
         depotId: depotId,
-        productId: variant.productId || variant.product?.id,
+        productId: variant.product?.id || variant.productId,
         name: variant.name,
         hsnCode: variant.hsnCode,
         minimumQty: variant.minimumQty || 1,
@@ -182,6 +190,20 @@ export class ProductServiceImpl implements ProductService {
       }));
     } catch (error) {
       console.error('Error fetching depot variants:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get depot variants for a specific product and depot
+   */
+  async getProductVariants(productId: number, depotId: number): Promise<DepotVariant[]> {
+    try {
+      // Get all depot variants for the depot, then filter by product ID
+      const allVariants = await this.getDepotVariants(depotId);
+      return allVariants.filter(variant => variant.productId === productId);
+    } catch (error) {
+      console.error('Error fetching product variants:', error);
       throw error;
     }
   }

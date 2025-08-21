@@ -209,6 +209,12 @@ const initialData = {
           icon: BarChart3,
           groupLabel: "Reports",
         },
+        {
+          title: "Purchase Report",
+          url: "/admin/reports/purchases",
+          icon: BarChart3,
+          groupLabel: "Reports",
+        },
         // {
         //   title: "Users",
         //   url: "/admin/users",
@@ -236,6 +242,7 @@ const initialData = {
           isActive: false,
           items: [
             { title: "Purchase Order Report", url: "/admin/reports/purchase-orders" },
+            { title: "Purchase Report", url: "/admin/reports/purchases" },
             { title: "Delivery Summaries", url: "/admin/reports/delivery-summaries" },
           ],
         },
@@ -318,6 +325,12 @@ const initialData = {
           url: "/admin/transfers",
           icon: FileText,
           groupLabel: "Depot",
+        },
+        {
+          title: "Purchase Report",
+          url: "/admin/reports/purchases",
+          icon: BarChart3,
+          groupLabel: "Reports",
         },
       ],
       navMain: [] as any[],

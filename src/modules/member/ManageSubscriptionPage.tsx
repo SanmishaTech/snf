@@ -480,7 +480,7 @@ const ManageSubscriptionPage: React.FC = () => {
             <Button
               onClick={() => {
                 const baseUrl =
-                  import.meta.env.VITE_BACKEND_URL || "https://www.indraai.in";
+                  import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
                 const invoiceUrl = `${baseUrl}/invoices/${subscription.productOrder.invoicePath}`;
                 window.open(invoiceUrl);
               }}

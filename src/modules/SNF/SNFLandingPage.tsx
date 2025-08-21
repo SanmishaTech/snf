@@ -36,8 +36,13 @@ const SNFContent: React.FC = () => {
 
   // Use pricing context data directly instead of individual hooks
   // const location = pricingState.userLocation;
+  console.log('=== PRODUCT TRANSFORMATION DEBUG ===');
+  console.log('pricingState.products:', pricingState.products);
+  console.log('pricingState.depotVariants:', pricingState.depotVariants);
+  
   const products = pricingState.products.map(product => {
     const productVariants = pricingState.depotVariants.filter(v => v.productId === product.id);
+    console.log(`Product ${product.id} (${product.name}) has ${productVariants.length} variants:`, productVariants);
     
     // Calculate buyOncePrice only from available variants
     const availableVariants = productVariants.filter(v => !v.notInStock && !v.isHidden);
@@ -73,6 +78,7 @@ const SNFContent: React.FC = () => {
       setCatError(null);
       try {
         const data = await productService.getCategories();
+        console.log('Fetched categories:', data);
         // Normalize fields for display: id, name, imageUrl (if present in API)
         const normalized: (FilterCategory & { imageUrl?: string })[] = (Array.isArray(data) ? data : []).map((c: any) => ({
           id: String(c.id ?? c._id ?? c.slug ?? ""),
@@ -132,6 +138,8 @@ const SNFContent: React.FC = () => {
     if (pricingState.currentDepot) {
       console.log(`Products loaded for depot: ${pricingState.currentDepot.name} (${pricingState.currentDepot.id})`);
       console.log(`Total products: ${pricingState.products.length}, Total variants: ${pricingState.depotVariants.length}`);
+      console.log('Raw products from API:', pricingState.products);
+      console.log('Raw depot variants from API:', pricingState.depotVariants);
     }
   }, [pricingState.currentDepot, pricingState.products.length, pricingState.depotVariants.length]);
 
@@ -218,7 +226,8 @@ const SNFContent: React.FC = () => {
   // Filter and sort products
   const filtered = useMemo(() => {
     let filteredProducts = products;
-
+    // Apply search query filter
+    console.log(`Filter display ${filteredProducts.length} products with query "${q}"`);
     if (q.trim()) {
       const term = q.trim().toLowerCase();
       filteredProducts = filteredProducts.filter(p =>
@@ -274,6 +283,8 @@ const SNFContent: React.FC = () => {
         });
         break;
     }
+    console.log(`Filtered ${filteredProducts.length} products, sorted by ${sort}`);
+    console.log(`Final product count: ${sorted.length}`);
 
     return sorted;
   }, [products, q, selectedCats, sort, selectedTag]);

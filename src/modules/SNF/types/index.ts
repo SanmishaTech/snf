@@ -160,12 +160,12 @@ export interface DepotVariant {
  * API service interface for products and variants
  */
 export interface ProductService {
-  getProducts(depotId: number): Promise<Product[]>;
+  getProducts(depotId?: number): Promise<Product[]>;
   getProductById(id: number): Promise<Product | null>;
   getDepotVariants(depotId: number): Promise<DepotVariant[]>;
   getProductVariants(productId: number, depotId: number): Promise<DepotVariant[]>;
-  getProductsByCategory(categoryId: number, depotId: number): Promise<Product[]>;
-  searchProducts(query: string, depotId: number): Promise<Product[]>;
+  getProductsByCategory(categoryId: number, depotId?: number): Promise<Product[]>;
+  searchProducts(query: string, depotId?: number): Promise<Product[]>;
   getCategories(): Promise<Category[]>;
 }
 

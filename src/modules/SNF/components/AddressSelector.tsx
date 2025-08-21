@@ -98,7 +98,7 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
             You need to add a delivery address to place an order.
           </p>
           <Button asChild size="sm">
-            <Link to="/snf/addresses">
+            <Link to="/snf/address">
               <Plus className="size-4 mr-2" />
               Add Address
             </Link>
