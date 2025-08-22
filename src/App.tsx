@@ -88,9 +88,10 @@ import PurchasePaymentViewPage from "./modules/PurchasePayment/PurchasePaymentVi
 import TransferList from "./modules/Transfer/TransferList";
 import CreateTransferPage from "./modules/Transfer/CreateTransferPage";
 import EditTransferPage from "./modules/Transfer/EditTransferPage";
-import DeliveryReport from "./modules/Reports/DeliveryAgenciesReport"
-import DeliverySummariesReport from "./modules/Reports/DeliverySummariesReport"
-import SubscriptionReports from "./modules/Reports/SubscriptionReports"
+import DeliveryReport from "./modules/Reports/DeliveryAgenciesReport";
+import DeliverySummariesReport from "./modules/Reports/DeliverySummariesReport";
+import SubscriptionReports from "./modules/Reports/SubscriptionReports";
+import SNFOrdersReport from "./modules/Reports/SNFOrdersReport";
 import DepotOrderDetails from "./modules/Order/DepotOrderDetails";
 import "./App.css";
 // MembershipList wrapper component to handle showing all memberships
@@ -395,6 +396,7 @@ const App = () => {
             <Route path="/admin/reports/delivery-agencies" element={<DeliveryReport />} /> {/* Delivery Agencies Report */}
             <Route path="/admin/reports/delivery-summaries" element={<DeliverySummariesReport />} /> {/* Delivery Summaries Report */}
             <Route path="/admin/reports/subscriptions" element={<SubscriptionReports />} /> {/* Subscription Reports */}
+            <Route path="/admin/reports/snf-orders" element={<SNFOrdersReport />} /> {/* SNF Orders Report */}
 
           </Route>
 
