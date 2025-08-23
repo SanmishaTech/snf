@@ -29,6 +29,19 @@ const API_URL = backendUrl;
 export default function DeliveryAgenciesReport() {
   const { isAdmin } = useRoleAccess();
   
+  // Determine if current user is a delivery agent (AGENCY)
+  let isAgency = false;
+  try {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      const userObj = JSON.parse(userStr);
+      const role = (userObj?.role || '').toString().toUpperCase();
+      isAgency = role === 'AGENCY';
+    }
+  } catch (e) {
+    // ignore parsing errors, default is false
+  }
+  
   // State for filters
   const [filters, setFilters] = useState<DeliveryAgencyFilters>({
     startDate: format(new Date(new Date().setDate(new Date().getDate() - 30)), 'yyyy-MM-dd'),
@@ -56,12 +69,16 @@ export default function DeliveryAgenciesReport() {
   });
   
   // Fetch report data
-  const { data: reportData, isLoading, refetch } = useQuery<DeliveryAgencyReportResponse>({
-    queryKey: ['deliveryAgenciesReport', filters],
+const { data: reportData, isLoading, refetch } = useQuery<DeliveryAgencyReportResponse>({
+    queryKey: ['deliveryAgenciesReport', filters, isAdmin, isAgency],
     queryFn: async () => {
       const params = new URLSearchParams();
+      // For admin, allow all configured filters including agencyId
+      // For agency users, do not pass agencyId (backend will scope to their agency)
       Object.entries(filters).forEach(([key, value]) => {
-        if (value) params.append(key, value.toString());
+        if (!value) return;
+        if (isAgency && key === 'agencyId') return; // lock to current agent
+        params.append(key, value.toString());
       });
       
       const token = localStorage.getItem('authToken') || localStorage.getItem('token');
@@ -72,7 +89,7 @@ export default function DeliveryAgenciesReport() {
       });
       return response.data;
     },
-    enabled: isAdmin
+    enabled: isAdmin || isAgency
   });
   
   // Handle filter changes
@@ -252,7 +269,8 @@ export default function DeliveryAgenciesReport() {
     return reportData.data.report;
   }, [reportData, searchTerm]);
   
-  if (!isAdmin) {
+const canView = isAdmin || isAgency;
+  if (!canView) {
     return (
       <Card className="m-4">
         <CardContent className="pt-6">
@@ -303,6 +321,7 @@ export default function DeliveryAgenciesReport() {
               />
             </div>
             
+{isAdmin && (
             <div className="space-y-2">
               <Label htmlFor="agencyId">Delivery Agency</Label>
               <Select
@@ -322,6 +341,7 @@ export default function DeliveryAgenciesReport() {
                 </SelectContent>
               </Select>
             </div>
+            )}
             
             <div className="space-y-2">
               <Label htmlFor="areaId">Delivery Area</Label>
@@ -345,7 +365,7 @@ export default function DeliveryAgenciesReport() {
           </div>
           
           {/* Grouping Options */}
-          {/* <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
             <Label>Group By:</Label>
             <div className="flex gap-4">
               <label className="flex items-center gap-2">
@@ -397,10 +417,10 @@ export default function DeliveryAgenciesReport() {
                 Status
               </label>
             </div>
-          </div> */}
+          </div>
           
           {/* Summary Stats */}
-          {/* {reportData?.data?.totals && (
+          {reportData?.data?.totals && (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <Card>
                 <CardContent className="pt-6">
@@ -429,7 +449,7 @@ export default function DeliveryAgenciesReport() {
                 </CardContent>
               </Card>
             </div>
-          )} */}
+          )}
           
           {/* Search */}
           {/* <div className="flex items-center gap-2">
@@ -443,7 +463,7 @@ export default function DeliveryAgenciesReport() {
           </div> */}
           
           {/* Data Table */}
-          {/* <div className="border rounded-lg overflow-hidden">
+          <div className="border rounded-lg overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -476,7 +496,7 @@ export default function DeliveryAgenciesReport() {
                 )}
               </TableBody>
             </Table>
-          </div> */}
+          </div>
         </CardContent>
       </Card>
     </div>

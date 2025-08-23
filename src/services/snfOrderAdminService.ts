@@ -86,6 +86,8 @@ export const getAllSNFOrders = async (
     search?: string;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
+    startDate?: string;
+    endDate?: string;
   } = {}
 ): Promise<PaginatedSNFOrdersResponse> => {
   try {

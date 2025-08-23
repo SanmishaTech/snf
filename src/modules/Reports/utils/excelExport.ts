@@ -12,6 +12,7 @@ export class ExcelExporter {
   private worksheet: XLSX.WorkSheet;
   private currentRow: number;
   private indentLevel: number;
+  private rootData: any[] | null = null;
 
   constructor() {
     this.workbook = XLSX.utils.book_new();
@@ -26,6 +27,9 @@ export class ExcelExporter {
   exportToExcel(exportData: ExportData): void {
     const { data, totals, config } = exportData;
     
+    // Stash root data for grand totals computations (e.g., wastage)
+    this.rootData = Array.isArray(data) ? (data as any[]) : [];
+
     // Initialize worksheet
     this.worksheet = {};
     this.currentRow = 1;
@@ -294,6 +298,35 @@ export class ExcelExporter {
           case 'rate':
             value = !isDeliveryItem ? this.formatCurrency((item as PurchaseOrderItem).purchaseRate) : '';
             break;
+          case 'wastage': {
+            // Prefer backend-computed wastage if present
+            const backendWastage = (item as any).wastage;
+            if (backendWastage !== undefined && backendWastage !== null) {
+              value = backendWastage;
+              break;
+            }
+            // Fallback computation (only for purchase order items)
+            if (!isDeliveryItem) {
+              const poi = item as PurchaseOrderItem;
+              const supQty = poi.supervisorQuantity;
+              const delivered = (poi.deliveredQuantity ?? (poi as any).receivedQuantity ?? 0) || 0;
+              if (delivered > 0) {
+                const shouldShow = (supQty === null) || (typeof supQty === 'number' && supQty > 0);
+                if (shouldShow) {
+                  const supervisor = supQty ?? 0;
+                  const calc = delivered - supervisor;
+                  value = calc >= 0 ? calc : 0;
+                } else {
+                  value = '';
+                }
+              } else {
+                value = '';
+              }
+            } else {
+              value = '';
+            }
+            break;
+          }
           default:
             // Fallback to item property if key matches
             value = (item as any)[header.key] ?? '';
@@ -328,20 +361,28 @@ export class ExcelExporter {
    */
   private addGroupTotals(group: GroupedData | DeliveryGroupedData): void {
     const indent = '  '.repeat(this.indentLevel);
-    const totalLabel = `${indent}Total for ${group.level === 'variant' ? group.productName + ' - ' + group.name : group.name}:`;
+    const totalLabel = `${indent}Total for ${group.level === 'variant' ? (group as GroupedData).productName + ' - ' + group.name : group.name}:`;
     const headerKeys: string[] = (this as any).headerKeys || [];
     const totalCols = Math.max(headerKeys.length, 11);
+
+    // Pre-compute wastage sum if the sheet has a wastage column
+    const hasWastageColumn = headerKeys.includes('wastage');
+    const wastageSum = hasWastageColumn && Array.isArray((group as any).data)
+      ? this.computeWastageSum((group as any).data)
+      : 0;
 
     // Write totals aligned to each header column
     for (let col = 0; col < totalCols; col++) {
       const headerKey = headerKeys[col];
-      let value = '';
+      let value = '' as any;
 
       // First column gets the label
       if (col === 0) {
         value = totalLabel;
       } else if (headerKey === 'qty') {
         value = group.totals.totalQuantity.toString();
+      } else if (headerKey === 'wastage') {
+        value = wastageSum.toString();
       } else if (headerKey === 'amount') {
         value = this.formatCurrency(group.totals.totalAmount);
       } else if (headerKey === 'rate') {
@@ -350,7 +391,7 @@ export class ExcelExporter {
         value = `${group.totals.itemCount} items`;
       }
 
-      if (value) {
+      if (value !== '') {
         const cell = XLSX.utils.encode_cell({ r: this.currentRow - 1, c: col });
         this.worksheet[cell] = {
           v: value,
@@ -358,7 +399,7 @@ export class ExcelExporter {
             font: { bold: true, italic: true },
             fill: { fgColor: { rgb: 'F5F5F5' } },
             alignment: { 
-              horizontal: (headerKey === 'amount' || headerKey === 'rate' || headerKey === 'qty') ? 'right' : 'left' 
+              horizontal: (headerKey === 'amount' || headerKey === 'rate' || headerKey === 'qty' || headerKey === 'wastage') ? 'right' : 'left' 
             },
             border: {
               top: { style: 'thin' },
@@ -374,38 +415,95 @@ export class ExcelExporter {
     this.currentRow++;
   }
 
+  // Compute wastage sum recursively for group data (specific to Purchase Order items)
+  private computeWastageSum(data: any[]): number {
+    if (!Array.isArray(data)) return 0;
+    let sum = 0;
+    data.forEach((node: any) => {
+      if (Array.isArray(node)) {
+        sum += this.computeWastageSum(node);
+      } else if (node && typeof node === 'object') {
+        // If this is a nested group node
+        if ('level' in node && 'data' in node) {
+          sum += this.computeWastageSum(node.data);
+        } else {
+          // Leaf row: try to use backend wastage if available
+          if (node.wastage !== undefined && node.wastage !== null) {
+            sum += Number(node.wastage) || 0;
+          } else {
+            // Fallback compute for purchase items (ignore delivery items)
+            const isDeliveryItem = 'orderId' in node;
+            if (!isDeliveryItem) {
+              const delivered = Number(node.deliveredQuantity ?? node.receivedQuantity) || 0;
+              const sup = node.supervisorQuantity === null || node.supervisorQuantity === undefined
+                ? null
+                : Number(node.supervisorQuantity);
+              if (delivered > 0) {
+                const shouldShow = (sup === null) || (typeof sup === 'number' && sup > 0);
+                if (shouldShow) {
+                  const supervisor = sup ?? 0;
+                  const calc = delivered - supervisor;
+                  sum += calc >= 0 ? calc : 0;
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+    return sum;
+  }
+
   /**
    * Add grand totals row
    */
   private addGrandTotals(totals: any): void {
     this.currentRow++; // Skip a row
-    
-    const rowData = [
-      'GRAND TOTAL',
-      `Purchases: ${totals.totalPurchases}`,
-      `Items: ${totals.totalItems}`,
-      `Qty: ${totals.totalQuantity}`,
-      this.formatCurrency(totals.totalAmount),
-      '', '', '', '', '',
-      `Avg Value: ${this.formatCurrency(totals.avgPurchaseValue)}`
-    ];
-    
-    rowData.forEach((value, index) => {
-      const cell = XLSX.utils.encode_cell({ r: this.currentRow - 1, c: index });
-      this.worksheet[cell] = {
-        v: value,
-        s: {
-          font: { bold: true, sz: 14 },
-          fill: { fgColor: { rgb: 'CCCCCC' } },
-          alignment: { horizontal: index >= 4 ? 'right' : 'left' },
-          border: {
-            top: { style: 'medium' },
-            bottom: { style: 'medium' }
+
+    const headerKeys: string[] = (this as any).headerKeys || [];
+    const totalCols = Math.max(headerKeys.length, 11);
+
+    // Compute total wastage across all rows if wastage column exists
+    const hasWastageColumn = headerKeys.includes('wastage');
+    const totalWastage = hasWastageColumn && Array.isArray(this.rootData)
+      ? this.computeWastageSum(this.rootData)
+      : 0;
+
+    for (let col = 0; col < totalCols; col++) {
+      const headerKey = headerKeys[col];
+      let value: any = '';
+
+      if (col === 0) {
+        value = 'GRAND TOTAL';
+      } else if (headerKey === 'qty') {
+        value = totals.totalQuantity?.toString?.() ?? '';
+      } else if (headerKey === 'wastage') {
+        value = totalWastage.toString();
+      } else if (headerKey === 'amount') {
+        value = this.formatCurrency(totals.totalAmount || 0);
+      } else if (headerKey === 'rate') {
+        value = `Avg: ${this.formatCurrency(totals.avgPurchaseValue || 0)}`;
+      } else if (headerKey === 'agency') {
+        value = `Purchases: ${totals.totalPurchases || 0}`; // informational placement
+      }
+
+      if (value !== '') {
+        const cell = XLSX.utils.encode_cell({ r: this.currentRow - 1, c: col });
+        this.worksheet[cell] = {
+          v: value,
+          s: {
+            font: { bold: true, sz: 14 },
+            fill: { fgColor: { rgb: 'CCCCCC' } },
+            alignment: { horizontal: (headerKey === 'amount' || headerKey === 'rate' || headerKey === 'qty' || headerKey === 'wastage') ? 'right' : 'left' },
+            border: {
+              top: { style: 'medium' },
+              bottom: { style: 'medium' }
+            }
           }
-        }
-      };
-    });
-    
+        };
+      }
+    }
+
     this.currentRow++;
   }
 

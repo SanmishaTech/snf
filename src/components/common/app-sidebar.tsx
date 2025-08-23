@@ -304,6 +304,12 @@ const initialData = {
           icon: FileText,
           groupLabel: "Farmer Portal",
         },
+        {
+          title: "Purchase Order Report",
+          url: "/vendor/reports/purchase-orders",
+          icon: BarChart3,
+          groupLabel: "Reports",
+        },
       ],
       navMain: [] as any[],
     },
@@ -342,7 +348,7 @@ const initialData = {
       ],
       navMain: [] as any[],
     },
-    AGENCY: {
+AGENCY: {
       projects: [
         {
           title: "Orders",
@@ -355,6 +361,18 @@ const initialData = {
           url: "/admin/delivery",
           icon: FileText,
           groupLabel: "Agency Portal",
+        },
+        {
+          title: "Delivery Agency Report",
+          url: "/admin/reports/delivery-agencies",
+          icon: BarChart3,
+          groupLabel: "Reports",
+        },
+        {
+          title: "Delivery Summaries",
+          url: "/admin/reports/delivery-summaries",
+          icon: BarChart3,
+          groupLabel: "Reports",
         },
       ],
       navMain: [] as any[],

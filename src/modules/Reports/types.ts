@@ -73,7 +73,8 @@ export interface PurchaseOrderItem {
   quantity: number;
   deliveredQuantity?: number;
   receivedQuantity?: number;
-  supervisorQuantity?: number;
+  supervisorQuantity?: number | null;
+  wastage?: number; // Computed as deliveredQuantity - supervisorQuantity (per rules)
   purchaseRate: number;
   amount: number;
   
@@ -251,6 +252,8 @@ export interface DeliveryAgencyFiltersResponse {
 export interface DeliverySummaryFilters {
   startDate: string;
   endDate: string;
+  groupBy?: 'agency' | 'variant' | 'agency,variant' | 'variant,agency';
+  agencyId?: number; // Optional: allow admin to filter summaries by agency
 }
 
 export interface DeliveryAgencySummary {
@@ -258,23 +261,57 @@ export interface DeliveryAgencySummary {
   name: string;
   city?: string;
   statusCounts: Record<string, number>;
+  quantityCounts?: Record<string, number>; // Track quantities per status
   totalCount: number;
+  totalQuantity?: number;
 }
+
+// New interface for variant-wise summaries
+export interface DeliveryVariantSummary {
+  id: number | string;
+  name: string;
+  productName: string;
+  variantName: string;
+  statusCounts: Record<string, number>;
+  quantityCounts: Record<string, number>;
+  totalCount: number;
+  totalQuantity: number;
+}
+
+// Combined interface for agency+variant summaries
+export interface DeliveryCombinedSummary {
+  id: string;
+  name: string;
+  agencyName: string;
+  agencyCity: string;
+  productName: string;
+  variantName: string;
+  statusCounts: Record<string, number>;
+  quantityCounts: Record<string, number>;
+  totalCount: number;
+  totalQuantity: number;
+}
+
+// Union type for different summary types
+export type DeliverySummaryItem = DeliveryAgencySummary | DeliveryVariantSummary | DeliveryCombinedSummary;
 
 export interface DeliverySummaryTotals {
   totalDeliveries: number;
-  totalAgencies: number;
+  totalAgencies?: number;
+  totalVariants?: number;
+  totalCombinations?: number;
   statusTotals: Record<string, number>;
 }
 
 export interface DeliverySummaryResponse {
   success: boolean;
   data: {
-    summary: DeliveryAgencySummary[];
+    summary: DeliverySummaryItem[];
     statusList: string[];
     totals: DeliverySummaryTotals;
     filters: DeliverySummaryFilters;
     recordCount: number;
+    groupBy: string;
   };
 }
 

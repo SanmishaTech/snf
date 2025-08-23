@@ -29,18 +29,40 @@ const API_URL = backendUrl;
 export default function PurchaseOrderReport() {
   const { isAdmin } = useRoleAccess();
   
+  // Get current user to check role
+  const currentUser = useMemo(() => {
+    try {
+      const userStr = localStorage.getItem('user');
+      return userStr ? JSON.parse(userStr) : null;
+    } catch (error) {
+      console.error('Failed to parse user data:', error);
+      return null;
+    }
+  }, []);
+  
+  // Check if user can access the report (admin or farmer)
+  const canAccess = useMemo(() => {
+    if (!currentUser) return false;
+    const role = currentUser.role?.toUpperCase();
+    return role === 'ADMIN' || role === 'SUPER_ADMIN' || role.includes('ADMIN') || role === 'VENDOR';
+  }, [currentUser]);
+  
+  const isFarmer = useMemo(() => {
+    return currentUser?.role?.toUpperCase() === 'VENDOR';
+  }, [currentUser]);
+  
   // State for filters
-  const [filters, setFilters] = useState<PurchaseOrderFilters>({
+  const [filters, setFilters] = useState<PurchaseOrderFilters>(() => ({
     startDate: format(new Date(new Date().setDate(new Date().getDate() - 30)), 'yyyy-MM-dd'),
     endDate: format(new Date(), 'yyyy-MM-dd'),
-    groupBy: 'farmer,depot,variant'
-  });
+    groupBy: isFarmer ? 'depot,variant' : 'farmer,depot,variant' // Adjust default grouping for farmers
+  }));
   
   // State for UI
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Fetch filter options
+  // Fetch filter options (only for admins since farmers will be auto-filtered)
   const { data: filterOptions } = useQuery<ReportFiltersResponse>({
     queryKey: ['reportFilters'],
     queryFn: async () => {
@@ -52,7 +74,7 @@ export default function PurchaseOrderReport() {
       });
       return response.data;
     },
-    enabled: isAdmin
+    enabled: canAccess && !isFarmer // Only fetch if user can access and is not a farmer
   });
   
   // Fetch report data
@@ -72,7 +94,7 @@ export default function PurchaseOrderReport() {
       });
       return response.data;
     },
-    enabled: isAdmin
+    enabled: canAccess
   });
   
   // Handle filter changes
@@ -107,7 +129,8 @@ export default function PurchaseOrderReport() {
       headers: [
         { key: 'status', label: 'Status', width: 12 },
         { key: 'product', label: 'Product', width: 20 },
-        { key: 'qty', label: 'Quantity', width: 15 },
+        { key: 'qty', label: 'Quantity', width: 12 },
+        { key: 'wastage', label: 'Wastage', width: 12, align: 'right' },
         { key: 'agency', label: 'Agency', width: 15 },
         { key: 'amount', label: 'Amount', width: 15, align: 'right' },
         { key: 'purchaseNo', label: 'Purchase No', width: 15 },
@@ -225,11 +248,13 @@ export default function PurchaseOrderReport() {
     return reportData.data.report;
   }, [reportData, searchTerm]);
   
-  if (!isAdmin) {
+  if (!canAccess) {
     return (
       <Card className="m-4">
         <CardContent className="pt-6">
-          <p className="text-center text-gray-600">You don't have permission to view this report.</p>
+          <p className="text-center text-gray-600">
+            {!currentUser ? 'Please log in to view this report.' : 'You don\'t have permission to view this report.'}
+          </p>
         </CardContent>
       </Card>
     );
@@ -276,25 +301,28 @@ export default function PurchaseOrderReport() {
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="farmerId">Farmer</Label>
-              <Select
-                value={filters.farmerId?.toString() || 'all'}
-                onValueChange={(value) => handleFilterChange('farmerId', value === 'all' ? undefined : parseInt(value))}
-              >
-                <SelectTrigger id="farmerId">
-                  <SelectValue placeholder="All Farmers" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Farmers</SelectItem>
-                  {filterOptions?.data?.farmers?.map((farmer) => (
-                    <SelectItem key={farmer.id} value={farmer.id.toString()}>
-                      {farmer.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Only show farmer filter for admins */}
+            {!isFarmer && (
+              <div className="space-y-2">
+                <Label htmlFor="farmerId">Farmer</Label>
+                <Select
+                  value={filters.farmerId?.toString() || 'all'}
+                  onValueChange={(value) => handleFilterChange('farmerId', value === 'all' ? undefined : parseInt(value))}
+                >
+                  <SelectTrigger id="farmerId">
+                    <SelectValue placeholder="All Farmers" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Farmers</SelectItem>
+                    {filterOptions?.data?.farmers?.map((farmer) => (
+                      <SelectItem key={farmer.id} value={farmer.id.toString()}>
+                        {farmer.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             
             <div className="space-y-2">
               <Label htmlFor="depotId">Depot</Label>
@@ -318,7 +346,7 @@ export default function PurchaseOrderReport() {
           </div>
           
           {/* Grouping Options */}
-          {/* <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
             <Label>Group By:</Label>
             <div className="flex gap-4">
               <label className="flex items-center gap-2">
@@ -377,21 +405,12 @@ export default function PurchaseOrderReport() {
               <Filter className="mr-2 h-4 w-4" />
               Apply Filters
             </Button>
-          </div> */}
+          </div>
           
-          {/* Search */}
-          {/* <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-            <Input
-              placeholder="Search in results..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div> */}
+        
           
           {/* Summary Cards */}
-          {/* {reportData?.data?.totals && (
+          {reportData?.data?.totals && (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <Card>
                 <CardContent className="pt-6">
@@ -420,10 +439,10 @@ export default function PurchaseOrderReport() {
                 </CardContent>
               </Card>
             </div>
-          )} */}
+          )}
           
           {/* Data Table */}
-          {/* <div className="border rounded-lg overflow-hidden">
+          <div className="border rounded-lg overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -456,7 +475,7 @@ export default function PurchaseOrderReport() {
                 )}
               </TableBody>
             </Table>
-          </div> */}
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -405,6 +405,7 @@ const App = () => {
             {/* Vendor specific routes */}
             <Route path="/vendor/orders/:id" element={<OrderDetailsPage />} />
             <Route path="/vendor/orders/:id/record-delivery" element={<OrderDeliveryPage />} />
+            <Route path="/vendor/reports/purchase-orders" element={<PurchaseOrderReport />} /> {/* Purchase Order Report for farmers */}
             {/* Add any other non-admin routes here that should use MainLayout but not admin protection */}
           </Route>
           

@@ -347,7 +347,9 @@ export default function SNFOrdersReport() {
         const response = await getAllSNFOrders({
           page: 1,
           limit: filters.limit || 1000,
-          search: ''
+          search: '',
+          startDate: filters.startDate,
+          endDate: filters.endDate
         });
 
         // Transform the data for reporting
