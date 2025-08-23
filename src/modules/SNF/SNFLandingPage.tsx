@@ -353,33 +353,9 @@ const SNFContent: React.FC = () => {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-4">
               {/* All category to clear filters */}
-              <button
-                key="all"
-                id="category-all"
-                type="button"
-                onClick={() => { 
-                  setSelectedCats([]); 
-                  setSelectedTag(null);
-                  const params = new URLSearchParams(location.search || '');
-                  params.delete('tag');
-                  navigate({ search: params.toString() ? `?${params.toString()}` : '' }, { replace: true });
-                }}
-                className="group text-left"
-                aria-label="Show all products"
-              >
-                <div className={`relative aspect-square w-full overflow-hidden rounded-full border bg-accent/10 ${selectedCats.length === 0 ? 'ring-2 ring-primary border-primary' : ''}`}>
-                  <div className="h-full w-full grid place-items-center text-muted-foreground bg-gradient-to-br from-muted/30 to-transparent rounded-full">
-                    All
-                  </div>
-                </div>
-                <div className="mt-3 text-center">
-                  <p className={`text-sm font-medium line-clamp-2 transition-colors ${selectedCats.length === 0 ? 'text-primary' : 'group-hover:text-primary'}`}>
-                    All
-                  </p>
-                </div>
-              </button>
+              
 
               {categories.map((cat: any) => {
                 const catIdNum = parseInt(cat.id, 10);
@@ -389,10 +365,10 @@ const SNFContent: React.FC = () => {
                     key={cat.id}
                     id={`category-${catIdNum}`}
                     href={`/snf/category/${catIdNum}`}
-                    className="group text-left"
+                    className="group text-left max-w-[10rem]"
                     aria-label={`Filter by category ${cat.name}`}
                   >
-                    <div className={`relative aspect-square w-full overflow-hidden rounded-full border bg-accent/10 ${isSelected ? 'ring-2 ring-primary border-primary' : ''}`}>
+                    <div className={`relative aspect-square w-full overflow-hidden rounded-full  border bg-accent/10 ${isSelected ? 'ring-2 ring-primary border-primary' : ''}`}>
                       {cat.imageUrl ? (
                         <img
                           src={`${import.meta.env.VITE_BACKEND_URL}${cat.imageUrl}`}
