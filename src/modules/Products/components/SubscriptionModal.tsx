@@ -23,7 +23,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
-import imageurl from "./IMG-20250724-WA0006.jpg"
+import imageurl from "./WhatsApp Image 2025-09-01 at 11.33.03.jpeg"
 import {
   CalendarIcon,
   Plus,
@@ -3075,7 +3075,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 </div>
 
 
-                <img src={imageurl} alt="" />
+                <img className="m-auto mb-2" src={imageurl} alt="" />
                 <p>1. GPay, UPI - 8850833370  ( Sarkhot Natural Farms) <br />
                   2. Bank Transfer: Current Account: Bank of Baroda A/C No.: 76040200002024, <br />
                   3. IFSC: BARB0VJDOME <br /> 4. Cash Before Delivery. </p>
