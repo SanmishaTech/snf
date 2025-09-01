@@ -105,6 +105,11 @@ const formatPeriod = (
   // Handle cases where inputPeriod might be a number (e.g., 7) or a numeric string (e.g., "7")
   const periodStr = String(inputPeriod); // Convert to string for consistent handling
 
+  // Explicitly handle buy-once semantics
+  if (periodStr === "0") {
+    return "Buy Once";
+  }
+
   const numericEquivalentMap: Record<string, string> = {
     "7": "7 Days",
     "15": "15 Days",
@@ -132,7 +137,8 @@ const formatDeliverySchedule = (
   schedule: MemberSubscription["deliverySchedule"],
   selectedDays?: string[] | null,
   qty?: number,
-  altQty?: number | null
+  altQty?: number | null,
+  unitLabel?: string
 ) => {
   let scheduleText = "";
   switch (schedule) {
@@ -154,11 +160,12 @@ const formatDeliverySchedule = (
     default:
       scheduleText = schedule;
   }
+  const label = unitLabel || "unit(s)";
   if (schedule === "VARYING" && qty && altQty) {
     return `${scheduleText} (${qty} / ${altQty})`;
   }
   if (qty) {
-    return `${scheduleText} - ${qty} unit(s)`;
+    return `${scheduleText} - ${qty} ${label}`;
   }
   return scheduleText;
 };
@@ -344,14 +351,14 @@ const MySubscriptionsPage: React.FC = () => {
               <CardContent className="space-y-2 text-sm text-gray-700 dark:text-gray-300 p-4 flex-grow">
                 {/* Debug info - remove this later */}
 
-                <p>
+<p>
                   <strong>Quantity:</strong> {sub.qty}{" "}
-                  {sub.product.depotVariant?.unit || sub.product.unit || "unit"}
+                  {sub.product.depotVariant?.name || sub.product.unit || "unit"}
                   {sub.altQty ? (
                     <>
                       {" "}
                       &amp; {sub.altQty}{" "}
-                      {sub.product.depotVariant?.unit ||
+                      {sub.product.depotVariant?.name ||
                         sub.product.unit ||
                         "unit"}
                     </>
@@ -371,11 +378,12 @@ const MySubscriptionsPage: React.FC = () => {
 
                 <p>
                   <strong>Delivery:</strong>{" "}
-                  {formatDeliverySchedule(
+{formatDeliverySchedule(
                     sub.deliverySchedule,
                     sub.selectedDays,
                     sub.qty,
-                    sub.altQty
+                    sub.altQty,
+                    sub.product.depotVariant?.name || sub.product.unit || "unit"
                   )}
                 </p>
                 {sub.paymentStatus && (
@@ -440,7 +448,7 @@ const MySubscriptionsPage: React.FC = () => {
                           try {
                             const baseUrl =
                               import.meta.env.VITE_BACKEND_URL ||
-                              "http://localhost:3000";
+                              "https://snf.3.7.237.251.sslip.io/";
                             const invoiceUrl = `${baseUrl}/invoices/${sub.productOrder.invoicePath}`;
 
                             // Fetch the file as blob to force download
@@ -467,7 +475,7 @@ const MySubscriptionsPage: React.FC = () => {
                             // Fallback to opening in new tab if download fails
                             const baseUrl =
                               import.meta.env.VITE_BACKEND_URL ||
-                              "http://localhost:3000";
+                              "https://snf.3.7.237.251.sslip.io/";
                             const invoiceUrl = `${baseUrl}/invoices/${sub.productOrder.invoicePath}`;
                             window.open(invoiceUrl, "_blank");
                           }

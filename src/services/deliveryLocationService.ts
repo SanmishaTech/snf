@@ -6,6 +6,7 @@ export interface DeliveryLocation {
   depotName?: string;
   areaId?: number;
   areaName?: string;
+  deliverySchedule?: string[];
 }
 
 /**
@@ -94,6 +95,7 @@ export class DeliveryLocationService {
         depotName: areaWithDepot.depot.name,
         areaId: areaWithDepot.id,
         areaName: areaWithDepot.name,
+        deliverySchedule: areaWithDepot.deliverySchedule || [],
       };
 
       // Store the location for future use

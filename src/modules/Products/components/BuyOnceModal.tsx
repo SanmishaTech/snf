@@ -60,6 +60,12 @@ interface DepotVariant {
   minimumQty: number;
 }
 
+// Interface for selected variant with quantity
+interface SelectedVariant {
+  variantId: number;
+  quantity: number;
+}
+
 
 interface LocationData {
   id: number;
@@ -119,7 +125,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
   productId,
   selectedDepot,
 }) => {
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(1); // Keep for backward compatibility
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(addDays(new Date(), 2));
 
   const [userAddresses, setUserAddresses] = useState<AddressData[]>([]);
@@ -132,7 +138,8 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
   const [mrpPrice, setMrpPrice] = useState<number>(0);
   const [isLoadingPrice, setIsLoadingPrice] = useState(false);
   const [depotVariants, setDepotVariants] = useState<DepotVariant[]>([]);
-  const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
+  const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null); // Keep for backward compatibility
+  const [selectedVariants, setSelectedVariants] = useState<SelectedVariant[]>([]); // New state for multiple variants
   const [areaMasters, setAreaMasters] = useState<AreaMaster[]>([]);
   const [filteredAreaMasters, setFilteredAreaMasters] = useState<AreaMaster[]>([]);
   const [cities, setCities] = useState<City[]>([]);
@@ -145,6 +152,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
   const [successDetails, setSuccessDetails] = useState<{
     orderId?: string;
     totalAmount?: number;
+    variantSummary?: string;
   }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deliveryInstructions, setDeliveryInstructions] = useState<string>("");
@@ -183,6 +191,9 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
       setFormErrors({});
       // Reset pincode validation
       setPincodeValidation({ isValid: false, message: "", isValidating: false });
+      // Reset success dialog state
+      setShowSuccessDialog(false);
+      setSuccessDetails({});
     }
   }, [isOpen]);
 
@@ -520,16 +531,19 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
 
         setDepotVariants(transformedVariants);
 
-        // Set buyOncePrice and MRP from first filtered variant or fallback
+        // Initialize with first variant selected by default for backward compatibility
         if (transformedVariants.length > 0) {
           const firstVariant = transformedVariants[0];
           setBuyOncePrice(firstVariant.buyOncePrice);
           setMrpPrice(firstVariant.mrp || firstVariant.sellingPrice || firstVariant.buyOncePrice);
           setSelectedVariantId(firstVariant.id);
+          // Initialize selectedVariants with the first variant
+          setSelectedVariants([{ variantId: firstVariant.id, quantity: 1 }]);
         } else {
           setBuyOncePrice(getBuyOncePrice());
           setMrpPrice(getBuyOncePrice());
           setSelectedVariantId(null);
+          setSelectedVariants([]);
         }
       } catch (err) {
         console.error('Failed to fetch depot variant pricing, using default:', err);
@@ -607,42 +621,100 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
     return format(date, 'yyyy-MM-dd');
   };
 
+  // Helper functions for variant management
+  const toggleVariantSelection = (variantId: number) => {
+    setSelectedVariants(prev => {
+      const existing = prev.find(sv => sv.variantId === variantId);
+      if (existing) {
+        // Remove variant if already selected
+        return prev.filter(sv => sv.variantId !== variantId);
+      } else {
+        // Add variant with default quantity
+        return [...prev, { variantId, quantity: 1 }];
+      }
+    });
+  };
+
+  const updateVariantQuantity = (variantId: number, quantity: number) => {
+    setSelectedVariants(prev => 
+      prev.map(sv => 
+        sv.variantId === variantId 
+          ? { ...sv, quantity: Math.max(1, quantity) }
+          : sv
+      )
+    );
+  };
+
   const [useWallet] = useState(true);
-  const productTotal = useMemo(() => quantity * buyOncePrice, [quantity, buyOncePrice]);
+  
+  // Calculate total based on selected variants
+  const productTotal = useMemo(() => {
+    if (selectedVariants.length === 0) {
+      // Fallback to old calculation for backward compatibility
+      return quantity * buyOncePrice;
+    }
+    return selectedVariants.reduce((total, sv) => {
+      const variant = depotVariants.find(v => v.id === sv.variantId);
+      if (!variant) return total;
+      return total + (sv.quantity * variant.buyOncePrice);
+    }, 0);
+  }, [selectedVariants, depotVariants, quantity, buyOncePrice]);
+  
   const walletDeduction = useMemo(() => (useWallet ? Math.min(walletBalance || 0, productTotal) : 0), [walletBalance, productTotal, useWallet]);
   const payableAmount = useMemo(() => productTotal - walletDeduction, [productTotal, walletDeduction]);
   
   // Calculate savings vs MRP
   const calculateSavings = useMemo(() => {
-    if (!mrpPrice || mrpPrice <= buyOncePrice) return 0;
-    const totalMrpPrice = mrpPrice * quantity;
-    const totalBuyOncePrice = buyOncePrice * quantity;
+    if (selectedVariants.length === 0) {
+      // Fallback to old calculation
+      if (!mrpPrice || mrpPrice <= buyOncePrice) return 0;
+      const totalMrpPrice = mrpPrice * quantity;
+      const totalBuyOncePrice = buyOncePrice * quantity;
+      return Math.max(0, totalMrpPrice - totalBuyOncePrice);
+    }
+    
+    // Calculate savings for all selected variants
+    let totalMrpPrice = 0;
+    let totalBuyOncePrice = 0;
+    selectedVariants.forEach(sv => {
+      const variant = depotVariants.find(v => v.id === sv.variantId);
+      if (variant) {
+        const mrp = variant.mrp || variant.buyOncePrice;
+        totalMrpPrice += mrp * sv.quantity;
+        totalBuyOncePrice += variant.buyOncePrice * sv.quantity;
+      }
+    });
     return Math.max(0, totalMrpPrice - totalBuyOncePrice);
-  }, [mrpPrice, buyOncePrice, quantity]);
+  }, [selectedVariants, depotVariants, mrpPrice, buyOncePrice, quantity]);
 
   const handleConfirm = async () => {
-    if (!selectedDate || !selectedVariantId) {
-      toast.error("Please select a delivery date and depot variant.");
+    if (!selectedDate) {
+      toast.error("Please select a delivery date.");
       return;
     }
 
-    // Get the selected variant to check if its depot is online
-    const selectedVariant = depotVariants.find(v => v.id === selectedVariantId);
-    if (!selectedVariant) {
-      toast.error("Invalid depot variant selected.");
+    if (selectedVariants.length === 0) {
+      toast.error("Please select at least one product variant.");
+      return;
+    }
+
+    // Check if all selected variants are from the same depot (for address validation)
+    const firstVariant = depotVariants.find(v => v.id === selectedVariants[0].variantId);
+    if (!firstVariant) {
+      toast.error("Invalid variant selection.");
       return;
     }
 
     // Determine the correct address ID based on depot type
-    const deliveryAddressIdForPayload = selectedVariant.depot.isOnline
+    const deliveryAddressIdForPayload = firstVariant.depot.isOnline
       ? selectedAddressId
-      : selectedVariant.depot.address;
+      : firstVariant.depot.address;
 
     // Validate address based on depot type
-    if (selectedVariant.depot.isOnline && !selectedAddressId) {
+    if (firstVariant.depot.isOnline && !selectedAddressId) {
       toast.error("Please select a delivery address.");
       return;
-    } else if (!selectedVariant.depot.isOnline && !selectedVariant.depot.address) {
+    } else if (!firstVariant.depot.isOnline && !firstVariant.depot.address) {
       toast.error("Depot address information is missing. Please contact support.");
       return;
     }
@@ -652,16 +724,24 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
       return;
     }
 
+    // Build subscriptions array for all selected variants
+    const subscriptions = selectedVariants
+      .filter(sv => sv.quantity > 0)
+      .map(sv => ({
+        productId: sv.variantId,
+        period: 0, // This signifies a "buy once" order (single delivery, no subscription period)
+        startDate: selectedDate.toISOString(),
+        deliverySchedule: 'DAILY', // Single delivery
+        qty: sv.quantity,
+      }));
+
+    if (subscriptions.length === 0) {
+      toast.error("Please set quantity for at least one product.");
+      return;
+    }
+
     const payload = {
-      subscriptions: [
-        {
-          productId: selectedVariantId, // Use selected depot variant ID
-          period: 0, // This signifies a "buy once" order (single delivery, no subscription period)
-          startDate: selectedDate.toISOString(),
-          deliverySchedule: 'DAILY', // Single delivery
-          qty: quantity,
-        },
-      ],
+      subscriptions,
       deliveryAddressId: parseInt(String(deliveryAddressIdForPayload), 10),
       walletamt: useWallet ? walletDeduction : 0,
       deliveryInstructions: deliveryInstructions.trim() || undefined, // Include delivery instructions
@@ -671,10 +751,17 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
     try {
       const response = await post('/api/product-orders/with-subscriptions', payload);
       
-      // Set success details
+      // Set success details with proper variant information
+      // Create a summary of all selected variants for the success message
+      const variantSummary = selectedVariants.map(sv => {
+        const variant = depotVariants.find(v => v.id === sv.variantId);
+        return variant ? `${sv.quantity} ${variant.name}` : '';
+      }).filter(Boolean).join(', ');
+      
       setSuccessDetails({
         orderId: response?.orderId || `ORD-${Date.now()}`,
         totalAmount: productTotal - walletDeduction,
+        variantSummary, // Store variant summary for display
       });
       
       // Show success dialog instead of toast
@@ -1156,69 +1243,110 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                 }
               })()}
 
-              {/* Depot Variant Selection */}
+              {/* Multiple Depot Variant Selection with Checkboxes */}
               <div>
-                <Label className="text-sm font-medium mb-2 block">
-                  {selectedDepot ? `Available variants for ${selectedDepot.name}:` : 'Available depot variants:'}
-                </Label>
+                <div className="flex justify-between items-center mb-2">
+                  <Label className="text-sm font-medium">
+                    {selectedDepot ? `Available variants for ${selectedDepot.name}:` : 'Select product variants (you can choose multiple):'}
+                  </Label>
+                  {selectedVariants.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedVariants([])}
+                      className="text-xs h-7"
+                    >
+                      Clear All
+                    </Button>
+                  )}
+                </div>
                 {depotVariants.length > 0 ? (
-                  <RadioGroup
-                    value={selectedVariantId?.toString() || ''}
-                    onValueChange={(value) => {
-                      const variantId = parseInt(value, 10);
-                      setSelectedVariantId(variantId);
-                      const selectedVariant = depotVariants.find(v => v.id === variantId);
-                      if (selectedVariant) {
-                        setBuyOncePrice(selectedVariant.buyOncePrice);
-                        setMrpPrice(selectedVariant.mrp || selectedVariant.sellingPrice || selectedVariant.buyOncePrice);
-                      }
-                    }}
-                    className="gap-3 mt-2"
-                  >
-                    {depotVariants.map((variant) => (
-                      <div
-                        key={variant.id}
-                        className={`border rounded-lg p-3 cursor-pointer ${selectedVariantId === variant.id ? 'border-green-500 bg-green-50' : 'border-gray-200'
+                  <div className="space-y-3">
+                    {depotVariants.map((variant) => {
+                      const isSelected = selectedVariants.some(sv => sv.variantId === variant.id);
+                      const selectedVariant = selectedVariants.find(sv => sv.variantId === variant.id);
+                      
+                      return (
+                        <div
+                          key={variant.id}
+                          className={`border rounded-lg p-3 transition-all ${
+                            isSelected ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'
                           }`}
-                        onClick={() => {
-                          setSelectedVariantId(variant.id);
-                          setBuyOncePrice(variant.buyOncePrice);
-                          setMrpPrice(variant.mrp || variant.sellingPrice || variant.buyOncePrice);
-                        }}
-                      >
-                        <div className="flex items-start gap-3">
-                          <RadioGroupItem value={variant.id.toString()} id={`variant-${variant.id}`} className="mt-1" />
-                          <div className="flex-1">
-                            <div className="flex justify-between items-start">
-                              <Label
-                                htmlFor={`variant-${variant.id}`}
-                                className="font-medium cursor-pointer flex items-center gap-1"
-                              >
-                                {variant.name}
-                              </Label>
-                              <div className="text-right">
-                                {variant.mrp && variant.mrp > variant.buyOncePrice ? (
-                                  <div className="flex flex-col items-end gap-0.5">
-                                    <span className="text-xs text-gray-500 line-through">
-                                      ₹{Number(variant.mrp).toFixed(2)}
-                                    </span>
+                        >
+                          <div className="flex items-start gap-3">
+                            {/* Checkbox */}
+                            <div
+                              className={`w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 cursor-pointer flex-shrink-0 ${
+                                isSelected ? 'bg-green-500 border-green-500' : 'border-gray-300'
+                              }`}
+                              onClick={() => toggleVariantSelection(variant.id)}
+                            >
+                              {isSelected && (
+                                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                            </div>
+                            
+                            <div className="flex-1">
+                              <div className="flex justify-between items-start">
+                                <Label
+                                  className="font-medium cursor-pointer"
+                                  onClick={() => toggleVariantSelection(variant.id)}
+                                >
+                                  {variant.name}
+                                </Label>
+                                <div className="text-right">
+                                  {variant.mrp && variant.mrp > variant.buyOncePrice ? (
+                                    <div className="flex flex-col items-end gap-0.5">
+                                      <span className="text-xs text-gray-500 line-through">
+                                        ₹{Number(variant.mrp).toFixed(2)}
+                                      </span>
+                                      <span className="text-sm font-semibold text-green-600">
+                                        ₹{Number(variant.buyOncePrice || 0).toFixed(2)}
+                                      </span>
+                                    </div>
+                                  ) : (
                                     <span className="text-sm font-semibold text-green-600">
                                       ₹{Number(variant.buyOncePrice || 0).toFixed(2)}
                                     </span>
-                                  </div>
-                                ) : (
-                                  <span className="text-sm font-semibold text-green-600">
-                                    ₹{Number(variant.buyOncePrice || 0).toFixed(2)}
-                                  </span>
-                                )}
+                                  )}
+                                </div>
                               </div>
+                              
+                              {/* Quantity controls for selected variant */}
+                              {isSelected && selectedVariant && (
+                                <div className="mt-3 flex items-center justify-between">
+                                  <Label className="text-sm text-gray-600">Quantity:</Label>
+                                  <div className="flex items-center border rounded overflow-hidden bg-white">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => updateVariantQuantity(variant.id, selectedVariant.quantity - 1)}
+                                      className="h-8 w-8 p-0 hover:bg-gray-100"
+                                    >
+                                      <Minus className="h-3 w-3" />
+                                    </Button>
+                                    <span className="px-3 py-1 text-sm font-medium min-w-[50px] text-center">
+                                      {selectedVariant.quantity}
+                                    </span>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => updateVariantQuantity(variant.id, selectedVariant.quantity + 1)}
+                                      className="h-8 w-8 p-0 hover:bg-gray-100"
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
-
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </RadioGroup>
+                      );
+                    })}
+                  </div>
                 ) : (
                   <div className="text-center py-4 border border-dashed border-gray-300 rounded-lg">
                     <p className="text-gray-500">
@@ -1232,30 +1360,7 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                 )}
               </div>
 
-              <div className="space-y-3">
-                <Label htmlFor="quantityBuyOnce" className="text-sm font-medium block">Quantity:</Label>
-                <div className="flex items-center justify-center">
-                  <div className="flex items-center border-2 border-green-200 rounded-xl overflow-hidden bg-white shadow-sm">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="h-12 w-12 p-0 flex items-center justify-center rounded-none hover:bg-green-50 border-r border-green-200 transition-colors"
-                    >
-                      <Minus className="h-5 w-5 text-green-600" />
-                    </Button>
-                    <span className="px-6 py-3 text-xl font-bold text-green-700 min-w-[80px] text-center">{quantity}</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setQuantity(quantity + 1)}
-                      className="h-12 w-12 p-0 flex items-center justify-center rounded-none hover:bg-green-50 border-l border-green-200 transition-colors"
-                    >
-                      <Plus className="h-5 w-5 text-green-600" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
+              {/* Remove the old single quantity selector - quantities are now handled per variant */}
 
               {/* Delivery Instructions */}
               <div>
@@ -1356,20 +1461,36 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
               </div>
 
 
-              {/* Integrated Order Summary Section */}
+              {/* Enhanced Order Summary Section for Multiple Variants */}
               <div className="mt-6 pt-4 border-t border-gray-200 space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Product:</span>
-                  <span className="text-sm font-medium text-gray-800">{product?.name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Quantity:</span>
-                  <span className="text-sm font-medium text-gray-800">{quantity} {product?.unit || ''}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Price per unit:</span>
-                  <span className="text-sm font-medium text-gray-800">₹{productTotal.toFixed(2)}</span>
-                </div>
+                <h3 className="text-sm font-semibold text-gray-800 mb-2">Order Summary</h3>
+                
+                {/* Show all selected variants */}
+                {selectedVariants.length > 0 && (
+                  <div className="space-y-2 mb-3">
+                    {selectedVariants.map(sv => {
+                      const variant = depotVariants.find(v => v.id === sv.variantId);
+                      if (!variant) return null;
+                      const variantTotal = sv.quantity * variant.buyOncePrice;
+                      
+                      return (
+                        <div key={sv.variantId} className="bg-gray-50 p-2 rounded">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <span className="text-sm font-medium text-gray-800">{variant.name}</span>
+                              <div className="text-xs text-gray-600 mt-1">
+                                {sv.quantity} × ₹{variant.buyOncePrice.toFixed(2)}
+                              </div>
+                            </div>
+                            <span className="text-sm font-medium text-gray-800">
+                              ₹{variantTotal.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
 
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Delivery Date:</span>
@@ -1481,18 +1602,21 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
                 <Button
                   onClick={handleConfirm}
                   disabled={isSubmitting || (() => {
-                    // Basic validations
-                    if (!selectedDate || !selectedVariantId || quantity < 1) return true;
+                    // Basic validations - updated for multiple variants
+                    if (!selectedDate || selectedVariants.length === 0) return true;
                     
-                    // Address validation based on depot type
-                    const selectedVariant = depotVariants.find(v => v.id === selectedVariantId);
-                    if (!selectedVariant) return true;
+                    // Get first selected variant for depot validation
+                    const firstSelectedVariant = selectedVariants[0];
+                    if (!firstSelectedVariant) return true;
+                    
+                    const firstVariant = depotVariants.find(v => v.id === firstSelectedVariant.variantId);
+                    if (!firstVariant) return true;
                     
                     // For online depots, require delivery address selection
-                    if (selectedVariant.depot.isOnline && !selectedAddressId) return true;
+                    if (firstVariant.depot.isOnline && !selectedAddressId) return true;
                     
                     // For offline depots (store pickup), require depot address to be available
-                    if (!selectedVariant.depot.isOnline && !selectedVariant.depot.address) return true;
+                    if (!firstVariant.depot.isOnline && !firstVariant.depot.address) return true;
                     
                     return false;
                   })()}
@@ -1554,11 +1678,10 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
         isOpen={showSuccessDialog}
         onOpenChange={setShowSuccessDialog}
         title="Order Placed Successfully!"
-        message="Your subscription has been set up and will start delivering as scheduled."
+        message="Your order has been placed and will be delivered on the selected date."
         orderDetails={{
           orderId: successDetails.orderId,
-          productName: product?.name,
-          quantity: quantity,
+          productName: successDetails.variantSummary || product?.name,
           deliveryDate: selectedDate,
           totalAmount: successDetails.totalAmount,
         }}

@@ -85,6 +85,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   //   ((selectedVariant as any)?.closingQty !== undefined && (selectedVariant as any).closingQty <= 0);
   
   const isOutOfStock = false; // As per requirements, all products are always in stock
+  const hasVariants = showVariants && (allVariants?.length || 0) > 0;
   const hasMultipleVariants = showVariants && (allVariants?.length || 0) > 1;
   const showPills = hasMultipleVariants && allVariants.length <= VARIANT_PILLS_THRESHOLD;
 
@@ -268,9 +269,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </h3>
 
         {/* Variant UX */}
-        {hasMultipleVariants && (
+        {hasVariants && (
           <>
-            {showPills ? (
+            {allVariants.length === 1 ? (
+              // Show single variant as read-only display
+              <div className="px-2.5 py-1.5 border rounded-md text-[13px] bg-muted/20">
+                <span className="flex items-center gap-2">
+                  <span className="font-medium">{allVariants[0].name}</span>
+                  <span className="text-muted-foreground">₹{(allVariants[0].buyOncePrice || allVariants[0].mrp || 0).toFixed(0)}</span>
+                </span>
+              </div>
+            ) : showPills ? (
               // Show variant pills directly (<= threshold)
               <div className="flex flex-wrap gap-1 md:gap-1.5">
                 {allVariants.map((variant: any) => {

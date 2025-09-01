@@ -84,6 +84,7 @@ interface DepotVariant {
   unit?: string;
   depotId?: string;
   productId?: string;
+  isHidden?: boolean;
 }
 
 // Helper functions from user's Calendar28
@@ -503,9 +504,13 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
         const response = await get("/depot-product-variants");
         let depotVariantsData: DepotVariant[] = [];
         if (response && Array.isArray(response.data)) {
-          depotVariantsData = response.data.map((variant: any) => ({ ...variant, id: String(variant.id) }));
+          depotVariantsData = response.data
+            .filter((variant: any) => !variant.isHidden) // exclude hidden
+            .map((variant: any) => ({ ...variant, id: String(variant.id) }));
         } else if (response && Array.isArray(response)) {
-          depotVariantsData = response.map((variant: any) => ({ ...variant, id: String(variant.id) }));
+          depotVariantsData = response
+            .filter((variant: any) => !variant.isHidden)
+            .map((variant: any) => ({ ...variant, id: String(variant.id) }));
         }
         setDepotVariants(depotVariantsData);
         if (!(depotVariantsData.length > 0)) {
@@ -1136,10 +1141,11 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                                 // Filter depot variants based on selected depot and product
                                 const currentItem = watchedOrderItems[index];
                                 const filteredVariants = depotVariants.filter(variant => {
-                                  // Only show variants that match the selected depot and product
+                                  // Only show variants that match the selected depot and product and are not hidden
                                   const matchesDepot = !currentItem?.depotId || String(variant.depotId) === currentItem.depotId;
                                   const matchesProduct = !currentItem?.productId || String(variant.productId) === currentItem.productId;
-                                  return matchesDepot && matchesProduct;
+                                  const notHidden = !(variant as any)?.isHidden;
+                                  return matchesDepot && matchesProduct && notHidden;
                                 });
                                 
                                 return (
@@ -1325,7 +1331,8 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                               const filteredVariants = depotVariants.filter(variant => {
                                 const matchesDepot = !currentItem?.depotId || String(variant.depotId) === currentItem.depotId;
                                 const matchesProduct = !currentItem?.productId || String(variant.productId) === currentItem.productId;
-                                return matchesDepot && matchesProduct;
+                                const notHidden = !(variant as any)?.isHidden;
+                                return matchesDepot && matchesProduct && notHidden;
                               });
                               
                               return (

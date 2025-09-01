@@ -17,6 +17,7 @@ export interface AreaMaster {
   city?: { id: number; name: string; } | null; // Added city object
   deliveryType: DeliveryType;
   isDairyProduct: boolean; // Flag to indicate if area supports dairy products
+  deliverySchedule: string[]; // Array of delivery schedule options
   createdAt: string; // ISO date string
   updatedAt: string; // ISO date string
 }
@@ -29,6 +30,7 @@ export interface AreaMasterFormData {
   cityId?: number | null; // Added city association
   deliveryType: DeliveryType;
   isDairyProduct: boolean;
+  deliverySchedule: string[]; // Array of delivery schedule options
 }
 
 // Interface for a simplified Depot object (for dropdowns)

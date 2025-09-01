@@ -102,6 +102,7 @@ import SNFOrdersListPage from "./modules/SNFOrders/SNFOrdersListPage";
 import SNFOrderDetailPage from "./modules/SNFOrders/SNFOrderDetailPage";
 import PurchaseOrderReport from "./modules/Reports/PurchaseOrderReport";
 import PurchaseReport from "./modules/Reports/PurchaseReport";
+import { UnitConversionPage, UnitConversionHistoryPage } from "./modules/UnitConversion";
 
 const App = () => {
   useEffect(() => {
@@ -397,6 +398,8 @@ const App = () => {
             <Route path="/admin/reports/delivery-summaries" element={<DeliverySummariesReport />} /> {/* Delivery Summaries Report */}
             <Route path="/admin/reports/subscriptions" element={<SubscriptionReports />} /> {/* Subscription Reports */}
             <Route path="/admin/reports/snf-orders" element={<SNFOrdersReport />} /> {/* SNF Orders Report */}
+            <Route path="/admin/unit-conversion" element={<UnitConversionPage />} /> {/* Unit Conversion */}
+            <Route path="/admin/unit-conversion/history" element={<UnitConversionHistoryPage />} /> {/* Unit Conversion History */}
 
           </Route>
 

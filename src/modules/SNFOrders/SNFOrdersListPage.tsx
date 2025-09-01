@@ -183,6 +183,9 @@ const SNFOrdersListPage: React.FC = () => {
                     <TableHead>Mobile</TableHead>
                     <TableHead>City</TableHead>
                     <TableHead>Depot</TableHead>
+                    <TableHead className="cursor-pointer" onClick={() => handleSort('deliveryDate')}>
+                      Delivery Date {sortBy === 'deliveryDate' && (sortOrder === 'asc' ? '▲' : '▼')}
+                    </TableHead>
                     <TableHead className="text-right cursor-pointer" onClick={() => handleSort('totalAmount')}>
                       Total {sortBy === 'totalAmount' && (sortOrder === 'asc' ? '▲' : '▼')}
                     </TableHead>
@@ -206,6 +209,9 @@ const SNFOrdersListPage: React.FC = () => {
                       <TableCell>{o.mobile}</TableCell>
                       <TableCell>{o.city}</TableCell>
                       <TableCell>{o.depot?.name || '-'}</TableCell>
+                      <TableCell>
+                        {o.deliveryDate ? new Date(o.deliveryDate).toLocaleDateString() : '-'}
+                      </TableCell>
                       <TableCell className="text-right">₹{o.totalAmount.toFixed(2)}</TableCell>
                       <TableCell>{o._count?.items ?? 0}</TableCell>
                       <TableCell>

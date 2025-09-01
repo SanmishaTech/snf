@@ -3,7 +3,7 @@
  */
 
 const BACKEND_URL =
-  import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+  import.meta.env.VITE_BACKEND_URL || "https://snf.3.7.237.251.sslip.io/";
 
 /**
  * Returns the first available photo URL from a member record

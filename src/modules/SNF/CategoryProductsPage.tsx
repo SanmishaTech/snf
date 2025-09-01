@@ -23,6 +23,8 @@ import { productService } from "@/modules/SNF/services/api"
 import { Header } from "@/modules/SNF/components/Header"
 import { Footer } from "@/modules/SNF/components/Footer"
 import { useDeliveryLocation } from "@/modules/SNF/hooks/useDeliveryLocation"
+import { useCart } from "@/modules/SNF/context/CartContext"
+import { toast } from "sonner"
 import type { Category, ProductWithPricing, DepotVariant } from "@/modules/SNF/types"
 
 export default function CategoryProductsPage() {
@@ -42,6 +44,7 @@ export default function CategoryProductsPage() {
   const [isLoadingCategories, setIsLoadingCategories] = useState(true)
   const [isFiltersOpen, setIsFiltersOpen] = useState(false)
   const { currentDepotId } = useDeliveryLocation();
+  const { addItem } = useCart();
 
   // Fetch products using the real API
   const { products, isLoading: isLoadingProducts, error: productsError } = useProducts(currentDepotId)
@@ -102,6 +105,34 @@ export default function CategoryProductsPage() {
     fetchCategories()
   }, [])
 
+  // Calculate dynamic price range from products
+  const priceRange = useMemo(() => {
+    if (products.length === 0) return [0, 10000]
+    
+    const prices = products.map(p => p.buyOncePrice).filter(price => price > 0)
+    if (prices.length === 0) return [0, 10000]
+    
+    const minPrice = Math.min(...prices)
+    const maxPrice = Math.max(...prices)
+    
+    // Round to nice numbers and add some padding
+    const paddedMin = Math.floor(minPrice / 10) * 10
+    const paddedMax = Math.ceil(maxPrice / 100) * 100
+    
+    console.log('Dynamic price range:', { minPrice, maxPrice, paddedMin, paddedMax })
+    return [paddedMin, paddedMax]
+  }, [products])
+
+  // Update filters when price range changes
+  useEffect(() => {
+    if (products.length > 0) {
+      setFilters(prev => ({
+        ...prev,
+        priceRange: priceRange as [number, number]
+      }))
+    }
+  }, [priceRange, products.length])
+
   // Extract unique brands and tags from products
   const availableBrands = useMemo(() => {
     const brands = new Set<string>()
@@ -147,23 +178,14 @@ export default function CategoryProductsPage() {
     return brandsArray
   }, [products])
 
-  // Filter products based on current filters
+  // Filter products based on current filters (with variant-level price filtering)
   const filteredProducts = useMemo(() => {
-    console.log('Filtering products with filters:', filters)
+    console.log('=== FILTERING PRODUCTS (VARIANT-LEVEL) ===')
+    console.log('Current filters:', filters)
+    console.log('Price range filter:', filters.priceRange)
     console.log('Total products to filter:', products.length)
 
-    // Debug: show all products and their tags
-    if (filters.brands.some(b => b.toLowerCase() === 'fruits')) {
-      console.log('=== DEBUG: Fruits filter active ===')
-      console.log('All products and their tags:')
-      products.forEach((p, index) => {
-        console.log(`${index + 1}. ${p.product.name}: tags="${p.product.tags}"`)
-      })
-      console.log('Current brand filters:', filters.brands)
-      console.log('About to start filtering...')
-    }
-
-    const filtered = products.filter((productWithPricing) => {
+    const filtered = products.map((productWithPricing) => {
       const product = productWithPricing.product
 
       // Category filter
@@ -171,18 +193,13 @@ export default function CategoryProductsPage() {
         const categoryMatch = filters.categories.some(categoryName => {
           return product.category?.name === categoryName
         })
-        if (!categoryMatch) return false
+        if (!categoryMatch) return null
       }
 
       // Brand/Tag filter - check both product name and tags
       if (filters.brands.length > 0) {
         const brandMatch = filters.brands.some(brand => {
           const brandLower = brand.toLowerCase()
-
-          if (brandLower === 'fruits') {
-            console.log(`\n=== Checking product: ${product.name} ===`)
-            console.log(`Brand filter: "${brand}" (lowercase: "${brandLower}")`)
-          }
 
           // Check product name
           const nameMatch = product.name.toLowerCase().includes(brandLower)
@@ -194,45 +211,19 @@ export default function CategoryProductsPage() {
               product.name.toLowerCase().includes(fruitName)
             )
 
-            console.log(`Name match: ${nameMatch}`)
-            console.log(`Is fruit product (by name): ${isFruitProduct}`)
-
             if (isFruitProduct) {
-              console.log(`✓ Matched as fruit product: ${product.name}`)
               return true
             }
-          } else if (brandLower === 'fruits') {
-            console.log(`Name match: ${nameMatch}`)
           }
 
           // Check tags (comma-separated)
           let tagMatch = false
           if (product.tags) {
             const productTags = product.tags.split(',').map(tag => tag.trim().toLowerCase())
-
-            // Debug logging for fruits specifically
-            if (brandLower === 'fruits' || brand.toLowerCase() === 'fruits') {
-              console.log(`Product: ${product.name}`)
-              console.log(`Raw tags: "${product.tags}"`)
-              console.log(`Parsed tags:`, productTags)
-              console.log(`Looking for brand: "${brand}" (lowercase: "${brandLower}")`)
-            }
-
             tagMatch = productTags.some(tag => {
-              // tag is already lowercase, brandLower is lowercase
               const exactMatch = tag === brandLower
               const containsMatch = tag.includes(brandLower) || brandLower.includes(tag)
-
-              const matches = exactMatch || containsMatch
-
-              if (brandLower === 'fruits' || brand.toLowerCase() === 'fruits') {
-                console.log(`  Checking tag: "${tag}" against "${brandLower}"`)
-                console.log(`    Exact match (${tag} === ${brandLower}): ${exactMatch}`)
-                console.log(`    Contains match: ${containsMatch}`)
-                console.log(`    Final result: ${matches}`)
-              }
-
-              return matches
+              return exactMatch || containsMatch
             })
           }
 
@@ -244,36 +235,48 @@ export default function CategoryProductsPage() {
             return product.isDairyProduct === false || tagMatch || nameMatch
           }
 
-          const finalMatch = nameMatch || tagMatch
-
-          if (brandLower === 'fruits') {
-            console.log(`Tag match: ${tagMatch}`)
-            console.log(`Final match for ${product.name}: nameMatch=${nameMatch}, tagMatch=${tagMatch}, finalMatch=${finalMatch}`)
-            console.log(`=== End ${product.name} ===\n`)
-          }
-
-          return finalMatch
+          return nameMatch || tagMatch
         })
-        if (!brandMatch) return false
+        if (!brandMatch) return null
       }
 
-      // Price range filter
-      const price = productWithPricing.buyOncePrice
-      if (price < filters.priceRange[0] || price > filters.priceRange[1]) {
-        return false
+      // VARIANT-LEVEL PRICE FILTERING
+      let filteredVariants = productWithPricing.variants || []
+      
+      // Filter variants by price range
+      if (filters.priceRange[0] > 0 || filters.priceRange[1] < Number.MAX_SAFE_INTEGER) {
+        filteredVariants = filteredVariants.filter(variant => {
+          const variantPrice = variant.buyOncePrice || productWithPricing.buyOncePrice || 0
+          const inRange = variantPrice >= filters.priceRange[0] && variantPrice <= filters.priceRange[1]
+          
+          // Debug logging for price filter
+          if (product.name.toLowerCase().includes('milk')) {
+            console.log(`[Variant Filter] ${product.name} - ${variant.name}`)
+            console.log(`  Variant price: ₹${variantPrice}`)
+            console.log(`  Filter range: ₹${filters.priceRange[0]} - ₹${filters.priceRange[1]}`)
+            console.log(`  In range: ${inRange}`)
+          }
+          
+          return inRange
+        })
+      }
+
+      // If no variants pass the price filter, exclude the entire product
+      if (filteredVariants.length === 0) {
+        return null
       }
 
       // Rating filter (using a default rating since we don't have ratings in the API)
-      const defaultRating = 4.0 // Default rating for products
+      const defaultRating = 4.0
       if (filters.rating > 0 && defaultRating < filters.rating) {
-        return false
+        return null
       }
 
       // Discount filter
       if (filters.discount > 0) {
         const discountPercent = productWithPricing.discount ? productWithPricing.discount * 100 : 0
         if (discountPercent < filters.discount) {
-          return false
+          return null
         }
       }
 
@@ -282,10 +285,10 @@ export default function CategoryProductsPage() {
         const hasInStock = filters.availability.includes("In Stock") && productWithPricing.inStock
         const hasSameDay = filters.availability.includes("Same Day Delivery") && productWithPricing.inStock
         const hasExpress = filters.availability.includes("Express Delivery") && productWithPricing.inStock
-        const hasBulk = filters.availability.includes("Bulk Available") // Assuming all products have bulk available
+        const hasBulk = filters.availability.includes("Bulk Available")
 
         if (!hasInStock && !hasSameDay && !hasExpress && !hasBulk) {
-          return false
+          return null
         }
       }
 
@@ -297,21 +300,21 @@ export default function CategoryProductsPage() {
         const tagsMatch = product.tags?.toLowerCase().includes(searchLower)
 
         if (!nameMatch && !descriptionMatch && !tagsMatch) {
-          return false
+          return null
         }
       }
 
-      return true
-    })
+      // Return product with filtered variants
+      return {
+        ...productWithPricing,
+        variants: filteredVariants,
+        // Update buyOncePrice to reflect the cheapest available variant
+        buyOncePrice: Math.min(...filteredVariants.map(v => v.buyOncePrice || productWithPricing.buyOncePrice || 0))
+      }
+    }).filter(Boolean) as ProductWithPricing[]
 
     console.log(`Filtered ${filtered.length} products out of ${products.length}`)
-    if (filters.brands.includes('Fruits') || filters.brands.includes('fruits')) {
-      console.log('Products with Fruits filter:', filtered.map(p => ({
-        name: p.product.name,
-        tags: p.product.tags
-      })))
-    }
-
+    
     return filtered
   }, [products, filters])
 
@@ -358,7 +361,7 @@ export default function CategoryProductsPage() {
         newFilters = { ...filters, discount: 0 }
         break
       case "price":
-        newFilters = { ...filters, priceRange: [0, 10000] }
+        newFilters = { ...filters, priceRange: priceRange as [number, number] }
         break
       case "search":
         newFilters = { ...filters, searchQuery: "" }
@@ -375,7 +378,7 @@ export default function CategoryProductsPage() {
     const newFilters = {
       categories: [],
       brands: [],
-      priceRange: [0, 10000] as [number, number],
+      priceRange: priceRange as [number, number],
       rating: 0,
       discount: 0,
       availability: [],
@@ -386,16 +389,36 @@ export default function CategoryProductsPage() {
   }
 
   const handleAddToCart = (product: ProductWithPricing, variant?: DepotVariant, qty?: number) => {
-    // Simple add to cart handler - in a real app this would integrate with cart state
-    console.log('Adding to cart:', {
-      product: product.product.name,
-      variant: variant?.name,
-      quantity: qty || 1,
-      price: variant?.buyOncePrice || product.buyOncePrice
-    })
-
-    // You can add toast notification here
-    // toast.success(`Added ${product.product.name} to cart`)
+    try {
+      const quantity = qty || 1;
+      
+      // CartContext addItem expects product, variant, and quantity parameters
+      // If no variant is provided, use the first depot variant or create a default one
+      const variantToUse = variant || {
+        id: product.product.id, // Use product ID as fallback
+        name: 'Default',
+        buyOncePrice: product.buyOncePrice,
+        mrp: product.buyOncePrice,
+        inStock: product.inStock,
+        isActive: true
+      };
+      
+      // Add item to cart using the cart context with correct parameters
+      addItem(product, variantToUse, quantity);
+      
+      // Show success notification
+      toast.success(`Added ${product.product.name} to cart`);
+      
+      console.log('Successfully added to cart:', {
+        product: product.product.name,
+        variant: variantToUse?.name,
+        quantity,
+        price: variantToUse.buyOncePrice
+      });
+    } catch (error) {
+      console.error('Failed to add item to cart:', error);
+      toast.error('Failed to add item to cart');
+    }
   }
 
   // Show loading state

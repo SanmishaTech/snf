@@ -55,6 +55,12 @@ const formatPeriod = (
   }
 
   const periodStr = String(inputPeriod);
+  
+  // Explicitly handle buy-once semantics
+  if (periodStr === "0") {
+    return "Buy Once";
+  }
+  
   const numericEquivalentMap: Record<string, string> = {
     "7": "7 Days",
     "15": "15 Days",
@@ -81,7 +87,8 @@ const formatDeliveryScheduleText = (
   schedule: ExtendedMemberSubscription["deliverySchedule"],
   selectedDays?: string[] | null,
   qty?: number,
-  altQty?: number | null
+  altQty?: number | null,
+  unitLabel?: string
 ) => {
   let scheduleText = "";
   switch (schedule) {
@@ -103,11 +110,12 @@ const formatDeliveryScheduleText = (
     default:
       scheduleText = schedule as string;
   }
+  const label = unitLabel || "unit(s)";
   if (schedule === "VARYING" && qty && altQty) {
     return `${scheduleText} (${qty} / ${altQty})`;
   }
   if (qty) {
-    return `${scheduleText} - ${qty} unit(s)`;
+    return `${scheduleText} - ${qty} ${label}`;
   }
   return scheduleText;
 };
@@ -410,13 +418,12 @@ const ManageSubscriptionPage: React.FC = () => {
           </p>
           <p>
             <strong>Quantity:</strong> {subscription.qty}{" "}
-            {subscription.product.unit}
-            {subscription.qty > 1 ? "s" : ""}
+            {subscription.product.depotVariant?.name || subscription.product.unit || "unit"}
             {subscription.altQty ? (
               <>
                 {" "}
-                &amp; {subscription.altQty} {subscription.product.unit}
-                {subscription.altQty > 1 ? "s" : ""}
+                &amp; {subscription.altQty}{" "}
+                {subscription.product.depotVariant?.name || subscription.product.unit || "unit"}
               </>
             ) : null}
           </p>
@@ -437,7 +444,8 @@ const ManageSubscriptionPage: React.FC = () => {
               subscription.deliverySchedule,
               subscription.selectedDays,
               subscription.qty,
-              subscription.altQty
+              subscription.altQty,
+              subscription.product.depotVariant?.name || subscription.product.unit || "unit"
             )}
           </p>
           {subscription.paymentStatus && (
@@ -480,7 +488,7 @@ const ManageSubscriptionPage: React.FC = () => {
             <Button
               onClick={() => {
                 const baseUrl =
-                  import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+                  import.meta.env.VITE_BACKEND_URL || "https://snf.3.7.237.251.sslip.io/";
                 const invoiceUrl = `${baseUrl}/invoices/${subscription.productOrder.invoicePath}`;
                 window.open(invoiceUrl);
               }}

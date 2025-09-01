@@ -5,6 +5,7 @@ import {
   deleteDepotProductVariant,
 } from "../../services/depotProductVariantService";
 import DepotProductVariantForm from "./DepotProductVariantForm";
+import { get } from "../../services/apiService";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -52,6 +53,11 @@ const DepotProductVariantListPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const recordsPerPage = 10;
 
+  // User role and depot filtering state
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+  const [currentUserDepotId, setCurrentUserDepotId] = useState<number | null>(null);
+  const [isUserInfoLoading, setIsUserInfoLoading] = useState(false);
+
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingVariant, setEditingVariant] =
     useState<DepotProductVariant | null>(null);
@@ -61,18 +67,111 @@ const DepotProductVariantListPage: React.FC = () => {
     null
   );
 
+  // Get user role and depot information from localStorage (fallback to /users/me)
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const userStr = localStorage.getItem("user");
+        let role: string | null = null;
+        let depotIdFromStorage: number | null = null;
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          role = user?.role || null;
+          // Try multiple shapes: direct depotId or nested depot.id
+          depotIdFromStorage = user?.depotId ?? user?.depot?.id ?? null;
+        }
+        setCurrentUserRole(role);
+
+        const normalizedRole = (role || "").toString().toUpperCase();
+        const isDepotRole = normalizedRole === "DEPOTADMIN" || normalizedRole.includes("DEPOT");
+
+        if (isDepotRole) {
+          // Prefer depotId from localStorage, fallback to /users/me
+          if (depotIdFromStorage) {
+            setCurrentUserDepotId(Number(depotIdFromStorage));
+          } else {
+            setIsUserInfoLoading(true);
+            try {
+              const userInfo = await get("/users/me");
+              setCurrentUserDepotId(
+                userInfo?.depot?.id || userInfo?.depotId || null
+              );
+            } catch (error) {
+              console.error("Failed to fetch user depot info:", error);
+              toast.error("Could not load depot details.");
+              setCurrentUserDepotId(null);
+            } finally {
+              setIsUserInfoLoading(false);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Failed to parse user data from localStorage", error);
+      }
+    };
+    fetchUserInfo();
+  }, []);
+
   const fetchVariants = useCallback(async () => {
+    // Don't fetch if depot user info is still loading
+    const normalizedRole = (currentUserRole || "").toString().toUpperCase();
+    const isDepotRole = normalizedRole === "DEPOTADMIN" || normalizedRole.includes("DEPOT");
+
+    if (isDepotRole && isUserInfoLoading) {
+      return;
+    }
+    
+    // Don't fetch if depot role but no depot assigned
+    if (isDepotRole && !currentUserDepotId && !isUserInfoLoading) {
+      setVariants([]);
+      setTotalPages(0);
+      toast.info("No depot assigned to your account. Please contact administrator.");
+      return;
+    }
+
     try {
-      const data = await getDepotProductVariants({
+      const params: any = {
         page: currentPage,
         limit: recordsPerPage,
-      });
-      setVariants(data.data);
+      };
+
+      // Add depot filtering if user is a depot user
+      if (isDepotRole && currentUserDepotId) {
+        params.depotId = currentUserDepotId;
+      }
+
+      // Add search parameter if search term exists
+      if (searchTerm.trim()) {
+        params.search = searchTerm.trim();
+      }
+
+      const data = await getDepotProductVariants(params);
+
+      // Frontend safeguard: if depot role, filter by depotId just in case backend ignores depotId filter
+      const serverData = Array.isArray(data.data) ? data.data : [];
+      const filtered = isDepotRole && currentUserDepotId
+        ? serverData.filter((v: any) => Number(v.depotId) === Number(currentUserDepotId) || Number(v?.depot?.id) === Number(currentUserDepotId))
+        : serverData;
+      setVariants(filtered);
       setTotalPages(data.totalPages);
     } catch (err: any) {
       toast.error(err.message || "Failed to fetch variants");
     }
-  }, [currentPage]);
+  }, [currentPage, currentUserRole, currentUserDepotId, isUserInfoLoading, searchTerm]);
+
+  // Debounced search effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      // Reset to first page when search changes
+      if (currentPage !== 1) {
+        setCurrentPage(1);
+      } else {
+        fetchVariants();
+      }
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
 
   useEffect(() => {
     fetchVariants();
@@ -152,13 +251,11 @@ const DepotProductVariantListPage: React.FC = () => {
       >
         <div className="bg-white p-8 rounded-xl shadow-lg">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-semibold text-gray-800">
-              Depot Product Variants
-            </h1>
+            <h1 className="text-3xl font-semibold text-gray-800">Depot Product Variants</h1>
             <div className="flex flex-col md:flex-row gap-2 items-center">
               <div className="relative w-full max-md:w-2/5">
                 <Input
-                  placeholder="Search..."
+                  placeholder="Search products, depots..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 min-h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -202,37 +299,70 @@ const DepotProductVariantListPage: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody className="divide-y divide-gray-200">
-                {variants.map((v) => (
-                  <TableRow key={v.id} className="hover:bg-gray-50">
-                    {/* <TableCell className="px-6 py-4 text-sm">{v.id}</TableCell> */}
-                    <TableCell className="px-6 py-4 text-sm">
-                      {v?.depot?.name ?? v.depotId}
-                    </TableCell>
-                    <TableCell className="px-6 py-4 text-sm">
-                      {v?.product?.name}
-                    </TableCell>
-                    <TableCell className="px-6 py-4 text-sm font-medium">
-                      {v.name}
-                    </TableCell>
-                    <TableCell className="px-6 py-4 text-sm">
-                      {v.closingQty}
-                    </TableCell>
-                    <TableCell className="px-6 py-4 text-sm space-x-3">
-                      <button
-                        onClick={() => handleEdit(v)}
-                        className="text-blue-600 hover:text-blue-800"
-                      >
-                        <Edit size={18} />
-                      </button>
-                      <button
-                        onClick={() => confirmDelete(v.id)}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                {isUserInfoLoading ? (
+                  // Loading state
+                  <TableRow>
+                    <TableCell colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                      <div className="flex items-center justify-center space-x-2">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+                        <span>Loading depot information...</span>
+                      </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : variants.length === 0 ? (
+                  // Empty state
+                  <TableRow>
+                    <TableCell colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                      <div className="flex flex-col items-center space-y-2">
+                        <PlusCircle size={48} className="text-gray-400" />
+                        <span className="text-lg font-medium">
+                          {((currentUserRole || "").toUpperCase().includes("DEPOT")) 
+                            ? "No product variants found for your depot" 
+                            : "No depot product variants found"}
+                        </span>
+                        <span className="text-sm">
+                          {((currentUserRole || "").toUpperCase().includes("DEPOT")) 
+                            ? "Contact your administrator to add variants for your depot." 
+                            : "Click 'Add New Variant' to create your first variant."}
+                        </span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  variants.map((v) => (
+                    <TableRow key={v.id} className="hover:bg-gray-50">
+                      {/* <TableCell className="px-6 py-4 text-sm">{v.id}</TableCell> */}
+                      <TableCell className="px-6 py-4 text-sm">
+                        {v?.depot?.name ?? v.depotId}
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-sm">
+                        {v?.product?.name}
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-sm font-medium">
+                        {v.name}
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-sm">
+                        {v.closingQty}
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-sm space-x-3">
+                        <button
+                          onClick={() => handleEdit(v)}
+                          className="text-blue-600 hover:text-blue-800"
+                          title="Edit variant"
+                        >
+                          <Edit size={18} />
+                        </button>
+                        <button
+                          onClick={() => confirmDelete(v.id)}
+                          className="text-red-600 hover:text-red-800"
+                          title="Delete variant"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>

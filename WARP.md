@@ -19,8 +19,8 @@ Common commands
 - Start dev server
   - npm run dev
   - Optional: set backend URL (overrides config.ts auto-detect)
-    - VITE_BACKEND_URL=http://localhost:3000 npm run dev
-    - Notes: vite.config.ts proxies /api -> http://localhost:3000; config.ts also uses VITE_BACKEND_URL or current host.
+    - VITE_BACKEND_URL=https://snf.3.7.237.251.sslip.io/ npm run dev
+    - Notes: vite.config.ts proxies /api -> https://snf.3.7.237.251.sslip.io/; config.ts also uses VITE_BACKEND_URL or current host.
 - Build production bundle
   - npm run build
 - Static preview of production build
@@ -38,7 +38,7 @@ Environment and configuration
 
 - Environment variables (Vite, exposed as import.meta.env.\*)
   - VITE_APP_NAME: document title and branding (default: "SNF")
-  - VITE_BACKEND_URL: base server URL (without trailing /api). If unset, dev uses http://localhost:3000 and prod derives from window.location.hostname.
+  - VITE_BACKEND_URL: base server URL (without trailing /api). If unset, dev uses https://snf.3.7.237.251.sslip.io/ and prod derives from window.location.hostname.
   - VITE_ALLOW_REGISTRATION: "true" to enable registration paths
 - HTTP layer
   - src/services/apiService.ts creates an axios instance with baseURL from backendUrl (config.ts). It ensures URLs are prefixed with /api, adds Authorization: Bearer <token> from localStorage, and intercepts 401/403 to redirect to login (except on auth pages and certain landing calls).
@@ -81,8 +81,8 @@ Testing model
 
 Local dev against backend
 
-- vite.config.ts defines a dev server proxy for /api -> http://localhost:3000
-- src/config.ts will default backendUrl to http://localhost:3000 in dev; in prod, it prefers VITE_BACKEND_URL or derives from window.location.hostname
+- vite.config.ts defines a dev server proxy for /api -> https://snf.3.7.237.251.sslip.io/
+- src/config.ts will default backendUrl to https://snf.3.7.237.251.sslip.io/ in dev; in prod, it prefers VITE_BACKEND_URL or derives from window.location.hostname
 - To point at a different backend in dev: VITE_BACKEND_URL=http://127.0.0.1:8080 npm run dev
 
 Repository notes

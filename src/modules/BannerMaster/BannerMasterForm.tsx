@@ -25,7 +25,7 @@ const API_BASE_URL = "/api/admin/banners";
 const BACKEND_URL =
   import.meta.env.VITE_BACKEND_URL === "production"
     ? ""
-    : "http://localhost:3000"; // Adjust as needed for production
+    : "https://snf.3.7.237.251.sslip.io/"; // Adjust as needed for production
 
 const ACCEPTED_IMAGE_TYPES = [
   "image/jpeg",

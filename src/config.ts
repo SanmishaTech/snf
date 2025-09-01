@@ -17,7 +17,7 @@ const getBackendUrl = () => {
   }
 
   // Default for development
-  return "http://localhost:3000";
+  return "https://snf.3.7.237.251.sslip.io/";
 };
 
 export const backendUrl = getBackendUrl();

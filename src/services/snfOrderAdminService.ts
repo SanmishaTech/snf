@@ -15,6 +15,7 @@ export interface SNFOrderListItem {
   paymentStatus: string;
   invoiceNo?: string | null;
   invoicePath?: string | null;
+  deliveryDate?: string | null;
   createdAt: string;
   depot?: {
     id: number;

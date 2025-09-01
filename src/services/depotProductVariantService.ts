@@ -36,6 +36,7 @@ export const getDepotProductVariants = async (params: {
   page?: number;
   limit?: number;
   productId?: number;
+  depotId?: number;
 } = {}): Promise<PaginatedDepotVariantsResponse> => {
   return await get<PaginatedDepotVariantsResponse>(API_BASE_URL, params);
 };

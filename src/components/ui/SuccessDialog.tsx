@@ -74,12 +74,7 @@ export const SuccessDialog: React.FC<SuccessDialogProps> = ({
                     <span className="font-medium">{orderDetails.productName}</span>
                   </div>
                 )}
-                {orderDetails.quantity && (
-                  <div className="flex justify-between">
-                    <span>Quantity:</span>
-                    <span className="font-medium">{orderDetails.quantity}</span>
-                  </div>
-                )}
+                {/* Don't show quantity for buy-once orders as it's included in productName */}
                 {orderDetails.deliveryDate && (
                   <div className="flex justify-between items-center">
                     <span>Delivery Date:</span>

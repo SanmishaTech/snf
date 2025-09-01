@@ -15,6 +15,7 @@ import { DeliveryLocationService, DeliveryLocation } from "@/services/deliveryLo
 import { toast } from "sonner";
 import AddressSelector from "./AddressSelector";
 import { type DeliveryAddress } from "../hooks/useAddresses";
+import DeliveryScheduleDisplay from "./DeliveryScheduleDisplay";
 
 const currency = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -43,6 +44,7 @@ const CheckoutPage: React.FC = () => {
   const unavailableItems = getUnavailableItems();
 
   const [selectedAddress, setSelectedAddress] = useState<DeliveryAddress | null>(null);
+  const [selectedDeliveryDate, setSelectedDeliveryDate] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [deliveryLocation, setDeliveryLocation] = useState<DeliveryLocation | null>(null);
   const [walletBalance, setWalletBalance] = useState<number>(0);
@@ -55,10 +57,24 @@ const CheckoutPage: React.FC = () => {
   // Track if we have items to avoid unnecessary validations
   hasItemsRef.current = state.items.length > 0;
 
-  // Load delivery location on component mount
+  // Load delivery location on component mount and when depot changes
   useEffect(() => {
     const location = DeliveryLocationService.getCurrentLocation();
     setDeliveryLocation(location);
+  }, [currentDepotId]);
+
+  // Listen for delivery location changes from localStorage (e.g., when set via header)
+  useEffect(() => {
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'snf.deliveryLocation' || event.key === null) {
+        const newLocation = DeliveryLocationService.getCurrentLocation();
+        console.log('[CheckoutPage] Delivery location changed via storage:', newLocation);
+        setDeliveryLocation(newLocation);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   // Initial validation when component mounts with existing items
@@ -105,6 +121,12 @@ const CheckoutPage: React.FC = () => {
         isValidating
       });
     }
+    
+    // Reset selected delivery date when depot changes
+    if (depotChanged && currentDepotId) {
+      console.log('[CheckoutPage] Resetting delivery date due to depot change');
+      setSelectedDeliveryDate('');
+    }
   }, [currentDepotId, isValidating]);
 
   // Fetch wallet balance for breakdown and deduction
@@ -132,7 +154,7 @@ const CheckoutPage: React.FC = () => {
     fetchWallet();
   }, []);
 
-  const isFormValid = selectedAddress !== null;
+  const isFormValid = selectedAddress !== null && selectedDeliveryDate !== '';
 
   const handlePlaceOrder = async () => {
     if (availableItems.length === 0 || !isFormValid || loading) return;
@@ -171,6 +193,11 @@ const CheckoutPage: React.FC = () => {
         return;
       }
 
+      if (!selectedDeliveryDate) {
+        toast.error("Please select a delivery date");
+        return;
+      }
+
       const payload = {
         customer: {
           name: selectedAddress.recipientName,
@@ -193,6 +220,7 @@ const CheckoutPage: React.FC = () => {
         paymentDate: null,
         depotId: depotId || null, // Include depot ID from delivery location
         deliveryAddressId: selectedAddress.id, // Include the selected address ID
+        deliveryDate: selectedDeliveryDate, // Include the selected delivery date
       };
       const res = await snfOrderService.createOrder(payload);
       toast.success(`Order created: ${res.data.orderNo}`);
@@ -414,6 +442,15 @@ const CheckoutPage: React.FC = () => {
                   </CardContent>
                 </Card>
 
+                {/* Delivery Schedule Display */}
+                {deliveryLocation && deliveryLocation.deliverySchedule && (
+                  <DeliveryScheduleDisplay
+                    deliverySchedule={deliveryLocation.deliverySchedule}
+                    selectedDate={selectedDeliveryDate}
+                    onDateSelect={setSelectedDeliveryDate}
+                  />
+                )}
+
                 <AddressSelector
                   selectedAddressId={selectedAddress?.id}
                   onAddressSelect={setSelectedAddress}
@@ -552,6 +589,11 @@ const CheckoutPage: React.FC = () => {
                     {!selectedAddress && availableItems.length > 0 && (
                       <p className="text-xs text-red-600 text-center">
                         Please select a delivery address to continue
+                      </p>
+                    )}
+                    {selectedAddress && !selectedDeliveryDate && availableItems.length > 0 && (
+                      <p className="text-xs text-red-600 text-center">
+                        Please select a delivery date to continue
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground text-center">

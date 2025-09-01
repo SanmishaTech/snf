@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { MultiSelect } from '@/components/ui/MultiSelect';
 
 interface AreaMasterFormProps {
   initialData?: AreaMaster;
@@ -29,12 +30,24 @@ const AreaMasterForm: React.FC<AreaMasterFormProps> = ({ initialData, onClose, o
     cityId: null, // cityId added
     deliveryType: DeliveryType.HandDelivery,
     isDairyProduct: false,
+    deliverySchedule: [],
   });
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [depots, setDepots] = useState<DepotListItem[]>([]);
   const [cities, setCities] = useState<City[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pincodeTags, setPincodeTags] = useState<string[]>([]);
+
+  // Delivery schedule options
+  const deliveryScheduleOptions = [
+    { label: 'Sunday', value: 'sunday' },
+    { label: 'Monday', value: 'monday' },
+    { label: 'Tuesday', value: 'tuesday' },
+    { label: 'Wednesday', value: 'wednesday' },
+    { label: 'Thursday', value: 'thursday' },
+    { label: 'Friday', value: 'friday' },
+    { label: 'Saturday', value: 'saturday' },
+  ];
 
   useEffect(() => {
     if (initialData && depots.length > 0 && cities.length > 0) {
@@ -45,6 +58,7 @@ const AreaMasterForm: React.FC<AreaMasterFormProps> = ({ initialData, onClose, o
         cityId: initialData.cityId || null, // City association
         deliveryType: initialData.deliveryType || DeliveryType.HandDelivery, // Ensure valid DeliveryType
         isDairyProduct: initialData.isDairyProduct || false,
+        deliverySchedule: initialData.deliverySchedule || [],
       });
     } else if (!initialData) {
       // Reset for new form only if initialData is not present
@@ -55,6 +69,7 @@ const AreaMasterForm: React.FC<AreaMasterFormProps> = ({ initialData, onClose, o
         cityId: null,
         deliveryType: DeliveryType.HandDelivery,
         isDairyProduct: false,
+        deliverySchedule: [],
       });
     }
   }, [initialData, depots, cities]);
@@ -134,6 +149,9 @@ const AreaMasterForm: React.FC<AreaMasterFormProps> = ({ initialData, onClose, o
     if (!formData.deliveryType) {
       newErrors.deliveryType = 'Delivery type is required';
     }
+    if (!formData.deliverySchedule || formData.deliverySchedule.length === 0) {
+      newErrors.deliverySchedule = 'At least one delivery schedule option is required';
+    }
     // Depot is now optional, no validation required
     // City is optional too, no validation required
     setErrors(newErrors);
@@ -173,6 +191,14 @@ const AreaMasterForm: React.FC<AreaMasterFormProps> = ({ initialData, onClose, o
     setFormData(prevFormData => ({
       ...prevFormData,
       [name]: checked,
+    }));
+  };
+
+  // Handler for delivery schedule multi-select
+  const handleDeliveryScheduleChange = (selectedValues: string[]) => {
+    setFormData(prevFormData => ({
+      ...prevFormData,
+      deliverySchedule: selectedValues,
     }));
   };
 
@@ -337,6 +363,24 @@ const AreaMasterForm: React.FC<AreaMasterFormProps> = ({ initialData, onClose, o
           </SelectContent>
         </Select>
         {errors.deliveryType && <p className="mt-1 text-xs text-red-500">{errors.deliveryType}</p>}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="deliverySchedule">
+          Delivery Schedule <span className="text-red-500">*</span>
+        </Label>
+        <MultiSelect
+          options={deliveryScheduleOptions}
+          onValueChange={handleDeliveryScheduleChange}
+          defaultValue={formData.deliverySchedule}
+          placeholder="Select delivery days"
+          maxCount={5}
+          className={`w-full ${errors.deliverySchedule ? 'border-red-500' : ''}`}
+        />
+        {errors.deliverySchedule && <p className="mt-1 text-xs text-red-500">{errors.deliverySchedule}</p>}
+        <p className="text-xs text-gray-600">
+          Select the days when deliveries are available in this area. You can choose specific days or predefined schedules.
+        </p>
       </div>
 
       <div className="space-y-2">

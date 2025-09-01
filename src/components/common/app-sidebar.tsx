@@ -11,6 +11,7 @@ import {
   Briefcase,
   ChevronDown,
   BarChart3,
+  ArrowRightLeft,
 } from "lucide-react";
 
 import { NavUser } from "@/components/common/nav-user";
@@ -23,6 +24,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { appName } from "@/config";
 import { useLocation, Link } from "react-router-dom";
@@ -55,6 +57,12 @@ const initialData = {
       projects: [
         //master
         {
+          title: "Unit Conversion",
+          url: "/admin/unit-conversion",
+          icon: ArrowRightLeft,
+          groupLabel: "Master",
+        },
+        {
           title: "Transfers",
           url: "/admin/transfers",
           icon: FileText,
@@ -72,18 +80,19 @@ const initialData = {
           icon: FileText,
           groupLabel: "Master",
         },
-        {
-          title: "Variant Stock",
-          url: "/admin/variantstock",
-          icon: FileText,
-          groupLabel: "Master",
-        },
+        // {
+        //   title: "Variant Stock",
+        //   url: "/admin/variantstock",
+        //   icon: FileText,
+        //   groupLabel: "Master",
+        // },
         {
           title: "Wastage",
           url: "/admin/wastages",
           icon: FileText,
           groupLabel: "Master",
         },
+        
         {
           title: "Areas",
           url: "/admin/areamasters",
@@ -165,6 +174,7 @@ const initialData = {
         //   icon: FileText,
         //   groupLabel: "Indraai",
         // },
+        
         {
           title: "Subscriptions",
           url: "/admin/subscriptions",
@@ -316,6 +326,12 @@ const initialData = {
     DepotAdmin: {
       projects: [
         {
+          title: "Unit Conversion",
+          url: "/admin/unit-conversion",
+          icon: ArrowRightLeft,
+          groupLabel: "Depot",
+        },
+        {
           title: "Purchases",
           url: "/admin/purchases",
           icon: FileText,
@@ -339,6 +355,7 @@ const initialData = {
           icon: FileText,
           groupLabel: "Depot",
         },
+       
         {
           title: "Purchase Report",
           url: "/admin/reports/purchases",
@@ -418,6 +435,7 @@ interface AppSidebarProps {}
 
 export function AppSidebar(props: AppSidebarProps) {
   const { pathname } = useLocation();
+  const { state } = useSidebar();
   const [data, setData] = React.useState({
     ...initialData,
     projects: [] as typeof initialData.roles.super_admin.projects,
@@ -528,6 +546,15 @@ export function AppSidebar(props: AppSidebarProps) {
     return groups;
   }, {} as Record<string, typeof data.projects>);
 
+  // Create a flat list of all navigation items for collapsed mode
+  const allNavItems = [
+    ...data.projects,
+    ...data.navMain,
+    ...(data.isOB ? data.obNav.flatMap(nav => nav.items || []) : [])
+  ];
+
+  const isCollapsed = state === "collapsed";
+
   return (
     <Sidebar
       collapsible="icon"
@@ -544,9 +571,11 @@ export function AppSidebar(props: AppSidebarProps) {
               <div className="flex items-center gap-2 justify-between">
                 <Link to="/" className="flex items-center gap-2">
                   <ArrowUpCircleIcon className="h-5 w-5 text-white" />
-                  <span className="text-sm font-medium text-white">
-                    {appName}
-                  </span>
+                  {!isCollapsed && (
+                    <span className="text-sm font-medium text-white">
+                      {appName}
+                    </span>
+                  )}
                 </Link>
               </div>
             </SidebarMenuButton>
@@ -554,122 +583,155 @@ export function AppSidebar(props: AppSidebarProps) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent className="space-y-1 overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden bg-[#1d398d]">
-        {data.isOB && (
-          <div className="mb-4">
-            <div className="px-3 py-2 text-xs font-medium text-blue-200 border-b border-[#1d398d]/30 mb-2">
-              Office Bearer Menu
-            </div>
-            {data.obNav.map((navGroup) => (
-              <div key={navGroup.title} className="mb-3">
-                <div className="px-3 py-2 text-sm font-medium text-blue-200 flex items-center gap-2">
-                  <navGroup.icon className="h-4 w-4 text-blue-300" />
-                  {navGroup.title}
-                </div>
-                <div className="ml-6">
-                  {navGroup.items?.map((item) => (
-                    <Link
-                      key={item.url}
-                      to={item.url}
-                      className={cn(
-                        "block w-full px-3 py-2 text-sm transition-colors",
-                        pathname === item.url
-                          ? "bg-white text-[#1d398d] rounded-md font-medium shadow-sm"
-                          : "text-blue-100 hover:bg-white/15 hover:text-white rounded-md"
-                      )}
-                    >
-                      {item.title}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Grouped navigation items */}
-        <div className="space-y-2">
-          {Object.entries(groupedItems).map(([groupLabel, items]) => (
-            <div key={groupLabel} className="mb-2">
-              <Collapsible
-                open={openGroups[groupLabel]}
-                onOpenChange={() => toggleGroup(groupLabel)}
-              >
-                <CollapsibleTrigger className="w-full">
-                  <div className="px-3 py-2 flex items-center justify-between text-sm font-medium text-blue-200 hover:bg-white/10 cursor-pointer transition-colors rounded-md">
-                    <div className="flex items-center gap-2">
-                      <ChevronDown
-                        className={`h-4 w-4 transition-transform text-blue-300 ${
-                          openGroups[groupLabel] ? "rotate-0" : "-rotate-90"
-                        }`}
-                      />
-                      <span>{groupLabel}</span>
-                    </div>
-                    <span className="text-xs text-blue-100 bg-white/20 px-2 py-1 rounded-full font-medium">
-                      {items.length}
-                    </span>
-                  </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className="ml-6 mt-1">
-                    {items.map((item) => (
-                      <Link
-                        key={item.url}
-                        to={item.url}
-                        className={cn(
-                          "flex items-center gap-2 px-3 py-2 text-sm transition-colors",
-                          pathname === item.url
-                            ? "bg-white text-[#1d398d] rounded-md font-medium shadow-sm"
-                            : "text-blue-100 hover:bg-white/15 hover:text-white rounded-md"
-                        )}
-                      >
-                        {item.icon && (
-                          <item.icon
-                            className={cn(
-                              "h-4 w-4 flex-shrink-0",
-                              pathname === item.url
-                                ? "text-[#1d398d]"
-                                : "text-blue-200"
-                            )}
-                          />
-                        )}
-                        <span>{item.title}</span>
-                      </Link>
-                    ))}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            </div>
-          ))}
-        </div>
-
-        {/* Additional navigation groups */}
-        {data.navMain.length > 0 && (
-          <>
-            <div className="px-3 py-2 text-xs font-medium text-blue-200 border-b border-[#1d398d]/30 mt-4 mb-2">
-              Management
-            </div>
-            {data.navMain.map((item) => (
+        {isCollapsed ? (
+          // Collapsed mode - show all items as icons only
+          <div className="space-y-1 px-2">
+            {allNavItems.map((item, index) => (
               <Link
-                key={item.url}
+                key={`${item.url}-${index}`}
                 to={item.url}
                 className={cn(
-                  "flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors",
+                  "flex items-center justify-center p-2 text-sm transition-colors rounded-md",
                   pathname === item.url
-                    ? "bg-white text-[#1d398d] rounded-md font-medium shadow-sm"
-                    : "text-blue-100 hover:bg-white/15 hover:text-white rounded-md"
+                    ? "bg-white text-[#1d398d] shadow-sm"
+                    : "text-blue-100 hover:bg-white/15 hover:text-white"
                 )}
+                title={item.title}
               >
                 {item.icon && (
                   <item.icon
                     className={cn(
-                      "h-4 w-4",
-                      pathname === item.url ? "text-[#1d398d]" : "text-blue-200"
+                      "h-5 w-5",
+                      pathname === item.url
+                        ? "text-[#1d398d]"
+                        : "text-blue-200"
                     )}
                   />
                 )}
-                <span>{item.title}</span>
               </Link>
             ))}
+          </div>
+        ) : (
+          // Expanded mode - show grouped navigation
+          <>
+            {data.isOB && (
+              <div className="mb-4">
+                <div className="px-3 py-2 text-xs font-medium text-blue-200 border-b border-[#1d398d]/30 mb-2">
+                  Office Bearer Menu
+                </div>
+                {data.obNav.map((navGroup) => (
+                  <div key={navGroup.title} className="mb-3">
+                    <div className="px-3 py-2 text-sm font-medium text-blue-200 flex items-center gap-2">
+                      <navGroup.icon className="h-4 w-4 text-blue-300" />
+                      {navGroup.title}
+                    </div>
+                    <div className="ml-6">
+                      {navGroup.items?.map((item) => (
+                        <Link
+                          key={item.url}
+                          to={item.url}
+                          className={cn(
+                            "block w-full px-3 py-2 text-sm transition-colors",
+                            pathname === item.url
+                              ? "bg-white text-[#1d398d] rounded-md font-medium shadow-sm"
+                              : "text-blue-100 hover:bg-white/15 hover:text-white rounded-md"
+                          )}
+                        >
+                          {item.title}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Grouped navigation items */}
+            <div className="space-y-2">
+              {Object.entries(groupedItems).map(([groupLabel, items]) => (
+                <div key={groupLabel} className="mb-2">
+                  <Collapsible
+                    open={openGroups[groupLabel]}
+                    onOpenChange={() => toggleGroup(groupLabel)}
+                  >
+                    <CollapsibleTrigger className="w-full">
+                      <div className="px-3 py-2 flex items-center justify-between text-sm font-medium text-blue-200 hover:bg-white/10 cursor-pointer transition-colors rounded-md">
+                        <div className="flex items-center gap-2">
+                          <ChevronDown
+                            className={`h-4 w-4 transition-transform text-blue-300 ${
+                              openGroups[groupLabel] ? "rotate-0" : "-rotate-90"
+                            }`}
+                          />
+                          <span>{groupLabel}</span>
+                        </div>
+                        <span className="text-xs text-blue-100 bg-white/20 px-2 py-1 rounded-full font-medium">
+                          {items.length}
+                        </span>
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="ml-6 mt-1">
+                        {items.map((item) => (
+                          <Link
+                            key={item.url}
+                            to={item.url}
+                            className={cn(
+                              "flex items-center gap-2 px-3 py-2 text-sm transition-colors",
+                              pathname === item.url
+                                ? "bg-white text-[#1d398d] rounded-md font-medium shadow-sm"
+                                : "text-blue-100 hover:bg-white/15 hover:text-white rounded-md"
+                            )}
+                          >
+                            {item.icon && (
+                              <item.icon
+                                className={cn(
+                                  "h-4 w-4 flex-shrink-0",
+                                  pathname === item.url
+                                    ? "text-[#1d398d]"
+                                    : "text-blue-200"
+                                )}
+                              />
+                            )}
+                            <span>{item.title}</span>
+                          </Link>
+                        ))}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </div>
+              ))}
+            </div>
+
+            {/* Additional navigation groups */}
+            {data.navMain.length > 0 && (
+              <>
+                <div className="px-3 py-2 text-xs font-medium text-blue-200 border-b border-[#1d398d]/30 mt-4 mb-2">
+                  Management
+                </div>
+                {data.navMain.map((item) => (
+                  <Link
+                    key={item.url}
+                    to={item.url}
+                    className={cn(
+                      "flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors",
+                      pathname === item.url
+                        ? "bg-white text-[#1d398d] rounded-md font-medium shadow-sm"
+                        : "text-blue-100 hover:bg-white/15 hover:text-white rounded-md"
+                    )}
+                  >
+                    {item.icon && (
+                      <item.icon
+                        className={cn(
+                          "h-4 w-4",
+                          pathname === item.url ? "text-[#1d398d]" : "text-blue-200"
+                        )}
+                      />
+                    )}
+                    <span>{item.title}</span>
+                  </Link>
+                ))}
+              </>
+            )}
           </>
         )}
       </SidebarContent>
