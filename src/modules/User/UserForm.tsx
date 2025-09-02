@@ -51,7 +51,7 @@ interface UserFormProps {
 }
 
 // Define the roles available for selection in the form
-const AVAILABLE_ROLES = ["VENDOR", "AGENCY", "ADMIN", "MEMBER"];
+const AVAILABLE_ROLES = ["VENDOR", "AGENCY", "ADMIN", "MEMBER", "SUPERVISOR"];
 
 const UserForm = ({ mode, userId, onSuccess, className }: UserFormProps) => {
   const roles = AVAILABLE_ROLES; // Use predefined roles directly

@@ -294,40 +294,8 @@ const UserList = () => {
 
             {/* Action Buttons */}
             <div className="flex flex-wrap items-center gap-2">
-              <Button
-                variant={
-                  showFilters || roles.length > 0 || active !== "all"
-                    ? "default"
-                    : "outline"
-                }
-                className={`
-                  ${
-                    showFilters || roles.length > 0 || active !== "all"
-                      ? "bg-primary hover:bg-primary/90 text-white shadow-sm"
-                      : "hover:bg-accent"
-                  }
-                  transition-all duration-200
-                `}
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                <Filter
-                  className={`mr-2 h-4 w-4 ${showFilters ? "text-white" : ""}`}
-                />
-                Filters
-                {(roles.length > 0 || active !== "all") && (
-                  <span className="ml-2 bg-white text-primary font-medium rounded-full px-2 py-0.5 text-xs">
-                    {roles.length + (active !== "all" ? 1 : 0)}
-                  </span>
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleExport}
-                disabled={isLoading || users.length === 0}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Export
-              </Button>
+              
+           
               <Button
                 onClick={() => setShowCreateDialog(true)}
                 className="bg-primary hover:bg-primary/90 text-white shadow-sm transition-all duration-200 hover:shadow-md"
