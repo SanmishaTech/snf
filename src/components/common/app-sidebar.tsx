@@ -209,12 +209,12 @@ const initialData = {
           icon: BarChart3,
           groupLabel: "Reports",
         },
-        // {
-        //   title: "Users",
-        //   url: "/admin/users",
-        //   icon: Briefcase,
-        //   groupLabel: "System",
-        // },
+        {
+          title: "Users",
+          url: "/admin/users",
+          icon: Briefcase,
+          groupLabel: "System",
+        },
       ],
       navMain: [],
     },
