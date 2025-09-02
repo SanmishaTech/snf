@@ -14,7 +14,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "https://snf.3.7.237.251.sslip.io/",
+        target: "https://snf.3.7.237.251.sslip.io",
         //This is https
         changeOrigin: true,
       },

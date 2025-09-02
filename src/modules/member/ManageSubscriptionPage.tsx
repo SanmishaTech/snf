@@ -488,7 +488,7 @@ const ManageSubscriptionPage: React.FC = () => {
             <Button
               onClick={() => {
                 const baseUrl =
-                  import.meta.env.VITE_BACKEND_URL || "https://snf.3.7.237.251.sslip.io/";
+                  import.meta.env.VITE_BACKEND_URL || "https://snf.3.7.237.251.sslip.io";
                 const invoiceUrl = `${baseUrl}/invoices/${subscription.productOrder.invoicePath}`;
                 window.open(invoiceUrl);
               }}

@@ -448,7 +448,7 @@ const MySubscriptionsPage: React.FC = () => {
                           try {
                             const baseUrl =
                               import.meta.env.VITE_BACKEND_URL ||
-                              "https://snf.3.7.237.251.sslip.io/";
+                              "https://snf.3.7.237.251.sslip.io";
                             const invoiceUrl = `${baseUrl}/invoices/${sub.productOrder.invoicePath}`;
 
                             // Fetch the file as blob to force download
@@ -475,7 +475,7 @@ const MySubscriptionsPage: React.FC = () => {
                             // Fallback to opening in new tab if download fails
                             const baseUrl =
                               import.meta.env.VITE_BACKEND_URL ||
-                              "https://snf.3.7.237.251.sslip.io/";
+                              "https://snf.3.7.237.251.sslip.io";
                             const invoiceUrl = `${baseUrl}/invoices/${sub.productOrder.invoicePath}`;
                             window.open(invoiceUrl, "_blank");
                           }

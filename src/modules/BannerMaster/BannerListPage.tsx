@@ -46,7 +46,7 @@ export interface Banner extends BannerFormData {
 
 const API_BASE_URL = "/api/admin/banners";
 const BACKEND_URL =
-  process.env.NODE_ENV === "production" ? "" : "https://snf.3.7.237.251.sslip.io/"; // Adjust as needed for production
+  process.env.NODE_ENV === "production" ? "" : "https://snf.3.7.237.251.sslip.io"; // Adjust as needed for production
 
 const BannerMasterListPage: React.FC = () => {
   const [banners, setBanners] = useState<Banner[]>([]);

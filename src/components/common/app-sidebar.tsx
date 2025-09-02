@@ -54,7 +54,7 @@ const initialData = {
   ],
   roles: {
     super_admin: {
-      projects: [
+      projects: [ 
         //master
         {
           title: "Unit Conversion",
@@ -168,12 +168,12 @@ const initialData = {
           icon: Briefcase,
           groupLabel: "Indraai",
         },
-        // {
-        //   title: "SNF Orders",
-        //   url: "/admin/snf-orders",
-        //   icon: FileText,
-        //   groupLabel: "Indraai",
-        // },
+        {
+          title: "SNF Orders",
+          url: "/admin/snf-orders",
+          icon: FileText,
+          groupLabel: "Indraai",
+        },
         
         {
           title: "Subscriptions",
@@ -194,10 +194,22 @@ const initialData = {
           icon: Briefcase,
           groupLabel: "Member",
         },
-        // Reports section
+        // Reports section        
         {
           title: "Purchase Order Report",
           url: "/admin/reports/purchase-orders",
+          icon: BarChart3,
+          groupLabel: "Reports",
+        },
+         {
+          title: "SNF Order Summaries Report",
+          url: "/admin/reports/delivery-date-orders",
+          icon: BarChart3,
+          groupLabel: "Reports",
+        },
+        {
+          title: "Delivery Labeling Report",
+          url: "/admin/reports/delivery-labeling",
           icon: BarChart3,
           groupLabel: "Reports",
         },
@@ -337,6 +349,7 @@ const initialData = {
           icon: FileText,
           groupLabel: "Depot",
         },
+        
         {
           title: "Wastage",
           url: "/admin/wastages",
@@ -355,7 +368,18 @@ const initialData = {
           icon: FileText,
           groupLabel: "Depot",
         },
-       
+        {
+          title: "SNF Order Summaries Report",
+          url: "/admin/reports/delivery-date-orders",
+          icon: BarChart3,
+          groupLabel: "Reports",
+        },
+        {
+          title: "Delivery Labeling Report",
+          url: "/admin/reports/delivery-labeling",
+          icon: BarChart3,
+          groupLabel: "Reports",
+        },
         {
           title: "Purchase Report",
           url: "/admin/reports/purchases",

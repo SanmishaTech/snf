@@ -75,7 +75,7 @@ const LandingPage = () => {
   };
 
   const BACKEND_URL =
-    import.meta.env.VITE_BACKEND_URL || "https://snf.3.7.237.251.sslip.io/";
+    import.meta.env.VITE_BACKEND_URL || "https://snf.3.7.237.251.sslip.io";
 
   useEffect(() => {
     const fetchProducts = async () => {

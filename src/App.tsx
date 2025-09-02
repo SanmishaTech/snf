@@ -92,6 +92,8 @@ import DeliveryReport from "./modules/Reports/DeliveryAgenciesReport";
 import DeliverySummariesReport from "./modules/Reports/DeliverySummariesReport";
 import SubscriptionReports from "./modules/Reports/SubscriptionReports";
 import SNFOrdersReport from "./modules/Reports/SNFOrdersReport";
+import DeliveryDateOrdersReport from "./modules/Reports/DeliveryDateOrdersReport";
+import DeliveryLabelingReport from "./modules/Reports/DeliveryLabelingReport";
 import DepotOrderDetails from "./modules/Order/DepotOrderDetails";
 import "./App.css";
 // MembershipList wrapper component to handle showing all memberships
@@ -396,8 +398,10 @@ const App = () => {
             <Route path="/admin/reports/purchases" element={<PurchaseReport />} /> {/* Purchase Report */}
             <Route path="/admin/reports/delivery-agencies" element={<DeliveryReport />} /> {/* Delivery Agencies Report */}
             <Route path="/admin/reports/delivery-summaries" element={<DeliverySummariesReport />} /> {/* Delivery Summaries Report */}
+            <Route path="/admin/reports/delivery-date-orders" element={<DeliveryDateOrdersReport />} /> {/* Delivery Date Orders Report */}
             <Route path="/admin/reports/subscriptions" element={<SubscriptionReports />} /> {/* Subscription Reports */}
             <Route path="/admin/reports/snf-orders" element={<SNFOrdersReport />} /> {/* SNF Orders Report */}
+            <Route path="/admin/reports/delivery-labeling" element={<DeliveryLabelingReport />} /> {/* Delivery Labeling Report */}
             <Route path="/admin/unit-conversion" element={<UnitConversionPage />} /> {/* Unit Conversion */}
             <Route path="/admin/unit-conversion/history" element={<UnitConversionHistoryPage />} /> {/* Unit Conversion History */}
 
