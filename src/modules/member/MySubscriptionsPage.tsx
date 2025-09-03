@@ -107,6 +107,7 @@ const formatPeriod = (
   const periodStr = String(inputPeriod); // Convert to string for consistent handling
 
   const numericEquivalentMap: Record<string, string> = {
+    "0": "Buy once",
     "7": "7 Days",
     "15": "15 Days",
     "30": "1 Month",
