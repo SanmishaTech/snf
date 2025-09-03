@@ -9,11 +9,12 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card"; // Added CardFooter
+import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, PackageSearch, Download, X, AlertTriangle } from "lucide-react"; // Added PackageSearch for empty state and Download for invoice
 import { Button } from "@/components/ui/button"; // Added Button
 import { Link } from "react-router-dom"; // Added Link
-import { format } from "date-fns";
+import { format, endOfDay, isAfter, parseISO } from "date-fns";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -161,6 +162,15 @@ const formatDeliverySchedule = (
     return `${scheduleText} - ${qty} unit(s)`;
   }
   return scheduleText;
+};
+
+// Determine if a subscription has expired by checking if now is after the end of the expiry date
+const isSubscriptionExpired = (expiryDate: string) => {
+  try {
+    return isAfter(new Date(), endOfDay(parseISO(expiryDate)));
+  } catch {
+    return false;
+  }
 };
 
 const MySubscriptionsPage: React.FC = () => {
@@ -331,7 +341,13 @@ const MySubscriptionsPage: React.FC = () => {
           {subscriptions?.map((sub: MemberSubscription) => (
             <Card
               key={sub.id}
-              className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out rounded-lg overflow-hidden flex flex-col"
+              className={`shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out rounded-lg overflow-hidden flex flex-col relative ${
+                (sub.status === 'CANCELLED' || sub.paymentStatus === 'CANCELLED')
+                  ? 'opacity-80 ring-1 ring-destructive/30'
+                  : isSubscriptionExpired(sub.expiryDate)
+                    ? 'opacity-75 ring-1 ring-amber-300'
+                    : ''
+              }`}
             >
               <CardHeader className="bg-gray-50 dark:bg-gray-800 pb-4">
                 <CardTitle className="text-lg font-semibold text-primary">
@@ -341,6 +357,24 @@ const MySubscriptionsPage: React.FC = () => {
                   Status: <span className={`font-medium ${sub.status === 'ACTIVE' ? 'text-green-600' : 'text-yellow-600'}`}>{sub?.status?.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase())}</span>
                 </CardDescription> */}
               </CardHeader>
+              {(sub.status === 'CANCELLED' || sub.paymentStatus === 'CANCELLED') && (
+                <Badge
+                  variant="destructive"
+                  className="absolute top-3 right-3 z-10"
+                  title="This subscription has been cancelled"
+                >
+                  Cancelled
+                </Badge>
+              )}
+              {!(sub.status === 'CANCELLED' || sub.paymentStatus === 'CANCELLED') && isSubscriptionExpired(sub.expiryDate) && (
+                <Badge
+                  variant="outline"
+                  className="absolute top-3 right-3 z-10 bg-amber-50 text-amber-700 border-amber-200"
+                  title="This subscription has expired"
+                >
+                  Expired
+                </Badge>
+              )}
               <CardContent className="space-y-2 text-sm text-gray-700 dark:text-gray-300 p-4 flex-grow">
                 {/* Debug info - remove this later */}
 
@@ -366,7 +400,12 @@ const MySubscriptionsPage: React.FC = () => {
                 </p>
                 <p>
                   <strong>Expires On:</strong>{" "}
-                  {format(new Date(sub.expiryDate), "dd/MM/yyyy")}
+                  <span className={`${isSubscriptionExpired(sub.expiryDate) ? "text-destructive font-semibold" : ""}`}>
+                    {format(new Date(sub.expiryDate), "dd/MM/yyyy")}
+                  </span>
+                  {isSubscriptionExpired(sub.expiryDate) && (
+                    <Badge variant="outline" className="ml-2 bg-amber-50 text-amber-700 border-amber-200">Expired</Badge>
+                  )}
                 </p>
 
                 <p>
