@@ -325,15 +325,24 @@ const MySubscriptionsPage: React.FC = () => {
     );
   }
 
+  // Helper function to check if subscription is truly active
+  const isSubscriptionActive = (sub: MemberSubscription) => {
+    const isCancelled = sub.status === 'CANCELLED' || sub.paymentStatus === 'CANCELLED';
+    const isExpired = isSubscriptionExpired(sub.expiryDate);
+    return !isCancelled && !isExpired;
+  };
+
+  const activeSubscriptions = subscriptions?.filter(isSubscriptionActive) || [];
+
   return (
     <div className="container mx-auto p-4 md:p-6">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
-          My Active Subscriptions
+          My Subscriptions
         </h1>
         {subscriptions && subscriptions.length > 0 && (
           <span className="px-3 py-1 text-sm font-semibold text-primary bg-primary-foreground rounded-full">
-            {subscriptions.length} Active
+            {activeSubscriptions.length} Active
           </span>
         )}
       </div>
