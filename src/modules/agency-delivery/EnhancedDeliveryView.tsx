@@ -167,6 +167,12 @@ const EnhancedDeliveryView: React.FC = () => {
   const [walletTransactions, setWalletTransactions] = useState<Record<string, WalletTransaction>>({});
   const [adminNotes, setAdminNotes] = useState<Record<string, string>>({});
 
+  // Delivery date edit modal state
+  const [showDateEditModal, setShowDateEditModal] = useState<boolean>(false);
+  const [dateEditDeliveryId, setDateEditDeliveryId] = useState<string>('');
+  const [newDeliveryDate, setNewDeliveryDate] = useState<string>('');
+  const [updatingDate, setUpdatingDate] = useState<Record<string, boolean>>({});
+
   const fetchDeliveries = useCallback(async (date: string, agencyIdForAdmin?: string) => {
     console.log(`[fetchDeliveries] Called. Date: ${date}, AdminAgencyID: ${agencyIdForAdmin}, UserRole: ${currentUser?.role}`);
     if (!currentUser) {
@@ -421,6 +427,50 @@ const EnhancedDeliveryView: React.FC = () => {
     setModalNotes('');
   };
 
+  const handleDeliveryDateUpdate = useCallback(async (deliveryId: string, newDate: string) => {
+    console.log(`[DeliveryDateUpdate] Attempting to update delivery ${deliveryId} to date ${newDate}`);
+
+    setUpdatingDate(prev => ({ ...prev, [deliveryId]: true }));
+    setError(null);
+
+    try {
+      await patch(`/admin/deliveries/${deliveryId}/delivery-date`, {
+        deliveryDate: newDate
+      });
+
+      console.log(`[DeliveryDateUpdate] Successfully updated delivery date for ${deliveryId} to ${newDate}`);
+      
+      // Update the delivery in the local state
+      setDeliveries(prevDeliveries =>
+        prevDeliveries.map(d => (d.id === deliveryId ? { ...d, deliveryDate: newDate } : d))
+      );
+      
+      toast.success(`Delivery date updated to ${new Date(newDate).toLocaleDateString()}`);
+      setShowDateEditModal(false);
+      setDateEditDeliveryId('');
+      setNewDeliveryDate('');
+
+    } catch (err: any) {
+      console.error(`[DeliveryDateUpdate] Error updating delivery date for ${deliveryId}:`, err);
+      setError(err.response?.data?.error || err.message || 'Failed to update delivery date.');
+      toast.error('Failed to update delivery date');
+    }
+
+    setUpdatingDate(prev => ({ ...prev, [deliveryId]: false }));
+  }, [setDeliveries, setError, setUpdatingDate]);
+
+  const openDateEditModal = (deliveryId: string, currentDate: string) => {
+    setDateEditDeliveryId(deliveryId);
+    setNewDeliveryDate(currentDate || new Date().toISOString().split('T')[0]);
+    setShowDateEditModal(true);
+  };
+
+  const closeDateEditModal = () => {
+    setShowDateEditModal(false);
+    setDateEditDeliveryId('');
+    setNewDeliveryDate('');
+  };
+
   const statusOptions = getStatusOptions(currentUser?.role || '');
   const selectedStatusOption = statusOptions.find(opt => opt.value === modalSelectedStatus);
 
@@ -535,6 +585,7 @@ const EnhancedDeliveryView: React.FC = () => {
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Member</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Delivery Date</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Delivery Instructions</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -557,6 +608,29 @@ const EnhancedDeliveryView: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="text-sm text-gray-900">{delivery.quantity}</span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-900">
+                        {delivery.deliveryDate ? new Date(delivery.deliveryDate).toLocaleDateString() : 'N/A'}
+                      </span>
+                      {currentUser?.role === 'ADMIN' && (
+                        <button
+                          onClick={() => openDateEditModal(delivery.id, delivery.deliveryDate || selectedDate)}
+                          disabled={updatingDate[delivery.id]}
+                          className="text-blue-600 hover:text-blue-800 disabled:text-gray-400"
+                          title="Edit delivery date"
+                        >
+                          {updatingDate[delivery.id] ? (
+                            <Spinner size="sm" color="blue" />
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                              <path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" />
+                            </svg>
+                          )}
+                        </button>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-normal max-w-xs">
                     <div className="text-sm text-gray-900">{delivery.deliveryAddress?.recipientName}</div>
@@ -777,6 +851,62 @@ const EnhancedDeliveryView: React.FC = () => {
                     Update Status
                   </button>
                 )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delivery Date Edit Modal */}
+      {showDateEditModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-1/2 lg:w-1/3 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Edit Delivery Date</h3>
+
+              <div className="mb-4">
+                <label htmlFor="deliveryDateInput" className="block text-sm font-medium text-gray-700 mb-2">
+                  Delivery Date:
+                </label>
+                <input
+                  id="deliveryDateInput"
+                  type="date"
+                  value={newDeliveryDate}
+                  onChange={(e) => setNewDeliveryDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]} // Prevent selecting past dates
+                  className="w-full border border-gray-300 rounded-md p-3 text-sm text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Select the new delivery date for this order
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end space-x-3 mt-6">
+                <button
+                  onClick={closeDateEditModal}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDeliveryDateUpdate(dateEditDeliveryId, newDeliveryDate)}
+                  disabled={!newDeliveryDate || updatingDate[dateEditDeliveryId]}
+                  className={clsx(
+                    "px-4 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2",
+                    (!newDeliveryDate || updatingDate[dateEditDeliveryId])
+                      ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+                      : "bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-400"
+                  )}
+                >
+                  {updatingDate[dateEditDeliveryId] ? (
+                    <>
+                      <Spinner size="sm" color="white" className="mr-2" />
+                      Updating...
+                    </>
+                  ) : (
+                    'Update Date'
+                  )}
+                </button>
               </div>
             </div>
           </div>
