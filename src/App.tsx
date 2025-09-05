@@ -88,12 +88,9 @@ import PurchasePaymentViewPage from "./modules/PurchasePayment/PurchasePaymentVi
 import TransferList from "./modules/Transfer/TransferList";
 import CreateTransferPage from "./modules/Transfer/CreateTransferPage";
 import EditTransferPage from "./modules/Transfer/EditTransferPage";
-import DeliveryReport from "./modules/Reports/DeliveryAgenciesReport";
-import DeliverySummariesReport from "./modules/Reports/DeliverySummariesReport";
-import SubscriptionReports from "./modules/Reports/SubscriptionReports";
-import SNFOrdersReport from "./modules/Reports/SNFOrdersReport";
-import DeliveryDateOrdersReport from "./modules/Reports/DeliveryDateOrdersReport";
-import DeliveryLabelingReport from "./modules/Reports/DeliveryLabelingReport";
+import DeliveryReport from "./modules/Reports/DeliveryAgenciesReport"
+import DeliverySummariesReport from "./modules/Reports/DeliverySummariesReport"
+import SubscriptionReports from "./modules/Reports/SubscriptionReports"
 import DepotOrderDetails from "./modules/Order/DepotOrderDetails";
 import "./App.css";
 // MembershipList wrapper component to handle showing all memberships
@@ -102,9 +99,8 @@ import "./App.css";
  
 import SNFOrdersListPage from "./modules/SNFOrders/SNFOrdersListPage";
 import SNFOrderDetailPage from "./modules/SNFOrders/SNFOrderDetailPage";
+import OrderControlPage from "./modules/OrderControl/OrderControlPage";
 import PurchaseOrderReport from "./modules/Reports/PurchaseOrderReport";
-import PurchaseReport from "./modules/Reports/PurchaseReport";
-import { UnitConversionPage, UnitConversionHistoryPage } from "./modules/UnitConversion";
 
 const App = () => {
   useEffect(() => {
@@ -394,16 +390,11 @@ const App = () => {
             <Route path="/admin/depot-variants" element={<DepotProductVariantListPage />} /> {/* Added for Depot Product Variant Management */}
             <Route path="/admin/snf-orders" element={<SNFOrdersListPage />} />
             <Route path="/admin/snf-orders/:id" element={<SNFOrderDetailPage />} />
+            <Route path="/admin/order-control" element={<OrderControlPage />} />
             <Route path="/admin/reports/purchase-orders" element={<PurchaseOrderReport />} /> {/* Purchase Order Report */}
-            <Route path="/admin/reports/purchases" element={<PurchaseReport />} /> {/* Purchase Report */}
             <Route path="/admin/reports/delivery-agencies" element={<DeliveryReport />} /> {/* Delivery Agencies Report */}
             <Route path="/admin/reports/delivery-summaries" element={<DeliverySummariesReport />} /> {/* Delivery Summaries Report */}
-            <Route path="/admin/reports/delivery-date-orders" element={<DeliveryDateOrdersReport />} /> {/* Delivery Date Orders Report */}
             <Route path="/admin/reports/subscriptions" element={<SubscriptionReports />} /> {/* Subscription Reports */}
-            <Route path="/admin/reports/snf-orders" element={<SNFOrdersReport />} /> {/* SNF Orders Report */}
-            <Route path="/admin/reports/delivery-labeling" element={<DeliveryLabelingReport />} /> {/* Delivery Labeling Report */}
-            <Route path="/admin/unit-conversion" element={<UnitConversionPage />} /> {/* Unit Conversion */}
-            <Route path="/admin/unit-conversion/history" element={<UnitConversionHistoryPage />} /> {/* Unit Conversion History */}
 
           </Route>
 
@@ -412,7 +403,6 @@ const App = () => {
             {/* Vendor specific routes */}
             <Route path="/vendor/orders/:id" element={<OrderDetailsPage />} />
             <Route path="/vendor/orders/:id/record-delivery" element={<OrderDeliveryPage />} />
-            <Route path="/vendor/reports/purchase-orders" element={<PurchaseOrderReport />} /> {/* Purchase Order Report for farmers */}
             {/* Add any other non-admin routes here that should use MainLayout but not admin protection */}
           </Route>
           

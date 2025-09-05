@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { getSNFOrderById, SNFOrderDetail, downloadSNFOrderInvoice, generateSNFOrderInvoice } from '@/services/snfOrderAdminService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -11,7 +12,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Loader2, ArrowLeft, Download } from 'lucide-react';
+import { Loader2, ArrowLeft, Download, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 const LabelRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
@@ -101,13 +103,13 @@ const SNFOrderDetailPage: React.FC = () => {
               <div className="rounded-md border p-4">
                 <LabelRow label="Subtotal" value={`₹${order.subtotal.toFixed(2)}`} />
                 <LabelRow label="Delivery Fee" value={`₹${order.deliveryFee.toFixed(2)}`} />
+                <LabelRow label="Total" value={`₹${order.totalAmount.toFixed(2)}`} />
                 {typeof (order as any).walletamt === 'number' && (
                   <LabelRow label="Wallet Deduction" value={`-₹${(order as any).walletamt.toFixed(2)}`} />
                 )}
                 {typeof (order as any).payableAmount === 'number' && (
-                  <LabelRow label="Payable Amount" value={`₹${(order as any).payableAmount.toFixed(2)}`} />
+                  <LabelRow label="Amount Payable" value={`₹${(order as any).payableAmount.toFixed(2)}`} />
                 )}
-                <LabelRow label="Total" value={`₹${order.totalAmount.toFixed(2)}`} />
                 <LabelRow label="Payment Mode" value={order.paymentMode || '-'} />
                 <LabelRow label="Payment Status" value={order.paymentStatus} />
                 <LabelRow label="Payment Ref" value={order.paymentRefNo || '-'} />
@@ -206,11 +208,12 @@ const SNFOrderDetailPage: React.FC = () => {
                     <TableHead>Price</TableHead>
                     <TableHead>Qty</TableHead>
                     <TableHead>Line Total</TableHead>
+                    <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {order.items.map((it) => (
-                    <TableRow key={it.id}>
+                    <TableRow key={it.id} className={cn(it.isCancelled && 'opacity-50 bg-red-50 dark:bg-red-950/20')}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           {it.imageUrl ? (
@@ -219,15 +222,25 @@ const SNFOrderDetailPage: React.FC = () => {
                             <div className="h-10 w-10 rounded bg-muted" />
                           )}
                           <div>
-                            <div className="font-medium">{it.name}</div>
+                            <div className={cn("font-medium", it.isCancelled && "line-through")}>{it.name}</div>
                             {/* <div className="text-xs text-muted-foreground">ID: {it.productId ?? '-'} | VariantID: {it.depotProductVariantId ?? '-'}</div> */}
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>{it.variantName || '-'}</TableCell>
-                      <TableCell>₹{it.price.toFixed(2)}</TableCell>
-                      <TableCell>{it.quantity}</TableCell>
-                      <TableCell>₹{it.lineTotal.toFixed(2)}</TableCell>
+                      <TableCell className={cn(it.isCancelled && "line-through")}>{it.variantName || '-'}</TableCell>
+                      <TableCell className={cn(it.isCancelled && "line-through")}>₹{it.price.toFixed(2)}</TableCell>
+                      <TableCell className={cn(it.isCancelled && "line-through")}>{it.quantity}</TableCell>
+                      <TableCell className={cn(it.isCancelled && "line-through")}>₹{it.lineTotal.toFixed(2)}</TableCell>
+                      <TableCell>
+                        {it.isCancelled ? (
+                          <Badge variant="destructive">
+                            <X className="h-3 w-3 mr-1" />
+                            Cancelled
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary">Active</Badge>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

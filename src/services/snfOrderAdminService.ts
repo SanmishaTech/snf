@@ -41,6 +41,7 @@ export interface SNFOrderItemDetail {
   price: number;
   quantity: number;
   lineTotal: number;
+  isCancelled?: boolean;
   createdAt: string;
 }
 
