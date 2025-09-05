@@ -90,3 +90,19 @@ export const renewSubscription = async (id: string): Promise<Subscription> => {
 export const cancelOrderSubscriptions = async (orderId: string): Promise<any> => {
   return patch<any>(`/product-orders/${orderId}/cancel-subscriptions`, {});
 };
+
+// Interface for delivery schedule entries
+export interface DeliveryScheduleEntry {
+  id: number;
+  deliveryDate: string;
+  status: string;
+  quantity: number;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Get delivery schedule entries for a subscription
+export const getSubscriptionDeliverySchedule = async (subscriptionId: string): Promise<DeliveryScheduleEntry[]> => {
+  return get<DeliveryScheduleEntry[]>(`${API_URL}/${subscriptionId}/delivery-schedule`);
+};

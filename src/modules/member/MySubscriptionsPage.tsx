@@ -63,6 +63,16 @@ interface Address {
   isDefault?: boolean;
 }
 
+export interface DeliveryScheduleEntry {
+  id: string;
+  deliveryDate: string;
+  status: string;
+  quantity: number;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface MemberSubscription {
   id: string;
   product: Product;
@@ -78,6 +88,7 @@ export interface MemberSubscription {
   agency?: Agency | null;
   amount?: number;
   deliveryAddress?: Address | null;
+  deliveryScheduleEntries?: DeliveryScheduleEntry[];
   productOrder?: {
     id: string;
     orderNo: string;
@@ -165,10 +176,25 @@ const formatDeliverySchedule = (
   return scheduleText;
 };
 
-// Determine if a subscription has expired by checking if now is after the end of the expiry date
-const isSubscriptionExpired = (expiryDate: string) => {
+// Get the effective expiry date - use last delivery date or fallback to subscription expiry
+const getEffectiveExpiryDate = (subscription: MemberSubscription) => {
+  if (subscription.deliveryScheduleEntries && subscription.deliveryScheduleEntries.length > 0) {
+    // Sort delivery entries by date and get the last one
+    const sortedEntries = subscription.deliveryScheduleEntries
+      .slice()
+      .sort((a, b) => new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime());
+    const lastEntry = sortedEntries[sortedEntries.length - 1];
+    return lastEntry.deliveryDate;
+  }
+  // Fallback to subscription expiry date
+  return subscription.expiryDate;
+};
+
+// Determine if a subscription has expired by checking if now is after the end of the effective expiry date
+const isSubscriptionExpired = (subscription: MemberSubscription) => {
   try {
-    return isAfter(new Date(), endOfDay(parseISO(expiryDate)));
+    const effectiveExpiryDate = getEffectiveExpiryDate(subscription);
+    return isAfter(new Date(), endOfDay(parseISO(effectiveExpiryDate)));
   } catch {
     return false;
   }
@@ -328,7 +354,7 @@ const MySubscriptionsPage: React.FC = () => {
   // Helper function to check if subscription is truly active
   const isSubscriptionActive = (sub: MemberSubscription) => {
     const isCancelled = sub.status === 'CANCELLED' || sub.paymentStatus === 'CANCELLED';
-    const isExpired = isSubscriptionExpired(sub.expiryDate);
+    const isExpired = isSubscriptionExpired(sub);
     return !isCancelled && !isExpired;
   };
 
@@ -354,7 +380,7 @@ const MySubscriptionsPage: React.FC = () => {
               className={`shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out rounded-lg overflow-hidden flex flex-col relative ${
                 (sub.status === 'CANCELLED' || sub.paymentStatus === 'CANCELLED')
                   ? 'opacity-80 ring-1 ring-destructive/30'
-                  : isSubscriptionExpired(sub.expiryDate)
+                  : isSubscriptionExpired(sub)
                     ? 'opacity-75 ring-1 ring-amber-300'
                     : ''
               }`}
@@ -376,7 +402,7 @@ const MySubscriptionsPage: React.FC = () => {
                   Cancelled
                 </Badge>
               )}
-              {!(sub.status === 'CANCELLED' || sub.paymentStatus === 'CANCELLED') && isSubscriptionExpired(sub.expiryDate) && (
+              {!(sub.status === 'CANCELLED' || sub.paymentStatus === 'CANCELLED') && isSubscriptionExpired(sub) && (
                 <Badge
                   variant="outline"
                   className="absolute top-3 right-3 z-10 bg-amber-50 text-amber-700 border-amber-200"
@@ -410,10 +436,13 @@ const MySubscriptionsPage: React.FC = () => {
                 </p>
                 <p>
                   <strong>Expires On:</strong>{" "}
-                  <span className={`${isSubscriptionExpired(sub.expiryDate) ? "text-destructive font-semibold" : ""}`}>
-                    {format(new Date(sub.expiryDate), "dd/MM/yyyy")}
+                  <span className={`${isSubscriptionExpired(sub) ? "text-destructive font-semibold" : ""}`}>
+                    {format(new Date(getEffectiveExpiryDate(sub)), "dd/MM/yyyy")}
                   </span>
-                  {isSubscriptionExpired(sub.expiryDate) && (
+                  {getEffectiveExpiryDate(sub) !== sub.expiryDate && (
+                    <span className="text-xs text-gray-500 ml-1">(Last delivery)</span>
+                  )}
+                  {isSubscriptionExpired(sub) && (
                     <Badge variant="outline" className="ml-2 bg-amber-50 text-amber-700 border-amber-200">Expired</Badge>
                   )}
                 </p>
@@ -530,9 +559,10 @@ const MySubscriptionsPage: React.FC = () => {
                         </span>
                       </Button>
                     )}
-                    {/* Cancel Button - show only for unpaid or pending subscriptions */}
+                    {/* Cancel Button - show only for unpaid or pending subscriptions that haven't expired */}
                     {(sub.status !== 'CANCELLED' && sub.status !== 'COMPLETED' &&
-                      (sub.paymentStatus === 'PENDING' || sub.paymentStatus === 'FAILED' || !sub.paymentStatus)) && (
+                      (sub.paymentStatus === 'PENDING' || sub.paymentStatus === 'FAILED' || !sub.paymentStatus) &&
+                      !isSubscriptionExpired(sub)) && (
                         <Button
                           onClick={() => handleCancelClick(sub)}
                           variant="destructive"
