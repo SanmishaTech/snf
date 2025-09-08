@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Calendar, Download, Filter, ChevronDown, ChevronRight, Search } from 'lucide-react';
+import { Download, ChevronDown, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
@@ -8,8 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { TableCell, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
@@ -27,7 +26,7 @@ import { backendUrl } from '@/config';
 const API_URL = backendUrl;
 
 export default function PurchaseOrderReport() {
-  const { isAdmin } = useRoleAccess();
+  const { isAdmin, isVendor } = useRoleAccess();
   
   // State for filters
   const [filters, setFilters] = useState<PurchaseOrderFilters>({
@@ -38,7 +37,6 @@ export default function PurchaseOrderReport() {
   
   // State for UI
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-  const [searchTerm, setSearchTerm] = useState('');
   
   // Fetch filter options
   const { data: filterOptions } = useQuery<ReportFiltersResponse>({
@@ -52,11 +50,22 @@ export default function PurchaseOrderReport() {
       });
       return response.data;
     },
-    enabled: isAdmin
+    enabled: isAdmin || isVendor
   });
   
+  // If VENDOR user, set their current farmerId automatically (locked filter)
+  useEffect(() => {
+    if (isVendor) {
+      const currentFarmerId = filterOptions?.data?.farmers?.[0]?.id;
+      if (currentFarmerId && !filters.farmerId) {
+        setFilters(prev => ({ ...prev, farmerId: currentFarmerId }));
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isVendor, filterOptions]);
+  
   // Fetch report data
-  const { data: reportData, isLoading, refetch } = useQuery<PurchaseOrderReportResponse>({
+  const { data: reportData } = useQuery<PurchaseOrderReportResponse>({
     queryKey: ['purchaseOrderReport', filters],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -72,7 +81,7 @@ export default function PurchaseOrderReport() {
       });
       return response.data;
     },
-    enabled: isAdmin
+    enabled: isAdmin || isVendor
   });
   
   // Handle filter changes
@@ -134,7 +143,7 @@ export default function PurchaseOrderReport() {
   };
   
   // Render grouped data recursively
-  const renderGroupedData = (data: GroupedData[] | PurchaseOrderItem[], level: number = 0): JSX.Element[] => {
+  const renderGroupedData = (data: GroupedData[] | PurchaseOrderItem[], level: number = 0): React.ReactElement[] => {
     if (!Array.isArray(data)) return [];
     
     // Check if this is grouped data or flat data
@@ -215,17 +224,7 @@ export default function PurchaseOrderReport() {
     });
   };
   
-  // Filter the displayed data based on search term
-  const filteredData = useMemo(() => {
-    if (!reportData?.data?.report || !searchTerm) {
-      return reportData?.data?.report || [];
-    }
-    
-    // Implement search logic here if needed
-    return reportData.data.report;
-  }, [reportData, searchTerm]);
-  
-  if (!isAdmin) {
+  if (!(isAdmin || isVendor)) {
     return (
       <Card className="m-4">
         <CardContent className="pt-6">
@@ -276,25 +275,36 @@ export default function PurchaseOrderReport() {
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="farmerId">Farmer</Label>
-              <Select
-                value={filters.farmerId?.toString() || 'all'}
-                onValueChange={(value) => handleFilterChange('farmerId', value === 'all' ? undefined : parseInt(value))}
-              >
-                <SelectTrigger id="farmerId">
-                  <SelectValue placeholder="All Farmers" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Farmers</SelectItem>
-                  {filterOptions?.data?.farmers?.map((farmer) => (
-                    <SelectItem key={farmer.id} value={farmer.id.toString()}>
-                      {farmer.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {isAdmin ? (
+              <div className="space-y-2">
+                <Label htmlFor="farmerId">Farmer</Label>
+                <Select
+                  value={filters.farmerId?.toString() || 'all'}
+                  onValueChange={(value) => handleFilterChange('farmerId', value === 'all' ? undefined : parseInt(value))}
+                >
+                  <SelectTrigger id="farmerId">
+                    <SelectValue placeholder="All Farmers" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Farmers</SelectItem>
+                    {filterOptions?.data?.farmers?.map((farmer) => (
+                      <SelectItem key={farmer.id} value={farmer.id.toString()}>
+                        {farmer.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="currentFarmer">Current Farmer</Label>
+                <Input
+                  id="currentFarmer"
+                  value={filterOptions?.data?.farmers?.[0]?.name || 'Your Farmer Profile'}
+                  disabled
+                />
+              </div>
+            )}
             
             <div className="space-y-2">
               <Label htmlFor="depotId">Depot</Label>

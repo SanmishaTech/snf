@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Calendar, Download, Filter, ChevronDown, ChevronRight, Search, UserCheck, MapPin, Package } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Download, ChevronDown, ChevronRight, UserCheck, MapPin, Package } from 'lucide-react';
 import { format } from 'date-fns';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
@@ -8,10 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { TableCell, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { 
   DeliveryAgencyFilters, 
@@ -27,7 +26,7 @@ import { backendUrl } from '@/config';
 const API_URL = backendUrl;
 
 export default function DeliveryAgenciesReport() {
-  const { isAdmin } = useRoleAccess();
+  const { isAdmin, isAgency } = useRoleAccess();
   
   // State for filters
   const [filters, setFilters] = useState<DeliveryAgencyFilters>({
@@ -38,7 +37,7 @@ export default function DeliveryAgenciesReport() {
   
   // State for UI
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-  const [searchTerm, setSearchTerm] = useState('');
+  
   
   // Fetch filter options
   const { data: filterOptions } = useQuery<DeliveryAgencyFiltersResponse>({
@@ -52,11 +51,23 @@ export default function DeliveryAgenciesReport() {
       });
       return response.data;
     },
-    enabled: isAdmin
+    enabled: isAdmin || isAgency
   });
   
+  // For AGENCY users, reflect their current agency in filters so exports use it
+  useEffect(() => {
+    if (isAgency) {
+      const currentAgencyId = filterOptions?.data?.agencies?.[0]?.id;
+      if (currentAgencyId && !filters.agencyId) {
+        setFilters(prev => ({ ...prev, agencyId: currentAgencyId }));
+      }
+    }
+    // We only want to run when the filter options are loaded or agency-ness changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAgency, filterOptions]);
+  
   // Fetch report data
-  const { data: reportData, isLoading, refetch } = useQuery<DeliveryAgencyReportResponse>({
+  const { data: reportData } = useQuery<DeliveryAgencyReportResponse>({
     queryKey: ['deliveryAgenciesReport', filters],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -72,7 +83,7 @@ export default function DeliveryAgenciesReport() {
       });
       return response.data;
     },
-    enabled: isAdmin
+    enabled: isAdmin || isAgency
   });
   
   // Handle filter changes
@@ -149,7 +160,7 @@ export default function DeliveryAgenciesReport() {
   };
   
   // Render grouped data recursively
-  const renderGroupedData = (data: DeliveryGroupedData[] | DeliveryItem[], level: number = 0): JSX.Element[] => {
+  const renderGroupedData = (data: DeliveryGroupedData[] | DeliveryItem[], level: number = 0): React.ReactElement[] => {
     if (!Array.isArray(data)) return [];
     
     // Check if this is grouped data or flat data
@@ -242,17 +253,9 @@ export default function DeliveryAgenciesReport() {
     });
   };
   
-  // Filter the displayed data based on search term
-  const filteredData = useMemo(() => {
-    if (!reportData?.data?.report || !searchTerm) {
-      return reportData?.data?.report || [];
-    }
-    
-    // Implement search logic here if needed
-    return reportData.data.report;
-  }, [reportData, searchTerm]);
-  
-  if (!isAdmin) {
+  // Note: Table rendering is currently disabled; export uses reportData directly.
+
+  if (!(isAdmin || isAgency)) {
     return (
       <Card className="m-4">
         <CardContent className="pt-6">
@@ -303,25 +306,36 @@ export default function DeliveryAgenciesReport() {
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="agencyId">Delivery Agency</Label>
-              <Select
-                value={filters.agencyId?.toString() || 'all'}
-                onValueChange={(value) => handleFilterChange('agencyId', value === 'all' ? undefined : parseInt(value))}
-              >
-                <SelectTrigger id="agencyId">
-                  <SelectValue placeholder="All Agencies" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Agencies</SelectItem>
-                  {filterOptions?.data?.agencies?.map((agency) => (
-                    <SelectItem key={agency.id} value={agency.id.toString()}>
-                      {agency.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {isAdmin ? (
+              <div className="space-y-2">
+                <Label htmlFor="agencyId">Delivery Agency</Label>
+                <Select
+                  value={filters.agencyId?.toString() || 'all'}
+                  onValueChange={(value) => handleFilterChange('agencyId', value === 'all' ? undefined : parseInt(value))}
+                >
+                  <SelectTrigger id="agencyId">
+                    <SelectValue placeholder="All Agencies" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Agencies</SelectItem>
+                    {filterOptions?.data?.agencies?.map((agency: { id: number; name: string }) => (
+                      <SelectItem key={agency.id} value={agency.id.toString()}>
+                        {agency.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="currentAgency">Current Agency</Label>
+                <Input
+                  id="currentAgency"
+                  value={filterOptions?.data?.agencies?.[0]?.name || 'Your Agency'}
+                  disabled
+                />
+              </div>
+            )}
             
             <div className="space-y-2">
               <Label htmlFor="areaId">Delivery Area</Label>
@@ -334,7 +348,7 @@ export default function DeliveryAgenciesReport() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Areas</SelectItem>
-                  {filterOptions?.data?.areas?.map((area) => (
+                  {filterOptions?.data?.areas?.map((area: { id: number; name: string; city?: string }) => (
                     <SelectItem key={area.id} value={area.id.toString()}>
                       {area.name} {area.city && `(${area.city})`}
                     </SelectItem>

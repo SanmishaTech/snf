@@ -1,19 +1,19 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Calendar, Download, BarChart3, TrendingUp, Package, Clock } from 'lucide-react';
+import { Download, BarChart3 } from 'lucide-react';
 import { format } from 'date-fns';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { 
   DeliverySummaryFilters, 
   DeliverySummaryResponse,
+  DeliveryAgencyFiltersResponse,
   DeliveryAgencySummary,
   ExcelExportConfig
 } from './types';
@@ -23,7 +23,7 @@ import { backendUrl } from '@/config';
 const API_URL = backendUrl;
 
 export default function DeliverySummariesReport() {
-  const { isAdmin } = useRoleAccess();
+  const { isAdmin, isAgency } = useRoleAccess();
   
   // State for filters
   const [filters, setFilters] = useState<DeliverySummaryFilters>({
@@ -31,8 +31,32 @@ export default function DeliverySummariesReport() {
     endDate: format(new Date(new Date().setDate(new Date().getDate() + 30)), 'yyyy-MM-dd') // 30 days from today
   });
   
+  // Fetch filter options for agency dropdown / current agency
+  const { data: filterOptions } = useQuery<DeliveryAgencyFiltersResponse>({
+    queryKey: ['deliveryReportFilters'],
+    queryFn: async () => {
+      const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+      const response = await axios.get(`${API_URL}/api/reports/delivery-filters`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      return response.data;
+    },
+    enabled: isAdmin || isAgency
+  });
+  
+  // If AGENCY user, set their current agencyId automatically (locked filter)
+  useEffect(() => {
+    if (isAgency) {
+      const currentAgencyId = filterOptions?.data?.agencies?.[0]?.id;
+      if (currentAgencyId && !filters.agencyId) {
+        setFilters(prev => ({ ...prev, agencyId: currentAgencyId }));
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAgency, filterOptions]);
+  
   // Fetch report data
-  const { data: reportData, isLoading, refetch } = useQuery<DeliverySummaryResponse>({
+  const { data: reportData } = useQuery<DeliverySummaryResponse>({
     queryKey: ['deliverySummariesReport', filters],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -48,7 +72,7 @@ export default function DeliverySummariesReport() {
       });
       return response.data;
     },
-    enabled: isAdmin
+    enabled: isAdmin || isAgency
   });
   
   // Handle filter changes
@@ -128,23 +152,7 @@ export default function DeliverySummariesReport() {
     toast.success('Report exported successfully');
   };
   
-  // Get status badge variant
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'delivered':
-        return 'default';
-      case 'pending':
-        return 'secondary';
-      case 'cancelled':
-        return 'destructive';
-      case 'in_transit':
-        return 'outline';
-      default:
-        return 'secondary';
-    }
-  };
-  
-  if (!isAdmin) {
+  if (!(isAdmin || isAgency)) {
     return (
       <Card className="m-4">
         <CardContent className="pt-6">
@@ -153,10 +161,6 @@ export default function DeliverySummariesReport() {
       </Card>
     );
   }
-  
-  const statusList = reportData?.data?.statusList || [];
-  const summaryData = reportData?.data?.summary || [];
-  const totals = reportData?.data?.totals;
   
   return (
     <div className="container mx-auto p-4 space-y-4">
@@ -181,7 +185,7 @@ export default function DeliverySummariesReport() {
         
         <CardContent className="space-y-4">
           {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="startDate">Start Date</Label>
               <Input
@@ -201,12 +205,40 @@ export default function DeliverySummariesReport() {
                 onChange={(e) => handleFilterChange('endDate', e.target.value)}
               />
             </div>
+
+            {isAdmin ? (
+              <div className="space-y-2">
+                <Label htmlFor="agencyId">Delivery Agency</Label>
+                <Select
+                  value={filters.agencyId?.toString() || 'all'}
+                  onValueChange={(value) => handleFilterChange('agencyId', value === 'all' ? undefined : parseInt(value))}
+                >
+                  <SelectTrigger id="agencyId">
+                    <SelectValue placeholder="All Agencies" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Agencies</SelectItem>
+                    {filterOptions?.data?.agencies?.map((agency: { id: number; name: string }) => (
+                      <SelectItem key={agency.id} value={agency.id.toString()}>
+                        {agency.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="currentAgency">Current Agency</Label>
+                <Input
+                  id="currentAgency"
+                  value={filterOptions?.data?.agencies?.[0]?.name || 'Your Agency'}
+                  disabled
+                />
+              </div>
+            )}
           </div>
           
-       
-       
           
-         
         </CardContent>
       </Card>
     </div>

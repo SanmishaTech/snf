@@ -251,6 +251,7 @@ export interface DeliveryAgencyFiltersResponse {
 export interface DeliverySummaryFilters {
   startDate: string;
   endDate: string;
+  agencyId?: number;
 }
 
 export interface DeliveryAgencySummary {

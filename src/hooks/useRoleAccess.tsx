@@ -3,6 +3,10 @@ import { useAuth } from './useAuth';
 interface RoleAccessMethods {
   isAdmin: boolean;
   checkIsAdmin: () => boolean;
+  isAgency: boolean;
+  checkIsAgency: () => boolean;
+  isVendor: boolean;
+  checkIsVendor: () => boolean;
 }
 
 export function useRoleAccess(): RoleAccessMethods {
@@ -35,8 +39,28 @@ export function useRoleAccess(): RoleAccessMethods {
   // Pre-computed property for common check
   const isAdmin = checkIsAdmin();
 
+  // Check if the user has agency role
+  const checkIsAgency = (): boolean => {
+    if (!user || !user.role) return false;
+    const role = user.role.toString().toUpperCase();
+    return role === 'AGENCY' || role.includes('AGENCY');
+  };
+  const isAgency = checkIsAgency();
+
+  // Check if the user has vendor role
+  const checkIsVendor = (): boolean => {
+    if (!user || !user.role) return false;
+    const role = user.role.toString().toUpperCase();
+    return role === 'VENDOR' || role.includes('VENDOR');
+  };
+  const isVendor = checkIsVendor();
+
   return {
     isAdmin,
-    checkIsAdmin
+    checkIsAdmin,
+    isAgency,
+    checkIsAgency,
+    isVendor,
+    checkIsVendor
   };
 } 

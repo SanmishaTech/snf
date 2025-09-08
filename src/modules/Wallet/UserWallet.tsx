@@ -24,6 +24,12 @@ interface ApiTransaction {
   description?: string;
   timestamp: string; // ISO date string
   status: string; // e.g., PENDING, COMPLETED, FAILED
+  referenceNumber?: string;
+  paymentMethod?: string;
+  processedBy?: {
+    name: string;
+    email: string;
+  } | null;
 }
 
 interface UserWalletData {
@@ -327,12 +333,43 @@ export default function WalletPage() {
               <div className="space-y-3">
                 {transactions.map((transaction) => {
                   const isCredit = transaction.type === "CREDIT";
-                  const status = transaction.status?.toUpperCase() || 'UNKNOWN'; // Default to UNKNOWN if status is missing
+                  const status = transaction.status?.toUpperCase() || 'UNKNOWN';
 
                   let icon = <CheckCircle2 className="h-5 w-5 text-gray-500" />;
                   let iconBgColor = "bg-gray-100";
                   let amountColor = isCredit ? "text-green-600" : "text-red-600";
-                  let title = transaction.description || (isCredit ? "Funds Added" : "Funds Withdrawn");
+                  
+                  // Parse transaction description for better categorization
+                  const description = transaction.description || "";
+                  let title = "";
+                  let subtitle = "";
+                  
+                  // Check for subscription-related transactions
+                  if (description.includes("Subscription Payment")) {
+                    title = isCredit ? "Subscription Refund" : "Subscription Payment";
+                    // Extract reference number if present
+                    const refMatch = description.match(/ORDER-([^)]+)/);
+                    subtitle = refMatch ? `Order: ${refMatch[1]}` : "Product subscription";
+                  } else if (description.includes("Subscription Cancellation")) {
+                    title = "Subscription Cancellation Refund";
+                    const refMatch = description.match(/CANCEL_SUB_(\d+)/);
+                    subtitle = refMatch ? `Sub ID: ${refMatch[1]}` : "Cancelled subscription";
+                  } else if (description.includes("Refund for cancelled order")) {
+                    title = "Order Cancellation Refund";
+                    const orderMatch = description.match(/#([^)]+)/);
+                    subtitle = orderMatch ? `Order: ${orderMatch[1]}` : "Cancelled order";
+                  } else if (description.includes("Top-up")) {
+                    title = "Wallet Top-up";
+                    subtitle = "Account recharge";
+                  } else if (description.includes("delivery credit")) {
+                    title = "Delivery Credit";
+                    subtitle = "Service refund";
+                  } else {
+                    // Fallback to original logic
+                    title = description || (isCredit ? "Funds Added" : "Funds Withdrawn");
+                    subtitle = transaction.referenceNumber ? `Ref: ${transaction.referenceNumber}` : "";
+                  }
+                  
                   const formattedStatus = status.charAt(0) + status.slice(1).toLowerCase();
 
                   if (status === "COMPLETED" || status === "PAID") {
@@ -354,11 +391,16 @@ export default function WalletPage() {
                         <div className={`flex h-10 w-10 items-center justify-center rounded-full ${iconBgColor}`}>
                           {icon}
                         </div>
-                        <div>
+                        <div className="flex-1">
                           <p className="font-medium">{title}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {new Date(transaction.timestamp).toLocaleDateString()} {new Date(transaction.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </p>
+                          <div className="space-y-1">
+                            {subtitle && (
+                              <p className="text-xs text-muted-foreground">{subtitle}</p>
+                            )}
+                            <p className="text-sm text-muted-foreground">
+                              {new Date(transaction.timestamp).toLocaleDateString()} {new Date(transaction.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
                         </div>
                       </div>
                       <div className="text-right">
