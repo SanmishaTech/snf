@@ -10,7 +10,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { get, del } from "@/services/apiService";
 import { format } from "date-fns";
@@ -48,7 +48,11 @@ interface Transfer {
 }
 
 const TransferList = () => {
-  const [page, setPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [page, setPage] = useState(() => {
+    const pageParam = searchParams.get('page');
+    return pageParam ? parseInt(pageParam, 10) : 1;
+  });
   const pageSize = 10;
   const [inputValue, setInputValue] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -82,8 +86,19 @@ const TransferList = () => {
   const clearFilters = () => {
     setInputValue("");
     setSearchTerm("");
-    setPage(1);
+    updatePage(1);
   };
+
+  const updatePage = useCallback((newPage: number) => {
+    setPage(newPage);
+    const newSearchParams = new URLSearchParams(searchParams);
+    if (newPage === 1) {
+      newSearchParams.delete('page');
+    } else {
+      newSearchParams.set('page', newPage.toString());
+    }
+    setSearchParams(newSearchParams, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const calcTotalQty = (details: TransferDetail[]) =>
     details.reduce((sum, d) => sum + (d.quantity || 0), 0);
@@ -196,9 +211,9 @@ const TransferList = () => {
           {totalPages > 1 && (
             <Pagination className="mt-6">
               <PaginationContent>
-                <PaginationPrevious onClick={() => setPage((p) => Math.max(1, p - 1))} />
+                <PaginationPrevious onClick={() => page > 1 && updatePage(page - 1)} />
                 <span className="px-4 py-2 text-sm">Page {page} of {totalPages}</span>
-                <PaginationNext onClick={() => setPage((p) => Math.min(totalPages, p + 1))} />
+                <PaginationNext onClick={() => page < totalPages && updatePage(page + 1)} />
               </PaginationContent>
             </Pagination>
           )}
