@@ -177,19 +177,19 @@ export class ExcelExporter {
   private getGroupHeaderText(group: GroupedData | DeliveryGroupedData): string {
     switch (group.level) {
       case 'farmer':
-        return `Farmer: ${group.name}`;
+        return `Farmer: ${(group as any).name}`;
       case 'depot':
-        return `Depot: ${group.name}${(group as GroupedData).location ? ` (${(group as GroupedData).location})` : ''}`;
+        return `Depot: ${(group as any).name}${(group as GroupedData).location ? ` (${(group as GroupedData).location})` : ''}`;
       case 'variant':
-        return `Product: ${(group as GroupedData).productName || ''} - Variant: ${group.name}${(group as GroupedData).unit ? ` (${(group as GroupedData).unit})` : ''}`;
+        return `Product: ${(group as GroupedData).productName || ''} - Variant: ${(group as any).name}${(group as GroupedData).unit ? ` (${(group as GroupedData).unit})` : ''}`;
       case 'agency':
-        return `Delivery Agency: ${group.name}`;
+        return `Delivery Agency: ${(group as any).name}`;
       case 'area':
-        return `Area: ${group.name}${(group as DeliveryGroupedData).city ? ` (${(group as DeliveryGroupedData).city})` : ''}`;
+        return `Area: ${(group as any).name}${(group as DeliveryGroupedData).city ? ` (${(group as DeliveryGroupedData).city})` : ''}`;
       case 'status':
-        return `Status: ${group.name}`;
+        return `Status: ${(group as any).name}`;
       default:
-        return group.name;
+        return (group as any).name;
     }
   }
 
@@ -225,7 +225,7 @@ export class ExcelExporter {
 
       headers.forEach((header, index) => {
         let value: any = '';
-        
+
         // Check if this is a delivery item or purchase order item
         const isDeliveryItem = 'orderId' in item;
         console.log("isDeliveryItem",item)
@@ -238,7 +238,7 @@ export class ExcelExporter {
             value = `${item.productName} - ${item.variantName}`;
             break;
           case 'qty':
-            value = item.quantity;
+            value = Number(item.quantity) || 0;
             break;
           case 'agency':
             // Handle different data structures
@@ -306,16 +306,7 @@ export class ExcelExporter {
 
         const cell = XLSX.utils.encode_cell({ r: this.currentRow - 1, c: index });
         this.worksheet[cell] = {
-          v: value,
-          s: {
-            alignment: { horizontal: header.align || 'left' },
-            border: {
-              top: { style: 'thin' },
-              bottom: { style: 'thin' },
-              left: { style: 'thin' },
-              right: { style: 'thin' }
-            }
-          }
+          v: value
         };
       });
 
@@ -335,38 +326,25 @@ export class ExcelExporter {
     // Write totals aligned to each header column
     for (let col = 0; col < totalCols; col++) {
       const headerKey = headerKeys[col];
-      let value = '';
+      let value: any = '';
 
       // First column gets the label
       if (col === 0) {
         value = totalLabel;
       } else if (headerKey === 'qty') {
-        value = group.totals.totalQuantity.toString();
+        value = (group as any).totals?.totalQuantity?.toString() || '0';
       } else if (headerKey === 'amount') {
-        value = this.formatCurrency(group.totals.totalAmount);
+        value = this.formatCurrency((group as any).totals?.totalAmount || 0);
       } else if (headerKey === 'rate') {
-        value = `Avg: ${this.formatCurrency(group.totals.avgRate)}`;
+        value = `Avg: ${this.formatCurrency((group as any).totals?.avgRate || 0)}`;
       } else if (headerKey === 'agency') {
-        value = `${group.totals.itemCount} items`;
+        value = `${(group as any).totals?.itemCount || 0} items`;
       }
 
-      if (value) {
+      if (value !== '') {
         const cell = XLSX.utils.encode_cell({ r: this.currentRow - 1, c: col });
         this.worksheet[cell] = {
-          v: value,
-          s: {
-            font: { bold: true, italic: true },
-            fill: { fgColor: { rgb: 'F5F5F5' } },
-            alignment: { 
-              horizontal: (headerKey === 'amount' || headerKey === 'rate' || headerKey === 'qty') ? 'right' : 'left' 
-            },
-            border: {
-              top: { style: 'thin' },
-              bottom: { style: 'thin' },
-              left: { style: 'thin' },
-              right: { style: 'thin' }
-            }
-          }
+          v: value
         };
       }
     }

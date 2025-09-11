@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { get, del } from "@/services/apiService";
 import { format } from "date-fns";
@@ -122,7 +122,11 @@ const getStoredUserDetails = (): StoredUserDetails => {
 };
 
 const OrderList = () => {
-  const [page, setPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [page, setPage] = useState(() => {
+    const pageParam = searchParams.get('page');
+    return pageParam ? parseInt(pageParam, 10) : 1;
+  });
   const [inputValue, setInputValue] = useState(""); // For the input field
   const [searchTerm, setSearchTerm] = useState(""); // Debounced value for the query
   const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
@@ -305,8 +309,19 @@ const OrderList = () => {
     setSearchTerm(""); // Clear the search term
     setDateFilter(undefined);
     setStatusFilter("");
-    setPage(1); 
+    updatePage(1); 
   };
+
+  const updatePage = useCallback((newPage: number) => {
+    setPage(newPage);
+    const newSearchParams = new URLSearchParams(searchParams);
+    if (newPage === 1) {
+      newSearchParams.delete('page');
+    } else {
+      newSearchParams.set('page', newPage.toString());
+    }
+    setSearchParams(newSearchParams, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   if (currentUserRole === 'AGENCY' && isAgencyInfoLoading) {
     return <div className="flex justify-center items-center h-screen"><p>Loading agency details...</p></div>;
@@ -648,7 +663,7 @@ const OrderList = () => {
         <div className="flex justify-center mt-6">
           <Pagination>
             <PaginationPrevious
-              onClick={() => page > 1 && setPage(page - 1)}
+              onClick={() => page > 1 && updatePage(page - 1)}
               className={cn("cursor-pointer", page <= 1 && "pointer-events-none opacity-50")}
             />
             <PaginationContent>
@@ -659,7 +674,7 @@ const OrderList = () => {
               </div>
             </PaginationContent>
             <PaginationNext
-              onClick={() => page < totalPages && setPage(page + 1)}
+              onClick={() => page < totalPages && updatePage(page + 1)}
               className={cn("cursor-pointer", page >= totalPages && "pointer-events-none opacity-50")}
             />
           </Pagination>

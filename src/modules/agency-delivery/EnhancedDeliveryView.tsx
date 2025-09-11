@@ -564,174 +564,167 @@ const EnhancedDeliveryView: React.FC = () => {
           <Spinner size="lg" />
         </div>
       )}
-
-      {error && (
-        <div className="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg border border-red-300" role="alert">
-          <span className="font-medium">Error:</span> {error}
-        </div>
-      )}
-
-      {!loading && deliveries.length === 0 && !error && (
-        <div className="p-4 text-sm text-gray-700 bg-blue-100 rounded-lg border border-blue-300" role="alert">
-          No deliveries scheduled for this date.
-        </div>
-      )}
-
-      {deliveries.length > 0 && (
-        <div className="overflow-x-auto bg-white rounded-lg shadow">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Member</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Delivery Date</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Delivery Instructions</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Handler</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {deliveries.map((delivery) => (
-                <tr key={delivery.id} className={updatingStatus[delivery.id] ? 'opacity-50' : ''}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{delivery.member.name}</div>
-                    <div className="text-xs text-gray-500">{delivery.deliveryAddress?.mobile || 'N/A'}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{delivery.product.name}</div>
-                    {delivery.DepotProductVariant?.name && (
-                      <div className="text-xs text-gray-500">{delivery.DepotProductVariant.name}</div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm text-gray-900">{delivery.quantity}</span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-900">
-                        {delivery.deliveryDate ? new Date(delivery.deliveryDate).toLocaleDateString() : 'N/A'}
+    {error && (
+      <div className="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg border border-red-300" role="alert">
+        <span className="font-medium">Error:</span> {error}
+      </div>
+    )}
+  
+    {!loading && deliveries.length === 0 && !error && (
+      <div className="p-4 text-sm text-gray-700 bg-blue-100 rounded-lg border border-blue-300" role="alert">
+        No deliveries scheduled for this date.
+      </div>
+    )}
+ 
+    {deliveries.length > 0 && (
+    <div className="overflow-x-auto bg-white rounded-lg shadow">
+      <table className="min-w-full divide-y divide-gray-200 [&>thead>tr>th]:!px-3 [&>tbody>tr>td]:!px-3">
+        <thead className="bg-gray-50">
+          <tr>
+            <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Member</th>
+            <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+            <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
+            <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Delivery Date</th>
+            <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
+            <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Delivery Instructions</th>
+            <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+            <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Handler</th>
+            <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-200">
+          {deliveries.map((delivery) => (
+            <tr key={delivery.id} className={updatingStatus[delivery.id] ? 'opacity-50' : ''}>
+              <td className="px-3 py-4 whitespace-nowrap">
+                <div className="text-sm font-medium text-gray-900">{delivery.member.name}</div>
+                <div className="text-xs text-gray-500">{delivery.deliveryAddress?.mobile || 'N/A'}</div>
+              </td>
+              <td className="px-3 py-4 whitespace-nowrap">
+                <div className="text-sm text-gray-900 break-words">{delivery.product.name}</div>
+                {delivery.DepotProductVariant?.name && (
+                  <div className="text-xs text-gray-500 break-words">{delivery.DepotProductVariant.name}</div>
+                )}
+              </td>
+              <td className="px-3 py-4 whitespace-nowrap">
+                <span className="text-sm text-gray-900">{delivery.quantity}</span>
+              </td>
+              <td className="px-3 py-4 whitespace-nowrap">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-900">
+                    {delivery.deliveryDate ? new Date(delivery.deliveryDate).toLocaleDateString() : 'N/A'}
+                  </span>
+                  {currentUser?.role === 'ADMIN' && (
+                    <button
+                      onClick={() => openDateEditModal(delivery.id, delivery.deliveryDate || selectedDate)}
+                      disabled={updatingDate[delivery.id]}
+                      className="text-blue-600 hover:text-blue-800 disabled:text-gray-400"
+                      title="Edit delivery date"
+                    >
+                      {updatingDate[delivery.id] ? (
+                        <Spinner size="sm" color="blue" />
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                          <path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" />
+                        </svg>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </td>
+              <td className="px-3 py-4 whitespace-normal max-w-xs">
+                <div className="text-sm text-gray-900">{delivery.deliveryAddress?.recipientName}</div>
+                <div className="text-sm text-gray-900">{delivery.deliveryAddress && `${delivery.deliveryAddress.plotBuilding || ''}${delivery.deliveryAddress.plotBuilding && delivery.deliveryAddress.streetArea ? ', ' : ''}${delivery.deliveryAddress.streetArea || ''}`}</div>
+                <div className="text-sm text-gray-500">{delivery.deliveryAddress ? `${delivery.deliveryAddress.city}, ${delivery.deliveryAddress.pincode}` : 'Offline Depot Delivery'}</div>
+                {delivery.member.user?.mobile && (
+                  <div className="text-sm text-blue-600 mt-1">Phone: {delivery.member.user.mobile}</div>
+                )}
+                {delivery.deliveryAddress?.deliveryNotes && (
+                  <div className="text-xs text-gray-500 mt-1 italic">Notes: {delivery.deliveryAddress.deliveryNotes}</div>
+                )}
+              </td>
+              <td className="px-3 py-4 whitespace-normal max-w-xs">
+                <div className="text-sm text-gray-900" title={delivery.subscription?.deliveryInstructions || 'N/A'}>
+                  {truncateText(delivery.subscription?.deliveryInstructions, 40)}
+                </div>
+              </td>
+              <td className="px-3 py-4 whitespace-nowrap">
+                <div className="flex flex-col space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <span className={clsx("px-2 inline-flex text-xs leading-5 font-semibold rounded-full", getStatusBadgeClass(delivery.status))}>
+                      {delivery.status.replace(/_/g, ' ')}
+                    </span>
+                    {delivery.status !== DeliveryStatus.PENDING && (
+                      <span className="text-xs text-gray-500" title="Status has been assigned and cannot be changed">
+                        🔒
                       </span>
-                      {currentUser?.role === 'ADMIN' && (
-                        <button
-                          onClick={() => openDateEditModal(delivery.id, delivery.deliveryDate || selectedDate)}
-                          disabled={updatingDate[delivery.id]}
-                          className="text-blue-600 hover:text-blue-800 disabled:text-gray-400"
-                          title="Edit delivery date"
-                        >
-                          {updatingDate[delivery.id] ? (
-                            <Spinner size="sm" color="blue" />
-                          ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                              <path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" />
-                            </svg>
-                          )}
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-normal max-w-xs">
-                    <div className="text-sm text-gray-900">{delivery.deliveryAddress?.recipientName}</div>
-                    <div className="text-sm text-gray-900">{delivery.deliveryAddress && `${delivery.deliveryAddress.plotBuilding || ''}${delivery.deliveryAddress.plotBuilding && delivery.deliveryAddress.streetArea ? ', ' : ''}${delivery.deliveryAddress.streetArea || ''}`}</div>
-                    <div className="text-sm text-gray-500">{delivery.deliveryAddress ? `${delivery.deliveryAddress.city}, ${delivery.deliveryAddress.pincode}` : 'Offline Depot Delivery'}</div>
-                    {delivery.member.user?.mobile && (
-                      <div className="text-sm text-blue-600 mt-1">Phone: {delivery.member.user.mobile}</div>
                     )}
-                    {delivery.deliveryAddress?.deliveryNotes && (
-                      <div className="text-xs text-gray-500 mt-1 italic">Notes: {delivery.deliveryAddress.deliveryNotes}</div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-normal max-w-xs">
-                    <div className="text-sm text-gray-900" title={delivery.subscription?.deliveryInstructions || 'N/A'}>
-                      {truncateText(delivery.subscription?.deliveryInstructions, 40)}
+                  </div>
+                  {(delivery.adminNotes || adminNotes[delivery.id]) && (
+                    <div className="text-xs bg-blue-50 border border-blue-200 rounded p-2 mt-1">
+                      <div className="font-medium text-blue-800">Admin Notes:</div>
+                      <div className="text-blue-700">{delivery.adminNotes || adminNotes[delivery.id]}</div>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex flex-col space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <span className={clsx("px-2 inline-flex text-xs leading-5 font-semibold rounded-full", getStatusBadgeClass(delivery.status))}>
-                          {delivery.status.replace(/_/g, ' ')}
-                        </span>
-                        {delivery.status !== DeliveryStatus.PENDING && (
-                          <span className="text-xs text-gray-500" title="Status has been assigned and cannot be changed">
-                            🔒
-                          </span>
-                        )}
+                  )}
+                  {(delivery.walletTransaction || walletTransactions[delivery.id]) && (
+                    <div className="text-xs bg-green-50 border border-green-200 rounded p-2 mt-1">
+                      <div className="font-medium text-green-800">
+                        Wallet Credit: ₹{(delivery.walletTransaction || walletTransactions[delivery.id]).amount}
                       </div>
-                      {/* Admin Notes Display */}
-                      {(delivery.adminNotes || adminNotes[delivery.id]) && (
-                        <div className="text-xs bg-blue-50 border border-blue-200 rounded p-2 mt-1">
-                          <div className="font-medium text-blue-800">Admin Notes:</div>
-                          <div className="text-blue-700">{delivery.adminNotes || adminNotes[delivery.id]}</div>
-                        </div>
-                      )}
-                      {/* Wallet Transaction Display */}
-                      {(delivery.walletTransaction || walletTransactions[delivery.id]) && (
-                        <div className="text-xs bg-green-50 border border-green-200 rounded p-2 mt-1">
-                          <div className="font-medium text-green-800">
-                            Wallet Credit: ₹{(delivery.walletTransaction || walletTransactions[delivery.id]).amount}
-                          </div>
-                 
-                        </div>
-                      )}
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex flex-col space-y-1">
-                      {/* Subscription Owner */}
-
-                      {/* Delivery Handler */}
-                      {delivery.agent && (
-                        <div className="text-xs text-blue-600">
-                          <span className="font-medium">Handler:</span> {delivery.agent.name}
-                        </div>
-                      )}
-                      {!delivery.agent && delivery.status !== DeliveryStatus.PENDING && (
-                        <div className="text-xs text-orange-600">
-                          <span className="font-medium">Handler:</span> Not assigned
-                        </div>
-                      )}
+                  )}
+                </div>
+              </td>
+              <td className="px-3 py-4 whitespace-nowrap">
+                <div className="flex flex-col space-y-1">
+                  {delivery.agent && (
+                    <div className="text-xs text-blue-600">
+                      <span className="font-medium">Handler:</span> <br />{delivery.agent.name}
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-y-1">
-                    {currentUser?.role === 'AGENCY' && (
-                      <div className="space-x-1">
-                        <button
-                          onClick={() => handleQuickStatusUpdate(delivery.id, DeliveryStatus.DELIVERED)}
-                          disabled={delivery.status !== DeliveryStatus.PENDING || updatingStatus[delivery.id]}
-                          className={clsx(
-                            "text-xs font-medium py-1 px-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1",
-                            (delivery.status !== DeliveryStatus.PENDING || updatingStatus[delivery.id])
-                              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                              : "bg-green-600 text-white hover:bg-green-700 focus:ring-green-400"
-                          )}
-                          title={delivery.status !== DeliveryStatus.PENDING ? "Status already assigned" : "Mark as Delivered"}
-                        >
-                          {updatingStatus[delivery.id] ? (
-                            <Spinner size="sm" color="white" className="mr-1 inline-block align-middle" />
-                          ) : null}
-                          Delivered
-                        </button>
-                        <button
-                          onClick={() => handleQuickStatusUpdate(delivery.id, DeliveryStatus.NOT_DELIVERED)}
-                          disabled={delivery.status !== DeliveryStatus.PENDING || updatingStatus[delivery.id]}
-                          className={clsx(
-                            "text-xs font-medium py-1 px-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1",
-                            (delivery.status !== DeliveryStatus.PENDING || updatingStatus[delivery.id])
-                              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                              : "bg-red-500 text-white hover:bg-red-600 focus:ring-red-400"
-                          )}
-                          title={delivery.status !== DeliveryStatus.PENDING ? "Status already assigned" : "Mark as Not Delivered"}
-                        >
-                          {updatingStatus[delivery.id] ? (
-                            <Spinner size="sm" color="white" className="mr-1 inline-block align-middle" />
-                          ) : null}
-                          Not Delivered
-                        </button>
-                      </div>
-                    )}
+                  )}
+                  {!delivery.agent && delivery.status !== DeliveryStatus.PENDING && (
+                    <div className="text-xs text-orange-600">
+                      <span className="font-medium">Handler:</span> Not assigned
+                    </div>
+                  )}
+                </div>
+              </td>
+              <td className="px-3 py-4 whitespace-nowrap text-sm font-medium space-y-1">
+                {currentUser?.role === 'AGENCY' && (
+                  <div className="space-x-1">
+                    <button
+                      onClick={() => handleQuickStatusUpdate(delivery.id, DeliveryStatus.DELIVERED)}
+                      disabled={delivery.status !== DeliveryStatus.PENDING || updatingStatus[delivery.id]}
+                      className={clsx(
+                        "text-xs font-medium py-1 px-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1",
+                        (delivery.status !== DeliveryStatus.PENDING || updatingStatus[delivery.id])
+                          ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                          : "bg-green-600 text-white hover:bg-green-700 focus:ring-green-400"
+                      )}
+                      title={delivery.status !== DeliveryStatus.PENDING ? "Status already assigned" : "Mark as Delivered"}
+                    >
+                      {updatingStatus[delivery.id] ? (
+                        <Spinner size="sm" color="white" className="mr-1 inline-block align-middle" />
+                      ) : null}
+                      Delivered
+                    </button>
+                    <button
+                      onClick={() => handleQuickStatusUpdate(delivery.id, DeliveryStatus.NOT_DELIVERED)}
+                      disabled={delivery.status !== DeliveryStatus.PENDING || updatingStatus[delivery.id]}
+                      className={clsx(
+                        "text-xs font-medium py-1 px-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1",
+                        (delivery.status !== DeliveryStatus.PENDING || updatingStatus[delivery.id])
+                          ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                          : "bg-red-500 text-white hover:bg-red-600 focus:ring-red-400"
+                      )}
+                      title={delivery.status !== DeliveryStatus.PENDING ? "Status already assigned" : "Mark as Not Delivered"}
+                    >
+                      {updatingStatus[delivery.id] ? (
+                        <Spinner size="sm" color="white" className="mr-1 inline-block align-middle" />
+                      ) : null}
+                      Not Delivered
+                    </button>
+                  </div>
+                )}
 
                     {currentUser?.role === 'ADMIN' && (
                       <div className="space-y-1">

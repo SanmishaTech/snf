@@ -1396,7 +1396,7 @@ const AdminSubscriptionList: React.FC = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">All</SelectItem>
-                <SelectItem value="NOT_EXPIRED">Not Expired</SelectItem>
+                <SelectItem value="NOT_EXPIRED">Active</SelectItem>
                 <SelectItem value="EXPIRED">Expired</SelectItem>
               </SelectContent>
             </Select>
@@ -1525,7 +1525,7 @@ const AdminSubscriptionList: React.FC = () => {
               Showing {((currentPage - 1) * limit) + 1}-{Math.min(currentPage * limit, totalCount)} of {totalCount} orders
               {showUnassignedOnly && " (unassigned only)"}
               {filters.expiryStatus === "EXPIRED" && " (expired only)"}
-              {filters.expiryStatus === "NOT_EXPIRED" && " (not expired)"}
+              {filters.expiryStatus === "NOT_EXPIRED" && " (active only)"}
               {filters.expiryStatus === "ALL" && " (all records)"}
             </>
           )}

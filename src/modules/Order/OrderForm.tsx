@@ -225,6 +225,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
     handleSubmit, 
     setValue, 
     watch, 
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<OrderFormData>({
     resolver: zodResolver(orderSchema),
@@ -235,7 +236,6 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
       // Initialize other fields based on mode and initialData
       orderDate: (mode === 'edit' && initialData?.orderDate) ? new Date(initialData.orderDate) : new Date(),
       deliveryDate: (mode === 'edit' && initialData?.deliveryDate) ? new Date(initialData.deliveryDate) : addDays(new Date(), 1),
-      receivedById: (mode === 'edit' && initialData?.receivedById) ? initialData.receivedById : '',
       contactPersonName: (mode === 'edit' && initialData?.contactPersonName) ? initialData.contactPersonName : '',
       vendorId: (mode === 'edit' && initialData?.vendorId) ? initialData.vendorId : '',
       notes: (mode === 'edit' && initialData?.notes) ? initialData.notes : '',
@@ -371,6 +371,55 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
     console.log("[OrderForm] Fields updated:", fields);
     console.log("[OrderForm] Fields length:", fields.length);
   }, [fields]);
+
+  // Enhanced remove function that ensures form state consistency
+  const handleRemoveItem = (index: number) => {
+    console.log("[OrderForm] Removing item at index:", index);
+    
+    // Don't allow removal if only one item remains
+    if (fields.length <= 1) {
+      console.log("[OrderForm] Cannot remove last item");
+      return;
+    }
+    
+    // Remove the item
+    remove(index);
+    
+    // Force form re-validation after removal to ensure field states are consistent
+    setTimeout(() => {
+      const currentItems = getValues("orderItems");
+      console.log("[OrderForm] After removal, current items:", currentItems);
+      
+      // Re-validate all remaining fields to ensure they're properly registered
+      currentItems.forEach((_, itemIndex) => {
+        setValue(`orderItems.${itemIndex}.depotId`, currentItems[itemIndex]?.depotId || "", { 
+          shouldValidate: true, 
+          shouldDirty: true, 
+          shouldTouch: true 
+        });
+        setValue(`orderItems.${itemIndex}.agencyId`, currentItems[itemIndex]?.agencyId || "", { 
+          shouldValidate: true, 
+          shouldDirty: true, 
+          shouldTouch: true 
+        });
+        setValue(`orderItems.${itemIndex}.productId`, currentItems[itemIndex]?.productId || "", { 
+          shouldValidate: true, 
+          shouldDirty: true, 
+          shouldTouch: true 
+        });
+        setValue(`orderItems.${itemIndex}.depotVariantId`, currentItems[itemIndex]?.depotVariantId || "", { 
+          shouldValidate: true, 
+          shouldDirty: true, 
+          shouldTouch: true 
+        });
+        setValue(`orderItems.${itemIndex}.quantity`, currentItems[itemIndex]?.quantity || 1, { 
+          shouldValidate: true, 
+          shouldDirty: true, 
+          shouldTouch: true 
+        });
+      });
+    }, 0);
+  };
 
   // Fetch vendors
   useEffect(() => {
@@ -677,7 +726,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
       };
       fetchPrefillData();
     }
-  }, [watchedDeliveryDate, mode, setValue, products, agencies]);
+  }, [watchedDeliveryDate, mode, setValue]);
 
   // useEffect for populating basic form fields from initialData
   useEffect(() => {
@@ -932,9 +981,11 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                   name="vendorId"
                   render={({ field }) => (
                     <Select 
-                      onValueChange={field.onChange} 
-                      value={field.value || ""} 
-                      defaultValue={field.value || ""}
+                      onValueChange={(val) => {
+                        field.onChange(val);
+                        setValue("vendorId", val, { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+                      }} 
+                      value={field.value || undefined}
                     >
                       <SelectTrigger className="bg-white dark:bg-gray-700 w-full">
                         <SelectValue placeholder="Select a Farmer" />
@@ -1034,21 +1085,32 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                     </thead>
                     <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                     {fields.map((itemField, index) => {
-                      console.log(`[OrderForm] Rendering field ${index}:`, itemField, "Watched item:", watchedOrderItems[index]);
-                      const variantInfo = depotVariants.find(v => String(v.id) === watchedOrderItems[index]?.depotVariantId);
+                      console.log(`[OrderForm] Rendering field ${index}:`, itemField, "Row item:", getValues(`orderItems.${index}`));
+                      const rowItem = getValues(`orderItems.${index}`);
+                      const variantInfo = depotVariants.find(v => String(v.id) === rowItem?.depotVariantId);
                       // Prioritize purchasePrice if available, then fallback to mrp or buyOncePrice
                       const unitPrice = variantInfo ? (Number(variantInfo.purchasePrice) || Number(variantInfo.mrp) || Number(variantInfo.buyOncePrice) || 0) : 0;
-                      const itemTotal = unitPrice * (watchedOrderItems[index]?.quantity || 0);
+                      const itemTotal = unitPrice * (rowItem?.quantity || 0);
 
                       return (
                         <tr key={itemField.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                           <td className="px-4 py-3 whitespace-nowrap min-w-[200px]">
                             <Controller
+                              key={`depot-${itemField.id}-${index}`}
                               control={control}
                               name={`orderItems.${index}.depotId`}
                               render={({ field }) => (
-                                <Select onValueChange={field.onChange} value={field.value || ""}>
-                                  <SelectTrigger className={cn("h-9 text-sm bg-white dark:bg-gray-700 min-w-full", errors.orderItems?.[index]?.depotId && "border-red-500")}>
+                                <Select 
+                                  onValueChange={(val) => {
+                                    field.onChange(val);
+                                    // Clear dependent fields when depot changes
+                                    setValue(`orderItems.${index}.depotId`, val, { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+                                    setValue(`orderItems.${index}.agencyId`, "", { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+                                    setValue(`orderItems.${index}.depotVariantId`, "", { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+                                  }} 
+                                  value={field.value || ""}
+                                >
+                                  <SelectTrigger className={cn("h-9 text-sm bg-white dark:bg-gray-700 min-w-full", errors.orderItems?.[index]?.depotId && "border-red-500")}> 
                                     <SelectValue placeholder="Select Depot" />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -1062,11 +1124,12 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap min-w-[200px]">
                             <Controller
+                              key={`agency-${itemField.id}-${index}`}
                               control={control}
                               name={`orderItems.${index}.agencyId`}
                               render={({ field: agencyField }) => {
                                 // Filter agencies based on selected depot
-                                const currentItem = watchedOrderItems[index];
+                                const currentItem = getValues(`orderItems.${index}`);
                                 const filteredAgencies = currentItem?.depotId 
                                   ? agencies.filter(agency => 
                                       // Show agencies that are assigned to the selected depot
@@ -1075,16 +1138,13 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                                     )
                                   : agencies; // If no depot selected, show all agencies
                                 
-                                // Check if current selection is valid
-                                const isValidSelection = !agencyField.value || filteredAgencies.some(a => a.id === agencyField.value);
-                                
-                                // Use the field value if valid, otherwise empty string
-                                const effectiveValue = isValidSelection ? agencyField.value : "";
-                                
                                 return (
                                   <Select 
-                                    onValueChange={agencyField.onChange} 
-                                    value={effectiveValue || ""}
+                                    onValueChange={(val) => {
+                                      agencyField.onChange(val);
+                                      setValue(`orderItems.${index}.agencyId`, val, { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+                                    }} 
+                                    value={agencyField.value || ""}
                                   >
                                     <SelectTrigger className={cn("h-9 text-sm bg-white dark:bg-gray-700 min-w-full", 
                                       errors.orderItems?.[index]?.agencyId && "border-red-500")}>
@@ -1110,10 +1170,19 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap min-w-[200px]">
                             <Controller
+                              key={`product-${itemField.id}-${index}`}
                               control={control}
                               name={`orderItems.${index}.productId`}
                               render={({ field: controllerField }) => (
-                                <Select onValueChange={controllerField.onChange} value={controllerField.value || ""}>
+                                <Select 
+                                  onValueChange={(val) => {
+                                    controllerField.onChange(val);
+                                    // Clear variant when product changes
+                                    setValue(`orderItems.${index}.productId`, val, { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+                                    setValue(`orderItems.${index}.depotVariantId`, "", { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+                                  }} 
+                                  value={controllerField.value || ""}
+                                >
                                   <SelectTrigger className="h-9 text-sm bg-white dark:bg-gray-700/50 border-gray-300 dark:border-gray-600 w-full">
                                     <SelectValue placeholder="Select Product" />
                                   </SelectTrigger>
@@ -1130,11 +1199,12 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap min-w-[200px]">
                             <Controller
+                              key={`variant-${itemField.id}-${index}`}
                               control={control}
                               name={`orderItems.${index}.depotVariantId`}
                               render={({ field }) => {
                                 // Filter depot variants based on selected depot and product
-                                const currentItem = watchedOrderItems[index];
+                                const currentItem = getValues(`orderItems.${index}`);
                                 const filteredVariants = depotVariants.filter(variant => {
                                   // Only show variants that match the selected depot and product
                                   const matchesDepot = !currentItem?.depotId || String(variant.depotId) === currentItem.depotId;
@@ -1143,7 +1213,13 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                                 });
                                 
                                 return (
-                                  <Select onValueChange={field.onChange} value={field.value || ""}>
+                                  <Select 
+                                    onValueChange={(val) => {
+                                      field.onChange(val);
+                                      setValue(`orderItems.${index}.depotVariantId`, val, { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+                                    }} 
+                                    value={field.value || ""}
+                                  >
                                     <SelectTrigger className="h-9 text-sm bg-white dark:bg-gray-700 min-w-full">
                                       <SelectValue placeholder="Select Depot Variant" />
                                     </SelectTrigger>
@@ -1161,6 +1237,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap min-w-[100px]">
                             <Controller
+                              key={`quantity-${itemField.id}-${index}`}
                               control={control}
                               name={`orderItems.${index}.quantity`}
                               render={({ field }) => (
@@ -1168,10 +1245,24 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                                   id={`orderItems.${index}.quantity`}
                                   type="number"
                                   min="1"
-                                  value={field.value || 1}
+                                  value={field.value === undefined || field.value === null ? '' : field.value}
                                   onChange={(e) => {
-                                    const value = parseInt(e.target.value, 10);
-                                    field.onChange(isNaN(value) || value < 1 ? 1 : value);
+                                    const raw = e.target.value;
+                                    if (raw === '') {
+                                      field.onChange(undefined as any);
+                                      return;
+                                    }
+                                    const value = Number(raw);
+                                    if (Number.isNaN(value)) {
+                                      field.onChange(undefined as any);
+                                    } else {
+                                      field.onChange(value);
+                                    }
+                                  }}
+                                  onBlur={() => {
+                                    if (field.value === undefined || field.value === null || (typeof field.value === 'number' && field.value <= 0)) {
+                                      field.onChange(1);
+                                    }
                                   }}
                                   className="h-9 text-sm bg-white dark:bg-gray-700/50 border-gray-300 dark:border-gray-600 w-full"
                                 />
@@ -1184,7 +1275,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                               type="button"
                               size="icon"
                               variant="ghost"
-                              onClick={() => remove(index)}
+                              onClick={() => handleRemoveItem(index)}
                               className="h-8 w-8 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800/50"
                               disabled={fields.length === 1}
                             >
@@ -1201,10 +1292,11 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
               {/* Mobile card layout */}
               <div className="md:hidden space-y-4">
                 {fields.map((itemField, index) => {
-                  console.log(`[OrderForm] Rendering mobile field ${index}:`, itemField, "Watched item:", watchedOrderItems[index]);
-                  const variantInfo = depotVariants.find(v => String(v.id) === watchedOrderItems[index]?.depotVariantId);
+                  console.log(`[OrderForm] Rendering mobile field ${index}:`, itemField, "Row item:", getValues(`orderItems.${index}`));
+                  const rowItemMobile = getValues(`orderItems.${index}`);
+                  const variantInfo = depotVariants.find(v => String(v.id) === rowItemMobile?.depotVariantId);
                   const unitPrice = variantInfo ? (Number(variantInfo.purchasePrice) || Number(variantInfo.mrp) || Number(variantInfo.buyOncePrice) || 0) : 0;
-                  const itemTotal = unitPrice * (watchedOrderItems[index]?.quantity || 0);
+                  const itemTotal = unitPrice * (rowItemMobile?.quantity || 0);
 
                   return (
                     <div key={itemField.id} className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 space-y-4">
@@ -1214,7 +1306,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                           type="button"
                           size="icon"
                           variant="ghost"
-                          onClick={() => remove(index)}
+                          onClick={() => handleRemoveItem(index)}
                           className="h-8 w-8 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800/50"
                           disabled={fields.length === 1}
                         >
@@ -1226,11 +1318,21 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                         <div>
                           <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Depot</Label>
                           <Controller
+                            key={`mobile-depot-${itemField.id}-${index}`}
                             control={control}
                             name={`orderItems.${index}.depotId`}
                             render={({ field }) => (
-                              <Select onValueChange={field.onChange} value={field.value || ""}>
-                                <SelectTrigger className={cn("mt-1 bg-white dark:bg-gray-700", errors.orderItems?.[index]?.depotId && "border-red-500")}>
+                              <Select 
+                                onValueChange={(val) => {
+                                  field.onChange(val);
+                                  // Clear dependent fields when depot changes
+                                  setValue(`orderItems.${index}.depotId`, val, { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+                                  setValue(`orderItems.${index}.agencyId`, "", { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+                                  setValue(`orderItems.${index}.depotVariantId`, "", { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+                                }} 
+                                value={field.value || ""}
+                              >
+                                <SelectTrigger className={cn("mt-1 bg-white dark:bg-gray-700", errors.orderItems?.[index]?.depotId && "border-red-500")}> 
                                   <SelectValue placeholder="Select Depot" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1246,11 +1348,12 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                         <div>
                           <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Agency</Label>
                           <Controller
+                            key={`mobile-agency-${itemField.id}-${index}`}
                             control={control}
                             name={`orderItems.${index}.agencyId`}
                             render={({ field: agencyField }) => {
                               // Filter agencies based on selected depot
-                              const currentItem = watchedOrderItems[index];
+                              const currentItem = getValues(`orderItems.${index}`);
                               const filteredAgencies = currentItem?.depotId 
                                 ? agencies.filter(agency => 
                                     // Show agencies that are assigned to the selected depot
@@ -1259,16 +1362,13 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                                   )
                                 : agencies; // If no depot selected, show all agencies
                               
-                              // Check if current selection is valid
-                              const isValidSelection = !agencyField.value || filteredAgencies.some(a => a.id === agencyField.value);
-                              
-                              // Use the field value if valid, otherwise empty string
-                              const effectiveValue = isValidSelection ? agencyField.value : "";
-                              
                               return (
                                 <Select 
-                                  onValueChange={agencyField.onChange} 
-                                  value={effectiveValue || ""}
+                                  onValueChange={(val) => {
+                                    agencyField.onChange(val);
+                                    setValue(`orderItems.${index}.agencyId`, val, { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+                                  }} 
+                                  value={agencyField.value || ""}
                                 >
                                   <SelectTrigger className={cn("mt-1 bg-white dark:bg-gray-700", 
                                     errors.orderItems?.[index]?.agencyId && "border-red-500")}>
@@ -1296,10 +1396,19 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                         <div>
                           <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Product</Label>
                           <Controller
+                            key={`mobile-product-${itemField.id}-${index}`}
                             control={control}
                             name={`orderItems.${index}.productId`}
                             render={({ field: controllerField }) => (
-                              <Select onValueChange={controllerField.onChange} value={controllerField.value || ""}>
+                              <Select 
+                                onValueChange={(val) => {
+                                  controllerField.onChange(val);
+                                  // Clear variant when product changes
+                                  setValue(`orderItems.${index}.productId`, val, { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+                                  setValue(`orderItems.${index}.depotVariantId`, "", { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+                                }} 
+                                value={controllerField.value || ""}
+                              >
                                 <SelectTrigger className="mt-1 bg-white dark:bg-gray-700">
                                   <SelectValue placeholder="Select Product" />
                                 </SelectTrigger>
@@ -1318,10 +1427,11 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                         <div>
                           <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Depot Variant</Label>
                           <Controller
+                            key={`mobile-variant-${itemField.id}-${index}`}
                             control={control}
                             name={`orderItems.${index}.depotVariantId`}
                             render={({ field }) => {
-                              const currentItem = watchedOrderItems[index];
+                              const currentItem = getValues(`orderItems.${index}`);
                               const filteredVariants = depotVariants.filter(variant => {
                                 const matchesDepot = !currentItem?.depotId || String(variant.depotId) === currentItem.depotId;
                                 const matchesProduct = !currentItem?.productId || String(variant.productId) === currentItem.productId;
@@ -1329,7 +1439,13 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                               });
                               
                               return (
-                                <Select onValueChange={field.onChange} value={field.value || ""}>
+                                <Select 
+                                  onValueChange={(val) => {
+                                    field.onChange(val);
+                                    setValue(`orderItems.${index}.depotVariantId`, val, { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+                                  }} 
+                                  value={field.value || ""}
+                                >
                                   <SelectTrigger className="mt-1 bg-white dark:bg-gray-700">
                                     <SelectValue placeholder="Select Depot Variant" />
                                   </SelectTrigger>
@@ -1349,6 +1465,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                         <div>
                           <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Quantity</Label>
                           <Controller
+                            key={`mobile-quantity-${itemField.id}-${index}`}
                             control={control}
                             name={`orderItems.${index}.quantity`}
                             render={({ field }) => (
@@ -1356,10 +1473,24 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                                 id={`orderItems.${index}.quantity`}
                                 type="number"
                                 min="1"
-                                value={field.value || 1}
+                                value={field.value === undefined || field.value === null ? '' : field.value}
                                 onChange={(e) => {
-                                  const value = parseInt(e.target.value, 10);
-                                  field.onChange(isNaN(value) || value < 1 ? 1 : value);
+                                  const raw = e.target.value;
+                                  if (raw === '') {
+                                    field.onChange(undefined as any);
+                                    return;
+                                  }
+                                  const value = Number(raw);
+                                  if (Number.isNaN(value)) {
+                                    field.onChange(undefined as any);
+                                  } else {
+                                    field.onChange(value);
+                                  }
+                                }}
+                                onBlur={() => {
+                                  if (field.value === undefined || field.value === null || (typeof field.value === 'number' && field.value <= 0)) {
+                                    field.onChange(1);
+                                  }
                                 }}
                                 className="mt-1 bg-white dark:bg-gray-700"
                               />

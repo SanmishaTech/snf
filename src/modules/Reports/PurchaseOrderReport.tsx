@@ -116,12 +116,11 @@ export default function PurchaseOrderReport() {
       headers: [
         { key: 'status', label: 'Status', width: 12 },
         { key: 'product', label: 'Product', width: 20 },
-        { key: 'qty', label: 'Quantity', width: 15 },
+        { key: 'qty', label: 'Quantity', width: 15, align: 'center' },
         { key: 'agency', label: 'Agency', width: 15 },
         { key: 'amount', label: 'Amount', width: 15, align: 'right' },
         { key: 'purchaseNo', label: 'Purchase No', width: 15 },
         { key: 'date', label: 'Date', width: 12 },
-        { key: 'invoice', label: 'Invoice No', width: 15 },
         { key: 'farmer', label: 'Farmer', width: 20 },
         { key: 'depot', label: 'Depot', width: 20 },
         { key: 'rate', label: 'Rate', width: 12, align: 'right' }
