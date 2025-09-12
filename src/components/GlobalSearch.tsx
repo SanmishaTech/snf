@@ -250,10 +250,10 @@ const GlobalSearch: React.FC = () => {
   };
 
   return (
-    <div className="relative w-full max-w-xl">
+    <div className="relative w-full max-w-xl bg-white">
       <div className="relative">
-        <div className="flex items-center bg-gray-100 rounded-full px-4 py-2">
-          <Search className="h-5 w-5 text-gray-500 mr-2" aria-hidden="true" />
+        <div className="flex items-center rounded-sm bg-white border-1 border-solid border-black px-4 py-1">
+          <Search className="h-5 w-5 text-gray-500 mr-2 text-black " aria-hidden="true" />
           <input
             ref={inputRef}
             type="search"
@@ -262,7 +262,7 @@ const GlobalSearch: React.FC = () => {
             aria-expanded={open}
             aria-controls="search-suggestion-list"
             aria-activedescendant={active >= 0 ? `search-option-${active}` : undefined}
-            placeholder="Search products..."
+            // placeholder="..."
             className="bg-transparent border-none focus:outline-none w-60"
             value={q}
             onChange={onChange}

@@ -10,6 +10,7 @@ import { usePricing } from "@/modules/SNF/context/PricingContext";
 import { useCart } from "@/modules/SNF/context/CartContext";
 import { CartDropdown } from "./CartDropdown";
 import WalletButton from "@/modules/Wallet/Components/Walletmenu";
+import Logo from "@/modules/SNF/image/logosarkhot.webp";
 
 interface HeaderProps {
   cartCount: number;
@@ -171,33 +172,34 @@ export const Header: React.FC<HeaderProps> = (_props) => {
 
   return (
     <header
-      className={`top-0 inset-x-0 z-40 bg-background/95 supports-[backdrop-filter]:bg-background/60 backdrop-blur border-b transition-all pt-[env(safe-area-inset-top)] ${
+      className={`top-0 inset-x-0 z-40 bg-[#F7F5F3] supports-[backdrop-filter]:bg-background/60 backdrop-blur border-b transition-all pt-[env(safe-area-inset-top)] ${
         sticky ? "sticky shadow-sm" : "relative"
       }`}
       aria-label="SNF store global header"
     >
       <div className="container mx-auto px-3 md:px-6 lg:px-8">
-        <div className="h-14 md:h-16 flex items-center justify-between gap-2 md:gap-3 min-w-0">
-          <a href="/snf" className="flex items-center gap-2 min-w-0" aria-label="SNF Home">
-            <div className="size-8 rounded-md bg-primary text-primary-foreground grid place-items-center font-bold shrink-0">
-              S
-            </div>
-            <span className="hidden sm:inline text-base md:text-lg font-semibold tracking-tight truncate">SNF Market</span>
-          </a>
+        <div className="h-[5rem] md:h-[5rem] flex items-center justify-between gap-2 md:gap-3 min-w-0">
+  
+  {/* Replace submit-based search with search-as-you-type preview dropdown */}
 
-          {/* Replace submit-based search with search-as-you-type preview dropdown */}
-          <div className="flex-1 max-w-xl hidden md:flex items-center min-w-0">
+        <div className="flex-1 max-w-xs hidden md:flex items-center min-w-0">
             <GlobalSearch />
           </div>
+         
+          <a href="/snf" className="flex items-center gap-2 min-w-0" aria-label="SNF Home">
+          <img src={Logo} alt="SNF Logo" className="w-[7rem] " />
+          </a>
+
+      
 
           <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
             {/* Location selector using shadcn DropdownMenu with portal and safe z-index */}
             <DropdownMenu open={open} onOpenChange={setOpen}>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" aria-label="Select delivery location" className="whitespace-nowrap">
+                <Button variant="outline" size="lg" aria-label="Select delivery location" className="whitespace-nowrap">
                   <MapPin className="size-4" />
                   {deliveryLocation && deliveryLocation.depotName ? (
-                    <span className="hidden sm:inline">{deliveryLocation.pincode} • {deliveryLocation.depotName}</span>
+                    <span className="hidden sm:inline">{deliveryLocation.pincode}</span>
                   ) : pincode ? (
                     <span className="hidden sm:inline">Pincode: {pincode}</span>
                   ) : (
