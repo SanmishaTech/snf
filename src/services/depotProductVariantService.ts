@@ -37,8 +37,18 @@ export const getDepotProductVariants = async (params: {
   limit?: number;
   productId?: number;
   depotId?: number;
+  search?: string;
 } = {}): Promise<PaginatedDepotVariantsResponse> => {
-  return await get<PaginatedDepotVariantsResponse>(API_BASE_URL, params);
+  const res = await get<PaginatedDepotVariantsResponse>(API_BASE_URL, params);
+  // Map backend include.product.name into productName for UI consistency
+  const mapped = {
+    ...res,
+    data: (res.data || []).map((v: any) => ({
+      ...v,
+      productName: v.productName ?? v.product?.name ?? undefined,
+    })),
+  };
+  return mapped;
 };
 
 export const createDepotProductVariant = async (data: Partial<DepotProductVariant>): Promise<DepotProductVariant> => {

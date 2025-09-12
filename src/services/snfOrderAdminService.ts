@@ -1,6 +1,8 @@
 import { get, patch, post } from './apiService';
 import { backendUrl } from '../config';
 
+const API_BASE_URL = '/admin/snf-orders';
+
 export interface SNFOrderListItem {
   id: number;
   orderNo: string;
@@ -23,6 +25,63 @@ export interface SNFOrderListItem {
   } | null;
   _count: { items: number };
 }
+
+// Admin: Add an item to SNF order
+export interface AddItemPayload {
+  depotProductVariantId?: number | null;
+  productId?: number | null;
+  name?: string;
+  variantName?: string | null;
+  imageUrl?: string | null;
+  price: number;
+  quantity: number;
+}
+
+export interface EditItemOperationResponse {
+  success: boolean;
+  message: string;
+  order?: SNFOrderDetail;
+  newOrderTotal?: number;
+  needsInvoiceRegeneration?: boolean;
+}
+
+export const addSNFOrderItem = async (id: number, payload: AddItemPayload): Promise<EditItemOperationResponse> => {
+  try {
+    const response = await post<EditItemOperationResponse>(`${API_BASE_URL}/${id}/items`, payload);
+    return response;
+  } catch (error) {
+    console.error(`Failed to add item to SNF order ${id}:`, error);
+    throw error;
+  }
+};
+
+export const updateSNFOrderItemQuantity = async (
+  id: number,
+  itemId: number,
+  quantity: number
+): Promise<EditItemOperationResponse> => {
+  try {
+    const response = await patch<EditItemOperationResponse>(`${API_BASE_URL}/${id}/items/${itemId}`, { quantity });
+    return response;
+  } catch (error) {
+    console.error(`Failed to update item ${itemId} for SNF order ${id}:`, error);
+    throw error;
+  }
+};
+
+export const toggleSNFOrderItemCancellation = async (
+  id: number,
+  itemId: number,
+  isCancelled: boolean
+): Promise<EditItemOperationResponse> => {
+  try {
+    const response = await patch<EditItemOperationResponse>(`${API_BASE_URL}/${id}/items/${itemId}/cancel`, { isCancelled });
+    return response;
+  } catch (error) {
+    console.error(`Failed to toggle cancellation for item ${itemId} in order ${id}:`, error);
+    throw error;
+  }
+};
 
 export interface PaginatedSNFOrdersResponse {
   orders: SNFOrderListItem[];
@@ -64,6 +123,9 @@ export interface SNFOrderDetail {
   paymentStatus: string;
   paymentRefNo?: string | null;
   paymentDate?: string | null;
+  deliveryDate?: string | null;
+  payableAmount?: number;
+  walletamt?: number;
   invoiceNo?: string | null;
   invoicePath?: string | null;
   createdAt: string;
@@ -79,7 +141,6 @@ export interface SNFOrderDetail {
   } | null;
 }
 
-const API_BASE_URL = '/admin/snf-orders';
 
 export const getAllSNFOrders = async (
   params: {
@@ -107,6 +168,26 @@ export const getSNFOrderById = async (id: number): Promise<SNFOrderDetail> => {
     return response;
   } catch (error) {
     console.error(`Failed to fetch SNF order ${id}:`, error);
+    throw error;
+  }
+};
+
+// Update SNF order (partial). Supports fields like paymentStatus/mode/ref/date and deliveryDate.
+export const updateSNFOrder = async (
+  id: number,
+  data: Partial<{
+    paymentStatus: string;
+    paymentMode: string | null;
+    paymentRefNo: string | null;
+    paymentDate: string | null; // yyyy-MM-dd
+    deliveryDate: string | null; // yyyy-MM-dd
+  }>
+): Promise<SNFOrderDetail> => {
+  try {
+    const response = await patch<SNFOrderDetail>(`${API_BASE_URL}/${id}`, data);
+    return response;
+  } catch (error) {
+    console.error(`Failed to update SNF order ${id}:`, error);
     throw error;
   }
 };

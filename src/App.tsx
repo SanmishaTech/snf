@@ -99,6 +99,8 @@ import "./App.css";
  
 import SNFOrdersListPage from "./modules/SNFOrders/SNFOrdersListPage";
 import SNFOrderDetailPage from "./modules/SNFOrders/SNFOrderDetailPage";
+import SNFOrderEditPage from "./modules/SNFOrders/SNFOrderEditPage";
+import SNFOrderCreatePage from "./modules/SNFOrders/SNFOrderCreatePage";
 import OrderControlPage from "./modules/OrderControl/OrderControlPage";
 import PurchaseOrderReport from "./modules/Reports/PurchaseOrderReport";
 
@@ -389,7 +391,9 @@ const App = () => {
             <Route path="/admin/banners" element={<BannerListPage />} /> {/* Added for Banner Master Management */}
             <Route path="/admin/depot-variants" element={<DepotProductVariantListPage />} /> {/* Added for Depot Product Variant Management */}
             <Route path="/admin/snf-orders" element={<SNFOrdersListPage />} />
+            <Route path="/admin/snf-orders/new" element={<SNFOrderCreatePage />} />
             <Route path="/admin/snf-orders/:id" element={<SNFOrderDetailPage />} />
+            <Route path="/admin/snf-orders/:id/edit" element={<SNFOrderEditPage />} />
             <Route path="/admin/order-control" element={<OrderControlPage />} />
             <Route path="/admin/reports/purchase-orders" element={<PurchaseOrderReport />} /> {/* Purchase Order Report */}
             <Route path="/admin/reports/delivery-agencies" element={<DeliveryReport />} /> {/* Delivery Agencies Report */}

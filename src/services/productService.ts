@@ -5,11 +5,9 @@ export interface ProductOption {
   name: string;
 }
 
-// Fetch lightweight list of products for dropdowns (id & name only).
+// Fetch all products for dropdown options (admin endpoint).
 export const getProductOptions = async (): Promise<ProductOption[]> => {
-  // Assumes backend supports selecting minimal fields via query, otherwise full objects are fine.
-  // e.g. GET /api/products?select=id,name&limit=1000
-  const res = await get<{ data: ProductOption[] }>(`/products`, { select: 'id,name', limit: 1000 });
-  // If backend returns array directly adjust accordingly
-  return (res as any).data ?? res;
+  const res = await get<{ data: any[] }>(`/admin/products`, { limit: 1000 });
+  // Extract just id and name from the full product objects
+  return (res.data || []).map(p => ({ id: p.id, name: p.name }));
 };

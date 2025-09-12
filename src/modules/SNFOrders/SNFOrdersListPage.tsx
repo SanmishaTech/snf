@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, AlertCircle, Search, Download } from 'lucide-react';
+import { Loader2, AlertCircle, Search, Download, Plus } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { getAllSNFOrders, PaginatedSNFOrdersResponse, SNFOrderListItem, markSNFOrderAsPaid, MarkOrderPaidPayload, generateSNFOrderInvoice, downloadSNFOrderInvoice } from '@/services/snfOrderAdminService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -149,6 +149,11 @@ const SNFOrdersListPage: React.FC = () => {
                   <SelectItem value="100">100</SelectItem>
                 </SelectContent>
               </Select>
+              <Button asChild>
+                <Link to="/admin/snf-orders/new">
+                  <Plus className="h-4 w-4 mr-1" /> Add Order
+                </Link>
+              </Button>
             </div>
           </div>
 
@@ -203,7 +208,7 @@ const SNFOrdersListPage: React.FC = () => {
                       <TableCell>
                         <div className="flex flex-col">
                           <span className="font-medium">{o.name}</span>
-                          <span className="text-xs text-muted-foreground">{o.email || '-'}</span>
+                          {/* <span className="text-xs text-muted-foreground">{o.email || '-'}</span> */}
                         </div>
                       </TableCell>
                       <TableCell>{o.mobile}</TableCell>
@@ -243,6 +248,9 @@ const SNFOrdersListPage: React.FC = () => {
                         <div className="flex items-center justify-center gap-2">
                           <Button asChild size="sm" variant="outline">
                             <Link to={`/admin/snf-orders/${o.id}`}>View</Link>
+                          </Button>
+                          <Button asChild size="sm" className="bg-black text-white hover:bg-black/80">
+                            <Link to={`/admin/snf-orders/${o.id}/edit`}>Edit</Link>
                           </Button>
                           {o.paymentStatus === 'PAID' ? (
                             <Button size="sm" variant="secondary" disabled>

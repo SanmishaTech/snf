@@ -33,9 +33,8 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
+TableRow,
 } from "@/components/ui/table";
-import { format } from "date-fns";
 import {
   PlusCircle,
   Edit,
@@ -44,7 +43,21 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { formatCurrency } from "@/lib/formatter";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  getProductOptions,
+  type ProductOption,
+} from "../../services/productService";
+import {
+  getAllDepotsList,
+  type DepotListItem,
+} from "../../services/depotService";
 
 const DepotProductVariantListPage: React.FC = () => {
   const [variants, setVariants] = useState<DepotProductVariant[]>([]);
@@ -52,6 +65,12 @@ const DepotProductVariantListPage: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const recordsPerPage = 10;
+
+  // Filter states and options
+  const [selectedProductId, setSelectedProductId] = useState<string>("all");
+  const [selectedDepotId, setSelectedDepotId] = useState<string>("all");
+  const [productOptions, setProductOptions] = useState<ProductOption[]>([]);
+  const [depotOptions, setDepotOptions] = useState<DepotListItem[]>([]);
 
   // User role and depot filtering state
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
@@ -112,6 +131,23 @@ const DepotProductVariantListPage: React.FC = () => {
     fetchUserInfo();
   }, []);
 
+  // Fetch filter dropdown options (products and depots)
+  useEffect(() => {
+    const loadOptions = async () => {
+      try {
+        const [products, depots] = await Promise.all([
+          getProductOptions().catch(() => []),
+          getAllDepotsList().catch(() => []),
+        ]);
+        setProductOptions(Array.isArray(products) ? products : []);
+        setDepotOptions(Array.isArray(depots) ? depots : []);
+      } catch (e) {
+        // Silent fail; filters are optional UX enhancements
+      }
+    };
+    loadOptions();
+  }, []);
+
   const fetchVariants = useCallback(async () => {
     // Don't fetch if depot user info is still loading
     const normalizedRole = (currentUserRole || "").toString().toUpperCase();
@@ -135,9 +171,17 @@ const DepotProductVariantListPage: React.FC = () => {
         limit: recordsPerPage,
       };
 
-      // Add depot filtering if user is a depot user
+      // Add depot filtering
       if (isDepotRole && currentUserDepotId) {
+        // Depot users are locked to their own depot
         params.depotId = currentUserDepotId;
+      } else if (selectedDepotId && selectedDepotId !== "all") {
+        params.depotId = Number(selectedDepotId);
+      }
+
+      // Add product filtering if selected
+      if (selectedProductId && selectedProductId !== "all") {
+        params.productId = Number(selectedProductId);
       }
 
       // Add search parameter if search term exists
@@ -157,7 +201,7 @@ const DepotProductVariantListPage: React.FC = () => {
     } catch (err: any) {
       toast.error(err.message || "Failed to fetch variants");
     }
-  }, [currentPage, currentUserRole, currentUserDepotId, isUserInfoLoading, searchTerm]);
+  }, [currentPage, currentUserRole, currentUserDepotId, isUserInfoLoading, searchTerm, selectedDepotId, selectedProductId]);
 
   // Debounced search effect
   useEffect(() => {
@@ -252,10 +296,67 @@ const DepotProductVariantListPage: React.FC = () => {
         <div className="bg-white p-8 rounded-xl shadow-lg">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-semibold text-gray-800">Depot Product Variants</h1>
-            <div className="flex flex-col md:flex-row gap-2 items-center">
-              <div className="relative w-full max-md:w-2/5">
+            <div className="flex flex-col md:flex-row gap-2 items-center w-full md:w-auto md:justify-end">
+              {/* Product Filter */}
+              <div className="w-full md:w-56">
+                <Select
+                  value={selectedProductId}
+                  onValueChange={(v) => {
+                    setSelectedProductId(v);
+                    if (currentPage !== 1) setCurrentPage(1);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Product" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Products</SelectItem>
+                    {productOptions.map((p) => (
+                      <SelectItem key={p.id} value={String(p.id)}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Depot Filter */}
+              <div className="w-full md:w-56">
+                {(() => {
+                  const normalizedRole = (currentUserRole || "").toString().toUpperCase();
+                  const isDepotRole = normalizedRole === "DEPOTADMIN" || normalizedRole.includes("DEPOT");
+                  const depotValue = isDepotRole
+                    ? String(currentUserDepotId ?? "")
+                    : selectedDepotId;
+                  return (
+                    <Select
+                      value={depotValue}
+                      onValueChange={(v) => {
+                        setSelectedDepotId(v);
+                        if (currentPage !== 1) setCurrentPage(1);
+                      }}
+                      disabled={isDepotRole || isUserInfoLoading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Depot" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Depots</SelectItem>
+                        {depotOptions.map((d) => (
+                          <SelectItem key={d.id} value={String(d.id)}>
+                            {d.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  );
+                })()}
+              </div>
+
+              {/* Name Filter */}
+              <div className="relative w-full md:w-64">
                 <Input
-                  placeholder="Search products, depots..."
+                  placeholder="Filter by name"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 min-h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -265,6 +366,7 @@ const DepotProductVariantListPage: React.FC = () => {
                   size={20}
                 />
               </div>
+
               <DialogTrigger asChild>
                 <Button
                   variant="default"
