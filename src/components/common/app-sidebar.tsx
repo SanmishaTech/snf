@@ -165,12 +165,12 @@ const initialData = {
           icon: FileText,
           groupLabel: "Indraai",
         },
-        // {
-        //   title: "SNF Orders",
-        //   url: "/admin/snf-orders",
-        //   icon: FileText,
-        //   groupLabel: "Indraai",
-        // },
+        {
+          title: "SNF Orders",
+          url: "/admin/snf-orders",
+          icon: FileText,
+          groupLabel: "Indraai",
+        },
         {
           title: "Subscriptions",
           url: "/admin/subscriptions",
