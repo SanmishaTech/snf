@@ -1,0 +1,1 @@
+import{j as r}from"./index-CJs8Bkls.js";import{P as i,C as o}from"./Footer-CVsbJRor.js";import t from"./SNFLandingPage-BFyjMi2z.js";import"./ProductGrid-D9l67S8Z.js";import"./ProductCard-CQ2qANfi.js";const n=()=>r.jsx(i,{children:r.jsx(o,{children:r.jsx(t,{})})});export{n as default};
