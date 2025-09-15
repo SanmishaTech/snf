@@ -408,22 +408,24 @@ const OrderList = () => {
               <p className="text-sm text-gray-500 dark:text-gray-500">Try adjusting your filters or creating a new order.</p>
             </div>
           ) : (
-            <Table className="min-w-full bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <Table className="w-full bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden table-fixed min-w-max">
               <TableHeader className="bg-gray-100 dark:bg-gray-700">
                 <TableRow>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">PO Number</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Farmer</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Agency/Depot</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Order Date</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Delivery Date</TableHead>
+                  <TableHead className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-tight dark:text-gray-300" style={{width: '80px'}}>PO Number</TableHead>
+                  <TableHead className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-tight dark:text-gray-300" style={{width: '100px'}}>Farmer</TableHead>
+                  <TableHead className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-tight dark:text-gray-300" style={{width: '120px'}}>Agency/Depot</TableHead>
+                  <TableHead className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-tight dark:text-gray-300" style={{width: '80px'}}>Order Date</TableHead>
+                  <TableHead className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-tight dark:text-gray-300" style={{width: '80px'}}>Delivery Date</TableHead>
                   {currentUserRole !== "AGENCY" && currentUserRole !== "SUPERVISOR" && (
-                    <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Total Amount</TableHead>
+                    <TableHead className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-tight dark:text-gray-300" style={{width: '80px'}}>Total Amount</TableHead>
                   )}
                   {currentUserRole === "ADMIN" && (
-                    <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Quantities (O/D/R/S)</TableHead>
+                    <TableHead className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-tight dark:text-gray-300" style={{width: '120px'}}>Quantities (O/D/R/S)</TableHead>
                   )}
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Status</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Actions</TableHead>
+                  <TableHead className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-tight dark:text-gray-300" style={{width: '70px'}}>Wastage (F/A)</TableHead>
+                  <TableHead className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-tight dark:text-gray-300" style={{width: '70px'}}>Status</TableHead>
+                  <TableHead className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-tight dark:text-gray-300" style={{width: '60px'}}>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -443,9 +445,9 @@ const OrderList = () => {
                     className="hover:bg-gray-50 dark:hover:bg-gray-750 cursor-pointer"
                     onClick={() => { setSelectedOrder(order); setDetailsOpen(true); }}
                   >
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{order.poNumber}</TableCell>
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{order.vendor.name}</TableCell>
-                    <TableCell className="px-6 py-4 text-sm text-gray-500 dark:text-gray-300">
+                    <TableCell className="px-1 py-3 whitespace-nowrap text-xs font-medium text-gray-900 dark:text-gray-100">{order.poNumber}</TableCell>
+                    <TableCell className="px-1 py-3 whitespace-nowrap text-xs text-gray-500 dark:text-gray-300 truncate">{order.vendor.name}</TableCell>
+                    <TableCell className="px-1 py-3 text-xs text-gray-500 dark:text-gray-300">
                       {(() => {
                         // Get unique agencies and depots from order items
                         const agencies = order.items?.map(item => item.agency).filter(Boolean) || [];
@@ -484,13 +486,13 @@ const OrderList = () => {
                         );
                       })()}
                     </TableCell>
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{format(new Date(order.orderDate), "dd/MM/yyyy")}</TableCell>
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{format(new Date(order.deliveryDate), "dd/MM/yyyy")}</TableCell>
+                    <TableCell className="px-1 py-3 whitespace-nowrap text-xs text-gray-500 dark:text-gray-300">{format(new Date(order.orderDate), "dd/MM/yy")}</TableCell>
+                    <TableCell className="px-1 py-3 whitespace-nowrap text-xs text-gray-500 dark:text-gray-300">{format(new Date(order.deliveryDate), "dd/MM/yy")}</TableCell>
                     {currentUserRole !== "AGENCY" && currentUserRole !== "SUPERVISOR" && (
-                      <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{formatCurrency(order.totalAmount)}</TableCell>
+                      <TableCell className="px-1 py-3 whitespace-nowrap text-xs text-gray-500 dark:text-gray-300">{formatCurrency(order.totalAmount)}</TableCell>
                     )}
                     {currentUserRole === "ADMIN" && (
-                      <TableCell className="px-6 py-4 whitespace-nowrap text-sm">
+                      <TableCell className="px-1 py-3 whitespace-nowrap text-xs">
                         <div className="flex flex-col space-y-1">
                           {(() => {
                             // Get all unique variant names from items
@@ -526,8 +528,43 @@ const OrderList = () => {
                         </div>
                       </TableCell>
                     )}
-                    <TableCell className="px-6 py-4 whitespace-nowrap">
-                      <Badge className={`${getStatusColor(order.status)} text-white px-2 py-1 rounded-full text-xs`}>
+                    <TableCell className="px-1 py-3 whitespace-nowrap text-xs text-gray-500 dark:text-gray-300">
+                      {(() => {
+                        const hasValidDelivered = quantities.delivered != null && quantities.delivered > 0;
+                        const hasValidReceived = quantities.received != null && quantities.received > 0;
+                        const hasValidSupervisor = quantities.supervisor != null && quantities.supervisor > 0;
+                        
+                        const farmerWastage = hasValidDelivered && hasValidReceived ? quantities.delivered - quantities.received : null;
+                        const agencyWastage = hasValidReceived && hasValidSupervisor ? quantities.received - quantities.supervisor : null;
+                        
+                        return (
+                          <div className="flex flex-col space-y-1">
+                            <div>
+                              <span className="text-xs font-medium">F:</span>{" "}
+                              {farmerWastage !== null ? (
+                                <span className={farmerWastage > 0 ? "text-red-500 font-medium" : "text-gray-500 dark:text-gray-300"}>
+                                  {farmerWastage}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                            </div>
+                            <div>
+                              <span className="text-xs font-medium">A:</span>{" "}
+                              {agencyWastage !== null ? (
+                                <span className={agencyWastage > 0 ? "text-red-500 font-medium" : "text-gray-500 dark:text-gray-300"}>
+                                  {agencyWastage}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </TableCell>
+                    <TableCell className="px-1 py-3 whitespace-nowrap">
+                      <Badge className={`${getStatusColor(order.status)} text-white px-1 py-0.5 rounded-full text-xs`}>
                         {order.status}
                       </Badge>
                       {agencyNeedsToRecord && (
@@ -543,7 +580,7 @@ const OrderList = () => {
                         </TooltipProvider>
                       )}
                     </TableCell>
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" onClick={(e) => e.stopPropagation()}>
+                    <TableCell className="px-1 py-3 whitespace-nowrap text-right text-xs font-medium" onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu modal={false} >
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="h-8 w-8 p-0">
@@ -645,7 +682,8 @@ const OrderList = () => {
                 )
               })}
             </TableBody>
-          </Table>
+              </Table>
+            </div>
         )}
 
         {selectedOrder && (

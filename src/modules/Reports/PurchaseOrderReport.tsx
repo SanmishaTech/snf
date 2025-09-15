@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TableCell, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
@@ -116,7 +116,12 @@ export default function PurchaseOrderReport() {
       headers: [
         { key: 'status', label: 'Status', width: 12 },
         { key: 'product', label: 'Product', width: 20 },
-        { key: 'qty', label: 'Quantity', width: 15, align: 'center' },
+        { key: 'qty', label: 'Ordered Qty', width: 12, align: 'center' },
+        { key: 'deliveredQty', label: 'Delivered Qty', width: 12, align: 'center' },
+        { key: 'receivedQty', label: 'Received Qty', width: 12, align: 'center' },
+        { key: 'supervisorQty', label: 'Supervisor Qty', width: 12, align: 'center' },
+        { key: 'farmerWastage', label: 'Farmer Wastage', width: 12, align: 'center' },
+        { key: 'agencyWastage', label: 'Agency Wastage', width: 12, align: 'center' },
         { key: 'agency', label: 'Agency', width: 15 },
         { key: 'amount', label: 'Amount', width: 15, align: 'right' },
         { key: 'purchaseNo', label: 'Purchase No', width: 15 },
@@ -162,7 +167,44 @@ export default function PurchaseOrderReport() {
           <TableCell>{item.farmerName}</TableCell>
           <TableCell>{item.productName} - {item.variantName}</TableCell>
           <TableCell className="text-right">{item.quantity}</TableCell>
-          <TableCell className="text-right">{item.deliveredQuantity || 0}</TableCell>
+          <TableCell className="text-right">{item.deliveredQuantity ?? '-'}</TableCell>
+          <TableCell className="text-right">{item.receivedQuantity ?? '-'}</TableCell>
+          <TableCell className="text-right">{item.supervisorQuantity ?? '-'}</TableCell>
+          <TableCell className="text-right text-xs">
+            {(() => {
+              const hasValidDelivered = item.deliveredQuantity != null && item.deliveredQuantity > 0;
+              const hasValidReceived = item.receivedQuantity != null && item.receivedQuantity > 0;
+              const hasValidSupervisor = item.supervisorQuantity != null && item.supervisorQuantity > 0;
+              
+              const farmerWastage = hasValidDelivered && hasValidReceived ? item.deliveredQuantity - item.receivedQuantity : null;
+              const agencyWastage = hasValidReceived && hasValidSupervisor ? item.receivedQuantity - item.supervisorQuantity : null;
+              
+              return (
+                <div className="flex flex-col space-y-1">
+                  <div>
+                    <span className="text-xs font-medium">F:</span>{" "}
+                    {farmerWastage !== null ? (
+                      <span className={farmerWastage > 0 ? "text-red-500 font-medium" : "text-gray-500"}>
+                        {farmerWastage}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </div>
+                  <div>
+                    <span className="text-xs font-medium">A:</span>{" "}
+                    {agencyWastage !== null ? (
+                      <span className={agencyWastage > 0 ? "text-red-500 font-medium" : "text-gray-500"}>
+                        {agencyWastage}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+          </TableCell>
           <TableCell className="text-right font-medium">
             ₹{item.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
           </TableCell>
@@ -195,7 +237,7 @@ export default function PurchaseOrderReport() {
             }`}
             onClick={() => toggleGroupExpansion(groupId)}
           >
-            <TableCell colSpan={9} style={{ paddingLeft: `${indent + 16}px` }}>
+            <TableCell colSpan={12} style={{ paddingLeft: `${indent + 16}px` }}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
@@ -432,7 +474,7 @@ export default function PurchaseOrderReport() {
           )} */}
           
           {/* Data Table */}
-          {/* <div className="border rounded-lg overflow-hidden">
+          <div className="border rounded-lg overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -441,31 +483,28 @@ export default function PurchaseOrderReport() {
                   <TableHead>Delivery Date</TableHead>
                   <TableHead>Vendor</TableHead>
                   <TableHead>Product</TableHead>
-                  <TableHead className="text-right">Ordered</TableHead>
-                  <TableHead className="text-right">Delivered</TableHead>
+                  <TableHead className="text-right">Ordered Qty</TableHead>
+                  <TableHead className="text-right">Delivered Qty</TableHead>
+                  <TableHead className="text-right">Received Qty</TableHead>
+                  <TableHead className="text-right">Supervisor Qty</TableHead>
+                  <TableHead className="text-right">Wastage (F/A)</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8">
-                      Loading report data...
-                    </TableCell>
-                  </TableRow>
-                ) : filteredData && filteredData.length > 0 ? (
-                  renderGroupedData(filteredData)
+                {reportData?.data?.report ? (
+                  renderGroupedData(reportData.data.report)
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={12} className="text-center py-8 text-gray-500">
                       No data found for the selected filters
                     </TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
-          </div> */}
+          </div>
         </CardContent>
       </Card>
     </div>

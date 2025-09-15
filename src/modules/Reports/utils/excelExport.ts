@@ -240,6 +240,33 @@ export class ExcelExporter {
           case 'qty':
             value = Number(item.quantity) || 0;
             break;
+          case 'deliveredQty':
+            value = (item as PurchaseOrderItem).deliveredQuantity ?? '-';
+            break;
+          case 'receivedQty':
+            value = (item as PurchaseOrderItem).receivedQuantity ?? '-';
+            break;
+          case 'supervisorQty':
+            value = (item as PurchaseOrderItem).supervisorQuantity ?? '-';
+            break;
+          case 'farmerWastage':
+            {
+              const purchaseItem = item as PurchaseOrderItem;
+              const hasValidDelivered = purchaseItem.deliveredQuantity != null && purchaseItem.deliveredQuantity > 0;
+              const hasValidReceived = purchaseItem.receivedQuantity != null && purchaseItem.receivedQuantity > 0;
+              const farmerWastage = hasValidDelivered && hasValidReceived ? purchaseItem.deliveredQuantity - purchaseItem.receivedQuantity : null;
+              value = farmerWastage !== null ? farmerWastage : '-';
+            }
+            break;
+          case 'agencyWastage':
+            {
+              const purchaseItem = item as PurchaseOrderItem;
+              const hasValidReceived = purchaseItem.receivedQuantity != null && purchaseItem.receivedQuantity > 0;
+              const hasValidSupervisor = purchaseItem.supervisorQuantity != null && purchaseItem.supervisorQuantity > 0;
+              const agencyWastage = hasValidReceived && hasValidSupervisor ? purchaseItem.receivedQuantity - purchaseItem.supervisorQuantity : null;
+              value = agencyWastage !== null ? agencyWastage : '-';
+            }
+            break;
           case 'agency':
             // Handle different data structures
             if ((item as any).agency) {
@@ -290,6 +317,9 @@ export class ExcelExporter {
             break;
           case 'depot':
             value = !isDeliveryItem ? (item as PurchaseOrderItem).depotName : '';
+            break;
+          case 'rate':
+            value = !isDeliveryItem ? this.formatCurrency((item as PurchaseOrderItem).purchaseRate) : '';
             break;
           case 'rate':
             value = !isDeliveryItem ? this.formatCurrency((item as PurchaseOrderItem).purchaseRate) : '';
