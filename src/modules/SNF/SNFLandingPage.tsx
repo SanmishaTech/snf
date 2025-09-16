@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { useCart } from "./context/CartContext";
 import { useDeliveryLocation } from "./hooks/useDeliveryLocation";
 import type { Category as FilterCategory } from "./components/CategoryFilters.tsx";
+import AnimatedCategoryNav from "./components/AnimatedCategoryNav.tsx";
 
 export type SortKey = "relevance" | "price_asc" | "price_desc" | "popularity_desc";
 
@@ -112,8 +113,8 @@ const SNFContent: React.FC = () => {
             id: currentDepotId,
             name: `Depot ${currentDepotId}`,
             address: '',
-            pincode: '',
-            isActive: true,
+            city: '',
+            isOnline: true,
           };
           
           await pricingActions.setDepot(depot);
@@ -183,6 +184,8 @@ const SNFContent: React.FC = () => {
         setSelectedCats([idNum]);
       }
       setSelectedTag(null);
+      // Do NOT auto-scroll when selecting a category from the top bar
+      return;
     } else {
       // Keep the exact tag (lowercased). Matching logic will handle common misspellings.
       setSelectedTag(tag);
@@ -307,7 +310,26 @@ const SNFContent: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header cartCount={cartState.items.reduce((n, it) => n + it.quantity, 0)} onSearch={setQ} />
+      <Header cartCount={cartState.items.reduce((n, it) => n + it.quantity, 0)} onSearch={setQ} blendWithCategoryBar />
+
+      {/* Animated category nav bridging header and hero */}
+      <AnimatedCategoryNav
+        categories={categories.map((c: any) => ({
+          id: Number(c.id),
+          name: c.name,
+          imageUrl: (c as any).imageUrl,
+        }))}
+        selectedId={selectedCats.length > 0 ? selectedCats[0] : null}
+        onSelect={(id) => {
+          if (id === null) {
+            setSelectedCats([]);
+            navigate('/snf', { replace: false });
+          } else {
+            setSelectedCats([id]);
+            navigate(`/snf?tag=category:${id}`, { replace: false });
+          }
+        }}
+      />
 
       <main className="flex-1">
         <Hero />
@@ -364,7 +386,7 @@ const SNFContent: React.FC = () => {
                   <a
                     key={cat.id}
                     id={`category-${catIdNum}`}
-                    href={`/snf/category/${catIdNum}`}
+                    href={`/snf?tag=category:${catIdNum}`}
                     className="group text-left max-w-[10rem]"
                     aria-label={`Filter by category ${cat.name}`}
                   >

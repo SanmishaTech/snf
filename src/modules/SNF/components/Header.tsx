@@ -13,8 +13,10 @@ import WalletButton from "@/modules/Wallet/Components/Walletmenu";
 import Logo from "@/modules/SNF/image/logosarkhot.webp";
 
 interface HeaderProps {
-  cartCount: number;
-  onSearch: (q: string) => void;
+  cartCount?: number;
+  onSearch?: (q: string) => void;
+  /** When true, header uses a translucent background background without bottom border to blend into the category bar */
+  blendWithCategoryBar?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = (_props) => {
@@ -170,15 +172,18 @@ export const Header: React.FC<HeaderProps> = (_props) => {
     }
   };
 
+  const blend = _props.blendWithCategoryBar === true;
   return (
     <header
-      className={`top-0 inset-x-0 z-40 bg-[#F7F5F3] supports-[backdrop-filter]:bg-background/60 backdrop-blur border-b transition-all pt-[env(safe-area-inset-top)] ${
-        sticky ? "sticky shadow-sm" : "relative"
-      }`}
+      className={`top-0 inset-x-0 z-40 transition-all pt-[env(safe-area-inset-top)] ${
+        blend
+          ? `bg-background  supports-[backdrop-filter]:bg-background-600/80 backdrop-blur`
+          : `bg-[background] supports-[backdrop-filter]:bg-background/60 backdrop-blur `
+      } ${sticky ? "sticky shadow-sm" : "relative"}`}
       aria-label="SNF store global header"
     >
       <div className="container mx-auto px-3 md:px-6 lg:px-8">
-        <div className="h-[5rem] md:h-[5rem] flex items-center justify-between gap-2 md:gap-3 min-w-0">
+        <div className="h-[4rem] md:h-[4rem] flex items-center justify-between gap-2 md:gap-3 min-w-0">
   
   {/* Replace submit-based search with search-as-you-type preview dropdown */}
 
@@ -283,7 +288,11 @@ export const Header: React.FC<HeaderProps> = (_props) => {
                   className="inline-flex items-center justify-center rounded-md h-9 w-9 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ring"
                   aria-label="Account"
                 >
-                  <User className="size-5" aria-hidden={true} />
+                  {/* <User className="size-5" aria-hidden={true} /> */}
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
+  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+</svg>
+
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" sideOffset={8} className="w-44">

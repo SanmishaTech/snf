@@ -7,7 +7,7 @@ export * from "./ProductGrid";
 export * from "./LoadingSkeleton";
 export * from "./PincodeEntry";
 export * from "./ErrorDisplay";
-export * from "./DepotInfo";
+export { default as AnimatedCategoryNav } from "./AnimatedCategoryNav";
 export {
   ProductSkeleton,
   DepotSkeleton,
