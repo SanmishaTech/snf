@@ -27,15 +27,21 @@ const DeliveryScheduleDisplay: React.FC<DeliveryScheduleDisplayProps> = ({
     saturday: 6,
   };
 
-  // Generate next 1 date for each delivery day
+  // Generate next 4 dates for each delivery day
   const generateDeliveryDates = () => {
     if (!deliverySchedule || deliverySchedule.length === 0) return [];
 
     const dates: Array<{ date: string; dayName: string; formattedDate: string }> = [];
     const today = new Date();
     
-    // Look ahead up to 14 days to find next occurrence of each delivery day
-    for (let i = 1; i <= 14; i++) {
+    // Track how many dates we've found for each delivery day
+    const dateCountByDay: Record<string, number> = {};
+    deliverySchedule.forEach(day => {
+      dateCountByDay[day] = 0;
+    });
+    
+    // Look ahead up to 28 days to find 4 occurrences of each delivery day
+    for (let i = 1; i <= 28; i++) {
       const checkDate = new Date(today);
       checkDate.setDate(today.getDate() + i);
       const dayOfWeek = checkDate.getDay();
@@ -43,25 +49,29 @@ const DeliveryScheduleDisplay: React.FC<DeliveryScheduleDisplayProps> = ({
       // Check if this day matches any of our delivery days
       for (const scheduleDay of deliverySchedule) {
         const scheduleDayNumber = dayNumbers[scheduleDay.toLowerCase()];
-        if (dayOfWeek === scheduleDayNumber) {
-          // Check if we already have a date for this day
-          const alreadyHasDate = dates.some(d => d.dayName === scheduleDay);
-          if (!alreadyHasDate) {
-            const dateString = checkDate.toISOString().split('T')[0]; // YYYY-MM-DD format
-            const formattedDate = checkDate.toLocaleDateString('en-IN', {
-              weekday: 'short',
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric'
-            });
-            
-            dates.push({
-              date: dateString,
-              dayName: scheduleDay,
-              formattedDate: formattedDate
-            });
-          }
+        if (dayOfWeek === scheduleDayNumber && dateCountByDay[scheduleDay] < 4) {
+          const dateString = checkDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+          const formattedDate = checkDate.toLocaleDateString('en-IN', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+          });
+          
+          dates.push({
+            date: dateString,
+            dayName: scheduleDay,
+            formattedDate: formattedDate
+          });
+          
+          dateCountByDay[scheduleDay]++;
         }
+      }
+      
+      // Exit early if we have 4 dates for all delivery days
+      const allDaysHave4Dates = deliverySchedule.every(day => dateCountByDay[day] >= 4);
+      if (allDaysHave4Dates) {
+        break;
       }
     }
 
@@ -110,16 +120,42 @@ const DeliveryScheduleDisplay: React.FC<DeliveryScheduleDisplayProps> = ({
               <SelectValue placeholder="Select a delivery date" />
             </SelectTrigger>
             <SelectContent>
-              {availableDates.map((dateOption) => (
-                <SelectItem key={dateOption.date} value={dateOption.date}>
-                  {dateOption.formattedDate}
-                </SelectItem>
-              ))}
+              {(() => {
+                // Group dates by delivery day
+                const groupedDates: Record<string, Array<{ date: string; dayName: string; formattedDate: string }>> = {};
+                availableDates.forEach(dateOption => {
+                  if (!groupedDates[dateOption.dayName]) {
+                    groupedDates[dateOption.dayName] = [];
+                  }
+                  groupedDates[dateOption.dayName].push(dateOption);
+                });
+
+                // Render grouped dates with separators
+                return Object.entries(groupedDates).map(([dayName, dayDates], groupIndex) => (
+                  <div key={dayName}>
+                    {groupIndex > 0 && (
+                      <div className="px-2 py-1 text-xs font-medium text-muted-foreground bg-muted/50 border-t">
+                        {dayName.charAt(0).toUpperCase() + dayName.slice(1)}s
+                      </div>
+                    )}
+                    {groupIndex === 0 && (
+                      <div className="px-2 py-1 text-xs font-medium text-muted-foreground bg-muted/50">
+                        {dayName.charAt(0).toUpperCase() + dayName.slice(1)}s
+                      </div>
+                    )}
+                    {dayDates.map((dateOption) => (
+                      <SelectItem key={dateOption.date} value={dateOption.date}>
+                        {dateOption.formattedDate}
+                      </SelectItem>
+                    ))}
+                  </div>
+                ));
+              })()}
             </SelectContent>
           </Select>
           
           <div className="text-xs text-blue-600 bg-blue-100/50 p-2 rounded-md">
-            💡 Select your preferred delivery date from the available options above. Next available date for each delivery day is shown.
+            💡 Dates are grouped by delivery day. Select your preferred delivery date from the next 4 available options for each scheduled day.
           </div>
         </div>
       </CardContent>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { User, Search, MapPin, LocateFixed, Loader2, Check } from "lucide-react";
+import { Search, MapPin, LocateFixed, Loader2, Check } from "lucide-react";
 import GlobalSearch from "@/components/GlobalSearch";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = (_props) => {
   const [sticky, setSticky] = useState(false);
   const [open, setOpen] = useState(false);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [deliveryLocation, setDeliveryLocation] = useState<DeliveryLocation | null>(() => 
     DeliveryLocationService.getCurrentLocation()
   );
@@ -271,14 +272,15 @@ export const Header: React.FC<HeaderProps> = (_props) => {
               <WalletButton isLoggedIn={true} />
             </div>
 
-            {/* Mobile search icon focuses input inside GlobalSearch if desired (future enhancement) */}
-            <a
-              href="/snf"
+            {/* Mobile search toggle button */}
+            <button
+              type="button"
+              onClick={() => setShowMobileSearch(!showMobileSearch)}
               className="md:hidden inline-flex items-center justify-center rounded-md h-9 w-9 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ring"
-              aria-label="Search"
+              aria-label="Toggle search"
             >
               <Search className="size-5" aria-hidden="true" />
-            </a>
+            </button>
 
             {/* Account dropdown opens on click */}
             <DropdownMenu>
@@ -308,8 +310,8 @@ export const Header: React.FC<HeaderProps> = (_props) => {
           </div>
         </div>
 
-        {/* Mobile search (uses same GlobalSearch component) */}
-        <div className="md:hidden pb-2">
+        {/* Mobile search (uses same GlobalSearch component) - toggleable */}
+        <div className={`md:hidden transition-all duration-300 ease-in-out overflow-hidden ${showMobileSearch ? 'pb-2 max-h-20 opacity-100' : 'max-h-0 opacity-0'}`}>
           <GlobalSearch />
         </div>
       </div>

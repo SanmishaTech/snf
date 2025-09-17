@@ -312,30 +312,32 @@ const SNFContent: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-background">
       <Header cartCount={cartState.items.reduce((n, it) => n + it.quantity, 0)} onSearch={setQ} blendWithCategoryBar />
 
-      {/* Animated category nav bridging header and hero */}
-      <AnimatedCategoryNav
-        categories={categories.map((c: any) => ({
-          id: Number(c.id),
-          name: c.name,
-          imageUrl: (c as any).imageUrl,
-        }))}
-        selectedId={selectedCats.length > 0 ? selectedCats[0] : null}
-        onSelect={(id) => {
-          if (id === null) {
-            setSelectedCats([]);
-            navigate('/snf', { replace: false });
-          } else {
-            setSelectedCats([id]);
-            navigate(`/snf?tag=category:${id}`, { replace: false });
-          }
-        }}
-      />
+      {/* Animated category nav bridging header and hero - Mobile only */}
+      <div className="block md:hidden">
+        <AnimatedCategoryNav
+          categories={categories.map((c: any) => ({
+            id: Number(c.id),
+            name: c.name,
+            imageUrl: (c as any).imageUrl,
+          }))}
+          selectedId={selectedCats.length > 0 ? selectedCats[0] : null}
+          onSelect={(id) => {
+            if (id === null) {
+              setSelectedCats([]);
+              navigate('/snf', { replace: false });
+            } else {
+              setSelectedCats([id]);
+              navigate(`/snf?tag=category:${id}`, { replace: false });
+            }
+          }}
+        />
+      </div>
 
       <main className="flex-1">
         <Hero />
 
-        {/* Categories Grid - fetched from API, 6 columns per row on large screens */}
-        <section className="container mx-auto px-4 md:px-6 lg:px-8 py-8">
+        {/* Categories Grid - fetched from API, 6 columns per row on large screens - Desktop only */}
+        <section className="hidden md:block container mx-auto px-4 md:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl md:text-2xl font-semibold">Browse by Category</h2>
             {catError && (

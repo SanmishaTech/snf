@@ -523,10 +523,10 @@ const CheckoutPage: React.FC = () => {
                       </div>
                     )}
                     
-                    <div className="flex items-center justify-between text-sm">
+                    {/* <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Delivery</span>
                       <span className="font-medium">₹0</span>
-                    </div>
+                    </div> */}
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Wallet deduction</span>
                       <span className="font-medium text-green-600">-
