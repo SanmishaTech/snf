@@ -316,7 +316,7 @@ export default function WalletPage() {
         {/* Recent Activity */}
         <Card>
           <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
+            <CardTitle>Wallet History</CardTitle>
             <CardDescription>Your latest wallet transactions</CardDescription>
           </CardHeader>
           <CardContent>
