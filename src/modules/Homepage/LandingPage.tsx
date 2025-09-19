@@ -20,6 +20,7 @@ import { GiMilkCarton, GiGrassMushroom } from "react-icons/gi";
 import { cn } from "@/lib/utils";
 import { Leaf } from "lucide-react"; // For AppFooter
 // import Banner from '@/images/banner1.webp'; // Replaced by dynamic banners
+
 import * as apiService from "@/services/apiService";
 import HeroSection from "./Coursel";
 import type { Banner as ApiBanner } from "../BannerMaster/BannerListPage"; // Renamed to avoid conflict if Banner is used locally

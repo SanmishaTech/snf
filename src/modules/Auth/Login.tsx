@@ -81,10 +81,10 @@ const Login: React.FC<LoginProps> = () => {
       return "/admin/dashboard";
     }
     if (user && user.role === "VENDOR") {
-      return "/admin/dashboard";
+      return "/admin/orders";
     }
     if (user && user.role === "AGENCY") {
-      return "/admin/dashboard";
+      return "/admin/orders";
     }
     if (user && user.role === "SUPERVISOR") {
       return "/admin/dashboard";

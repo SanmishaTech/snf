@@ -1,12 +1,54 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import { Facebook, Instagram, Search, Menu, X, UserCircle, LogOut, ShoppingBag, KeyRound } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Facebook, Instagram, Search, Menu, X, UserCircle, LogOut, ShoppingBag, KeyRound, Bell } from 'lucide-react';
 import UserChangePasswordDialog from '@/components/common/UserChangePasswordDialog';
-import { appName } from '@/config';
 import WalletButton from '@/modules/Wallet/Components/Walletmenu';
 import Sarkotlogo from "@/images/Sarkhot-Natural-Farms-Png.webp"
 import Indraipng from "@/images/WhatsApp Image 2025-06-24 at 18.32.39 (1) (1).png"
+import { get } from '@/services/apiService';
+import { parseISO, differenceInCalendarDays, format, startOfDay, endOfDay } from 'date-fns';
 
+
+interface DeliveryScheduleEntry {
+  id: string;
+  deliveryDate: string;
+  status: string;
+  quantity: number;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface MemberSubscription {
+  id: string;
+  product: {
+    id: string;
+    name: string;
+    price?: number;
+    unit?: string;
+    depotProductVariantId?: string;
+    depotVariant?: {
+      id: string;
+      name: string;
+      unit: string;
+    };
+  };
+  qty: number;
+  altQty?: number | null;
+  deliverySchedule: "DAILY" | "SELECT_DAYS" | "VARYING" | "ALTERNATE_DAYS";
+  selectedDays?: string[] | null;
+  startDate: string;
+  expiryDate: string;
+  period: "DAYS_7" | "DAYS_15" | "DAYS_30" | "DAYS_90";
+  status: string;
+  paymentStatus?: "PENDING" | "PAID" | "FAILED" | "CANCELLED";
+  deliveryScheduleEntries?: DeliveryScheduleEntry[];
+  productOrder?: {
+    id: string;
+    orderNo: string;
+    invoiceNo?: string | null;
+  };
+}
 
 interface HeaderProps {
   isLoggedIn?: boolean;
@@ -16,12 +58,17 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWallet }) => {
+  const navigate = useNavigate();
   const headerRef = useRef<HTMLElement>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
+  const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] = useState(false);
   const [headerVisible, setHeaderVisible] = useState(true);
   const [scrolled, setScrolled] = useState(false);
   const [isChangePasswordDialogOpen, setIsChangePasswordDialogOpen] = useState(false);
+  const [expiringSubscriptions, setExpiringSubscriptions] = useState<MemberSubscription[]>([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [notificationsError, setNotificationsError] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(() => {
     try {
       const userDataString = localStorage.getItem('user');
@@ -33,6 +80,79 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
   });
   const lastScrollY = useRef(0);
   const accountDropdownTimeoutId = useRef<NodeJS.Timeout | null>(null);
+  const notificationDropdownTimeoutId = useRef<NodeJS.Timeout | null>(null);
+
+  // Helper function to get effective expiry date (from delivery schedule or subscription expiry)
+  const getEffectiveExpiryDate = (subscription: MemberSubscription) => {
+    if (subscription.deliveryScheduleEntries && subscription.deliveryScheduleEntries.length > 0) {
+      // Sort delivery entries by date and get the last one
+      const sortedEntries = subscription.deliveryScheduleEntries
+        .slice()
+        .sort((a, b) => new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime());
+      const lastEntry = sortedEntries[sortedEntries.length - 1];
+      return lastEntry.deliveryDate;
+    }
+    // Fallback to subscription expiry date
+    return subscription.expiryDate;
+  };
+
+  // Check if subscription expires within 2 days (calendar-day accurate)
+  const isExpiringWithinTwoDays = (subscription: MemberSubscription) => {
+    try {
+      const effectiveExpiryDate = getEffectiveExpiryDate(subscription);
+      const expiryDate = parseISO(effectiveExpiryDate);
+      const daysUntilExpiry = differenceInCalendarDays(
+        endOfDay(expiryDate),
+        startOfDay(new Date())
+      );
+      return daysUntilExpiry >= 0 && daysUntilExpiry <= 2;
+    } catch {
+      return false;
+    }
+  };
+
+  // Helper to compute days left (0=today, 1=tomorrow, 2=in 2 days)
+  const getDaysLeft = (subscription: MemberSubscription) => {
+    try {
+      const effectiveExpiryDate = getEffectiveExpiryDate(subscription);
+      const expiryDate = parseISO(effectiveExpiryDate);
+      return differenceInCalendarDays(endOfDay(expiryDate), startOfDay(new Date()));
+    } catch {
+      return 9999; // far future if parsing fails
+    }
+  };
+
+  // Fetch user subscriptions if logged in
+  const fetchSubscriptions = async () => {
+    if (!isLoggedIn || userRole !== 'MEMBER') return;
+    setNotificationsLoading(true);
+    setNotificationsError(null);
+    try {
+      const userSubscriptions = await get<MemberSubscription[]>("/subscriptions");
+      // Filter active subscriptions expiring within 2 days
+      const expiring = userSubscriptions.filter(sub => {
+        const isActive = sub.status !== 'CANCELLED' && sub.paymentStatus !== 'CANCELLED';
+        return isActive && isExpiringWithinTwoDays(sub);
+      });
+      // Sort by days left, then by effective date, then by product name for a stable pleasant order
+      const sorted = expiring.slice().sort((a, b) => {
+        const da = getDaysLeft(a);
+        const db = getDaysLeft(b);
+        if (da !== db) return da - db;
+        const aDate = parseISO(getEffectiveExpiryDate(a)).getTime();
+        const bDate = parseISO(getEffectiveExpiryDate(b)).getTime();
+        if (aDate !== bDate) return aDate - bDate;
+        return (a.product.name || '').localeCompare(b.product.name || '');
+      });
+      setExpiringSubscriptions(sorted);
+    } catch (error: any) {
+      console.error("Failed to fetch subscriptions:", error);
+      setExpiringSubscriptions([]);
+      setNotificationsError(error?.message || 'Failed to load notifications');
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
 
   useEffect(() => {
     // This effect updates the role when the user logs in or out.
@@ -45,6 +165,15 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
       setUserRole(null);
     }
   }, [isLoggedIn]);
+
+  // Fetch subscriptions when login status or user role changes and refresh periodically
+  useEffect(() => {
+    if (isLoggedIn && userRole === 'MEMBER') {
+      fetchSubscriptions();
+      const id = setInterval(fetchSubscriptions, 5 * 60 * 1000); // refresh every 5 minutes
+      return () => clearInterval(id);
+    }
+  }, [isLoggedIn, userRole]);
 
   const navLinks = [
     { name: 'Home', path: '/' },
@@ -133,6 +262,165 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
                 <Instagram size={18} />
               </a>
               <span className="hidden sm:block border-l border-gray-300 h-6 mx-2"></span>
+              
+              {/* Notification Bell - Only for logged in MEMBER users */}
+              {isLoggedIn && userRole === 'MEMBER' && (
+                <div 
+                  className="relative"
+                  onMouseEnter={() => {
+                    if (notificationDropdownTimeoutId.current) clearTimeout(notificationDropdownTimeoutId.current);
+                    setIsNotificationDropdownOpen(true);
+                    // Refresh notifications on hover to show latest
+                    fetchSubscriptions();
+                  }}
+                  onMouseLeave={() => {
+                    notificationDropdownTimeoutId.current = setTimeout(() => {
+                      setIsNotificationDropdownOpen(false);
+                    }, 200);
+                  }}
+                >
+                  <button
+                    className="relative flex items-center text-gray-700 hover:text-green-600 transition-colors p-1"
+                    onClick={() => {
+                      const next = !isNotificationDropdownOpen;
+                      setIsNotificationDropdownOpen(next);
+                      if (next) fetchSubscriptions();
+                    }}
+                    aria-haspopup="true"
+                    aria-expanded={isNotificationDropdownOpen}
+                    aria-label="Notifications"
+                  >
+                    <Bell size={18} />
+                    {expiringSubscriptions.length > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                        {expiringSubscriptions.length > 9 ? '9+' : expiringSubscriptions.length}
+                      </span>
+                    )}
+                  </button>
+                  
+                  {/* Notification Dropdown */}
+                  {isNotificationDropdownOpen && (
+                    <div 
+                      className="absolute right-0 mt-1 w-80 bg-white rounded-md shadow-lg py-2 z-50 border border-gray-100"
+                      onMouseEnter={() => {
+                        if (notificationDropdownTimeoutId.current) clearTimeout(notificationDropdownTimeoutId.current);
+                      }}
+                      onMouseLeave={() => {
+                        notificationDropdownTimeoutId.current = setTimeout(() => {
+                          setIsNotificationDropdownOpen(false);
+                        }, 200);
+                      }}
+                    >
+                      <div className="px-4 py-2 border-b border-gray-100">
+                        <h3 className="text-sm font-semibold text-gray-800">
+                          Notifications
+                          {expiringSubscriptions.length > 0 && (
+                            <span className="ml-2 bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">
+                              {expiringSubscriptions.length}
+                            </span>
+                          )}
+                        </h3>
+                      </div>
+                      {/* Content */}
+                      {notificationsLoading ? (
+                        <div className="max-h-64 overflow-y-auto px-4 py-3">
+                          <div className="animate-pulse space-y-3">
+                            <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                            <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                            <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                          </div>
+                        </div>
+                      ) : notificationsError ? (
+                        <div className="px-4 py-4 text-sm text-red-600">
+                          {notificationsError}
+                        </div>
+                      ) : expiringSubscriptions.length > 0 ? (
+                        <div className="max-h-64 overflow-y-auto">
+                          {(() => {
+                            const todayItems = expiringSubscriptions.filter((s) => getDaysLeft(s) === 0);
+                            const tomorrowItems = expiringSubscriptions.filter((s) => getDaysLeft(s) === 1);
+                            const twoDayItems = expiringSubscriptions.filter((s) => getDaysLeft(s) === 2);
+
+                            const renderSection = (title: string, items: MemberSubscription[], color: string) => (
+                              items.length > 0 && (
+                                <div>
+                                  <div className={`px-4 py-1 text-xs font-semibold ${color} sticky top-0`}>{title}</div>
+                                  {items.map((sub) => {
+                                    const effectiveExpiryDate = getEffectiveExpiryDate(sub);
+                                    const daysLeft = getDaysLeft(sub);
+                                    return (
+                                      <div
+                                        key={sub.id}
+                                        className="px-4 py-3 hover:bg-amber-50 border-b border-gray-50 last:border-b-0 cursor-pointer"
+                                        onClick={() => {
+                                          navigate(`/manage-subscription/${sub.id}`);
+                                          setIsNotificationDropdownOpen(false);
+                                        }}
+                                        role="button"
+                                        tabIndex={0}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter' || e.key === ' ') {
+                                            navigate(`/manage-subscription/${sub.id}`);
+                                            setIsNotificationDropdownOpen(false);
+                                          }
+                                        }}
+                                      >
+                                        <div className="flex items-start">
+                                          <div className="flex-shrink-0 w-2 h-2 bg-amber-500 rounded-full mt-2 mr-3"></div>
+                                          <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium text-gray-900 truncate">
+                                              {sub.product.name}
+                                            </p>
+                                            <p className="text-xs text-gray-600 mt-1">
+                                              Expires {daysLeft === 0 ? 'today' : daysLeft === 1 ? 'tomorrow' : `in ${daysLeft} days`}
+                                            </p>
+                                            <p className="text-xs text-gray-500">
+                                              {format(parseISO(effectiveExpiryDate), 'dd/MM/yyyy')}
+                                              {typeof sub.qty === 'number' && (
+                                                <span className="ml-2 text-gray-400">• Qty: {sub.qty} {sub.product.depotVariant?.unit || sub.product.unit || ''}</span>
+                                              )}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )
+                            );
+
+                            return (
+                              <div>
+                                {renderSection('Expiring Today', todayItems, 'bg-red-50 text-red-700')}
+                                {renderSection('Expiring Tomorrow', tomorrowItems, 'bg-amber-50 text-amber-800')}
+                                {renderSection('In 2 days', twoDayItems, 'bg-yellow-50 text-yellow-800')}
+                                <div className="px-4 py-2 border-t border-gray-100">
+                                  <button
+                                    onClick={() => {
+                                      navigate('/member/subscriptions');
+                                      setIsNotificationDropdownOpen(false);
+                                    }}
+                                    className="w-full text-center text-sm text-green-600 hover:text-green-700 font-medium py-1"
+                                  >
+                                    Manage All Subscriptions
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      ) : (
+                        <div className="px-4 py-8 text-center">
+                          <Bell size={32} className="mx-auto text-gray-400 mb-2" />
+                          <p className="text-sm text-gray-500">No notifications</p>
+                          <p className="text-xs text-gray-400 mt-1">You'll see subscription alerts here</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+              
               {isLoggedIn ? (
                 <div 
                   className="relative"

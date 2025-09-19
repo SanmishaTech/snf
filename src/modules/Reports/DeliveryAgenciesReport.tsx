@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
@@ -32,7 +33,7 @@ export default function DeliveryAgenciesReport() {
   const [filters, setFilters] = useState<DeliveryAgencyFilters>({
     startDate: format(new Date(new Date().setDate(new Date().getDate() - 30)), 'yyyy-MM-dd'),
     endDate: format(new Date(), 'yyyy-MM-dd'),
-    groupBy: 'agency,area,status'
+    groupBy: 'agency,area,variant,status'
   });
   
   // State for UI
@@ -187,7 +188,7 @@ export default function DeliveryAgenciesReport() {
             </Badge>
           </TableCell>
           <TableCell className="text-right font-medium">
-            ₹{item.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+            ₹{(item.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
           </TableCell>
         </TableRow>
       ));
@@ -206,6 +207,8 @@ export default function DeliveryAgenciesReport() {
             return <UserCheck size={16} className="mr-2" />;
           case 'area':
             return <MapPin size={16} className="mr-2" />;
+          case 'variant':
+            return <Package size={16} className="mr-2" />;
           case 'status':
             return <Package size={16} className="mr-2" />;
           default:
@@ -219,6 +222,7 @@ export default function DeliveryAgenciesReport() {
             className={`cursor-pointer hover:bg-gray-100 ${
               group.level === 'agency' ? 'bg-blue-50' : 
               group.level === 'area' ? 'bg-green-50' : 
+              group.level === 'variant' ? 'bg-purple-50' :
               'bg-orange-50'
             }`}
             onClick={() => toggleGroupExpansion(groupId)}
@@ -231,6 +235,7 @@ export default function DeliveryAgenciesReport() {
                   <span className="font-semibold">
                     {group.level === 'agency' && `Delivery Agent: ${group.name}`}
                     {group.level === 'area' && `Area: ${group.name} ${group.city ? `(${group.city})` : ''}`}
+                    {group.level === 'variant' && `Product: ${group.name}`}
                     {group.level === 'status' && `Status: ${group.name}`}
                   </span>
                   <Badge variant="outline" className="ml-2">
@@ -241,7 +246,7 @@ export default function DeliveryAgenciesReport() {
                   <span>Packages: <strong>{group.totals.totalQuantity}</strong></span>
                   <span>Delivered: <strong>{group.totals.deliveredCount}</strong></span>
                   <span>Pending: <strong>{group.totals.pendingCount}</strong></span>
-                  <span>Amount: <strong>₹{group.totals.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>
+                  <span>Amount: <strong>₹{(group.totals.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>
                 </div>
               </div>
             </TableCell>
@@ -409,6 +414,22 @@ export default function DeliveryAgenciesReport() {
                   }}
                 />
                 Status
+              </label>
+              <label className="flex items-center gap-2">
+                <Checkbox
+                  checked={filters.groupBy?.includes('variant')}
+                  onCheckedChange={(checked) => {
+                    const groups = filters.groupBy?.split(',') || [];
+                    if (checked) {
+                      groups.push('variant');
+                    } else {
+                      const index = groups.indexOf('variant');
+                      if (index > -1) groups.splice(index, 1);
+                    }
+                    handleFilterChange('groupBy', groups.join(','));
+                  }}
+                />
+                Variants
               </label>
             </div>
           </div> */}

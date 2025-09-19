@@ -4,12 +4,22 @@ import { useQuery } from "@tanstack/react-query";
 import { get, del } from "@/services/apiService";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Breadcrumb, BreadcrumbItem } from "@/components/ui/breadcrumb";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import RecordDeliveryDialog from "./RecordDeliveryDialog";
+import RecordReceiptDialog from "./RecordReceiptDialog";
+import RecordSupervisorDialog from "./RecordSupervisorDialog";
+import WastageRegistrationDialog from "./WastageRegistrationDialog";
+import FarmerWastageDialog from "./FarmerWastageDialog";
+import AgencyWastageDialog from "./AgencyWastageDialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   HomeIcon,
   Calendar as CalendarIcon,
@@ -22,31 +32,15 @@ import {
   ClipboardCheck,
   AlertCircle,
   Check,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  FileText,
+  Plus
 } from "lucide-react";
-import { formatCurrency } from "@/lib/formatter"
-import { toast } from "sonner";
+import { formatCurrency } from "@/lib/formatter";
 import { Pagination, PaginationContent, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
-import { cn } from "@/lib/utils";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Breadcrumb, BreadcrumbItem } from "@/components/ui/breadcrumb";
 import OrderDetailsPanel from "./OrderDetailsPanel";
 
 interface OrderItem {
@@ -97,6 +91,17 @@ interface Order {
   recordedDelivery?: boolean;    // Add this flag
   recordedReceipt?: boolean;     // Add this flag
   recordedSupervisor?: boolean;  // Add this flag
+  farmerWastage?: number;
+  farmerNotReceived?: number;
+  agencyWastage?: number;
+  agencyNotReceived?: number;
+  wastageRegisteredById?: number;
+  wastageRegisteredAt?: string;
+  wastageRegisteredBy?: {
+    id: number;
+    name: string;
+    email: string;
+  };
 }
 
 interface StoredUserDetails {
@@ -142,6 +147,13 @@ const OrderList = () => {
 
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [wastageDialogOpen, setWastageDialogOpen] = useState(false);
+  const [farmerWastageDialogOpen, setFarmerWastageDialogOpen] = useState(false);
+  const [agencyWastageDialogOpen, setAgencyWastageDialogOpen] = useState(false);
+  const [wastageOrderId, setWastageOrderId] = useState<string>("");
+  const [wastageOrderNumber, setWastageOrderNumber] = useState<string>("");
+  const [wastageDeliveredQty, setWastageDeliveredQty] = useState<number>(0);
+  const [wastageReceivedQty, setWastageReceivedQty] = useState<number>(0);
 
   const currentUserRole = currentUserDetails?.role;
 
@@ -534,31 +546,69 @@ const OrderList = () => {
                         const hasValidReceived = quantities.received != null && quantities.received > 0;
                         const hasValidSupervisor = quantities.supervisor != null && quantities.supervisor > 0;
                         
-                        const farmerWastage = hasValidDelivered && hasValidReceived ? quantities.delivered - quantities.received : null;
-                        const agencyWastage = hasValidReceived && hasValidSupervisor ? quantities.received - quantities.supervisor : null;
+                        // Check if we have registered wastage data
+                        const hasRegisteredFarmerData = order.farmerWastage !== null || order.farmerNotReceived !== null;
+                        const hasRegisteredAgencyData = order.agencyWastage !== null || order.agencyNotReceived !== null;
                         
                         return (
-                          <div className="flex flex-col space-y-1">
-                            <div>
-                              <span className="text-xs font-medium">F:</span>{" "}
-                              {farmerWastage !== null ? (
-                                <span className={farmerWastage > 0 ? "text-red-500 font-medium" : "text-gray-500 dark:text-gray-300"}>
-                                  {farmerWastage}
-                                </span>
-                              ) : (
-                                <span className="text-gray-400">-</span>
-                              )}
-                            </div>
-                            <div>
-                              <span className="text-xs font-medium">A:</span>{" "}
-                              {agencyWastage !== null ? (
-                                <span className={agencyWastage > 0 ? "text-red-500 font-medium" : "text-gray-500 dark:text-gray-300"}>
-                                  {agencyWastage}
-                                </span>
-                              ) : (
-                                <span className="text-gray-400">-</span>
-                              )}
-                            </div>
+                          <div className="flex flex-col space-y-0.5">
+                            {/* Farmer Level Display */}
+                            {hasRegisteredFarmerData ? (
+                              <>
+                                <div className="text-xs">
+                                  <span className="font-medium text-blue-700">F-W:</span>{" "}
+                                  <span className={(order.farmerWastage || 0) > 0 ? "text-red-500 font-medium" : "text-gray-500"}>
+                                    {order.farmerWastage || 0}
+                                  </span>
+                                </div>
+                                <div className="text-xs">
+                                  <span className="font-medium text-blue-700">F-NR:</span>{" "}
+                                  <span className={(order.farmerNotReceived || 0) > 0 ? "text-orange-500 font-medium" : "text-gray-500"}>
+                                    {order.farmerNotReceived || 0}
+                                  </span>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="text-xs">
+                                <span className="font-medium">F:</span>{" "}
+                                {hasValidDelivered && hasValidReceived ? (
+                                  <span className={quantities.delivered - quantities.received > 0 ? "text-red-500 font-medium" : "text-gray-500"}>
+                                    {quantities.delivered - quantities.received}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400">-</span>
+                                )}
+                              </div>
+                            )}
+                            
+                            {/* Agency Level Display */}
+                            {hasRegisteredAgencyData ? (
+                              <>
+                                <div className="text-xs">
+                                  <span className="font-medium text-green-700">A-W:</span>{" "}
+                                  <span className={(order.agencyWastage || 0) > 0 ? "text-red-500 font-medium" : "text-gray-500"}>
+                                    {order.agencyWastage || 0}
+                                  </span>
+                                </div>
+                                <div className="text-xs">
+                                  <span className="font-medium text-green-700">A-NR:</span>{" "}
+                                  <span className={(order.agencyNotReceived || 0) > 0 ? "text-orange-500 font-medium" : "text-gray-500"}>
+                                    {order.agencyNotReceived || 0}
+                                  </span>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="text-xs">
+                                <span className="font-medium">A:</span>{" "}
+                                {hasValidReceived && hasValidSupervisor ? (
+                                  <span className={quantities.received - quantities.supervisor > 0 ? "text-red-500 font-medium" : "text-gray-500"}>
+                                    {quantities.received - quantities.supervisor}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400">-</span>
+                                )}
+                              </div>
+                            )}
                           </div>
                         );
                       })()}
@@ -602,6 +652,51 @@ const OrderList = () => {
                                   <Eye className="mr-2 h-4 w-4" /> View Details
                                 </Link>
                               </DropdownMenuItem>
+                              {(order.status === "DELIVERED" || order.status === "RECEIVED") && (
+                                <>
+                                  {/* Farmer Level Wastage - Available if not registered */}
+                                  {(!order.farmerWastage && !order.farmerNotReceived) && (
+                                    <DropdownMenuItem onClick={() => {
+                                      const totalDelivered = order.items.reduce((sum, item) => sum + (item.deliveredQuantity || 0), 0);
+                                      setWastageOrderId(order.id);
+                                      setWastageOrderNumber(order.poNumber);
+                                      setWastageDeliveredQty(totalDelivered);
+                                      setFarmerWastageDialogOpen(true);
+                                    }} className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800 cursor-pointer">
+                                      <ClipboardCheck className="mr-2 h-4 w-4" /> Register Farmer Wastage
+                                    </DropdownMenuItem>
+                                  )}
+                                  
+                                  {/* Agency Level Wastage - Available if not registered and received quantities exist */}
+                                  {(!order.agencyWastage && !order.agencyNotReceived) && (
+                                    <DropdownMenuItem onClick={() => {
+                                      const totalReceived = order.items.reduce((sum, item) => sum + (item.receivedQuantity || 0), 0);
+                                      if (totalReceived === 0) {
+                                        toast.error("Cannot register agency wastage as no received quantities have been recorded yet.");
+                                        return;
+                                      }
+                                      setWastageOrderId(order.id);
+                                      setWastageOrderNumber(order.poNumber);
+                                      setWastageReceivedQty(totalReceived);
+                                      setAgencyWastageDialogOpen(true);
+                                    }} className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800 cursor-pointer">
+                                      <ClipboardCheck className="mr-2 h-4 w-4" /> Register Agency Wastage
+                                    </DropdownMenuItem>
+                                  )}
+                                  
+                                  {/* Show completion status */}
+                                  {(order.farmerWastage !== null || order.farmerNotReceived !== null) && (
+                                    <DropdownMenuItem disabled className="flex items-center w-full px-3 py-2 text-sm text-gray-500">
+                                      <Check className="mr-2 h-4 w-4" /> Farmer Wastage Registered
+                                    </DropdownMenuItem>
+                                  )}
+                                  {(order.agencyWastage !== null || order.agencyNotReceived !== null) && (
+                                    <DropdownMenuItem disabled className="flex items-center w-full px-3 py-2 text-sm text-gray-500">
+                                      <Check className="mr-2 h-4 w-4" /> Agency Wastage Registered
+                                    </DropdownMenuItem>
+                                  )}
+                                </>
+                              )}
                               {order.status === "PENDING" && (
                                 <DropdownMenuItem onClick={() => handleDeleteOrder(order.id)} className="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/50 cursor-pointer">
                                   <Trash2 className="mr-2 h-4 w-4" /> Delete
@@ -718,6 +813,43 @@ const OrderList = () => {
           </Pagination>
         </div>
       )}
+
+      {/* Farmer Wastage Registration Dialog */}
+      <FarmerWastageDialog
+        isOpen={farmerWastageDialogOpen}
+        onClose={() => setFarmerWastageDialogOpen(false)}
+        orderId={wastageOrderId}
+        orderNumber={wastageOrderNumber}
+        deliveredQuantity={wastageDeliveredQty}
+        onSuccess={() => {
+          refetch(); // Refresh the orders list
+        }}
+      />
+
+      {/* Agency Wastage Registration Dialog */}
+      <AgencyWastageDialog
+        isOpen={agencyWastageDialogOpen}
+        onClose={() => setAgencyWastageDialogOpen(false)}
+        orderId={wastageOrderId}
+        orderNumber={wastageOrderNumber}
+        receivedQuantity={wastageReceivedQty}
+        onSuccess={() => {
+          refetch(); // Refresh the orders list
+        }}
+      />
+
+      {/* Legacy Wastage Registration Dialog - keeping for backward compatibility */}
+      <WastageRegistrationDialog
+        isOpen={wastageDialogOpen}
+        onClose={() => setWastageDialogOpen(false)}
+        orderId={wastageOrderId}
+        orderNumber={wastageOrderNumber}
+        deliveredQuantity={wastageDeliveredQty}
+        receivedQuantity={wastageReceivedQty}
+        onSuccess={() => {
+          refetch(); // Refresh the orders list
+        }}
+      />
     </div>
   );
 };

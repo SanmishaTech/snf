@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Download, ChevronDown, ChevronRight } from 'lucide-react';
+import { Download, ChevronDown, ChevronRight, Filter } from 'lucide-react';
 import { format } from 'date-fns';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { 
@@ -65,7 +66,7 @@ export default function PurchaseOrderReport() {
   }, [isVendor, filterOptions]);
   
   // Fetch report data
-  const { data: reportData } = useQuery<PurchaseOrderReportResponse>({
+  const { data: reportData, refetch } = useQuery<PurchaseOrderReportResponse>({
     queryKey: ['purchaseOrderReport', filters],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -369,7 +370,7 @@ export default function PurchaseOrderReport() {
           </div>
           
           {/* Grouping Options */}
-          {/* <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
             <Label>Group By:</Label>
             <div className="flex gap-4">
               <label className="flex items-center gap-2">
@@ -428,7 +429,7 @@ export default function PurchaseOrderReport() {
               <Filter className="mr-2 h-4 w-4" />
               Apply Filters
             </Button>
-          </div> */}
+          </div>
           
           {/* Search */}
           {/* <div className="relative">

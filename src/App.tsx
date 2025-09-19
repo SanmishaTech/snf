@@ -92,6 +92,7 @@ import DeliveryReport from "./modules/Reports/DeliveryAgenciesReport"
 import DeliverySummariesReport from "./modules/Reports/DeliverySummariesReport"
 import SubscriptionReports from "./modules/Reports/SubscriptionReports"
 import DepotOrderDetails from "./modules/Order/DepotOrderDetails";
+import { AdminDashboard } from "./modules/Dashboard/Dashboard.tsx";
 import "./App.css";
 // MembershipList wrapper component to handle showing all memberships
  
@@ -333,11 +334,7 @@ const App = () => {
           </Route>
           {/* Protected Admin Routes with MainLayout */}
           <Route element={<AdminProtectedRoute><MainLayout /></AdminProtectedRoute>}>
-            <Route path="/admin/dashboard" element={<div className="space-y-4 ml-4">
-              <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-              <p>Welcome to your dashboard. Here you can manage orders.</p>
-              {/* Dashboard content would go here */}
-            </div>} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/users" element={<UserList />} />
             <Route path="/admin/variantstock" element={<VarientstockListPage />} />
             <Route path="/admin/users/create" element={<UserForm mode='create' />} />

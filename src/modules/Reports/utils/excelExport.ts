@@ -252,19 +252,45 @@ export class ExcelExporter {
           case 'farmerWastage':
             {
               const purchaseItem = item as PurchaseOrderItem;
-              const hasValidDelivered = purchaseItem.deliveredQuantity != null && purchaseItem.deliveredQuantity > 0;
-              const hasValidReceived = purchaseItem.receivedQuantity != null && purchaseItem.receivedQuantity > 0;
-              const farmerWastage = hasValidDelivered && hasValidReceived ? purchaseItem.deliveredQuantity - purchaseItem.receivedQuantity : null;
-              value = farmerWastage !== null ? farmerWastage : '-';
+              // Use registered wastage data if available, otherwise calculate
+              if (purchaseItem.wastageRegisteredAt && purchaseItem.farmerWastage !== null) {
+                value = purchaseItem.farmerWastage || 0;
+              } else {
+                const hasValidDelivered = purchaseItem.deliveredQuantity != null && purchaseItem.deliveredQuantity > 0;
+                const hasValidReceived = purchaseItem.receivedQuantity != null && purchaseItem.receivedQuantity > 0;
+                const farmerWastage = hasValidDelivered && hasValidReceived ? 
+                  (purchaseItem.deliveredQuantity! - purchaseItem.receivedQuantity!) : null;
+                value = farmerWastage !== null ? farmerWastage : '-';
+              }
+            }
+            break;
+          case 'farmerNotReceived':
+            {
+              const purchaseItem = item as PurchaseOrderItem;
+              value = (purchaseItem.wastageRegisteredAt && purchaseItem.farmerNotReceived !== null) ? 
+                     (purchaseItem.farmerNotReceived || 0) : '-';
             }
             break;
           case 'agencyWastage':
             {
               const purchaseItem = item as PurchaseOrderItem;
-              const hasValidReceived = purchaseItem.receivedQuantity != null && purchaseItem.receivedQuantity > 0;
-              const hasValidSupervisor = purchaseItem.supervisorQuantity != null && purchaseItem.supervisorQuantity > 0;
-              const agencyWastage = hasValidReceived && hasValidSupervisor ? purchaseItem.receivedQuantity - purchaseItem.supervisorQuantity : null;
-              value = agencyWastage !== null ? agencyWastage : '-';
+              // Use registered wastage data if available, otherwise calculate
+              if (purchaseItem.wastageRegisteredAt && purchaseItem.agencyWastage !== null) {
+                value = purchaseItem.agencyWastage || 0;
+              } else {
+                const hasValidReceived = purchaseItem.receivedQuantity != null && purchaseItem.receivedQuantity > 0;
+                const hasValidSupervisor = purchaseItem.supervisorQuantity != null && purchaseItem.supervisorQuantity > 0;
+                const agencyWastage = hasValidReceived && hasValidSupervisor ? 
+                  (purchaseItem.receivedQuantity! - purchaseItem.supervisorQuantity!) : null;
+                value = agencyWastage !== null ? agencyWastage : '-';
+              }
+            }
+            break;
+          case 'agencyNotReceived':
+            {
+              const purchaseItem = item as PurchaseOrderItem;
+              value = (purchaseItem.wastageRegisteredAt && purchaseItem.agencyNotReceived !== null) ? 
+                     (purchaseItem.agencyNotReceived || 0) : '-';
             }
             break;
           case 'agency':
@@ -388,14 +414,21 @@ export class ExcelExporter {
   private addGrandTotals(totals: any): void {
     this.currentRow++; // Skip a row
     
+    // Determine if this is Purchase Order Report or Delivery Report
+    const isPurchaseReport = totals.totalPurchases !== undefined;
+    const isDeliveryReport = totals.totalDeliveries !== undefined;
+    
     const rowData = [
       'GRAND TOTAL',
-      `Purchases: ${totals.totalPurchases}`,
+      isPurchaseReport ? `Purchases: ${totals.totalPurchases}` : 
+      isDeliveryReport ? `Deliveries: ${totals.totalDeliveries}` : 
       `Items: ${totals.totalItems}`,
-      `Qty: ${totals.totalQuantity}`,
-      this.formatCurrency(totals.totalAmount),
+      `Items: ${totals.totalItems || 0}`,
+      `Qty: ${totals.totalQuantity || 0}`,
+      this.formatCurrency(totals.totalAmount || 0),
       '', '', '', '', '',
-      `Avg Value: ${this.formatCurrency(totals.avgPurchaseValue)}`
+      // Only show avg value for purchase reports, not delivery reports
+      isPurchaseReport ? `Avg Value: ${this.formatCurrency(totals.avgPurchaseValue || 0)}` : ''
     ];
     
     rowData.forEach((value, index) => {

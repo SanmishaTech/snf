@@ -84,6 +84,13 @@ export interface PurchaseOrderItem {
   // Delivery info
   deliveredBy?: string;
   receivedBy?: string;
+  
+  // Registered wastage data
+  farmerWastage?: number;
+  farmerNotReceived?: number;
+  agencyWastage?: number;
+  agencyNotReceived?: number;
+  wastageRegisteredAt?: string;
 }
 
 export interface GroupTotals {
@@ -211,10 +218,12 @@ export interface DeliveryGroupTotals {
 }
 
 export interface DeliveryGroupedData {
-  level: 'agency' | 'area' | 'status';
+  level: 'agency' | 'area' | 'variant' | 'status';
   id: string | number;
   name: string;
   city?: string;
+  productName?: string;
+  variantName?: string;
   data: DeliveryGroupedData[] | DeliveryItem[];
   totals: DeliveryGroupTotals;
 }

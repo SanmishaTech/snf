@@ -522,7 +522,7 @@ export function AppSidebar(props: AppSidebarProps) {
               className="data-[slot=sidebar-menu-button]:!p-2 hover:bg-white/10 transition-colors rounded-lg"
             >
               <div className="flex items-center gap-2 justify-between">
-                <Link to="/" className="flex items-center gap-2">
+                <Link to="/admin/dashboard" className="flex items-center gap-2">
                   <ArrowUpCircleIcon className="h-5 w-5 text-white" />
                   <span className="text-sm font-medium text-white">
                     {appName}
