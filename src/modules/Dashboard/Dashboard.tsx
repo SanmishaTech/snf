@@ -360,9 +360,9 @@ export function AdminDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-primary">₹{(dashboardStats.totalRevenue || 0).toLocaleString()}</div>
-                  <p className="text-xs text-muted-foreground">
+                  {/* <p className="text-xs text-muted-foreground">
                     {(dashboardStats.revenueChange || 0) >= 0 ? '+' : ''}{dashboardStats.revenueChange || 0}% from last month
-                  </p>
+                  </p> */}
                 </CardContent>
               </Card>
 
@@ -373,9 +373,9 @@ export function AdminDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-secondary">{(dashboardStats.activeCustomers || 0).toLocaleString()}</div>
-                  <p className="text-xs text-muted-foreground">
+                  {/* <p className="text-xs text-muted-foreground">
                     {(dashboardStats.customersChange || 0) >= 0 ? '+' : ''}{dashboardStats.customersChange || 0}% from last month
-                  </p>
+                  </p> */}
                 </CardContent>
               </Card>
 
@@ -386,9 +386,9 @@ export function AdminDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{(dashboardStats.totalOrders || 0).toLocaleString()}</div>
-                  <p className="text-xs text-muted-foreground">
+                  {/* <p className="text-xs text-muted-foreground">
                     {(dashboardStats.ordersChange || 0) >= 0 ? '+' : ''}{dashboardStats.ordersChange || 0}% from last month
-                  </p>
+                  </p> */}
                 </CardContent>
               </Card>
 
@@ -512,7 +512,7 @@ export function AdminDashboard() {
                             <TableHead>Expiry Date</TableHead>
                             <TableHead className="text-center">Status</TableHead>
                             <TableHead className="text-center">Days Left</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
+                            {/* <TableHead className="text-right">Actions</TableHead> */}
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -546,11 +546,11 @@ export function AdminDashboard() {
                                   {sub.daysLeft}
                                 </span>
                               </TableCell>
-                              <TableCell className="text-right">
+                              {/* <TableCell className="text-right">
                                 <Button variant="outline" size="sm">
                                   View
                                 </Button>
-                              </TableCell>
+                              </TableCell> */}
                             </TableRow>
                           ))}
                         </TableBody>
