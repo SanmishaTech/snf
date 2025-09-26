@@ -859,6 +859,7 @@ const AdminSubscriptionList: React.FC = () => {
       agencyId: "",
       productId: "",
       expiryStatus: "ALL", // Default to show all records
+      expiringInDays: "", // New filter for days until expiry
       // Add other filter keys as needed, initialized to empty or default values
     }
   );
@@ -1102,6 +1103,8 @@ const AdminSubscriptionList: React.FC = () => {
         deliveryStatus: "",
         agencyId: "",
         productId: "",
+        expiryStatus: "ALL",
+        expiringInDays: "",
       });
     }
     // Optionally, re-fetch immediately or wait for explicit submit
@@ -1396,14 +1399,34 @@ const AdminSubscriptionList: React.FC = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">All</SelectItem>
-                <SelectItem value="NOT_EXPIRED">Active</SelectItem>
+                <SelectItem value="ACTIVE">Active</SelectItem>
+                <SelectItem value="EXPIRING_SOON">Expiring Soon</SelectItem>
                 <SelectItem value="EXPIRED">Expired</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
+          {/* Days Until Expiry Filter */}
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-gray-500" />
+            <Input
+              type="number"
+              placeholder="Days until expiry"
+              value={filters.expiringInDays || ""}
+              onChange={(e) => {
+                const value = e.target.value;
+                setFilters(prev => ({ ...prev, expiringInDays: value }));
+                setCurrentPage(1); // Reset to page 1 when changing filter
+              }}
+              className="w-40"
+              min="0"
+              max="365"
+            />
+          </div>
+
           <Button
-            onClick={handleOpenBulkAssignModal}
+            variant="outline"
+            onClick={() => setIsBulkAssignModalOpen(true)}
             className="flex items-center gap-2"
           >
             <Users className="h-4 w-4" />
