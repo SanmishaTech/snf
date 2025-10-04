@@ -343,6 +343,22 @@ const EnhancedDeliveryView: React.FC = () => {
     return statusOption?.color || 'bg-gray-100 text-gray-800';
   };
 
+  const getRowStatusClass = (status: DeliveryStatus) => {
+    switch (status) {
+      case DeliveryStatus.DELIVERED:
+        return 'bg-green-100 hover:bg-green-200';
+      case DeliveryStatus.NOT_DELIVERED:
+        return 'bg-red-100 hover:bg-red-200';
+      case DeliveryStatus.SKIPPED:
+      case DeliveryStatus.SKIP_BY_CUSTOMER:
+        return 'bg-blue-100 hover:bg-blue-200';
+      case DeliveryStatus.CANCELLED:
+        return 'bg-gray-100 hover:bg-gray-200';
+      default:
+        return 'bg-white hover:bg-gray-50';
+    }
+  };
+
   const handleQuickStatusUpdate = useCallback(async (deliveryId: string, newStatus: DeliveryStatus) => {
     console.log(`[QuickStatusUpdate] Attempting to update delivery ${deliveryId} to ${newStatus}`);
 
@@ -592,9 +608,9 @@ const EnhancedDeliveryView: React.FC = () => {
             <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+        <tbody className="divide-y divide-gray-200">
           {deliveries.map((delivery) => (
-            <tr key={delivery.id} className={updatingStatus[delivery.id] ? 'opacity-50' : ''}>
+            <tr key={delivery.id} className={clsx(getRowStatusClass(delivery.status), updatingStatus[delivery.id] && 'opacity-50')}>
               <td className="px-3 py-4 whitespace-nowrap">
                 <div className="text-sm font-medium text-gray-900">{delivery.member.name}</div>
                 <div className="text-xs text-gray-500">{delivery.deliveryAddress?.mobile || 'N/A'}</div>

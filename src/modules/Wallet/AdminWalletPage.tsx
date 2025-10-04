@@ -486,7 +486,7 @@ const AdminWalletPage: React.FC = () => {
                         <TableHead className="px-3 py-2">Reference</TableHead>
                         <TableHead className="px-3 py-2">Admin</TableHead>
                         <TableHead className="px-3 py-2">Status</TableHead>
-                        <TableHead className="text-right px-3 py-2">Actions</TableHead>
+                        {/* <TableHead className="text-right px-3 py-2">Actions</TableHead> */}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -511,7 +511,7 @@ const AdminWalletPage: React.FC = () => {
                             {tx.adminName || <span className="text-muted-foreground">N/A</span>}
                           </TableCell>
                           <TableCell className="text-xs px-3 py-2">{tx.status || <span className="text-muted-foreground">-</span>}</TableCell>
-                          <TableCell className="text-right px-3 py-2">
+                          {/* <TableCell className="text-right px-3 py-2">
                             <Button
                               variant="outline"
                               size="sm"
@@ -520,7 +520,7 @@ const AdminWalletPage: React.FC = () => {
                             >
                               View Details
                             </Button>
-                          </TableCell>
+                          </TableCell> */}
                         </TableRow>
                       ))}
                     </TableBody>
