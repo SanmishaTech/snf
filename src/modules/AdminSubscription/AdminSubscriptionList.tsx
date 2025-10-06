@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { get, put, post } from "@/services/apiService"; // Assuming you have a configured apiService
+import { get, put, post, patch } from "@/services/apiService"; // Assuming you have a configured apiService
 import {
   Table,
   TableBody,
@@ -51,6 +51,8 @@ import {
   Users,
   Download,
   MessageSquare,
+  Ban,
+  AlertTriangle,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner"; // Using Sonner for toasts
@@ -841,6 +843,9 @@ const AdminSubscriptionList: React.FC = () => {
   const [downloadingInvoices, setDownloadingInvoices] = useState<Set<string>>(
     new Set()
   );
+  const [orderToCancel, setOrderToCancel] = useState<ProductOrder | null>(null);
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   // User role and supervisor filtering state
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
@@ -1221,6 +1226,43 @@ const AdminSubscriptionList: React.FC = () => {
     }
   };
 
+  const handleCancelSubscriptions = async (order: ProductOrder) => {
+    setOrderToCancel(order);
+    setIsCancelDialogOpen(true);
+  };
+
+  const confirmCancelSubscriptions = async () => {
+    if (!orderToCancel) return;
+
+    setIsCancelling(true);
+    try {
+      // Call the cancel order subscriptions API
+      const response = await patch(`/product-orders/${orderToCancel.id}/cancel-subscriptions`, {});
+
+      const successMessage =
+        response?.message ||
+        `Cancellation completed for order ${orderToCancel.orderNo}. Pending deliveries have been marked as cancelled.`;
+
+      toast.success(successMessage);
+
+      // Refresh the list to show updated status
+      fetchProductOrders(currentPage, limit, filters, showUnassignedOnly);
+      
+      // Close the dialog
+      setIsCancelDialogOpen(false);
+      setOrderToCancel(null);
+    } catch (error: any) {
+      console.error("Failed to cancel subscriptions:", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to cancel subscriptions. Please try again.";
+      toast.error(errorMessage);
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
   const handleDownloadInvoice = async (order: ProductOrder) => {
     // Check if this invoice is already being downloaded
     if (downloadingInvoices.has(order.id)) {
@@ -1397,7 +1439,7 @@ const AdminSubscriptionList: React.FC = () => {
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Expiry Status" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent> 
                 <SelectItem value="ALL">All</SelectItem>
                 <SelectItem value="ACTIVE">Active</SelectItem>
                 <SelectItem value="EXPIRING_SOON">Expiring Soon</SelectItem>
@@ -1601,7 +1643,10 @@ const AdminSubscriptionList: React.FC = () => {
               });
               
               // Check if order is cancelled
-              const isCancelled = order.paymentStatus === 'CANCELLED' || order.subscriptions.some(sub => sub.paymentStatus === 'CANCELLED');
+              const hasCancelledSubs = order.subscriptions.some(sub => sub.paymentStatus === 'CANCELLED');
+              const isCancelled =
+                order.paymentStatus === 'CANCELLED' ||
+                (hasCancelledSubs && order.subscriptions.every(sub => sub.paymentStatus === 'CANCELLED'));
 
               return (
                 <div
@@ -2069,6 +2114,33 @@ const AdminSubscriptionList: React.FC = () => {
                                 </p>
                               </TooltipContent>
                             </Tooltip>
+
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className={`h-8 w-8 rounded-full ${
+                                    isExpired || isCancelled
+                                      ? 'bg-red-50 border-red-200'
+                                      : 'bg-white hover:bg-red-50 border-red-200'
+                                  }`}
+                                  onClick={() => handleCancelSubscriptions(order)}
+                                  disabled={isExpired || isCancelled}
+                                >
+                                  <Ban className={`h-4 w-4 ${isExpired || isCancelled ? 'text-red-300' : 'text-red-600'}`} />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent side="top">
+                                <p>
+                                  {isExpired
+                                    ? "Cannot cancel expired subscription"
+                                    : isCancelled
+                                      ? "Subscriptions already cancelled"
+                                      : "Cancel pending deliveries"}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
                           </TooltipProvider>
                         </div>
                       )}
@@ -2141,6 +2213,104 @@ const AdminSubscriptionList: React.FC = () => {
         isLoadingAgencies={isLoadingAgencies}
         onBulkUpdateSubscriptions={handleBulkAssignAgency}
       />
+
+      {/* Cancel Confirmation Dialog */}
+      <Dialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-600" />
+              Cancel Subscriptions
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to cancel all subscriptions in this order?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogClose
+            className="absolute right-4 top-4 z-10"
+            onClick={() => setIsCancelDialogOpen(false)}
+          >
+            <X className="h-4 w-4" />
+          </DialogClose>
+
+          {orderToCancel && (
+            <div className="py-4 space-y-4">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-yellow-800">
+                    <p className="font-medium mb-1">This action will:</p>
+                    <ul className="list-disc list-inside space-y-1 text-xs">
+                      <li>Cancel all {orderToCancel.subscriptions.length} subscription(s) in order {orderToCancel.orderNo}</li>
+                      <li>Mark all future delivery schedule entries as CANCELLED</li>
+                      <li>
+                        {currentUserRole === 'ADMIN'
+                          ? 'No wallet refund will be processed from the admin panel'
+                          : 'Process wallet refund if applicable (for remaining deliveries)'}
+                      </li>
+                      <li>This action cannot be undone</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 p-3 rounded-md">
+                <h4 className="text-sm font-medium mb-2">Order Details:</h4>
+                <div className="space-y-1 text-sm">
+                  <p><span className="text-gray-500">Order No:</span> <span className="font-medium">{orderToCancel.orderNo}</span></p>
+                  <p><span className="text-gray-500">Customer:</span> <span className="font-medium">{orderToCancel.member?.user?.name || "N/A"}</span></p>
+                  <p><span className="text-gray-500">Subscriptions:</span> <span className="font-medium">{orderToCancel.subscriptions.length} item(s)</span></p>
+                  <p><span className="text-gray-500">Payment Status:</span> <span className="font-medium">{orderToCancel.paymentStatus}</span></p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium">Subscriptions to be cancelled:</h4>
+                <div className="space-y-1 max-h-32 overflow-y-auto">
+                  {orderToCancel.subscriptions.map((sub, index) => (
+                    <div key={sub.id} className="flex items-center gap-2 text-sm bg-white p-2 rounded border">
+                      <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">{index + 1}</span>
+                      <span className="font-medium">{sub.product.name}</span>
+                      <span className="text-xs text-gray-500">×{sub.qty}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsCancelDialogOpen(false)}
+              disabled={isCancelling}
+              className="w-full sm:w-auto"
+            >
+              No, Keep Subscriptions
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={confirmCancelSubscriptions}
+              disabled={isCancelling}
+              className="w-full sm:w-auto"
+            >
+              {isCancelling ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Cancelling...
+                </>
+              ) : (
+                <>
+                  <Ban className="h-4 w-4 mr-2" />
+                  Yes, Cancel Subscriptions
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       {/* <Toaster richColors position="top-right" /> */}
     </div>
   );
