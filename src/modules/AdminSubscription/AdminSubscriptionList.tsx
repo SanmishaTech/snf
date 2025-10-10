@@ -936,7 +936,7 @@ const AdminSubscriptionList: React.FC = () => {
         }
 
         if (originalKey === "memberName") {
-          apiParams["searchTerm"] = value;
+          apiParams["search"] = value;
         } else if (originalKey === "subscriptionDate") {
           apiParams["startDate"] = value;
         } else {
@@ -1278,7 +1278,7 @@ const AdminSubscriptionList: React.FC = () => {
         // If invoice path exists, download using forced download approach
         const baseUrl =
           import.meta.env.VITE_BACKEND_URL || "https://www.indraai.in";
-        const invoiceUrl = `${baseUrl}/invoices/${order.invoicePath}`;
+        const invoiceUrl = `${baseUrl}/uploads/invoices/${order.invoicePath}`;
 
         // Fetch the file as blob to force download
         const response = await fetch(invoiceUrl);
@@ -1319,7 +1319,7 @@ const AdminSubscriptionList: React.FC = () => {
       if (order.invoicePath) {
         const baseUrl =
           import.meta.env.VITE_BACKEND_URL || "https://www.indraai.in";
-        const invoiceUrl = `${baseUrl}/invoices/${order.invoicePath}`;
+        const invoiceUrl = `${baseUrl}/uploads/invoices/${order.invoicePath}`;
         window.open(invoiceUrl, "_blank");
       }
     } finally {
@@ -1414,6 +1414,22 @@ const AdminSubscriptionList: React.FC = () => {
       <div className="flex flex-wrap justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Admin - Subscriptions Management</h1>
         <div className="flex flex-wrap gap-2 mt-2">
+          {/* Search by Member Name */}
+          <div className="flex items-center gap-2">
+            <UserIcon className="h-4 w-4 text-gray-500" />
+            <Input
+              type="text"
+              placeholder="Search by name..."
+              value={filters.memberName || ""}
+              onChange={(e) => {
+                const value = e.target.value;
+                setFilters(prev => ({ ...prev, memberName: value }));
+                setCurrentPage(1); // Reset to page 1 when changing filter
+              }}
+              className="w-48"
+            />
+          </div>
+
           <Button
             variant={showUnassignedOnly ? "default" : "outline"}
             onClick={() => {

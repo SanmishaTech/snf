@@ -519,7 +519,8 @@ const MySubscriptionsPage: React.FC = () => {
                             const baseUrl =
                               import.meta.env.VITE_BACKEND_URL ||
                               "https://www.indraai.in";
-                            const invoiceUrl = `${baseUrl}/invoices/${sub.productOrder.invoicePath}`;
+                            const invoiceUrl = `${baseUrl}/uploads/invoices/${sub.productOrder.invoicePath}`;
+                            console.log("Fetching invoice from:", invoiceUrl);
 
                             // Fetch the file as blob to force download
                             const response = await fetch(invoiceUrl);
@@ -546,7 +547,7 @@ const MySubscriptionsPage: React.FC = () => {
                             const baseUrl =
                               import.meta.env.VITE_BACKEND_URL ||
                               "https://www.indraai.in";
-                            const invoiceUrl = `${baseUrl}/invoices/${sub.productOrder.invoicePath}`;
+                            const invoiceUrl = `${baseUrl}/uploads/invoices/${sub.productOrder.invoicePath}`;
                             window.open(invoiceUrl, "_blank");
                           }
                         }}

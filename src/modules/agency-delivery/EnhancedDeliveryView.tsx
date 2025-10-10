@@ -172,6 +172,7 @@ const EnhancedDeliveryView: React.FC = () => {
   const [dateEditDeliveryId, setDateEditDeliveryId] = useState<string>('');
   const [newDeliveryDate, setNewDeliveryDate] = useState<string>('');
   const [updatingDate, setUpdatingDate] = useState<Record<string, boolean>>({});
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
 
   const fetchDeliveries = useCallback(async (date: string, agencyIdForAdmin?: string) => {
     console.log(`[fetchDeliveries] Called. Date: ${date}, AdminAgencyID: ${agencyIdForAdmin}, UserRole: ${currentUser?.role}`);
@@ -505,18 +506,42 @@ const EnhancedDeliveryView: React.FC = () => {
       </header>
 
       <div className="mb-6 p-4 bg-white rounded-lg shadow flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <label htmlFor="deliveryDate" className="font-semibold text-gray-700 whitespace-nowrap">Select Date:</label>
-          <input
-            id="deliveryDate"
-            type="date"
-            value={selectedDate}
-            onChange={(e) => {
-              console.log('[DateChange] New date:', e.target.value);
-              setSelectedDate(e.target.value);
-            }}
-            className="border border-gray-300 rounded-md p-2 text-sm text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-          />
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <div className="flex items-center gap-3">
+            <label htmlFor="deliveryDate" className="font-semibold text-gray-700 whitespace-nowrap">Select Date:</label>
+            <input
+              id="deliveryDate"
+              type="date"
+              value={selectedDate}
+              onChange={(e) => {
+                console.log('[DateChange] New date:', e.target.value);
+                setSelectedDate(e.target.value);
+              }}
+              className="border border-gray-300 rounded-md p-2 text-sm text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            />
+          </div>
+          <div className="flex items-center gap-3">
+            <label htmlFor="statusFilter" className="font-semibold text-gray-700 whitespace-nowrap">Status:</label>
+            <Select
+              value={statusFilter}
+              onValueChange={(value) => {
+                console.log('[StatusFilter] Changed to:', value);
+                setStatusFilter(value);
+              }}
+            >
+              <SelectTrigger id="statusFilter" className="min-w-[160px]">
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All Statuses</SelectItem>
+                {statusOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         {currentUser?.role === 'ADMIN' && (
           <div className="flex items-center gap-3 max-sm:flex-col">
@@ -592,24 +617,33 @@ const EnhancedDeliveryView: React.FC = () => {
       </div>
     )}
  
-    {deliveries.length > 0 && (
-    <div className="overflow-x-auto bg-white rounded-lg shadow">
-      <table className="min-w-full divide-y divide-gray-200 [&>thead>tr>th]:!px-3 [&>tbody>tr>td]:!px-3">
-        <thead className="bg-gray-50">
-          <tr>
-            <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Member</th>
-            <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-            <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
-            <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Delivery Date</th>
-            <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
-            <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Delivery Instructions</th>
-            <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-            <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Handler</th>
-            <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200">
-          {deliveries.map((delivery) => (
+    {deliveries.length > 0 && (() => {
+      const filteredDeliveries = statusFilter === 'ALL' 
+        ? deliveries 
+        : deliveries.filter(d => d.status === statusFilter);
+      
+      return filteredDeliveries.length === 0 ? (
+        <div className="p-4 text-sm text-gray-700 bg-blue-100 rounded-lg border border-blue-300" role="alert">
+          No deliveries found with status: {statusOptions.find(opt => opt.value === statusFilter)?.label || statusFilter}
+        </div>
+      ) : (
+        <div className="overflow-x-auto bg-white rounded-lg shadow">
+          <table className="min-w-full divide-y divide-gray-200 [&>thead>tr>th]:!px-3 [&>tbody>tr>td]:!px-3">
+            <thead className="bg-gray-50">
+              <tr>
+                <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Member</th>
+                <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
+                <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Delivery Date</th>
+                <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
+                <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Delivery Instructions</th>
+                <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Handler</th>
+                <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filteredDeliveries.map((delivery) => (
             <tr key={delivery.id} className={clsx(getRowStatusClass(delivery.status), updatingStatus[delivery.id] && 'opacity-50')}>
               <td className="px-3 py-4 whitespace-nowrap">
                 <div className="text-sm font-medium text-gray-900">{delivery.member.name}</div>
@@ -792,10 +826,11 @@ const EnhancedDeliveryView: React.FC = () => {
                   </td>
                 </tr>
               ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </tbody>
+            </table>
+          </div>
+        );
+    })()}
 
       {/* Admin Status Update Modal */}
       {showStatusModal && (

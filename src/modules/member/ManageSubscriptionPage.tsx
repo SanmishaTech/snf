@@ -481,7 +481,7 @@ const ManageSubscriptionPage: React.FC = () => {
               onClick={() => {
                 const baseUrl =
                   import.meta.env.VITE_BACKEND_URL || "https://www.indraai.in";
-                const invoiceUrl = `${baseUrl}/invoices/${subscription.productOrder.invoicePath}`;
+                const invoiceUrl = `${baseUrl}/uploads/invoices/${subscription.productOrder.invoicePath}`;
                 window.open(invoiceUrl);
               }}
               variant="outline"
