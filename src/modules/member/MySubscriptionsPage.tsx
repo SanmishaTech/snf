@@ -518,7 +518,7 @@ const MySubscriptionsPage: React.FC = () => {
                           try {
                             const baseUrl =
                               import.meta.env.VITE_BACKEND_URL ||
-                              "https://www.indraai.in";
+                              "http://localhost:3006";
                             const invoiceUrl = `${baseUrl}/uploads/invoices/${sub.productOrder.invoicePath}`;
                             console.log("Fetching invoice from:", invoiceUrl);
 
@@ -546,7 +546,7 @@ const MySubscriptionsPage: React.FC = () => {
                             // Fallback to opening in new tab if download fails
                             const baseUrl =
                               import.meta.env.VITE_BACKEND_URL ||
-                              "https://www.indraai.in";
+                              "http://localhost:3006";
                             const invoiceUrl = `${baseUrl}/uploads/invoices/${sub.productOrder.invoicePath}`;
                             window.open(invoiceUrl, "_blank");
                           }
