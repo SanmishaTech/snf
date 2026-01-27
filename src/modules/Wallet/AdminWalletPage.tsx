@@ -486,6 +486,7 @@ const AdminWalletPage: React.FC = () => {
                         <TableHead className="px-3 py-2">Reference</TableHead>
                         <TableHead className="px-3 py-2">Admin</TableHead>
                         <TableHead className="px-3 py-2">Status</TableHead>
+                        <TableHead className="px-3 py-2">Notes</TableHead>
                         {/* <TableHead className="text-right px-3 py-2">Actions</TableHead> */}
                       </TableRow>
                     </TableHeader>
@@ -511,6 +512,13 @@ const AdminWalletPage: React.FC = () => {
                             {tx.adminName || <span className="text-muted-foreground">N/A</span>}
                           </TableCell>
                           <TableCell className="text-xs px-3 py-2">{tx.status || <span className="text-muted-foreground">-</span>}</TableCell>
+                          <TableCell className="text-xs px-3 py-2 max-w-xs truncate">
+                            {tx.notes ? (
+                              <span title={tx.notes} className="text-muted-foreground">{tx.notes}</span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
                           {/* <TableCell className="text-right px-3 py-2">
                             <Button
                               variant="outline"

@@ -17,7 +17,7 @@ const getBackendUrl = () => {
   }
 
   // Default for development
-  return "https://www.indraai.in";
+  return "http://localhost:3006";
 };
 
 export const backendUrl = getBackendUrl();

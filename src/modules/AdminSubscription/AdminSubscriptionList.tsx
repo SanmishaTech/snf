@@ -1277,7 +1277,7 @@ const AdminSubscriptionList: React.FC = () => {
       if (order.invoicePath) {
         // If invoice path exists, download using forced download approach
         const baseUrl =
-          import.meta.env.VITE_BACKEND_URL || "https://www.indraai.in";
+          import.meta.env.VITE_BACKEND_URL || "http://localhost:3006";
         const invoiceUrl = `${baseUrl}/uploads/invoices/${order.invoicePath}`;
 
         // Fetch the file as blob to force download
@@ -1318,7 +1318,7 @@ const AdminSubscriptionList: React.FC = () => {
       // Fallback to opening in new tab if download fails
       if (order.invoicePath) {
         const baseUrl =
-          import.meta.env.VITE_BACKEND_URL || "https://www.indraai.in";
+          import.meta.env.VITE_BACKEND_URL || "http://localhost:3006";
         const invoiceUrl = `${baseUrl}/uploads/invoices/${order.invoicePath}`;
         window.open(invoiceUrl, "_blank");
       }
@@ -1910,10 +1910,7 @@ const AdminSubscriptionList: React.FC = () => {
                         >
                           {order.paymentStatus}
                         </div>
-                        {console.log(
-                          "order",
-                          order?.subscriptions?.[0]?.deliveryAddressId
-                        )}
+                        
                         <p>
                           {order?.subscriptions?.[0]?.deliveryAddressId
                             ? "Home Delivery"
@@ -1928,6 +1925,39 @@ const AdminSubscriptionList: React.FC = () => {
                                 ? "Processing payment"
                                 : "Payment required"}
                         </div>
+
+                        {/* Payment Details - Only show for PAID orders */}
+                        {order.paymentStatus === "PAID" && (
+                          <div className="mt-3 pt-3 border-t border-gray-200">
+                            <h4 className="text-xs font-semibold text-gray-600 mb-2">Payment Details</h4>
+                            <div className="space-y-1.5 text-xs">
+                              {order.paymentMode && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-gray-500 min-w-[70px]">Mode:</span>
+                                  <span className="font-medium text-gray-700">
+                                    {order.paymentMode === "BANK" ? "Bank Transfer" : order.paymentMode}
+                                  </span>
+                                </div>
+                              )}
+                              {order.paymentDate && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-gray-500 min-w-[70px]">Date:</span>
+                                  <span className="font-medium text-gray-700">
+                                    {format(new Date(order.paymentDate), "dd MMM yyyy")}
+                                  </span>
+                                </div>
+                              )}
+                              {order.paymentReferenceNo && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-gray-500 min-w-[70px]">Reference:</span>
+                                  <span className="font-medium text-gray-700 break-all">
+                                    {order.paymentReferenceNo}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
 
                         {/* Delivery Instructions */}
                         {firstSub?.deliveryInstructions && (
