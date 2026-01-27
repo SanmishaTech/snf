@@ -5,7 +5,7 @@ import { ProductService, Product, DepotVariant, ApiResponse, PaginatedResponse }
  * Uses only MRP pricing from depot variants as specified
  */
 export class ProductServiceImpl implements ProductService {
-  private readonly API_BASE_URL = import.meta.env.VITE_BACKEND_URL || '/api';
+  private readonly API_ORIGIN = import.meta.env.VITE_BACKEND_URL || window.location.origin;
   private readonly DEFAULT_TIMEOUT = 10000; // 10 seconds
   private readonly MAX_RETRIES = 2;
 
@@ -14,7 +14,7 @@ export class ProductServiceImpl implements ProductService {
    */
   async getProducts(depotId?: number): Promise<Product[]> {
     try {
-      const url = new URL(`${this.API_BASE_URL}/api/products/public`);
+      const url = new URL(`/api/products/public`, this.API_ORIGIN);
       if (depotId) {
         url.searchParams.append('depotId', depotId.toString());
       }
@@ -63,7 +63,7 @@ export class ProductServiceImpl implements ProductService {
   async getProductVariants(productId: number, depotId: number): Promise<DepotVariant[]> {
     try {
       // Use the public products endpoint with depotId to get products with variants
-      const url = new URL(`${this.API_BASE_URL}/api/products/public`);
+      const url = new URL(`/api/products/public`, this.API_ORIGIN);
       url.searchParams.append('depotId', depotId.toString());
 
       const response = await this.fetchWithRetry(url.toString());
@@ -167,7 +167,7 @@ export class ProductServiceImpl implements ProductService {
   async getDepotVariants(depotId: number): Promise<DepotVariant[]> {
     try {
       // Use the correct endpoint that returns products with variants
-      const url = new URL(`${this.API_BASE_URL}/api/products/public`);
+      const url = new URL(`/api/products/public`, this.API_ORIGIN);
       url.searchParams.append('depotId', depotId.toString());
 
       const response = await this.fetchWithRetry(url.toString());
@@ -273,7 +273,7 @@ export class ProductServiceImpl implements ProductService {
    */
   async getAllDepotVariants(): Promise<DepotVariant[]> {
     try {
-      const url = new URL(`${this.API_BASE_URL}/public/depot-variants`);
+      const url = new URL(`/api/public/depot-variants`, this.API_ORIGIN);
 
       const response = await this.fetchWithRetry(url.toString());
       
@@ -338,7 +338,7 @@ export class ProductServiceImpl implements ProductService {
    */
   async getPublicProducts(): Promise<Product[]> {
     try {
-      const url = new URL(`${this.API_BASE_URL}/api/products/public`);
+      const url = new URL(`/api/products/public`, this.API_ORIGIN);
 
       const response = await this.fetchWithRetry(url.toString());
       
@@ -364,7 +364,7 @@ export class ProductServiceImpl implements ProductService {
    */
   async getProductsByCategory(categoryId: number, depotId?: number): Promise<Product[]> {
     try {
-      const url = new URL(`${this.API_BASE_URL}/api/products/public`);
+      const url = new URL(`/api/products/public`, this.API_ORIGIN);
       // Backend may ignore categoryId; we still send it for forward compatibility
       url.searchParams.append('categoryId', categoryId.toString());
       if (depotId) {
@@ -406,7 +406,7 @@ export class ProductServiceImpl implements ProductService {
    */
   async searchProducts(query: string, depotId?: number): Promise<Product[]> {
     try {
-      const url = new URL(`${this.API_BASE_URL}/api/products/public`);
+      const url = new URL(`/api/products/public`, this.API_ORIGIN);
       url.searchParams.append('search', query);
       if (depotId) {
         url.searchParams.append('depotId', depotId.toString());
@@ -436,7 +436,7 @@ export class ProductServiceImpl implements ProductService {
    */
   async getProductById(productId: number): Promise<Product | null> {
     try {
-      const url = new URL(`${this.API_BASE_URL}/api/products/${productId}`);
+      const url = new URL(`/api/products/${productId}`, this.API_ORIGIN);
 
       const response = await this.fetchWithRetry(url.toString());
       
@@ -477,7 +477,7 @@ export class ProductServiceImpl implements ProductService {
     }
 
     try {
-      const url = new URL(`${this.API_BASE_URL}/api/products/batch`);
+      const url = new URL(`/api/products/batch`, this.API_ORIGIN);
       const response = await this.fetchWithRetry(url.toString(), {
         method: 'POST',
         headers: {
@@ -572,7 +572,7 @@ export class ProductServiceImpl implements ProductService {
    */
   async getCategories(): Promise<any[]> {
     try {
-      const url = new URL(`${this.API_BASE_URL}/api/admin/categories/public/AllCategories`);
+      const url = new URL(`/api/admin/categories/public/AllCategories`, this.API_ORIGIN);
 
       const response = await this.fetchWithRetry(url.toString());
       

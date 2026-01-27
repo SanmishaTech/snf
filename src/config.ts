@@ -16,8 +16,7 @@ const getBackendUrl = () => {
     }
   }
 
-  // Default for development
-  return "http://localhost:3006";
+  return window.location.origin;
 };
 
 export const backendUrl = getBackendUrl();
