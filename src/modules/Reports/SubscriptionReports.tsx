@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { 
   Select, 
   SelectContent, 
@@ -266,6 +267,100 @@ export default function SubscriptionReports() {
               </Button>
             </div>
           </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="pt-6">
+          {isLoading ? (
+            <div className="py-10 text-center text-sm text-gray-600">Loading subscription reports...</div>
+          ) : !reportData?.data || reportData.data.length === 0 ? (
+            <div className="py-10 text-center text-sm text-gray-600">
+              No subscriptions found for the selected filters.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="text-sm text-gray-600">
+                Total: {reportData?.summary?.totalSubscriptions ?? reportData.data.length}
+              </div>
+
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Member</TableHead>
+                    <TableHead>Product</TableHead>
+                    <TableHead>Variant</TableHead>
+                    <TableHead>Schedule</TableHead>
+                    <TableHead className="text-right">Daily Qty</TableHead>
+                    <TableHead className="text-right">Total Qty</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>Payment</TableHead>
+                    <TableHead>Agency</TableHead>
+                    <TableHead>Start</TableHead>
+                    <TableHead>Expiry</TableHead>
+                    <TableHead>Expired</TableHead>
+                    <TableHead>Address</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {reportData.data.map((subscription: SubscriptionReportItem) => (
+                    <TableRow key={subscription.id}>
+                      <TableCell>{subscription.id}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{subscription.memberName}</span>
+                          <span className="text-xs text-gray-600">{subscription.memberEmail}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{subscription.productName}</TableCell>
+                      <TableCell>{subscription.variantName}</TableCell>
+                      <TableCell>{subscription.deliverySchedule}</TableCell>
+                      <TableCell className="text-right">{subscription.dailyQty}</TableCell>
+                      <TableCell className="text-right">{subscription.totalQty}</TableCell>
+                      <TableCell className="text-right">
+                        ₹{(subscription.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell>{subscription.paymentStatus}</TableCell>
+                      <TableCell>{subscription.agencyName || 'Unassigned'}</TableCell>
+                      <TableCell>
+                        {subscription.startDate ? format(new Date(subscription.startDate), 'dd/MM/yyyy') : ''}
+                      </TableCell>
+                      <TableCell>
+                        {subscription.expiryDate ? format(new Date(subscription.expiryDate), 'dd/MM/yyyy') : ''}
+                      </TableCell>
+                      <TableCell>{subscription.isExpired ? 'Yes' : 'No'}</TableCell>
+                      <TableCell className="max-w-[320px] truncate" title={subscription.deliveryAddress?.fullAddress || ''}>
+                        {subscription.deliveryAddress?.fullAddress || 'N/A'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              {reportData?.summary?.totalPages ? (
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    disabled={(filters.page ?? 1) <= 1}
+                    onClick={() => handleFilterChange('page', Math.max(1, (filters.page ?? 1) - 1))}
+                  >
+                    Prev
+                  </Button>
+                  <div className="text-sm text-gray-600">
+                    Page {filters.page ?? 1} of {reportData.summary.totalPages}
+                  </div>
+                  <Button
+                    variant="outline"
+                    disabled={(filters.page ?? 1) >= reportData.summary.totalPages}
+                    onClick={() => handleFilterChange('page', (filters.page ?? 1) + 1)}
+                  >
+                    Next
+                  </Button>
+                </div>
+              ) : null}
+            </div>
+          )}
+        </CardContent>
       </Card>
     </div>
   );
