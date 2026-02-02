@@ -140,10 +140,12 @@ export const useProduct = (productId?: number, depotId?: number) => {
 
     try {
       // Fetch from API
-      const [productData, variantsData] = await Promise.all([
+      const [productData, fetchedVariantsData] = await Promise.all([
         productService.getProductById(productId),
         productService.getProductVariants(productId, depotId),
       ]);
+
+      let variantsData = fetchedVariantsData;
 
       if (!productData) {
         throw {
