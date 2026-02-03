@@ -143,9 +143,10 @@
   }
   html {
     font-family: 'Roboto', system-ui, sans-serif;
+    @apply overflow-x-hidden;
   }
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-background text-foreground font-sans overflow-x-hidden;
     font-family: 'Roboto', system-ui, sans-serif !important;
   }
   h1, h2, h3, h4, h5, h6 {

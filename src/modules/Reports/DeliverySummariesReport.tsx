@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Download, BarChart3 } from 'lucide-react';
+import { Download, BarChart3, X } from 'lucide-react';
 import { format } from 'date-fns';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { 
@@ -26,10 +27,12 @@ export default function DeliverySummariesReport() {
   const { isAdmin, isAgency } = useRoleAccess();
   
   // State for filters
-  const [filters, setFilters] = useState<DeliverySummaryFilters>({
-    startDate: format(new Date(new Date().setDate(new Date().getDate() - 7)), 'yyyy-MM-dd'), // 7 days ago
-    endDate: format(new Date(new Date().setDate(new Date().getDate() + 30)), 'yyyy-MM-dd') // 30 days from today
+  const [draftFilters, setDraftFilters] = useState<DeliverySummaryFilters>({
+    startDate: format(new Date(new Date().setDate(new Date().getDate() - 7)), 'yyyy-MM-dd'),
+    endDate: format(new Date(new Date().setDate(new Date().getDate() + 30)), 'yyyy-MM-dd')
   });
+
+  const [appliedFilters, setAppliedFilters] = useState<DeliverySummaryFilters>(draftFilters);
   
   // Fetch filter options for agency dropdown / current agency
   const { data: filterOptions } = useQuery<DeliveryAgencyFiltersResponse>({
@@ -48,19 +51,22 @@ export default function DeliverySummariesReport() {
   useEffect(() => {
     if (isAgency) {
       const currentAgencyId = filterOptions?.data?.agencies?.[0]?.id;
-      if (currentAgencyId && !filters.agencyId) {
-        setFilters(prev => ({ ...prev, agencyId: currentAgencyId }));
+      if (currentAgencyId && !draftFilters.agencyId) {
+        setDraftFilters(prev => ({ ...prev, agencyId: currentAgencyId }));
+      }
+      if (currentAgencyId && !appliedFilters.agencyId) {
+        setAppliedFilters(prev => ({ ...prev, agencyId: currentAgencyId }));
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAgency, filterOptions]);
   
   // Fetch report data
-  const { data: reportData } = useQuery<DeliverySummaryResponse>({
-    queryKey: ['deliverySummariesReport', filters],
+  const { data: reportData, refetch, isLoading, error } = useQuery<DeliverySummaryResponse>({
+    queryKey: ['deliverySummariesReport', appliedFilters],
     queryFn: async () => {
       const params = new URLSearchParams();
-      Object.entries(filters).forEach(([key, value]) => {
+      Object.entries(appliedFilters).forEach(([key, value]) => {
         if (value) params.append(key, value.toString());
       });
       
@@ -75,9 +81,43 @@ export default function DeliverySummariesReport() {
     enabled: isAdmin || isAgency
   });
   
-  // Handle filter changes
-  const handleFilterChange = (key: keyof DeliverySummaryFilters, value: any) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+  const handleDraftFilterChange = (key: keyof DeliverySummaryFilters, value: any) => {
+    setDraftFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const applyFilters = () => {
+    const nextApplied: DeliverySummaryFilters = {
+      ...draftFilters,
+    };
+
+    const isSameAsApplied =
+      nextApplied.startDate === appliedFilters.startDate &&
+      nextApplied.endDate === appliedFilters.endDate &&
+      nextApplied.agencyId === appliedFilters.agencyId;
+
+    if (isSameAsApplied) {
+      refetch();
+      return;
+    }
+
+    setAppliedFilters(nextApplied);
+  };
+
+  const clearFilters = () => {
+    const cleared: DeliverySummaryFilters = {
+      startDate: format(new Date(new Date().setDate(new Date().getDate() - 7)), 'yyyy-MM-dd'),
+      endDate: format(new Date(new Date().setDate(new Date().getDate() + 30)), 'yyyy-MM-dd')
+    };
+
+    if (isAgency) {
+      const currentAgencyId = filterOptions?.data?.agencies?.[0]?.id;
+      if (currentAgencyId) {
+        cleared.agencyId = currentAgencyId;
+      }
+    }
+
+    setDraftFilters(cleared);
+    setAppliedFilters(cleared);
   };
   
   // Export to Excel
@@ -191,8 +231,8 @@ export default function DeliverySummariesReport() {
               <Input
                 id="startDate"
                 type="date"
-                value={filters.startDate}
-                onChange={(e) => handleFilterChange('startDate', e.target.value)}
+                value={draftFilters.startDate}
+                onChange={(e) => handleDraftFilterChange('startDate', e.target.value)}
               />
             </div>
             
@@ -201,8 +241,8 @@ export default function DeliverySummariesReport() {
               <Input
                 id="endDate"
                 type="date"
-                value={filters.endDate}
-                onChange={(e) => handleFilterChange('endDate', e.target.value)}
+                value={draftFilters.endDate}
+                onChange={(e) => handleDraftFilterChange('endDate', e.target.value)}
               />
             </div>
 
@@ -210,8 +250,10 @@ export default function DeliverySummariesReport() {
               <div className="space-y-2">
                 <Label htmlFor="agencyId">Delivery Agency</Label>
                 <Select
-                  value={filters.agencyId?.toString() || 'all'}
-                  onValueChange={(value) => handleFilterChange('agencyId', value === 'all' ? undefined : parseInt(value))}
+                  value={draftFilters.agencyId?.toString() || 'all'}
+                  onValueChange={(value) =>
+                    handleDraftFilterChange('agencyId', value === 'all' ? undefined : parseInt(value))
+                  }
                 >
                   <SelectTrigger id="agencyId">
                     <SelectValue placeholder="All Agencies" />
@@ -237,8 +279,70 @@ export default function DeliverySummariesReport() {
               </div>
             )}
           </div>
-          
-          
+
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={clearFilters}>
+              <X className="mr-2 h-4 w-4" />
+              Clear Filters
+            </Button>
+            <Button onClick={applyFilters}>
+              Apply Filters
+            </Button>
+          </div>
+
+          {isLoading ? (
+            <div className="py-10 text-center text-sm text-gray-600">Loading report...</div>
+          ) : error ? (
+            <div className="py-10 text-center text-sm text-red-600">
+              Error loading report: {(error as any)?.message || 'Unknown error'}
+            </div>
+          ) : !reportData?.data?.summary || reportData.data.summary.length === 0 ? (
+            <div className="py-10 text-center text-sm text-gray-600">
+              No data found for selected filters.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Delivery Agency</TableHead>
+                    <TableHead>City</TableHead>
+                    {(reportData.data.statusList || []).map((status: string) => (
+                      <TableHead key={status} className="text-right">
+                        {status}
+                      </TableHead>
+                    ))}
+                    <TableHead className="text-right">Total</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {reportData.data.summary.map((agency: DeliveryAgencySummary) => (
+                    <TableRow key={agency.id}>
+                      <TableCell className="font-medium">{agency.name}</TableCell>
+                      <TableCell>{agency.city || ''}</TableCell>
+                      {(reportData.data.statusList || []).map((status: string) => (
+                        <TableCell key={status} className="text-right">
+                          {agency.statusCounts?.[status] ?? 0}
+                        </TableCell>
+                      ))}
+                      <TableCell className="text-right font-medium">{agency.totalCount ?? 0}</TableCell>
+                    </TableRow>
+                  ))}
+
+                  <TableRow>
+                    <TableCell className="font-bold">TOTAL</TableCell>
+                    <TableCell />
+                    {(reportData.data.statusList || []).map((status: string) => (
+                      <TableCell key={status} className="text-right font-bold">
+                        {reportData.data.totals?.statusTotals?.[status] ?? 0}
+                      </TableCell>
+                    ))}
+                    <TableCell className="text-right font-bold">{reportData.data.totals?.totalDeliveries ?? 0}</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -13,6 +13,7 @@ import { Sun, Moon } from "lucide-react";
 
 import { useNavigate } from "react-router-dom";
 import BottomNavBar from "../components/BottomNavBar";
+import CommandPalette from "@/components/common/CommandPalette";
 
 
 export default function MainLayout() {
@@ -69,6 +70,7 @@ export default function MainLayout() {
 
   return (
     <SidebarProvider>
+      <CommandPalette />
       <AppSidebar />
       <SidebarInset>
         {/* Sticky Header */}
