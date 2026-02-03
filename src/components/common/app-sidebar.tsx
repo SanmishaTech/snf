@@ -212,6 +212,12 @@ const initialData = {
           groupLabel: "Reports",
         },
         {
+          title: "Revenue Report",
+          url: "/admin/reports/revenue",
+          icon: BarChart3,
+          groupLabel: "Reports",
+        },
+        {
           title: "Users",
           url: "/admin/users",
           icon: Briefcase,
@@ -239,6 +245,7 @@ const initialData = {
           items: [
             { title: "Purchase Order Report", url: "/admin/reports/purchase-orders" },
             { title: "Delivery Summaries", url: "/admin/reports/delivery-summaries" },
+            { title: "Revenue Report", url: "/admin/reports/revenue" },
           ],
         },
       ],
