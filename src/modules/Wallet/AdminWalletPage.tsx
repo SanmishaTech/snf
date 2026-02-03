@@ -512,11 +512,36 @@ const AdminWalletPage: React.FC = () => {
                             {tx.adminName || <span className="text-muted-foreground">N/A</span>}
                           </TableCell>
                           <TableCell className="text-xs px-3 py-2">{tx.status || <span className="text-muted-foreground">-</span>}</TableCell>
-                          <TableCell className="text-xs px-3 py-2 max-w-xs truncate">
+                          <TableCell className="text-xs px-3 py-2 max-w-xs whitespace-normal break-words">
                             {tx.notes ? (
-                              <span title={tx.notes} className="text-muted-foreground">{tx.notes}</span>
+                              (() => {
+                                const isSkippedNote = /skipp/i.test(tx.notes)
+                                const skippedDateMatch = isSkippedNote
+                                  ? tx.notes.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/)
+                                  : null
+                                const parsedTxDate = tx.timestamp ? new Date(tx.timestamp) : null
+                                const txDateFallback = parsedTxDate && !Number.isNaN(parsedTxDate.getTime())
+                                  ? format(parsedTxDate, "dd/MM/yyyy")
+                                  : "-"
+                                const skippedDate = skippedDateMatch?.[1] || txDateFallback
+
+                                return (
+                                  <div className="space-y-1">
+                                    {isSkippedNote && (
+                                      <div className="text-muted-foreground">
+                                        <span className="font-medium">Skipped Date:</span> {skippedDate || "-"}
+                                      </div>
+                                    )}
+                                    <div className="text-muted-foreground whitespace-normal break-words">
+                                      <span className="font-medium">Note:</span> {tx.notes}
+                                    </div>
+                                  </div>
+                                )
+                              })()
                             ) : (
-                              <span className="text-muted-foreground">-</span>
+                              <div className="text-muted-foreground whitespace-normal break-words">
+                                <span className="font-medium">Note:</span> -
+                              </div>
                             )}
                           </TableCell>
                           {/* <TableCell className="text-right px-3 py-2">

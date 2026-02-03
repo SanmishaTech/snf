@@ -106,6 +106,20 @@ function isValidDate(date: Date | undefined) {
   return !isNaN(date.getTime())
 }
 
+function parseUnitToLiters(unit: string | undefined): number {
+  if (!unit) return 0
+  const normalized = unit.toLowerCase().replace(/\s+/g, "").trim()
+  const match = normalized.match(/(\d+(?:\.\d+)?)/)
+  if (!match) return 0
+  const value = Number(match[1])
+  if (!Number.isFinite(value)) return 0
+  if (normalized.includes("ml")) return value / 1000
+  if (normalized.includes("liter") || normalized.includes("litre") || normalized.includes("ltr") || normalized.includes("lt") || normalized.endsWith("l") || normalized.includes("l")) {
+    return value
+  }
+  return 0
+}
+
 // Adapted Calendar28 for react-hook-form
 interface ControlledCalendar28Props {
   value: Date | undefined;
@@ -255,6 +269,22 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
   const watchedOrderItems = watch("orderItems");
   const watchedOrderItemsString = JSON.stringify(watchedOrderItems); // Stringify for dependency
   const watchedDeliveryDate = watch('deliveryDate');
+
+  const totalLiters = React.useMemo(() => {
+    if (!watchedOrderItems || watchedOrderItems.length === 0) return 0
+    let total = 0
+    watchedOrderItems.forEach((item) => {
+      if (!item || !item.depotVariantId) return
+      const qty = Number((item as any).quantity)
+      if (!Number.isFinite(qty) || qty <= 0) return
+      const variant = depotVariants.find((v) => String(v.id) === String(item.depotVariantId))
+      const unitSource = variant?.unit || variant?.name
+      const litersPerUnit = parseUnitToLiters(unitSource)
+      if (!Number.isFinite(litersPerUnit) || litersPerUnit <= 0) return
+      total += qty * litersPerUnit
+    })
+    return total
+  }, [watchedOrderItemsString, depotVariants])
 
   // Enhanced grouped product summary with variant details
   const groupedProductSummary = React.useMemo(() => {
@@ -1801,6 +1831,12 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                             <span className="text-lg font-semibold text-gray-800 dark:text-gray-200">Total Order Value:</span>
                             <span className="text-xl font-bold text-green-600 dark:text-green-400">
                               {formatCurrency(orderTotal || 0)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center text-sm mt-1">
+                            <span className="text-gray-600 dark:text-gray-400">Total Liters:</span>
+                            <span className="font-medium text-gray-800 dark:text-gray-200">
+                              {(Number.isFinite(totalLiters) ? totalLiters : 0).toFixed(2)} L
                             </span>
                           </div>
                         </div>
