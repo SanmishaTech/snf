@@ -23,6 +23,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { appName } from "@/config";
 import { useLocation, Link } from "react-router-dom";
@@ -31,6 +32,7 @@ import {
   CollapsibleTrigger,
   CollapsibleContent,
 } from "@/components/ui/collapsible";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 // This is sample data.
@@ -398,6 +400,8 @@ interface AppSidebarProps {}
 
 export function AppSidebar(props: AppSidebarProps) {
   const { pathname } = useLocation();
+  const { state, isMobile } = useSidebar();
+  const showCollapsedTooltips = state === "collapsed" && !isMobile;
   const [data, setData] = React.useState({
     ...initialData,
     projects: [] as typeof initialData.roles.super_admin.projects,
@@ -519,12 +523,13 @@ export function AppSidebar(props: AppSidebarProps) {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
+              tooltip={appName}
               className="data-[slot=sidebar-menu-button]:!p-2 hover:bg-white/10 transition-colors rounded-lg"
             >
               <div className="flex items-center gap-2 justify-between">
-                <Link to="/admin/dashboard" className="flex items-center gap-2">
+                <Link to="/admin/dashboard" className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0">
                   <ArrowUpCircleIcon className="h-5 w-5 text-white" />
-                  <span className="text-sm font-medium text-white">
+                  <span className="text-sm font-medium text-white group-data-[collapsible=icon]:hidden">
                     {appName}
                   </span>
                 </Link>
@@ -535,15 +540,15 @@ export function AppSidebar(props: AppSidebarProps) {
       </SidebarHeader>
       <SidebarContent className="space-y-1 overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden bg-[#1d398d]">
         {data.isOB && (
-          <div className="mb-4">
-            <div className="px-3 py-2 text-xs font-medium text-blue-200 border-b border-[#1d398d]/30 mb-2">
+          <div className="mb-4 group-data-[collapsible=icon]:hidden">
+            <div className="px-3 py-2 text-xs font-medium text-blue-200 border-b border-[#1d398d]/30 mb-2 group-data-[collapsible=icon]:hidden">
               Office Bearer Menu
             </div>
             {data.obNav.map((navGroup) => (
               <div key={navGroup.title} className="mb-3">
                 <div className="px-3 py-2 text-sm font-medium text-blue-200 flex items-center gap-2">
                   <navGroup.icon className="h-4 w-4 text-blue-300" />
-                  {navGroup.title}
+                  <span className="group-data-[collapsible=icon]:hidden">{navGroup.title}</span>
                 </div>
                 <div className="ml-6">
                   {navGroup.items?.map((item) => (
@@ -557,7 +562,7 @@ export function AppSidebar(props: AppSidebarProps) {
                           : "text-blue-100 hover:bg-white/15 hover:text-white rounded-md"
                       )}
                     >
-                      {item.title}
+                      <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
                     </Link>
                   ))}
                 </div>
@@ -574,46 +579,59 @@ export function AppSidebar(props: AppSidebarProps) {
                 open={openGroups[groupLabel]}
                 onOpenChange={() => toggleGroup(groupLabel)}
               >
-                <CollapsibleTrigger className="w-full">
-                  <div className="px-3 py-2 flex items-center justify-between text-sm font-medium text-blue-200 hover:bg-white/10 cursor-pointer transition-colors rounded-md">
-                    <div className="flex items-center gap-2">
-                      <ChevronDown
-                        className={`h-4 w-4 transition-transform text-blue-300 ${
-                          openGroups[groupLabel] ? "rotate-0" : "-rotate-90"
-                        }`}
-                      />
-                      <span>{groupLabel}</span>
-                    </div>
-                    <span className="text-xs text-blue-100 bg-white/20 px-2 py-1 rounded-full font-medium">
-                      {items.length}
-                    </span>
-                  </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className="ml-6 mt-1">
-                    {items.map((item) => (
-                      <Link
-                        key={item.url}
-                        to={item.url}
-                        className={cn(
-                          "flex items-center gap-2 px-3 py-2 text-sm transition-colors",
-                          pathname === item.url
-                            ? "bg-white text-[#1d398d] rounded-md font-medium shadow-sm"
-                            : "text-blue-100 hover:bg-white/15 hover:text-white rounded-md"
-                        )}
-                      >
-                        {item.icon && (
-                          <item.icon
-                            className={cn(
-                              "h-4 w-4 flex-shrink-0",
-                              pathname === item.url
-                                ? "text-[#1d398d]"
-                                : "text-blue-200"
-                            )}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <CollapsibleTrigger className="w-full">
+                      <div className="px-3 py-2 flex items-center justify-between text-sm font-medium text-blue-200 hover:bg-white/10 cursor-pointer transition-colors rounded-md group-data-[collapsible=icon]:justify-center">
+                        <div className="flex items-center gap-2">
+                          <ChevronDown
+                            className={`h-4 w-4 transition-transform text-blue-300 ${
+                              openGroups[groupLabel] ? "rotate-0" : "-rotate-90"
+                            }`}
                           />
-                        )}
-                        <span>{item.title}</span>
-                      </Link>
+                          <span className="group-data-[collapsible=icon]:hidden">{groupLabel}</span>
+                        </div>
+                        <span className="text-xs text-blue-100 bg-white/20 px-2 py-1 rounded-full font-medium group-data-[collapsible=icon]:hidden">
+                          {items.length}
+                        </span>
+                      </div>
+                    </CollapsibleTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" align="center" hidden={!showCollapsedTooltips}>
+                    {groupLabel}
+                  </TooltipContent>
+                </Tooltip>
+                <CollapsibleContent>
+                  <div className="ml-6 mt-1 group-data-[collapsible=icon]:ml-0 group-data-[collapsible=icon]:px-1">
+                    {items.map((item) => (
+                      <Tooltip key={item.url}>
+                        <TooltipTrigger asChild>
+                          <Link
+                            to={item.url}
+                            className={cn(
+                              "flex items-center gap-2 px-3 py-2 text-sm transition-colors group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:px-2",
+                              pathname === item.url
+                                ? "bg-white text-[#1d398d] rounded-md font-medium shadow-sm"
+                                : "text-blue-100 hover:bg-white/15 hover:text-white rounded-md"
+                            )}
+                          >
+                            {item.icon && (
+                              <item.icon
+                                className={cn(
+                                  "h-4 w-4 flex-shrink-0 group-data-[collapsible=icon]:mx-auto",
+                                  pathname === item.url
+                                    ? "text-[#1d398d]"
+                                    : "text-blue-200"
+                                )}
+                              />
+                            )}
+                            <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
+                          </Link>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" align="center" hidden={!showCollapsedTooltips}>
+                          {item.title}
+                        </TooltipContent>
+                      </Tooltip>
                     ))}
                   </div>
                 </CollapsibleContent>
@@ -625,30 +643,36 @@ export function AppSidebar(props: AppSidebarProps) {
         {/* Additional navigation groups */}
         {data.navMain.length > 0 && (
           <>
-            <div className="px-3 py-2 text-xs font-medium text-blue-200 border-b border-[#1d398d]/30 mt-4 mb-2">
+            <div className="px-3 py-2 text-xs font-medium text-blue-200 border-b border-[#1d398d]/30 mt-4 mb-2 group-data-[collapsible=icon]:hidden">
               Management
             </div>
             {data.navMain.map((item) => (
-              <Link
-                key={item.url}
-                to={item.url}
-                className={cn(
-                  "flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors",
-                  pathname === item.url
-                    ? "bg-white text-[#1d398d] rounded-md font-medium shadow-sm"
-                    : "text-blue-100 hover:bg-white/15 hover:text-white rounded-md"
-                )}
-              >
-                {item.icon && (
-                  <item.icon
+              <Tooltip key={item.url}>
+                <TooltipTrigger asChild>
+                  <Link
+                    to={item.url}
                     className={cn(
-                      "h-4 w-4",
-                      pathname === item.url ? "text-[#1d398d]" : "text-blue-200"
+                      "flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2",
+                      pathname === item.url
+                        ? "bg-white text-[#1d398d] rounded-md font-medium shadow-sm"
+                        : "text-blue-100 hover:bg-white/15 hover:text-white rounded-md"
                     )}
-                  />
-                )}
-                <span>{item.title}</span>
-              </Link>
+                  >
+                    {item.icon && (
+                      <item.icon
+                        className={cn(
+                          "h-4 w-4",
+                          pathname === item.url ? "text-[#1d398d]" : "text-blue-200"
+                        )}
+                      />
+                    )}
+                    <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="right" align="center" hidden={!showCollapsedTooltips}>
+                  {item.title}
+                </TooltipContent>
+              </Tooltip>
             ))}
           </>
         )}

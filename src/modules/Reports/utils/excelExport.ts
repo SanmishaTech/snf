@@ -307,7 +307,7 @@ export class ExcelExporter {
             }
             break;
           case 'amount':
-            value = this.formatCurrency(item.amount);
+            value = Number(item.amount) || 0;
             break;
           case 'orderId':
             value = isDeliveryItem ? (item as DeliveryItem).orderId : '';
@@ -345,10 +345,7 @@ export class ExcelExporter {
             value = !isDeliveryItem ? (item as PurchaseOrderItem).depotName : '';
             break;
           case 'rate':
-            value = !isDeliveryItem ? this.formatCurrency((item as PurchaseOrderItem).purchaseRate) : '';
-            break;
-          case 'rate':
-            value = !isDeliveryItem ? this.formatCurrency((item as PurchaseOrderItem).purchaseRate) : '';
+            value = !isDeliveryItem ? (Number((item as PurchaseOrderItem).purchaseRate) || 0) : '';
             break;
           default:
             // Fallback to item property if key matches
@@ -362,7 +359,14 @@ export class ExcelExporter {
 
         const cell = XLSX.utils.encode_cell({ r: this.currentRow - 1, c: index });
         this.worksheet[cell] = {
-          v: value
+          v: value,
+          ...(typeof value === 'number'
+            ? { t: 'n' as const }
+            : typeof value === 'boolean'
+              ? { t: 'b' as const }
+              : value === null || value === undefined
+                ? {}
+                : { t: 's' as const })
         };
       });
 
@@ -388,11 +392,11 @@ export class ExcelExporter {
       if (col === 0) {
         value = totalLabel;
       } else if (headerKey === 'qty') {
-        value = (group as any).totals?.totalQuantity?.toString() || '0';
+        value = Number((group as any).totals?.totalQuantity) || 0;
       } else if (headerKey === 'amount') {
-        value = this.formatCurrency((group as any).totals?.totalAmount || 0);
+        value = Number((group as any).totals?.totalAmount) || 0;
       } else if (headerKey === 'rate') {
-        value = `Avg: ${this.formatCurrency((group as any).totals?.avgRate || 0)}`;
+        value = Number((group as any).totals?.avgRate) || 0;
       } else if (headerKey === 'agency') {
         value = `${(group as any).totals?.itemCount || 0} items`;
       }
@@ -400,7 +404,8 @@ export class ExcelExporter {
       if (value !== '') {
         const cell = XLSX.utils.encode_cell({ r: this.currentRow - 1, c: col });
         this.worksheet[cell] = {
-          v: value
+          v: value,
+          ...(typeof value === 'number' ? { t: 'n' as const } : { t: 's' as const })
         };
       }
     }
@@ -423,18 +428,23 @@ export class ExcelExporter {
       isPurchaseReport ? `Purchases: ${totals.totalPurchases}` : 
       isDeliveryReport ? `Deliveries: ${totals.totalDeliveries}` : 
       `Items: ${totals.totalItems}`,
-      `Items: ${totals.totalItems || 0}`,
-      `Qty: ${totals.totalQuantity || 0}`,
-      this.formatCurrency(totals.totalAmount || 0),
+      Number(totals.totalItems) || 0,
+      Number(totals.totalQuantity) || 0,
+      Number(totals.totalAmount) || 0,
       '', '', '', '', '',
       // Only show avg value for purchase reports, not delivery reports
-      isPurchaseReport ? `Avg Value: ${this.formatCurrency(totals.avgPurchaseValue || 0)}` : ''
+      isPurchaseReport ? (Number(totals.avgPurchaseValue) || 0) : ''
     ];
     
     rowData.forEach((value, index) => {
       const cell = XLSX.utils.encode_cell({ r: this.currentRow - 1, c: index });
       this.worksheet[cell] = {
         v: value,
+        ...(typeof value === 'number'
+          ? { t: 'n' as const }
+          : value === ''
+            ? {}
+            : { t: 's' as const }),
         s: {
           font: { bold: true, sz: 14 },
           fill: { fgColor: { rgb: 'CCCCCC' } },
@@ -466,9 +476,11 @@ export class ExcelExporter {
    * Set worksheet range
    */
   private setWorksheetRange(): void {
+    const headerKeys: string[] = (this as any).headerKeys || [];
+    const endCol = headerKeys.length > 0 ? headerKeys.length - 1 : 10;
     const range = {
       s: { c: 0, r: 0 },
-      e: { c: 10, r: this.currentRow - 1 }
+      e: { c: endCol, r: this.currentRow - 1 }
     };
     this.worksheet['!ref'] = XLSX.utils.encode_range(range);
   }
@@ -506,17 +518,6 @@ export class ExcelExporter {
    */
   private isGroupedData(data: any[]): boolean {
     return data.length > 0 && 'level' in data[0] && 'totals' in data[0];
-  }
-
-  /**
-   * Format currency
-   */
-  private formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 2
-    }).format(amount);
   }
 
   /**

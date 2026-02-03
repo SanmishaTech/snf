@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import UserChangePasswordDialog from "@/components/common/UserChangePasswordDialog"; // Assuming moved to auth directory
-import { LogOut, UserPen, ChevronsUpDown, KeySquare } from "lucide-react";
+import { LogOut, ChevronsUpDown, KeySquare } from "lucide-react";
 import ConfirmDialog from "@/components/common/confirm-dialog";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -10,7 +10,6 @@ import { clearAuthData } from "@/utils/auth";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -59,7 +58,8 @@ export function NavUser({
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
                 size="lg"
-                className="hover:bg-white/10 data-[state=open]:bg-white data-[state=open]:hover:bg-white cursor-pointer transition-colors group"
+                tooltip={user?.name || "User"}
+                className="hover:bg-white/10 data-[state=open]:bg-white data-[state=open]:hover:bg-white cursor-pointer transition-colors group group-data-[collapsible=icon]:justify-center"
               >
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage src={user?.avatar} alt={user?.name} />
@@ -67,11 +67,11 @@ export function NavUser({
                     {user?.avatarName}
                   </AvatarFallback>
                 </Avatar>
-                <div className="grid flex-1 text-left text-sm leading-tight">
+                <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                   <span className="truncate font-semibold text-white group-data-[state=open]:text-[#1d398d]">{user?.name}</span>
                   <span className="truncate text-xs text-white group-data-[state=open]:text-[#1d398d]/70">{user?.email}</span>
                 </div>
-                <ChevronsUpDown className="ml-auto size-4 text-blue-200 group-data-[state=open]:text-[#1d398d]" />
+                <ChevronsUpDown className="ml-auto size-4 text-blue-200 group-data-[state=open]:text-[#1d398d] group-data-[collapsible=icon]:hidden" />
               </SidebarMenuButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent
