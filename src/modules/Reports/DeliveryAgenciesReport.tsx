@@ -7,9 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TableCell, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
@@ -68,7 +67,7 @@ export default function DeliveryAgenciesReport() {
   }, [isAgency, filterOptions]);
   
   // Fetch report data
-  const { data: reportData } = useQuery<DeliveryAgencyReportResponse>({
+  const { data: reportData, isLoading, error } = useQuery<DeliveryAgencyReportResponse>({
     queryKey: ['deliveryAgenciesReport', filters],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -117,16 +116,18 @@ export default function DeliveryAgenciesReport() {
       fileName: 'Delivery_Agencies_Report',
       sheetName: 'Delivery Agencies',
       headers: [
-        { key: 'orderId', label: 'Order ID', width: 15 },
-        { key: 'date', label: 'Delivery Date', width: 12 },
-        { key: 'product', label: 'Product', width: 25 },
-        { key: 'qty', label: 'Quantity', width: 10, align: 'right' },
-        { key: 'customer', label: 'Customer', width: 20 },
-        { key: 'address', label: 'Delivery Address', width: 30 },
-        { key: 'area', label: 'Area', width: 15 },
+        { key: 'date', label: 'Date', width: 12 },
+        { key: 'productName', label: 'Product', width: 25 },
+        { key: 'variantName', label: 'Varient', width: 25 },
+        { key: 'customer', label: 'Member Name', width: 20 },
         { key: 'agency', label: 'Agency', width: 20 },
         { key: 'status', label: 'Status', width: 12 },
         { key: 'amount', label: 'Amount', width: 15, align: 'right' },
+        { key: 'qty', label: 'Delivery', width: 10, align: 'right' },
+        { key: 'address', label: 'Address', width: 30 },
+        { key: 'pincode', label: 'Pincode', width: 10 },
+        { key: 'depotName', label: 'Depot Name', width: 20 },
+        { key: 'area', label: 'Area', width: 15 },
        ],
       grouping: {
         enabled: true,
@@ -477,8 +478,7 @@ export default function DeliveryAgenciesReport() {
             />
           </div> */}
           
-          {/* Data Table */}
-          {/* <div className="border rounded-lg overflow-hidden">
+          <div className="border rounded-lg overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -500,18 +500,25 @@ export default function DeliveryAgenciesReport() {
                       Loading report data...
                     </TableCell>
                   </TableRow>
-                ) : filteredData.length === 0 ? (
+                ) : error ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-8 text-red-600">
+                      {(error as any)?.message || 'Failed to load report data'}
+                    </TableCell>
+                  </TableRow>
+                ) : !reportData?.data?.report ||
+                  (Array.isArray(reportData.data.report) && reportData.data.report.length === 0) ? (
                   <TableRow>
                     <TableCell colSpan={9} className="text-center py-8">
                       No data available for the selected filters
                     </TableCell>
                   </TableRow>
                 ) : (
-                  renderGroupedData(filteredData)
+                  renderGroupedData(reportData.data.report as any)
                 )}
               </TableBody>
             </Table>
-          </div> */}
+          </div>
         </CardContent>
       </Card>
     </div>

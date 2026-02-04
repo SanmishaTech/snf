@@ -82,6 +82,7 @@ export default function CommandPalette() {
       { group: "Reports", title: "Delivery Summaries", href: "/admin/reports/delivery-summaries" },
       { group: "Reports", title: "Subscription Reports", href: "/admin/reports/subscriptions" },
       { group: "Reports", title: "Revenue Report", href: "/admin/reports/revenue" },
+      { group: "Reports", title: "Exception Report", href: "/admin/reports/exceptions" },
 
       { group: "System", title: "Users", href: "/admin/users", keywords: "user users" },
     ],

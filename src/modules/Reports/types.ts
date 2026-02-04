@@ -144,6 +144,7 @@ export interface ExcelExportConfig {
   fileName: string;
   sheetName: string;
   headers: ExcelHeader[];
+  includeTitle?: boolean;
   grouping?: {
     enabled: boolean;
     levels: string[];
@@ -195,6 +196,7 @@ export interface DeliveryItem {
   customerId: number;
   customerName: string;
   deliveryAddress: string;
+  pincode?: string;
   
   // Area info
   areaId: number;
@@ -206,6 +208,10 @@ export interface DeliveryItem {
   agencyName?: string;
   deliveredBy?: string;
   deliveryTime?: string;
+
+  // Depot info
+  depotId?: number;
+  depotName?: string;
 }
 
 export interface DeliveryGroupTotals {
@@ -284,6 +290,33 @@ export interface DeliverySummaryResponse {
     statusList: string[];
     totals: DeliverySummaryTotals;
     filters: DeliverySummaryFilters;
+    recordCount: number;
+  };
+}
+
+export interface ExceptionReportFilters {
+  startDate: string;
+  endDate: string;
+}
+
+export interface ExceptionReportRow {
+  date: string;
+  customerId: string | number;
+  address: string;
+  pincode: string;
+  depotName: string;
+  subFromDate: string;
+  subToDate: string;
+  mobileNumber: string;
+  lastVariant: string;
+  newVariant: string;
+}
+
+export interface ExceptionReportResponse {
+  success: boolean;
+  data: {
+    report: ExceptionReportRow[];
+    filters: ExceptionReportFilters;
     recordCount: number;
   };
 }

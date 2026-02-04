@@ -114,9 +114,13 @@ export default function PurchaseOrderReport() {
     const exportConfig: ExcelExportConfig = {
       fileName: 'Purchase_Order_Report',
       sheetName: 'Purchase Orders',
+      includeTitle: false,
       headers: [
+        { key: 'date', label: 'Date', width: 12 },
+        { key: 'farmer', label: 'Farmer', width: 20 },
+        { key: 'productName', label: 'Product', width: 20 },
+        { key: 'variantName', label: 'Variant', width: 20 },
         { key: 'status', label: 'Status', width: 12 },
-        { key: 'product', label: 'Product', width: 20 },
         { key: 'qty', label: 'Ordered Qty', width: 12, align: 'center' },
         { key: 'deliveredQty', label: 'Delivered Qty', width: 12, align: 'center' },
         { key: 'receivedQty', label: 'Received Qty', width: 12, align: 'center' },
@@ -126,8 +130,6 @@ export default function PurchaseOrderReport() {
         { key: 'agency', label: 'Agency', width: 15 },
         { key: 'amount', label: 'Amount', width: 15, align: 'right' },
         { key: 'purchaseNo', label: 'Purchase No', width: 15 },
-        { key: 'date', label: 'Date', width: 12 },
-        { key: 'farmer', label: 'Farmer', width: 20 },
         { key: 'depot', label: 'Depot', width: 20 },
         { key: 'rate', label: 'Rate', width: 12, align: 'right' }
       ],
@@ -173,12 +175,16 @@ export default function PurchaseOrderReport() {
           <TableCell className="text-right">{item.supervisorQuantity ?? '-'}</TableCell>
           <TableCell className="text-right text-xs">
             {(() => {
-              const hasValidDelivered = item.deliveredQuantity != null && item.deliveredQuantity > 0;
-              const hasValidReceived = item.receivedQuantity != null && item.receivedQuantity > 0;
-              const hasValidSupervisor = item.supervisorQuantity != null && item.supervisorQuantity > 0;
+              const deliveredQty = item.deliveredQuantity ?? 0;
+              const receivedQty = item.receivedQuantity ?? 0;
+              const supervisorQty = item.supervisorQuantity ?? 0;
+
+              const hasValidDelivered = deliveredQty > 0;
+              const hasValidReceived = receivedQty > 0;
+              const hasValidSupervisor = supervisorQty > 0;
               
-              const farmerWastage = hasValidDelivered && hasValidReceived ? item.deliveredQuantity - item.receivedQuantity : null;
-              const agencyWastage = hasValidReceived && hasValidSupervisor ? item.receivedQuantity - item.supervisorQuantity : null;
+              const farmerWastage = hasValidDelivered && hasValidReceived ? deliveredQty - receivedQty : null;
+              const agencyWastage = hasValidReceived && hasValidSupervisor ? receivedQty - supervisorQty : null;
               
               return (
                 <div className="flex flex-col space-y-1">

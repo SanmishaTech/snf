@@ -97,11 +97,11 @@ import "./App.css";
 // MembershipList wrapper component to handle showing all memberships
  
  
- 
 import SNFOrdersListPage from "./modules/SNFOrders/SNFOrdersListPage";
 import SNFOrderDetailPage from "./modules/SNFOrders/SNFOrderDetailPage";
 import PurchaseOrderReport from "./modules/Reports/PurchaseOrderReport";
 import RevenueReport from "./modules/Reports/RevenueReport";
+import ExceptionReport from "./modules/Reports/ExceptionReport";
 
 const App = () => {
   useEffect(() => {
@@ -392,6 +392,7 @@ const App = () => {
             <Route path="/admin/reports/delivery-agencies" element={<DeliveryReport />} /> {/* Delivery Agencies Report */}
             <Route path="/admin/reports/delivery-summaries" element={<DeliverySummariesReport />} /> {/* Delivery Summaries Report */}
             <Route path="/admin/reports/subscriptions" element={<SubscriptionReports />} /> {/* Subscription Reports */}
+            <Route path="/admin/reports/exceptions" element={<ExceptionReport />} /> {/* Exception Report */}
           </Route>
 
           {/* Other routes using MainLayout (e.g., Vendor routes) - not protected by AdminProtectedRoute */}

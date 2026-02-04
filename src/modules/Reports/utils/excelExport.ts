@@ -30,8 +30,9 @@ export class ExcelExporter {
     this.worksheet = {};
     this.currentRow = 1;
     
-    // Add title
-    this.addTitle(config.fileName);
+    if (config.includeTitle !== false) {
+      this.addTitle(config.fileName);
+    }
     
     // Add headers
     this.addHeaders(config.headers);
@@ -228,7 +229,7 @@ export class ExcelExporter {
 
         // Check if this is a delivery item or purchase order item
         const isDeliveryItem = 'orderId' in item;
-        console.log("isDeliveryItem",item)
+        
         
         switch (header.key) {
           case 'status':
@@ -236,6 +237,12 @@ export class ExcelExporter {
             break;
           case 'product':
             value = `${item.productName} - ${item.variantName}`;
+            break;
+          case 'productName':
+            value = item.productName || '';
+            break;
+          case 'variantName':
+            value = item.variantName || '';
             break;
           case 'qty':
             value = Number(item.quantity) || 0;
@@ -313,15 +320,35 @@ export class ExcelExporter {
             value = isDeliveryItem ? (item as DeliveryItem).orderId : '';
             break;
           case 'date':
-            value = isDeliveryItem 
-              ? this.formatDate((item as DeliveryItem).deliveryDate)
-              : this.formatDate((item as PurchaseOrderItem).purchaseDate);
+            if (isDeliveryItem) {
+              value = this.formatDate((item as DeliveryItem).deliveryDate);
+            } else {
+              const anyItem = item as any;
+              const dateValue = anyItem?.purchaseDate ?? anyItem?.date;
+              value = dateValue ? this.formatDate(dateValue) : '';
+            }
+            break;
+          case 'subFromDate':
+            {
+              const anyItem = item as any;
+              value = anyItem?.subFromDate ? this.formatDate(anyItem.subFromDate) : '';
+            }
+            break;
+          case 'subToDate':
+            {
+              const anyItem = item as any;
+              value = anyItem?.subToDate ? this.formatDate(anyItem.subToDate) : '';
+            }
             break;
           case 'customer':
             value = isDeliveryItem ? (item as DeliveryItem).customerName : '';
             break;
           case 'address':
-            value = isDeliveryItem ? (item as DeliveryItem).deliveryAddress : '';
+            if (isDeliveryItem) {
+              value = (item as DeliveryItem).deliveryAddress;
+            } else {
+              value = (item as any).address ?? '';
+            }
             break;
           case 'area':
             value = isDeliveryItem ? (item as DeliveryItem).areaName : '';

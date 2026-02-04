@@ -28,8 +28,8 @@ export default function DeliverySummariesReport() {
   
   // State for filters
   const [draftFilters, setDraftFilters] = useState<DeliverySummaryFilters>({
-    startDate: format(new Date(new Date().setDate(new Date().getDate() - 7)), 'yyyy-MM-dd'),
-    endDate: format(new Date(new Date().setDate(new Date().getDate() + 30)), 'yyyy-MM-dd')
+    startDate: format(new Date(new Date().setDate(new Date().getDate() - 30)), 'yyyy-MM-dd'),
+    endDate: format(new Date(), 'yyyy-MM-dd')
   });
 
   const [appliedFilters, setAppliedFilters] = useState<DeliverySummaryFilters>(draftFilters);
@@ -105,8 +105,8 @@ export default function DeliverySummariesReport() {
 
   const clearFilters = () => {
     const cleared: DeliverySummaryFilters = {
-      startDate: format(new Date(new Date().setDate(new Date().getDate() - 7)), 'yyyy-MM-dd'),
-      endDate: format(new Date(new Date().setDate(new Date().getDate() + 30)), 'yyyy-MM-dd')
+      startDate: format(new Date(new Date().setDate(new Date().getDate() - 30)), 'yyyy-MM-dd'),
+      endDate: format(new Date(), 'yyyy-MM-dd')
     };
 
     if (isAgency) {
