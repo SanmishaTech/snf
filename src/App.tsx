@@ -145,6 +145,8 @@ const App = () => {
             <Route path="products/:id" element={<ProductDetailWrapper />} />
           </Route>
 
+          <Route path="/talukas" element={<Navigate to="/admin/locations" replace />} />
+
           {/* New SNF routes - independent landing page and product detail, both lazy-loaded */}
            <Route
             path="/snf" 

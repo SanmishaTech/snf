@@ -2,7 +2,7 @@
 
 import type React from "react";
 import { get, post } from "../../services/apiService";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -47,14 +47,14 @@ interface ApiTransaction {
   id: string | number;
   type: "CREDIT" | "DEBIT"; // Backend uses uppercase
   amount: number;
-  status: "PENDING" | "COMPLETED" | "FAILED" | "CANCELLED";
+  status: "PENDING" | "PAID" | "FAILED";
   paymentMethod?: string;
   referenceNumber?: string;
   notes?: string;
   timestamp: string; // This is createdAt from backend
   adminName: string;
-  adminId: string | number;
-  walletId: string | number;
+  adminId?: string | number;
+  walletId?: string | number;
 }
 
 interface ApiWalletData {
@@ -63,6 +63,20 @@ interface ApiWalletData {
   currency: string;
   updatedAt: string;
   transactions: ApiTransaction[];
+}
+
+interface MemberTransactionsResponse {
+  success: boolean;
+  data: {
+    transactions: ApiTransaction[];
+    paymentMethodOptions: string[];
+    meta: {
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    };
+  };
 }
 
 interface SelectedMemberData {
@@ -112,6 +126,20 @@ const AdminWalletPage: React.FC = () => {
   const [isViewTransactionDetailsDialogOpen, setIsViewTransactionDetailsDialogOpen] = useState(false);
   const [transactionForDialog, setTransactionForDialog] = useState<ApiTransaction | null>(null);
 
+  const [txTypeFilter, setTxTypeFilter] = useState<"ALL" | "CREDIT" | "DEBIT">("ALL");
+  const [txStatusFilter, setTxStatusFilter] = useState<"ALL" | ApiTransaction["status"]>("ALL");
+  const [txPaymentMethodFilter, setTxPaymentMethodFilter] = useState<string>("ALL");
+  const [txFromDate, setTxFromDate] = useState<string>("");
+  const [txToDate, setTxToDate] = useState<string>("");
+
+  const [txRows, setTxRows] = useState<ApiTransaction[]>([]);
+  const [txPaymentMethodOptions, setTxPaymentMethodOptions] = useState<string[]>([]);
+  const [txPage, setTxPage] = useState<number>(1);
+  const [txLimit, setTxLimit] = useState<number>(10);
+  const [txTotal, setTxTotal] = useState<number>(0);
+  const [txTotalPages, setTxTotalPages] = useState<number>(1);
+  const [isLoadingTx, setIsLoadingTx] = useState<boolean>(false);
+
   // State for Approval Form in Transaction Details Dialog
   const [approvalPaymentMethod, setApprovalPaymentMethod] = useState<string>("");
   const [approvalReferenceNumber, setApprovalReferenceNumber] = useState<string>("");
@@ -154,11 +182,9 @@ const AdminWalletPage: React.FC = () => {
       setIsLoadingDetails(true);
       try {
         // Use apiService.get for fetching member wallet details
-        const response = await get<ApiResponse<SelectedMemberData>>(`/admin/wallets/${selectedId}`);
-        if (response?.data?.wallet?.transactions) {
-          // Remove duplicate transactions (same id)
-          response.data.wallet.transactions = deduplicateTransactions(response.data.wallet.transactions);
-        }
+        const response = await get<ApiResponse<SelectedMemberData>>(`/admin/wallets/${selectedId}`, {
+          includeTransactions: false,
+        });
         setSelectedMemberData(response?.data);
       } catch (err: any) {
         setError(err.message || `Failed to load wallet for member ${selectedId}.`);
@@ -216,7 +242,7 @@ const AdminWalletPage: React.FC = () => {
   const handleOpenTransactionDetailsDialog = (transaction: ApiTransaction) => {
     setTransactionForDialog(transaction);
     // Reset approval form fields if opening for a pending transaction
-    if (transaction.paymentMethod === "PENDING") {
+    if (transaction.status === "PENDING") {
       setApprovalPaymentMethod("");
       setApprovalReferenceNumber("");
       setApprovalNotes("");
@@ -363,6 +389,63 @@ const AdminWalletPage: React.FC = () => {
     validateForm()
   }, [amount, paymentMethod, referenceNumber])
 
+  useEffect(() => {
+    setTxTypeFilter("ALL");
+    setTxStatusFilter("ALL");
+    setTxPaymentMethodFilter("ALL");
+    setTxFromDate("");
+    setTxToDate("");
+    setTxPage(1);
+  }, [selectedMemberId])
+
+  const isTxFilterActive = useMemo(() => {
+    return Boolean(
+      txTypeFilter !== "ALL" ||
+      txStatusFilter !== "ALL" ||
+      txPaymentMethodFilter !== "ALL" ||
+      txFromDate ||
+      txToDate
+    );
+  }, [txTypeFilter, txStatusFilter, txPaymentMethodFilter, txFromDate, txToDate])
+
+  const fetchMemberTransactions = useCallback(async () => {
+    if (!selectedMemberId) return;
+    setIsLoadingTx(true);
+    setError(null);
+
+    try {
+      const params: Record<string, any> = {
+        page: txPage,
+        limit: txLimit,
+        type: txTypeFilter !== "ALL" ? txTypeFilter : undefined,
+        status: txStatusFilter !== "ALL" ? txStatusFilter : undefined,
+        paymentMethod: txPaymentMethodFilter !== "ALL" ? txPaymentMethodFilter : undefined,
+        fromDate: txFromDate || undefined,
+        toDate: txToDate || undefined,
+      };
+
+      const response = await get<MemberTransactionsResponse>(`/admin/wallets/${selectedMemberId}/transactions`, params);
+      const unique = deduplicateTransactions(response.data.transactions || []);
+      setTxRows(unique);
+      setTxPaymentMethodOptions(response.data.paymentMethodOptions || []);
+      setTxTotal(response.data.meta?.total ?? 0);
+      setTxTotalPages(response.data.meta?.totalPages ?? 1);
+    } catch (err: any) {
+      setTxRows([]);
+      setTxPaymentMethodOptions([]);
+      setTxTotal(0);
+      setTxTotalPages(1);
+      setError(err.message || "Failed to load transactions.");
+    } finally {
+      setIsLoadingTx(false);
+    }
+  }, [selectedMemberId, txPage, txLimit, txTypeFilter, txStatusFilter, txPaymentMethodFilter, txFromDate, txToDate]);
+
+  useEffect(() => {
+    if (!selectedMemberId) return;
+    fetchMemberTransactions();
+  }, [selectedMemberId, txPage, txLimit, txTypeFilter, txStatusFilter, txPaymentMethodFilter, txFromDate, txToDate, fetchMemberTransactions]);
+
   return (
     <div className="container mx-auto p-4 max-w-7xl space-y-4">
       <div className="mb-6">
@@ -465,15 +548,95 @@ const AdminWalletPage: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <CardTitle className="text-lg">Transaction History</CardTitle>
                 </div>
-                {selectedMemberData?.wallet?.transactions && (
-                  <Badge variant="secondary" className="text-xs">
-                    {selectedMemberData.wallet.transactions.length} transaction(s)
-                  </Badge>
-                )}
+                <Badge variant="secondary" className="text-xs">
+                  {txTotal} transaction(s)
+                </Badge>
               </div>
             </CardHeader>
             <CardContent className="pt-0">
-              {selectedMemberData?.wallet?.transactions && selectedMemberData.wallet.transactions.length > 0 ? (
+              <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
+                  <div className="flex items-center gap-2 lg:col-span-2">
+                    <Input type="date" value={txFromDate} onChange={(e) => setTxFromDate(e.target.value)} />
+                    <Input type="date" value={txToDate} onChange={(e) => setTxToDate(e.target.value)} />
+                  </div>
+
+                  <Select value={String(txLimit)} onValueChange={(v) => {
+                    setTxLimit(parseInt(v));
+                    setTxPage(1);
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Rows" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10 rows</SelectItem>
+                      <SelectItem value="20">20 rows</SelectItem>
+                      <SelectItem value="50">50 rows</SelectItem>
+                      <SelectItem value="100">100 rows</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={txTypeFilter} onValueChange={(v) => setTxTypeFilter(v as any)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">All Types</SelectItem>
+                      <SelectItem value="CREDIT">Credit</SelectItem>
+                      <SelectItem value="DEBIT">Debit</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={txStatusFilter} onValueChange={(v) => setTxStatusFilter(v as any)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">All Status</SelectItem>
+                      <SelectItem value="PENDING">Pending</SelectItem>
+                      <SelectItem value="PAID">Paid</SelectItem>
+                      <SelectItem value="FAILED">Failed</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={txPaymentMethodFilter} onValueChange={setTxPaymentMethodFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Payment" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">All Payments</SelectItem>
+                      {txPaymentMethodOptions.map((m) => (
+                        <SelectItem key={m} value={m}>
+                          {m}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+              <div className="mb-4 flex justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setTxTypeFilter("ALL");
+                    setTxStatusFilter("ALL");
+                    setTxPaymentMethodFilter("ALL");
+                    setTxFromDate("");
+                    setTxToDate("");
+                    setTxPage(1);
+                  }}
+                  disabled={!isTxFilterActive}
+                >
+                  Clear
+                </Button>
+              </div>
+
+              {isLoadingTx ? (
+                <div className="py-10 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading transactions...
+                </div>
+              ) : txRows.length > 0 ? (
                 <div className="rounded-md border">
                   <Table>
                     <TableHeader>
@@ -491,10 +654,12 @@ const AdminWalletPage: React.FC = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {selectedMemberData.wallet.transactions.map((tx: ApiTransaction) => (
+                      {txRows.map((tx: ApiTransaction) => (
                         <TableRow key={String(tx.id)} className="text-sm hover:bg-muted/50">
                           <TableCell className="text-xs px-3 py-2 text-muted-foreground whitespace-nowrap">
-                            {typeof tx.timestamp === 'string' && tx.timestamp ? format(tx.timestamp, 'dd/MM/yyyy') : <span className="text-muted-foreground">Date N/A</span>}
+                            {typeof tx.timestamp === 'string' && tx.timestamp
+                              ? format(new Date(tx.timestamp), 'dd/MM/yyyy')
+                              : <span className="text-muted-foreground">Date N/A</span>}
                           </TableCell>
                           <TableCell className={`text-right ${tx.type === "CREDIT" ? 'text-green-500' : 'text-muted-foreground'}`}>
                             {tx.type === "CREDIT" ? formatCurrency(tx.amount) : <span className="text-muted-foreground">0</span>}
@@ -561,9 +726,37 @@ const AdminWalletPage: React.FC = () => {
                 </div>
               ) : (
                 <div className="text-center py-10 text-sm text-muted-foreground">
-                  No transactions found for this customer.
+                  No transactions found.
                 </div>
               )}
+
+              {txTotalPages > 1 ? (
+                <div className="mt-4 flex items-center justify-between gap-2 flex-wrap">
+                  <div className="text-xs text-muted-foreground">
+                    Page {txPage} of {txTotalPages}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setTxPage((p) => Math.max(1, p - 1))}
+                      disabled={txPage <= 1 || isLoadingTx}
+                    >
+                      Prev
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setTxPage((p) => Math.min(txTotalPages, p + 1))}
+                      disabled={txPage >= txTotalPages || isLoadingTx}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
             </CardContent>
           </Card>
         </>
@@ -706,7 +899,7 @@ const AdminWalletPage: React.FC = () => {
               {/* Display current status/payment method if not in PENDING approval mode */} 
               {transactionForDialog.status !== "PENDING" && (
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm pt-2 border-t">
-                  <div><span className="font-medium text-muted-foreground">Status:</span></div><div><Badge variant={transactionForDialog.status === 'COMPLETED' ? 'default' : transactionForDialog.status === 'FAILED' ? 'destructive' : 'outline'} className={`capitalize ${transactionForDialog.status === 'COMPLETED' ? 'bg-green-100 text-green-700' : transactionForDialog.status === 'FAILED' ? 'bg-red-100 text-red-700' : 'border-gray-300 text-gray-500'}`}>{transactionForDialog.status ? transactionForDialog.status.toLowerCase() : 'N/A'}</Badge></div>
+                  <div><span className="font-medium text-muted-foreground">Status:</span></div><div><Badge variant={transactionForDialog.status === 'PAID' ? 'default' : transactionForDialog.status === 'FAILED' ? 'destructive' : 'outline'} className={`capitalize ${transactionForDialog.status === 'PAID' ? 'bg-green-100 text-green-700' : transactionForDialog.status === 'FAILED' ? 'bg-red-100 text-red-700' : 'border-gray-300 text-gray-500'}`}>{transactionForDialog.status ? transactionForDialog.status.toLowerCase() : 'N/A'}</Badge></div>
                   {transactionForDialog.status && (
                     <>
                       <div><span className="font-medium text-muted-foreground">Payment Method:</span></div>
