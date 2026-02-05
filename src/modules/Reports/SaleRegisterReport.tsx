@@ -17,12 +17,12 @@ import { getAreaMastersByPincode } from "@/services/areaMasterService";
 
 const API_URL = backendUrl;
 
-type RevenueFilters = {
+type SaleRegisterFilters = {
   startDate: string;
   endDate: string;
 };
 
-type RevenueRow = {
+type SaleRegisterRow = {
   name: string;
   customerId: string | number;
   saleAmount: number;
@@ -41,7 +41,7 @@ function extractPincodeFromText(value: unknown): string {
   return match?.[0] || "";
 }
 
-function toRevenueRow(raw: any): RevenueRow {
+function toSaleRegisterRow(raw: any): SaleRegisterRow {
   const name =
     raw?.name ??
     raw?.memberName ??
@@ -120,17 +120,17 @@ function toRevenueRow(raw: any): RevenueRow {
   };
 }
 
-export default function RevenueReport() {
+export default function SaleRegisterReport() {
   const { isAdmin } = useRoleAccess();
 
-  const [filters, setFilters] = useState<RevenueFilters>({
+  const [filters, setFilters] = useState<SaleRegisterFilters>({
     startDate: format(new Date(new Date().setDate(new Date().getDate() - 30)), "yyyy-MM-dd"),
     endDate: format(new Date(), "yyyy-MM-dd"),
   });
 
   const { data, isFetching, refetch, error } = useQuery<{ success?: boolean; data?: any }>(
     {
-      queryKey: ["revenueReport", filters],
+      queryKey: ["saleRegisterReport", filters],
       queryFn: async () => {
         const token = localStorage.getItem("authToken") || localStorage.getItem("token");
         const params = new URLSearchParams();
@@ -140,7 +140,7 @@ export default function RevenueReport() {
         params.append("page", "1");
         params.append("limit", "1000");
 
-        const response = await axios.get(`${API_URL}/api/reports/subscriptions?${params.toString()}`, {
+        const response = await axios.get(`${API_URL}/api/reports/sale-register?${params.toString()}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -151,12 +151,12 @@ export default function RevenueReport() {
     }
   );
 
-  const rows: RevenueRow[] = useMemo(() => {
+  const rows: SaleRegisterRow[] = useMemo(() => {
     if (!data) return [];
 
     const payload = (data as any)?.data ?? data;
     const rawRows = Array.isArray(payload) ? payload : Array.isArray(payload?.rows) ? payload.rows : [];
-    return rawRows.map(toRevenueRow);
+    return rawRows.map(toSaleRegisterRow);
   }, [data]);
 
   const pincodesNeedingDepot = useMemo(() => {
@@ -171,7 +171,7 @@ export default function RevenueReport() {
   }, [rows]);
 
   const { data: depotByPincode } = useQuery<Record<string, string>>({
-    queryKey: ["revenueReportDepotByPincode", pincodesNeedingDepot],
+    queryKey: ["saleRegisterDepotByPincode", pincodesNeedingDepot],
     queryFn: async () => {
       const entries = await Promise.all(
         pincodesNeedingDepot.map(async (pincode) => {
@@ -219,7 +219,7 @@ export default function RevenueReport() {
 
     const worksheet = XLSX.utils.json_to_sheet(formattedData);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Revenue");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Sale Register");
 
     worksheet["!cols"] = [
       { wch: 22 },
@@ -233,7 +233,7 @@ export default function RevenueReport() {
       { wch: 24 },
     ];
 
-    XLSX.writeFile(workbook, `Revenue_Report_${filters.startDate}_to_${filters.endDate}.xlsx`);
+    XLSX.writeFile(workbook, `Sale_Register_${filters.startDate}_to_${filters.endDate}.xlsx`);
     toast.success("Excel downloaded");
   };
 
@@ -253,9 +253,9 @@ export default function RevenueReport() {
         <CardHeader>
           <div className="flex justify-between items-center gap-4">
             <div>
-              <CardTitle>Revenue Report</CardTitle>
+              <CardTitle>Sale Register</CardTitle>
               <CardDescription>
-                Date-wise revenue listing with export
+                Date-wise sale register listing with export
               </CardDescription>
             </div>
             <Button onClick={handleExportToExcel} disabled={!rows || rows.length === 0}>
