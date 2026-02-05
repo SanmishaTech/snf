@@ -271,8 +271,11 @@ export interface DeliverySummaryFilters {
 
 export interface DeliveryAgencySummary {
   id: number | string;
+  agencyId?: number | string;
   name: string;
   city?: string;
+  variantId?: number | string;
+  variantName?: string;
   statusCounts: Record<string, number>;
   totalCount: number;
 }

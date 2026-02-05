@@ -23,6 +23,13 @@ import { backendUrl } from '@/config';
 
 const API_URL = backendUrl;
 
+function formatShortDate(value?: string): string {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return format(d, 'dd-MM-yyyy');
+}
+
 export default function DeliverySummariesReport() {
   const { isAdmin, isAgency } = useRoleAccess();
   
@@ -132,7 +139,10 @@ export default function DeliverySummariesReport() {
     // Create headers - first column is Agency, then dynamic status columns
     const statusList = reportData.data.statusList || [];
     const headers = [
+      { key: 'fromDate', label: 'From Date', width: 12 },
+      { key: 'toDate', label: 'To Date', width: 12 },
       { key: 'agency', label: 'Delivery Agency', width: 25 },
+      { key: 'variant', label: 'Varient', width: 22 },
       { key: 'city', label: 'City', width: 15 },
       ...statusList.map(status => ({
         key: status.toLowerCase(),
@@ -146,7 +156,10 @@ export default function DeliverySummariesReport() {
     // Transform data for Excel - each agency becomes a row with status counts as columns
     const excelData = reportData.data.summary.map((agency: DeliveryAgencySummary) => {
       const row: any = {
+        fromDate: formatShortDate(appliedFilters.startDate),
+        toDate: formatShortDate(appliedFilters.endDate),
         agency: agency.name,
+        variant: agency.variantName || '',
         city: agency.city || '',
         total: agency.totalCount
       };
@@ -161,7 +174,10 @@ export default function DeliverySummariesReport() {
     
     // Add totals row
     const totalsRow: any = {
+      fromDate: '',
+      toDate: '',
       agency: 'TOTAL',
+      variant: '',
       city: '',
       total: reportData.data.totals.totalDeliveries
     };
@@ -305,7 +321,10 @@ export default function DeliverySummariesReport() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>From Date</TableHead>
+                    <TableHead>To Date</TableHead>
                     <TableHead>Delivery Agency</TableHead>
+                    <TableHead>Varient</TableHead>
                     <TableHead>City</TableHead>
                     {(reportData.data.statusList || []).map((status: string) => (
                       <TableHead key={status} className="text-right">
@@ -318,7 +337,10 @@ export default function DeliverySummariesReport() {
                 <TableBody>
                   {reportData.data.summary.map((agency: DeliveryAgencySummary) => (
                     <TableRow key={agency.id}>
+                      <TableCell>{formatShortDate(appliedFilters.startDate)}</TableCell>
+                      <TableCell>{formatShortDate(appliedFilters.endDate)}</TableCell>
                       <TableCell className="font-medium">{agency.name}</TableCell>
+                      <TableCell>{agency.variantName || ''}</TableCell>
                       <TableCell>{agency.city || ''}</TableCell>
                       {(reportData.data.statusList || []).map((status: string) => (
                         <TableCell key={status} className="text-right">
@@ -330,7 +352,10 @@ export default function DeliverySummariesReport() {
                   ))}
 
                   <TableRow>
+                    <TableCell />
+                    <TableCell />
                     <TableCell className="font-bold">TOTAL</TableCell>
+                    <TableCell />
                     <TableCell />
                     {(reportData.data.statusList || []).map((status: string) => (
                       <TableCell key={status} className="text-right font-bold">
