@@ -135,6 +135,7 @@ export default function SubscriptionReports() {
       { key: 'memberName', label: 'Member Name', width: 20 },
       { key: 'memberEmail', label: 'Email', width: 25 },
       { key: 'memberMobile', label: 'Mobile', width: 15 },
+      { key: 'memberStatus', label: 'Member Status', width: 14 },
       { key: 'productName', label: 'Product', width: 20 },
       { key: 'variantName', label: 'Variant', width: 20 },
       { key: 'deliverySchedule', label: 'Schedule', width: 15 },
@@ -160,6 +161,7 @@ export default function SubscriptionReports() {
       memberName: subscription.memberName,
       memberEmail: subscription.memberEmail,
       memberMobile: subscription.memberMobile,
+      memberStatus: subscription.memberActive === false ? 'Inactive' : 'Active',
       productName: subscription.productName,
       variantName: subscription.variantName,
       deliverySchedule: subscription.deliverySchedule,
@@ -331,6 +333,7 @@ export default function SubscriptionReports() {
                       <TableHead>Order Date</TableHead>
                       <TableHead>Member ID</TableHead>
                       <TableHead>Member</TableHead>
+                      <TableHead>Member Status</TableHead>
                       <TableHead>Product</TableHead>
                       <TableHead>Variant</TableHead>
                       <TableHead>Schedule</TableHead>
@@ -359,6 +362,7 @@ export default function SubscriptionReports() {
                             <span className="text-xs text-gray-600">{subscription.memberEmail}</span>
                           </div>
                         </TableCell>
+                        <TableCell>{subscription.memberActive === false ? 'Inactive' : 'Active'}</TableCell>
                         <TableCell>{subscription.productName}</TableCell>
                         <TableCell>{subscription.variantName}</TableCell>
                         <TableCell>{subscription.deliverySchedule}</TableCell>

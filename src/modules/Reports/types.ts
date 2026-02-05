@@ -353,6 +353,7 @@ export interface SubscriptionReportItem {
   memberName: string;
   memberEmail: string;
   memberMobile: string;
+  memberActive?: boolean;
   productName: string;
   variantName: string;
   deliverySchedule: string;
