@@ -224,6 +224,12 @@ const initialData = {
           groupLabel: "Reports",
         },
         {
+          title: "Wallet Report",
+          url: "/admin/reports/wallet",
+          icon: BarChart3,
+          groupLabel: "Reports",
+        },
+        {
           title: "Exception Report",
           url: "/admin/reports/exceptions",
           icon: BarChart3,
@@ -259,6 +265,7 @@ const initialData = {
             { title: "Delivery Summaries", url: "/admin/reports/delivery-summaries" },
             { title: "Sale Register", url: "/admin/reports/sale-register" },
             { title: "Revenue Report", url: "/admin/reports/revenue" },
+            { title: "Wallet Report", url: "/admin/reports/wallet" },
             { title: "Exception Report", url: "/admin/reports/exceptions" },
           ],
         },

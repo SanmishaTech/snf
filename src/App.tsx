@@ -102,6 +102,7 @@ import SNFOrderDetailPage from "./modules/SNFOrders/SNFOrderDetailPage";
 import PurchaseOrderReport from "./modules/Reports/PurchaseOrderReport";
 import SaleRegisterReport from "./modules/Reports/SaleRegisterReport";
 import RevenueReport from "./modules/Reports/RevenueReport";
+import WalletReport from "./modules/Reports/WalletReport";
 import ExceptionReport from "./modules/Reports/ExceptionReport";
 
 const App = () => {
@@ -398,6 +399,7 @@ const App = () => {
             <Route path="/admin/reports/purchase-orders" element={<PurchaseOrderReport />} /> {/* Purchase Order Report */}
             <Route path="/admin/reports/sale-register" element={<SaleRegisterReport />} /> {/* Sale Register */}
             <Route path="/admin/reports/revenue" element={<RevenueReport />} /> {/* Revenue Report */}
+            <Route path="/admin/reports/wallet" element={<WalletReport />} /> {/* Wallet Report */}
             <Route path="/admin/reports/delivery-agencies" element={<DeliveryReport />} /> {/* Delivery Agencies Report */}
             <Route path="/admin/reports/delivery-summaries" element={<DeliverySummariesReport />} /> {/* Delivery Summaries Report */}
             <Route path="/admin/reports/subscriptions" element={<SubscriptionReports />} /> {/* Subscription Reports */}
