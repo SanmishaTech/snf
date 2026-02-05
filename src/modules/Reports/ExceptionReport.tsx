@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { format } from "date-fns";
+import * as XLSX from "xlsx";
 
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,8 +14,7 @@ import { toast } from "sonner";
 
 import { backendUrl } from "@/config";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
-import { ExcelExporter } from "./utils/excelExport";
-import { ExcelExportConfig, ExceptionReportFilters, ExceptionReportResponse, ExceptionReportRow } from "./types";
+import { ExceptionReportFilters, ExceptionReportResponse, ExceptionReportRow } from "./types";
 
 const API_URL = backendUrl;
 
@@ -59,31 +59,27 @@ export default function ExceptionReport() {
       return;
     }
 
-    const exporter = new ExcelExporter();
+    const workbook = XLSX.utils.book_new();
 
-    const exportConfig: ExcelExportConfig = {
-      fileName: "Exception_Report",
-      sheetName: "Exceptions",
-      headers: [
-        { key: "date", label: "Date", width: 12 },
-        { key: "customerId", label: "Customer ID", width: 12 },
-        { key: "address", label: "Address", width: 35 },
-        { key: "pincode", label: "Pincode", width: 10 },
-        { key: "depotName", label: "Depot Name", width: 20 },
-        { key: "subFromDate", label: "Sub From date", width: 14 },
-        { key: "subToDate", label: "Sub To Date", width: 14 },
-        { key: "mobileNumber", label: "Mobile Number", width: 14 },
-        { key: "lastVariant", label: "Last Varient", width: 25 },
-        { key: "newVariant", label: "New Varient", width: 25 },
-      ],
-      includeTitle: false,
-    };
+    const worksheet = XLSX.utils.json_to_sheet(
+      rows.map((r) => ({
+        "Exception Type": r.exceptionType || "",
+        "Date": r.date,
+        "Customer ID": r.customerId,
+        "Customer Name": r.customerName || "",
+        "Mobile Number": r.mobileNumber,
+        "Address": r.address,
+        "Pincode": r.pincode,
+        "Depot Name": r.depotName,
+        "Sub From date": r.subFromDate,
+        "Sub To Date": r.subToDate,
+        "Last Varient": r.lastVariant,
+        "New Varient": r.newVariant,
+      }))
+    );
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Exceptions");
 
-    exporter.exportToExcel({
-      data: rows as any,
-      config: exportConfig,
-    });
-
+    XLSX.writeFile(workbook, `Exception_Report_${filters.startDate}_to_${filters.endDate}.xlsx`);
     toast.success("Report exported successfully");
   };
 
@@ -92,7 +88,7 @@ export default function ExceptionReport() {
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Exception Report</CardTitle>
-          <CardDescription>Subscription variant exceptions by date range</CardDescription>
+          <CardDescription>Stopped subscriptions, new customers, and subscription variant changes by date range</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -122,25 +118,35 @@ export default function ExceptionReport() {
               <Button variant="outline" onClick={() => refetch()} disabled={!isAdmin || isFetching}>
                 Refresh
               </Button>
-              <Button onClick={handleExportToExcel} disabled={!rows.length} className="gap-2">
+              <Button
+                onClick={handleExportToExcel}
+                disabled={!rows.length}
+                className="gap-2"
+              >
                 <Download className="h-4 w-4" />
                 Export to Excel
               </Button>
             </div>
           </div>
 
+          {error ? (
+            <div className="text-sm text-red-600">{(error as any)?.message || "Failed to load report"}</div>
+          ) : null}
+
           <div className="border rounded-lg overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Type</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Customer ID</TableHead>
+                  <TableHead>Customer Name</TableHead>
+                  <TableHead>Mobile Number</TableHead>
                   <TableHead>Address</TableHead>
                   <TableHead>Pincode</TableHead>
                   <TableHead>Depot Name</TableHead>
                   <TableHead>Sub From date</TableHead>
                   <TableHead>Sub To Date</TableHead>
-                  <TableHead>Mobile Number</TableHead>
                   <TableHead>Last Varient</TableHead>
                   <TableHead>New Varient</TableHead>
                 </TableRow>
@@ -148,27 +154,24 @@ export default function ExceptionReport() {
               <TableBody>
                 {isFetching ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={12} className="text-center py-8 text-gray-500">
                       Loading...
-                    </TableCell>
-                  </TableRow>
-                ) : error ? (
-                  <TableRow>
-                    <TableCell colSpan={10} className="text-center py-8 text-red-600">
-                      {(error as any)?.message || "Failed to load report"}
                     </TableCell>
                   </TableRow>
                 ) : rows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={12} className="text-center py-8 text-gray-500">
                       No data found for selected dates
                     </TableCell>
                   </TableRow>
                 ) : (
                   rows.map((r, idx) => (
                     <TableRow key={`${r.customerId}-${r.date}-${idx}`} className="hover:bg-gray-50">
+                      <TableCell>{r.exceptionType || "-"}</TableCell>
                       <TableCell>{formatDisplayDate(r.date) || "-"}</TableCell>
                       <TableCell>{r.customerId || "-"}</TableCell>
+                      <TableCell>{r.customerName || "-"}</TableCell>
+                      <TableCell>{r.mobileNumber || "-"}</TableCell>
                       <TableCell className="max-w-[360px] whitespace-normal break-words" title={r.address || ""}>
                         {r.address || "-"}
                       </TableCell>
@@ -176,7 +179,6 @@ export default function ExceptionReport() {
                       <TableCell>{r.depotName || "-"}</TableCell>
                       <TableCell>{formatDisplayDate(r.subFromDate) || "-"}</TableCell>
                       <TableCell>{formatDisplayDate(r.subToDate) || "-"}</TableCell>
-                      <TableCell>{r.mobileNumber || "-"}</TableCell>
                       <TableCell>{r.lastVariant || "-"}</TableCell>
                       <TableCell>{r.newVariant || "-"}</TableCell>
                     </TableRow>

@@ -300,8 +300,10 @@ export interface ExceptionReportFilters {
 }
 
 export interface ExceptionReportRow {
+  exceptionType?: string;
   date: string;
   customerId: string | number;
+  customerName?: string;
   address: string;
   pincode: string;
   depotName: string;
@@ -316,6 +318,14 @@ export interface ExceptionReportResponse {
   success: boolean;
   data: {
     report: ExceptionReportRow[];
+    variantChanges?: ExceptionReportRow[];
+    stoppedSubscriptions?: ExceptionReportRow[];
+    newCustomers?: ExceptionReportRow[];
+    counts?: {
+      variantChanges: number;
+      stoppedSubscriptions: number;
+      newCustomers: number;
+    };
     filters: ExceptionReportFilters;
     recordCount: number;
   };
