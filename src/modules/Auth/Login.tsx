@@ -213,9 +213,9 @@ const Login: React.FC<LoginProps> = () => {
         errorMessage.toLowerCase().includes("account is inactive")
       ) {
         toast.error(errorMessage); // Specific message for inactive account
-      } else if (!didDisplayFieldErrors || error.status === 401) {
-        // If field errors weren't displayed OR it's a 401 (likely "Invalid credentials"), show a general toast.
-        // For 401, error.message from the backend is usually "Invalid credentials"
+      } else if (error.status === 401) {
+        toast.error("Invalid email/mobile or password.");
+      } else if (!didDisplayFieldErrors) {
         toast.error(errorMessage || "An error occurred during login.");
       }
       // If didDisplayFieldErrors is true and it's not a 403 inactive or 401, field errors are already set, so no general toast needed.
@@ -280,7 +280,10 @@ const Login: React.FC<LoginProps> = () => {
   });
 
   const onSubmit: SubmitHandler<LoginFormInputs> = (data) => {
-    loginMutation.mutate(data);
+    loginMutation.mutate({
+      ...data,
+      identifier: typeof data.identifier === 'string' ? data.identifier.trim() : data.identifier,
+    });
   };
 
   const handleDisagree = () => {

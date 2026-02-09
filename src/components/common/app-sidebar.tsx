@@ -492,12 +492,12 @@ export function AppSidebar(props: AppSidebarProps) {
           isOB: isUserOB,
         }));
 
-        // Initialize all groups as open by default
+        // Initialize all groups as closed by default
         const groups = [
           ...new Set(roleData?.projects.map((p) => p.groupLabel)),
         ];
         const initialOpenState = groups.reduce((acc, group) => {
-          acc[group] = true;
+          acc[group] = false;
           return acc;
         }, {} as Record<string, boolean>);
         setOpenGroups(initialOpenState);
@@ -604,7 +604,7 @@ export function AppSidebar(props: AppSidebarProps) {
           {Object.entries(groupedItems).map(([groupLabel, items]) => (
             <div key={groupLabel} className="mb-2">
               <Collapsible
-                open={openGroups[groupLabel]}
+                open={!!openGroups[groupLabel]}
                 onOpenChange={() => toggleGroup(groupLabel)}
               >
                 <Tooltip>
