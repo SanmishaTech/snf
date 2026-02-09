@@ -5,9 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { get, post } from "@/services/apiService";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle, Star, Leaf, Truck, Calendar } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -600,9 +599,6 @@ const ProductDetailPage: React.FC = () => {
           <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
               <DialogTitle className="text-xl font-bold">{product.name} - Full Description</DialogTitle>
-              <DialogClose className="absolute right-4 top-4">
-                <X className="h-4 w-4" />
-              </DialogClose>
             </DialogHeader>
             <div className="mt-4 max-h-[70vh] overflow-y-auto">
               <div className="text-gray-700 leading-relaxed prose" dangerouslySetInnerHTML={{ __html: product.description || "Our premium milk comes from grass-fed cows raised in natural pastures. Rich in calcium and essential nutrients, it's pasteurized for safety while maintaining its natural goodness. We source our milk from local farms that prioritize animal welfare and sustainable farming practices. Each bottle undergoes rigorous quality checks to ensure you receive the freshest, most nutritious product possible. The cows are fed a natural diet without hormones or antibiotics, resulting in milk that's both delicious and healthier. Perfect for drinking, cooking, or adding to your morning coffee, our milk is a versatile addition to any kitchen. We're proud to support local farmers and bring you a product that's not only good for you but also good for the environment." }} />
@@ -618,9 +614,6 @@ const ProductDetailPage: React.FC = () => {
                 <Truck className="h-5 w-5 text-blue-600" />
                 All Delivery Locations
               </DialogTitle>
-              <DialogClose className="absolute right-4 top-4">
-                <X className="h-4 w-4" />
-              </DialogClose>
             </DialogHeader>
             <div className="mt-4 flex-1 overflow-y-auto px-4 sm:px-0">
               {depotsLoading ? (
@@ -693,9 +686,6 @@ const ProductDetailPage: React.FC = () => {
                 <Truck className="h-5 w-5 text-green-600" />
                 Home Delivery Areas
               </DialogTitle>
-              <DialogClose className="absolute right-4 top-4">
-                <X className="h-4 w-4" />
-              </DialogClose>  
             </DialogHeader>
             <div className="mt-4">
               <div className="overflow-y-auto max-h-[60vh]">

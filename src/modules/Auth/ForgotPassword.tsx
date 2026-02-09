@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { post } from "@/services/apiService";
 import { LoaderCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -29,15 +29,24 @@ type ForgotPasswordFormInputs = z.infer<typeof forgotPasswordSchema>;
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const {
     register,
     handleSubmit,
     setError,
+    setValue,
     formState: { errors },
   } = useForm<ForgotPasswordFormInputs>({
     resolver: zodResolver(forgotPasswordSchema),
   });
+
+  useEffect(() => {
+    const emailFromQuery = searchParams.get('email');
+    if (emailFromQuery) {
+      setValue('email', emailFromQuery);
+    }
+  }, [searchParams, setValue]);
 
   const forgotPasswordMutation = useMutation<
     ForgotPasswordResponse,

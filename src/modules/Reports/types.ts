@@ -298,8 +298,9 @@ export interface DeliverySummaryResponse {
 }
 
 export interface ExceptionReportFilters {
-  startDate: string;
-  endDate: string;
+  startDate?: string;
+  endDate?: string;
+  name?: string;
 }
 
 export interface ExceptionReportRow {
@@ -338,6 +339,7 @@ export interface ExceptionReportResponse {
 export interface SubscriptionReportFilters {
   startDate?: string;
   endDate?: string;
+  name?: string;
   status?: 'expired' | 'not_expired' | 'all';
   paymentStatus?: string;
   agencyId?: number;

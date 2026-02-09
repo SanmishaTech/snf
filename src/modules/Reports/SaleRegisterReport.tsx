@@ -26,6 +26,8 @@ type SaleRegisterRow = {
   name: string;
   customerId: string | number;
   saleAmount: number;
+  refundAmount: number;
+  netAmount: number;
   address: string;
   pincode: string | number;
   mobile: string;
@@ -56,6 +58,9 @@ function toSaleRegisterRow(raw: any): SaleRegisterRow {
   const saleAmountRaw =
     raw?.receivedamt ?? raw?.saleAmount ?? raw?.amount ?? raw?.totalAmount ?? raw?.sale ?? 0;
   const saleAmount = Number(saleAmountRaw) || 0;
+
+  const refundAmount = Number(raw?.refundAmount ?? raw?.refund ?? 0) || 0;
+  const netAmount = Number(raw?.netAmount ?? raw?.net ?? saleAmount - refundAmount) || 0;
 
   const address =
     raw?.address ??
@@ -111,6 +116,8 @@ function toSaleRegisterRow(raw: any): SaleRegisterRow {
     name: String(name || ""),
     customerId,
     saleAmount,
+    refundAmount,
+    netAmount,
     address: String(address || ""),
     pincode: finalPincode,
     mobile: String(mobile || ""),
@@ -128,9 +135,11 @@ export default function SaleRegisterReport() {
     endDate: format(new Date(), "yyyy-MM-dd"),
   });
 
+  const [nameSearch, setNameSearch] = useState<string>("");
+
   const { data, isFetching, refetch, error } = useQuery<{ success?: boolean; data?: any }>(
     {
-      queryKey: ["saleRegisterReport", filters],
+      queryKey: ["saleRegisterReport", filters, nameSearch],
       queryFn: async () => {
         const token = localStorage.getItem("authToken") || localStorage.getItem("token");
         const params = new URLSearchParams();
@@ -139,6 +148,9 @@ export default function SaleRegisterReport() {
         params.append("paymentStatus", "PAID");
         params.append("page", "1");
         params.append("limit", "1000");
+
+        const term = String(nameSearch || "").trim();
+        if (term) params.append("name", term);
 
         const response = await axios.get(`${API_URL}/api/reports/sale-register?${params.toString()}`, {
           headers: {
@@ -199,6 +211,21 @@ export default function SaleRegisterReport() {
     });
   }, [rows, depotByPincode]);
 
+  const totalSaleAmount = useMemo(
+    () => resolvedRows.reduce((sum, r) => sum + (Number(r.saleAmount) || 0), 0),
+    [resolvedRows]
+  );
+
+  const totalRefundAmount = useMemo(
+    () => resolvedRows.reduce((sum, r) => sum + (Number(r.refundAmount) || 0), 0),
+    [resolvedRows]
+  );
+
+  const totalNetAmount = useMemo(
+    () => resolvedRows.reduce((sum, r) => sum + (Number(r.netAmount) || 0), 0),
+    [resolvedRows]
+  );
+
   const handleExportToExcel = () => {
     if (!resolvedRows || resolvedRows.length === 0) {
       toast.error("No data to export");
@@ -209,6 +236,8 @@ export default function SaleRegisterReport() {
       "Name": r.name,
       "Customer ID": r.customerId,
       "Sale Amount": Number(r.saleAmount) || 0,
+      "Refund Amount": Number(r.refundAmount) || 0,
+      "Net Amount": Number(r.netAmount) || 0,
       "Address": r.address,
       "Pincode": r.pincode,
       "Mobile": r.mobile,
@@ -224,6 +253,8 @@ export default function SaleRegisterReport() {
     worksheet["!cols"] = [
       { wch: 22 },
       { wch: 12 },
+      { wch: 14 },
+      { wch: 14 },
       { wch: 14 },
       { wch: 40 },
       { wch: 10 },
@@ -268,6 +299,17 @@ export default function SaleRegisterReport() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2">
+              <Label htmlFor="nameSearch">Search Name</Label>
+              <Input
+                id="nameSearch"
+                type="text"
+                value={nameSearch}
+                placeholder="Search by name"
+                onChange={(e) => setNameSearch(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="startDate">From Date</Label>
               <Input
                 id="startDate"
@@ -307,6 +349,8 @@ export default function SaleRegisterReport() {
                   <TableHead>Name</TableHead>
                   <TableHead>Customer ID</TableHead>
                   <TableHead className="text-right">Sale Amount</TableHead>
+                  <TableHead className="text-right">Refund</TableHead>
+                  <TableHead className="text-right">Net Amount</TableHead>
                   <TableHead>Address</TableHead>
                   <TableHead>Pincode</TableHead>
                   <TableHead>Mobile</TableHead>
@@ -318,13 +362,13 @@ export default function SaleRegisterReport() {
               <TableBody>
                 {isFetching ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={11} className="text-center py-8 text-gray-500">
                       Loading...
                     </TableCell>
                   </TableRow>
                 ) : rows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={11} className="text-center py-8 text-gray-500">
                       No data found for selected dates
                     </TableCell>
                   </TableRow>
@@ -335,6 +379,12 @@ export default function SaleRegisterReport() {
                       <TableCell>{r.customerId || "-"}</TableCell>
                       <TableCell className="text-right font-medium">
                         ₹{(Number(r.saleAmount) || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        ₹{(Number(r.refundAmount) || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        ₹{(Number(r.netAmount) || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                       </TableCell>
                       <TableCell className="max-w-[360px] whitespace-normal break-words" title={r.address}>
                         {r.address || "-"}
@@ -347,6 +397,22 @@ export default function SaleRegisterReport() {
                     </TableRow>
                   ))
                 )}
+
+                {!isFetching && resolvedRows.length > 0 ? (
+                  <TableRow className="bg-gray-50 font-semibold">
+                    <TableCell colSpan={2}>Total</TableCell>
+                    <TableCell className="text-right">
+                      ₹{totalSaleAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      ₹{totalRefundAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      ₹{totalNetAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                    </TableCell>
+                    <TableCell colSpan={6} />
+                  </TableRow>
+                ) : null}
               </TableBody>
             </Table>
           </div>

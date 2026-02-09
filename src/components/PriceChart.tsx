@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
-import { TrendingDown, Clock, Calendar, Zap, X, IndianRupee } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { TrendingDown, Clock, Calendar, Zap, IndianRupee } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { get } from '@/services/apiService';
 import { useQuery } from '@tanstack/react-query';
@@ -311,9 +311,6 @@ export const PriceChart: React.FC<PriceChartProps> = ({ product, variants, class
               <TrendingDown className="h-5 w-5 text-blue-600" />
               Subscription Pricing & Schedules
             </DialogTitle>
-            <DialogClose className="absolute right-4 top-4">
-              <X className="h-4 w-4" />
-            </DialogClose>
           </DialogHeader>
           
           <div className="overflow-y-auto max-h-[70vh] space-y-6 pr-2">

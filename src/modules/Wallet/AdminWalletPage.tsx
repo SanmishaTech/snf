@@ -83,6 +83,7 @@ interface SelectedMemberData {
   memberId: string | number;
   memberName: string;
   memberEmail?: string;
+  memberActive?: boolean;
   wallet: ApiWalletData;
 }
 
@@ -458,43 +459,43 @@ const AdminWalletPage: React.FC = () => {
 
       {/* Selected Member Information */}
       {selectedMemberData && !isLoadingDetails && (
-  <Card className="p-6 rounded-xl shadow-sm border bg-card transition-all hover:shadow-md">
-    <div className="flex items-start gap-5">
-      <div className="bg-primary/10 p-3 rounded-full">
-        <User className="h-8 w-8 text-primary flex-shrink-0" />
-      </div>
-      
-      <div className="space-y-2">
-        <div>
-          <h3 className="text-xl font-bold text-foreground tracking-tight">
-            {selectedMemberData.memberName}
-          </h3>
-          
-          {selectedMemberData.memberEmail && (
-            <div className="flex items-center gap-2 mt-1">
-              <Mail className="h-4 w-4 text-muted-foreground" />
-              <a 
-                href={`mailto:${selectedMemberData.memberEmail}`}
-                className="text-muted-foreground hover:text-primary hover:underline transition-colors"
-              >
-                {selectedMemberData.memberEmail}
-              </a>
-            </div>
-          )}
-        </div>
-        
-         
-      </div>
-    </div>
-  </Card>
-)}
+        <Card className="p-6 rounded-xl shadow-sm border bg-card transition-all hover:shadow-md">
+          <div className="flex items-center gap-5">
+            <div className="flex items-start gap-5 flex-1 min-w-0">
+              <div className="bg-primary/10 p-3 rounded-full">
+                <User className="h-8 w-8 text-primary flex-shrink-0" />
+              </div>
 
-      {/* Wallet Details Section - loading state */}
-      {isLoadingDetails && (
-        <Card className="p-4 text-center mt-4">
-          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Loading wallet details...
+              <div className="space-y-2">
+                <div>
+                  <h3 className="text-xl font-bold text-foreground tracking-tight">
+                    {selectedMemberData.memberName}
+                  </h3>
+
+                  {selectedMemberData.memberEmail && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <a
+                        href={`mailto:${selectedMemberData.memberEmail}`}
+                        className="text-muted-foreground hover:text-primary hover:underline transition-colors"
+                      >
+                        {selectedMemberData.memberEmail}
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <Badge
+              className={
+                selectedMemberData.memberActive === false
+                  ? "ml-auto inline-flex items-center rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-red-700"
+                  : "ml-auto inline-flex items-center rounded-full border border-green-200 bg-green-50 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-green-700"
+              }
+            >
+              {selectedMemberData.memberActive === false ? "Inactive" : "Active"}
+            </Badge>
           </div>
         </Card>
       )}

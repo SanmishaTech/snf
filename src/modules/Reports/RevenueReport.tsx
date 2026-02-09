@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { format } from "date-fns";
@@ -18,6 +18,8 @@ type RevenueReportRow = {
   name: string;
   memberId: number | string;
   saleAmount: number;
+  refundAmount?: number;
+  netAmount?: number;
   mobile: string;
   currentVariant: string;
   milkSubscriptionStartDate: string | null;
@@ -32,6 +34,11 @@ type RevenueReportResponse = {
     report: RevenueReportRow[];
     recordCount: number;
   };
+  filters?: {
+    startDate?: string | null;
+    endDate?: string | null;
+    name?: string | null;
+  };
 };
 
 function formatDate(value: unknown): string {
@@ -44,11 +51,22 @@ function formatDate(value: unknown): string {
 export default function RevenueReport() {
   const { isAdmin } = useRoleAccess();
 
+  const [startDate, setStartDate] = useState<string>(format(new Date(new Date().setDate(new Date().getDate() - 30)), "yyyy-MM-dd"));
+  const [endDate, setEndDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+  const [nameSearch, setNameSearch] = useState<string>("");
+
   const { data, isFetching, error, refetch } = useQuery<RevenueReportResponse>({
-    queryKey: ["revenueReport"],
+    queryKey: ["revenueReport", startDate, endDate, nameSearch],
     queryFn: async () => {
       const token = localStorage.getItem("authToken") || localStorage.getItem("token");
-      const response = await axios.get(`${API_URL}/api/reports/revenue`, {
+      const params = new URLSearchParams();
+      if (startDate) params.set('startDate', startDate);
+      if (endDate) params.set('endDate', endDate);
+
+      const term = String(nameSearch || "").trim();
+      if (term) params.set('name', term);
+
+      const response = await axios.get(`${API_URL}/api/reports/revenue?${params.toString()}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -67,6 +85,14 @@ export default function RevenueReport() {
     return rows.reduce((sum, r) => sum + (Number(r.saleAmount) || 0), 0);
   }, [rows]);
 
+  const totalRefundAmount = useMemo(() => {
+    return rows.reduce((sum, r) => sum + (Number(r.refundAmount) || 0), 0);
+  }, [rows]);
+
+  const totalNetAmount = useMemo(() => {
+    return rows.reduce((sum, r) => sum + (Number(r.netAmount) || 0), 0);
+  }, [rows]);
+
   const handleExportToExcel = () => {
     if (!rows.length) {
       toast.error("No data to export");
@@ -79,6 +105,8 @@ export default function RevenueReport() {
         name: "TOTAL",
         memberId: "",
         saleAmount: totalSaleAmount,
+        refundAmount: totalRefundAmount,
+        netAmount: totalNetAmount,
         mobile: "",
         currentVariant: "",
         milkSubscriptionStartDate: null,
@@ -94,6 +122,8 @@ export default function RevenueReport() {
         Name: r.name,
         "Member ID": r.memberId,
         "Sale Amount": Number(r.saleAmount || 0),
+        "Refund Amount": Number(r.refundAmount || 0),
+        "Net Amount": Number(r.netAmount || 0),
         Mobile: r.mobile,
         "Current Varient": r.currentVariant,
         "Milk Subscription Start Date": formatDate(r.milkSubscriptionStartDate),
@@ -103,7 +133,9 @@ export default function RevenueReport() {
       }))
     );
     XLSX.utils.book_append_sheet(workbook, worksheet, "Revenue");
-    XLSX.writeFile(workbook, `Revenue_Report_${format(new Date(), "yyyy-MM-dd")}.xlsx`);
+    const safeName = String(nameSearch || "").trim().replace(/\s+/g, "_");
+    const namePart = safeName ? `_Search_${safeName}` : "";
+    XLSX.writeFile(workbook, `Revenue_Report_${startDate || "ALL"}_to_${endDate || "ALL"}${namePart}.xlsx`);
     toast.success("Report exported successfully");
   };
 
@@ -138,6 +170,42 @@ export default function RevenueReport() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="space-y-2">
+              <div className="text-sm font-medium">Search Name</div>
+              <input
+                type="text"
+                value={nameSearch}
+                onChange={(e) => setNameSearch(e.target.value)}
+                placeholder="Search by name"
+                className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="space-y-2">
+              <div className="text-sm font-medium">From Date</div>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="space-y-2">
+              <div className="text-sm font-medium">To Date</div>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="flex items-end">
+              <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
+                Apply
+              </Button>
+            </div>
+          </div>
+
           {error ? (
             <div className="text-sm text-red-600">{(error as any)?.message || "Failed to load report"}</div>
           ) : null}
@@ -149,6 +217,8 @@ export default function RevenueReport() {
                   <TableHead>Name</TableHead>
                   <TableHead>Member ID</TableHead>
                   <TableHead className="text-right">Sale Amount</TableHead>
+                  <TableHead className="text-right">Refund</TableHead>
+                  <TableHead className="text-right">Net Amount</TableHead>
                   <TableHead>Mobile</TableHead>
                   <TableHead>Current Varient</TableHead>
                   <TableHead>Milk Subscription Start Date</TableHead>
@@ -160,13 +230,13 @@ export default function RevenueReport() {
               <TableBody>
                 {isFetching ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={11} className="text-center py-8 text-gray-500">
                       Loading...
                     </TableCell>
                   </TableRow>
                 ) : rows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={11} className="text-center py-8 text-gray-500">
                       No data found
                     </TableCell>
                   </TableRow>
@@ -178,6 +248,12 @@ export default function RevenueReport() {
                         <TableCell>{r.memberId || "-"}</TableCell>
                         <TableCell className="text-right">
                           ₹{Number(r.saleAmount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          ₹{Number(r.refundAmount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          ₹{Number(r.netAmount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                         </TableCell>
                         <TableCell>{r.mobile || "-"}</TableCell>
                         <TableCell>{r.currentVariant || "-"}</TableCell>
@@ -194,6 +270,12 @@ export default function RevenueReport() {
                       <TableCell />
                       <TableCell className="text-right font-bold">
                         ₹{Number(totalSaleAmount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell className="text-right font-bold">
+                        ₹{Number(totalRefundAmount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell className="text-right font-bold">
+                        ₹{Number(totalNetAmount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                       </TableCell>
                       <TableCell />
                       <TableCell />

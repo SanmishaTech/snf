@@ -99,11 +99,18 @@ const Login: React.FC<LoginProps> = () => {
     register,
     handleSubmit,
     setError, // <-- Destructure setError
+    watch,
     formState: { errors },
     // getValues // Can be useful for debugging
   } = useForm<LoginFormInputs>({
     resolver: zodResolver(loginSchema),
   });
+
+  const identifierValue = watch('identifier');
+  const identifierEmail =
+    typeof identifierValue === 'string' && identifierValue.includes('@')
+      ? identifierValue.trim()
+      : '';
 
   useEffect(() => {
     if (location.state?.unauthorized) {
@@ -401,9 +408,10 @@ const Login: React.FC<LoginProps> = () => {
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
                 <Link
-                  to={
-                    isAdminPath ? "/admin/forgot-password" : "/forgot-password"
-                  }
+                  to={{
+                    pathname: isAdminPath ? "/admin/forgot-password" : "/forgot-password",
+                    search: identifierEmail ? `?email=${encodeURIComponent(identifierEmail)}` : "",
+                  }}
                   className="text-sm font-medium text-primary hover:underline"
                 >
                   Forgot password?

@@ -19,11 +19,22 @@ const API_URL = backendUrl;
 type WalletReportRow = {
   name: string;
   memberId: number | string;
+  memberStatus?: string;
   mobile: string;
+  currentVariant?: string;
+  firstSubscriptionDate?: string | null;
   address: string;
   pincode: string;
+  depotName?: string;
   closingBalance: number;
 };
+
+function formatDateDdMmYyyy(value?: string | null) {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  return format(d, "dd/MM/yyyy");
+}
 
 type WalletReportResponse = {
   success: boolean;
@@ -43,13 +54,16 @@ export default function WalletReport() {
   const { isAdmin } = useRoleAccess();
 
   const [endDate, setEndDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+  const [nameSearch, setNameSearch] = useState<string>("");
 
   const { data, isFetching, error, refetch } = useQuery<WalletReportResponse>({
-    queryKey: ["walletReport", endDate],
+    queryKey: ["walletReport", endDate, nameSearch],
     queryFn: async () => {
       const token = localStorage.getItem("authToken") || localStorage.getItem("token");
       const params = new URLSearchParams();
       if (endDate) params.append("endDate", endDate);
+      const term = String(nameSearch || "").trim();
+      if (term) params.append("name", term);
       const response = await axios.get(`${API_URL}/api/reports/wallet?${params.toString()}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -82,9 +96,13 @@ export default function WalletReport() {
       {
         name: "TOTAL",
         memberId: "",
+        memberStatus: "",
         mobile: "",
+        currentVariant: "",
+        firstSubscriptionDate: "",
         address: "",
         pincode: "",
+        depotName: "",
         closingBalance: totalClosingBalance,
       } satisfies WalletReportRow,
     ];
@@ -94,15 +112,21 @@ export default function WalletReport() {
       exportRows.map((r) => ({
         Name: r.name,
         "Member ID": r.memberId,
+        "Member Status": r.memberStatus || "",
         Mobile: r.mobile,
+        "Current Variant": r.currentVariant || "",
+        "First Subscription Date": formatDateDdMmYyyy(r.firstSubscriptionDate),
         Address: r.address,
         Pincode: r.pincode,
+        Depot: r.depotName || "",
         "Closing Balance": Number(r.closingBalance || 0),
       }))
     );
 
     XLSX.utils.book_append_sheet(workbook, worksheet, "Wallet");
-    XLSX.writeFile(workbook, `Wallet_Report_As_Of_${endDate || format(new Date(), "yyyy-MM-dd")}.xlsx`);
+    const safeName = String(nameSearch || "").trim().replace(/\s+/g, "_");
+    const namePart = safeName ? `_Search_${safeName}` : "";
+    XLSX.writeFile(workbook, `Wallet_Report_As_Of_${endDate || format(new Date(), "yyyy-MM-dd")}${namePart}.xlsx`);
     toast.success("Report exported successfully");
   };
 
@@ -139,6 +163,16 @@ export default function WalletReport() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
+              <Label htmlFor="nameSearch">Search Name</Label>
+              <Input
+                id="nameSearch"
+                type="text"
+                value={nameSearch}
+                placeholder="Search by name"
+                onChange={(e) => setNameSearch(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="endDate">As Of Date</Label>
               <Input
                 id="endDate"
@@ -159,22 +193,26 @@ export default function WalletReport() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Member ID</TableHead>
+                  <TableHead>Member Status</TableHead>
                   <TableHead>Mobile</TableHead>
+                  <TableHead>Current Variant</TableHead>
+                  <TableHead>First Subscription Date</TableHead>
                   <TableHead>Address</TableHead>
                   <TableHead>Pincode</TableHead>
+                  <TableHead>Depot</TableHead>
                   <TableHead className="text-right">Closing Balance</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isFetching ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={10} className="text-center py-8 text-gray-500">
                       Loading...
                     </TableCell>
                   </TableRow>
                 ) : rows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={10} className="text-center py-8 text-gray-500">
                       No data found
                     </TableCell>
                   </TableRow>
@@ -184,11 +222,15 @@ export default function WalletReport() {
                       <TableRow key={`${r.memberId}-${idx}`} className="hover:bg-gray-50">
                         <TableCell>{r.name || "-"}</TableCell>
                         <TableCell>{r.memberId || "-"}</TableCell>
+                        <TableCell>{r.memberStatus || "-"}</TableCell>
                         <TableCell>{r.mobile || "-"}</TableCell>
+                        <TableCell>{r.currentVariant || "-"}</TableCell>
+                        <TableCell>{formatDateDdMmYyyy(r.firstSubscriptionDate) || "-"}</TableCell>
                         <TableCell className="max-w-[360px] whitespace-normal break-words" title={r.address || ""}>
                           {r.address || "-"}
                         </TableCell>
                         <TableCell>{r.pincode || "-"}</TableCell>
+                        <TableCell>{r.depotName || "-"}</TableCell>
                         <TableCell className="text-right">
                           ₹{Number(r.closingBalance || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                         </TableCell>
@@ -196,6 +238,10 @@ export default function WalletReport() {
                     ))}
                     <TableRow>
                       <TableCell className="font-bold">TOTAL</TableCell>
+                      <TableCell />
+                      <TableCell />
+                      <TableCell />
+                      <TableCell />
                       <TableCell />
                       <TableCell />
                       <TableCell />

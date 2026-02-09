@@ -25,7 +25,6 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -36,7 +35,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  X,
   UserPlus,
   UserIcon,
   PhoneIcon,
@@ -52,7 +50,6 @@ import {
   Download,
   MessageSquare,
   Ban,
-  AlertTriangle,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner"; // Using Sonner for toasts
@@ -317,12 +314,6 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
             Modify payment details for the entire order.
           </DialogDescription>
         </DialogHeader>
-        <DialogClose
-          className="absolute right-4 top-4 z-10"
-          onClick={() => onOpenChange(false)}
-        >
-          <X className="h-4 w-4" />
-        </DialogClose>
 
         <div className="grid gap-6 py-4">
           <fieldset
@@ -593,12 +584,6 @@ const AssignAgentModal: React.FC<AssignAgentModalProps> = ({
             Only future deliveries will be affected.
           </DialogDescription>
         </DialogHeader>
-        <DialogClose
-          className="absolute right-2 top-2 sm:right-4 sm:top-4 z-10 h-8 w-8 rounded-full hover:bg-gray-100 flex items-center justify-center"
-          onClick={() => onOpenChange(false)}
-        >
-          <X className="h-4 w-4" />
-        </DialogClose>
 
         <div className="grid gap-4 sm:gap-6 py-2 sm:py-4 overflow-y-auto flex-grow">
           {/* Order Details Section */}
@@ -2260,43 +2245,28 @@ const AdminSubscriptionList: React.FC = () => {
         onBulkUpdateSubscriptions={handleBulkAssignAgency}
       />
 
-      {/* Cancel Confirmation Dialog */}
       <Dialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-600" />
-              Cancel Subscriptions
-            </DialogTitle>
+            <DialogTitle>Cancel Order</DialogTitle>
             <DialogDescription>
               Are you sure you want to cancel all subscriptions in this order?
             </DialogDescription>
           </DialogHeader>
-          <DialogClose
-            className="absolute right-4 top-4 z-10"
-            onClick={() => setIsCancelDialogOpen(false)}
-          >
-            <X className="h-4 w-4" />
-          </DialogClose>
 
           {orderToCancel && (
             <div className="py-4 space-y-4">
-              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
-                <div className="flex items-start gap-2">
-                  <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm text-yellow-800">
-                    <p className="font-medium mb-1">This action will:</p>
-                    <ul className="list-disc list-inside space-y-1 text-xs">
-                      <li>Cancel all {orderToCancel.subscriptions.length} subscription(s) in order {orderToCancel.orderNo}</li>
-                      <li>Mark all future delivery schedule entries as CANCELLED</li>
-                      <li>
-                        {currentUserRole === 'ADMIN'
-                          ? 'No wallet refund will be processed from the admin panel'
-                          : 'Process wallet refund if applicable (for remaining deliveries)'}
-                      </li>
-                      <li>This action cannot be undone</li>
-                    </ul>
-                  </div>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-red-800 mb-2">Important:</h4>
+                <div className="text-sm text-red-700">
+                  <ul className="list-disc pl-5 space-y-1">
+                    <li>
+                      {currentUserRole === 'ADMIN'
+                        ? 'No wallet refund will be processed from the admin panel'
+                        : 'Process wallet refund if applicable (for remaining deliveries)'}
+                    </li>
+                    <li>This action cannot be undone</li>
+                  </ul>
                 </div>
               </div>
 

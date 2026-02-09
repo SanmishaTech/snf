@@ -20,12 +20,9 @@ import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as apiService from "@/services/apiService";
 import { Banner } from "./BannerListPage"; // Import the full Banner type for initialData
+import { resolveAssetUrl } from "@/utils/photoUtils";
 
 const API_BASE_URL = "/api/admin/banners";
-const BACKEND_URL =
-  import.meta.env.VITE_BACKEND_URL === "production"
-    ? ""
-    : "http://localhost:3006"; // Adjust as needed for production
 
 const ACCEPTED_IMAGE_TYPES = [
   "image/jpeg",
@@ -252,34 +249,25 @@ const BannerMasterForm: React.FC<BannerMasterFormProps> = ({
             {mode === "edit" && initialData?.imagePath && (
               <div className="mt-2">
                 <p className="text-xs text-muted-foreground">Current image:</p>
-                {initialData.imagePath.startsWith("http") ||
-                initialData.imagePath.startsWith("/") ? (
-                  <>
-                    <img
-                      src={
-                        initialData.imagePath.startsWith("http")
-                          ? initialData.imagePath
-                          : `${BACKEND_URL}${initialData.imagePath}`
-                      }
-                      alt={initialData.caption || "Current banner image"}
-                      className="mt-1 h-20 w-auto object-contain border rounded shadow-sm"
-                      onError={(e) => {
-                        const imgElement = e.target as HTMLImageElement;
-                        imgElement.style.display = "none";
-                        const fallbackElement =
-                          imgElement.nextElementSibling as HTMLElement | null;
-                        if (fallbackElement)
-                          fallbackElement.classList.remove("hidden");
-                      }}
-                    />
-                    {/* Fallback text if image fails to load */}
-                    <p className="text-xs text-red-500 hidden">
-                      Unable to load image preview.
-                    </p>
-                  </>
-                ) : (
-                  <p className="text-xs font-medium">{initialData.imagePath}</p> // Display path if not a URL/relative path
-                )}
+                <>
+                  <img
+                    src={resolveAssetUrl(initialData.imagePath)}
+                    alt={initialData.caption || "Current banner image"}
+                    className="mt-1 h-20 w-auto object-contain border rounded shadow-sm"
+                    onError={(e) => {
+                      const imgElement = e.target as HTMLImageElement;
+                      imgElement.style.display = "none";
+                      const fallbackElement =
+                        imgElement.nextElementSibling as HTMLElement | null;
+                      if (fallbackElement)
+                        fallbackElement.classList.remove("hidden");
+                    }}
+                  />
+                  {/* Fallback text if image fails to load */}
+                  <p className="text-xs text-red-500 hidden">
+                    Unable to load image preview.
+                  </p>
+                </>
               </div>
             )}
             <p className="text-xs text-muted-foreground mt-1">

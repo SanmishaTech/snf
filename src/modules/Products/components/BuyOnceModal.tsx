@@ -5,9 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Minus, MapPin, X, Wallet } from "lucide-react";
+import { Plus, Minus, MapPin, Wallet } from "lucide-react";
 import { format, addDays } from 'date-fns';
-import { DialogClose } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { get, post } from "@/services/apiService";
 import { toast } from "sonner";
@@ -695,8 +694,6 @@ export const BuyOnceModal: React.FC<BuyOnceModalProps> = ({
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="w-full max-w-4xl mx-auto p-0 flex flex-col max-h-[95vh] overflow-hidden">
         <DialogHeader className="px-4 py-4 sm:px-6 sm:py-6 pb-2 border-b bg-gradient-to-r from-green-50 to-blue-50">
-          <DialogClose className="absolute right-3 top-3 sm:right-4 sm:top-4 z-10 p-2 rounded-full hover:bg-white/80 transition-colors" onClick={() => onOpenChange(false)}>
-          </DialogClose>
           <DialogTitle className="text-lg sm:text-xl font-bold text-center pr-8">
             {showAddressFormView ? 'Add New Delivery Address' : `${product?.name} - Buy Once`}
           </DialogTitle>

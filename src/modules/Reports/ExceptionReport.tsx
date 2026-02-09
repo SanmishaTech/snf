@@ -28,18 +28,23 @@ function formatDisplayDate(value: string): string {
 export default function ExceptionReport() {
   const { isAdmin } = useRoleAccess();
 
-  const [filters, setFilters] = useState<ExceptionReportFilters>({
-    startDate: format(new Date(new Date().setDate(new Date().getDate() - 30)), "yyyy-MM-dd"),
-    endDate: format(new Date(), "yyyy-MM-dd"),
-  });
+  const [filters, setFilters] = useState<ExceptionReportFilters>({});
 
   const { data, isFetching, error, refetch } = useQuery<ExceptionReportResponse>({
     queryKey: ["exceptionReport", filters],
     queryFn: async () => {
       const token = localStorage.getItem("authToken") || localStorage.getItem("token");
       const params = new URLSearchParams();
-      params.set("startDate", filters.startDate);
-      params.set("endDate", filters.endDate);
+
+      if (filters.startDate) {
+        params.set("startDate", filters.startDate);
+      }
+      if (filters.endDate) {
+        params.set("endDate", filters.endDate);
+      }
+      if (filters.name && String(filters.name).trim()) {
+        params.set("name", String(filters.name).trim());
+      }
 
       const response = await axios.get(`${API_URL}/api/reports/exceptions?${params.toString()}`, {
         headers: {
@@ -64,22 +69,25 @@ export default function ExceptionReport() {
     const worksheet = XLSX.utils.json_to_sheet(
       rows.map((r) => ({
         "Exception Type": r.exceptionType || "",
-        "Date": r.date,
+        "Date": formatDisplayDate(r.date),
         "Customer ID": r.customerId,
         "Customer Name": r.customerName || "",
         "Mobile Number": r.mobileNumber,
         "Address": r.address,
         "Pincode": r.pincode,
         "Depot Name": r.depotName,
-        "Sub From date": r.subFromDate,
-        "Sub To Date": r.subToDate,
+        "Sub From date": formatDisplayDate(r.subFromDate),
+        "Sub To Date": formatDisplayDate(r.subToDate),
         "Last Varient": r.lastVariant,
         "New Varient": r.newVariant,
       }))
     );
     XLSX.utils.book_append_sheet(workbook, worksheet, "Exceptions");
 
-    XLSX.writeFile(workbook, `Exception_Report_${filters.startDate}_to_${filters.endDate}.xlsx`);
+    const safeStart = filters.startDate || "ALL";
+    const safeEnd = filters.endDate || "ALL";
+    const safeName = (filters.name && String(filters.name).trim()) ? `_NAME_${String(filters.name).trim().replace(/\s+/g, '_')}` : '';
+    XLSX.writeFile(workbook, `Exception_Report_${safeStart}_to_${safeEnd}${safeName}.xlsx`);
     toast.success("Report exported successfully");
   };
 
@@ -93,11 +101,23 @@ export default function ExceptionReport() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
+              <Label htmlFor="nameSearch">Search Name</Label>
+              <Input
+                id="nameSearch"
+                type="text"
+                value={filters.name || ""}
+                placeholder="Search by name"
+                onChange={(e) =>
+                  setFilters((prev: ExceptionReportFilters) => ({ ...prev, name: e.target.value }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="startDate">Start Date</Label>
               <Input
                 id="startDate"
                 type="date"
-                value={filters.startDate}
+                value={filters.startDate || ""}
                 onChange={(e) =>
                   setFilters((prev: ExceptionReportFilters) => ({ ...prev, startDate: e.target.value }))
                 }
@@ -108,7 +128,7 @@ export default function ExceptionReport() {
               <Input
                 id="endDate"
                 type="date"
-                value={filters.endDate}
+                value={filters.endDate || ""}
                 onChange={(e) =>
                   setFilters((prev: ExceptionReportFilters) => ({ ...prev, endDate: e.target.value }))
                 }

@@ -58,10 +58,9 @@ export default function SubscriptionReports() {
   const [filters, setFilters] = useState<SubscriptionReportFilters>({
     startDate: format(new Date(new Date().setDate(new Date().getDate() - 30)), 'yyyy-MM-dd'), // 30 days ago
     endDate: format(new Date(), 'yyyy-MM-dd'), // today
+    name: '',
     status: 'all',
     paymentStatus: undefined,
-    page: 1,
-    limit: 50
   });
   
   
@@ -70,6 +69,7 @@ export default function SubscriptionReports() {
     queryKey: ['subscriptionReports', filters],
     queryFn: async () => {
       const params = new URLSearchParams();
+      params.set('paginate', 'false');
       Object.entries(filters).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
           params.append(key, value.toString());
@@ -102,7 +102,7 @@ export default function SubscriptionReports() {
     setFilters(prev => ({ 
       ...prev, 
       [key]: value,
-      ...(key !== 'page' ? { page: 1 } : {}) // Reset to page 1 when other filters change
+      ...(key !== 'page' ? { page: 1 } : {}) // no-op; pagination disabled but kept for compatibility
     }));
   };
 
@@ -111,10 +111,9 @@ export default function SubscriptionReports() {
     setFilters({
       startDate: format(new Date(new Date().setDate(new Date().getDate() - 30)), 'yyyy-MM-dd'),
       endDate: format(new Date(), 'yyyy-MM-dd'),
+      name: '',
       status: 'all',
       paymentStatus: undefined,
-      page: 1,
-      limit: 50
     });
   };
   
@@ -243,6 +242,17 @@ export default function SubscriptionReports() {
         
           <CardContent className="border-t bg-gray-50">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="nameSearch">Search Name</Label>
+                <Input
+                  id="nameSearch"
+                  type="text"
+                  value={filters.name || ''}
+                  placeholder="Search by name"
+                  onChange={(e) => handleFilterChange('name', e.target.value)}
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="startDate">Start Date</Label>
                 <Input
@@ -392,27 +402,7 @@ export default function SubscriptionReports() {
                 </Table>
               </div>
 
-              {reportData?.summary?.totalPages ? (
-                <div className="flex items-center justify-end gap-2 pt-2">
-                  <Button
-                    variant="outline"
-                    disabled={(filters.page ?? 1) <= 1}
-                    onClick={() => handleFilterChange('page', Math.max(1, (filters.page ?? 1) - 1))}
-                  >
-                    Prev
-                  </Button>
-                  <div className="text-sm text-gray-600">
-                    Page {filters.page ?? 1} of {reportData.summary.totalPages}
-                  </div>
-                  <Button
-                    variant="outline"
-                    disabled={(filters.page ?? 1) >= reportData.summary.totalPages}
-                    onClick={() => handleFilterChange('page', (filters.page ?? 1) + 1)}
-                  >
-                    Next
-                  </Button>
-                </div>
-              ) : null}
+              {null}
             </div>
           )}
         </CardContent>

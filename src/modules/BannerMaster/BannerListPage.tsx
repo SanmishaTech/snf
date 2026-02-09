@@ -35,6 +35,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import BannerMasterForm, { BannerFormData } from "./BannerMasterForm";
 import { Pagination } from "@/components/common/Pagination";
+import { resolveAssetUrl } from "@/utils/photoUtils";
 
 export interface Banner extends BannerFormData {
   id: string;
@@ -45,8 +46,6 @@ export interface Banner extends BannerFormData {
 }
 
 const API_BASE_URL = "/api/admin/banners";
-const BACKEND_URL =
-  process.env.NODE_ENV === "production" ? "" : "http://localhost:3006"; // Adjust as needed for production
 
 const BannerMasterListPage: React.FC = () => {
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -286,12 +285,12 @@ const BannerMasterListPage: React.FC = () => {
                         <TableCell className="px-4 py-3">
                           {banner.imagePath ? (
                             <img
-                              src={`${BACKEND_URL}${banner.imagePath}`}
+                              src={resolveAssetUrl(banner.imagePath)}
                               alt={banner.caption || "Banner image"}
                               className="h-10 w-16 object-cover rounded"
                             />
                           ) : (
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-gray-400 flex items-center">
                               No image
                             </span>
                           )}
