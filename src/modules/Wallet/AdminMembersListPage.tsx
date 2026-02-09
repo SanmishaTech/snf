@@ -26,6 +26,7 @@ import {
 interface MemberWalletInfo {
   _id: string; // or number, depending on your ID type
   id: string; // or number
+  userUniqueId?: string;
   name: string;
   email: string;
   role?: string; // Added from backend
@@ -188,6 +189,9 @@ const AdminMembersListPage: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>
+                    User Unique ID
+                  </TableHead>
                   <TableHead onClick={() => handleSort('name')} className="cursor-pointer">
                     Name {sortBy === 'name' && (sortOrder === 'asc' ? '▲' : '▼')}
                   </TableHead>
@@ -206,6 +210,7 @@ const AdminMembersListPage: React.FC = () => {
               <TableBody>
                 {members.map((member) => (
                   <TableRow key={member._id}>
+                    <TableCell>{member.userUniqueId || '-'}</TableCell>
                     <TableCell>{member.name}</TableCell>
                     <TableCell>{member.email}</TableCell>
                     <TableCell>₹{member.walletBalance.toFixed(2)}</TableCell>
