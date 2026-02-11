@@ -50,7 +50,7 @@ interface LoginResponse {
 }
 
 const loginSchema = z.object({
-  identifier: z.string().min(1, "Email or mobile is required"),
+  identifier: z.string().trim().min(1, "Email or mobile is required"),
   password: z.string().min(1, "Password is required"),
   // agreedToPolicy removed as it's no longer part of the initial form
 });

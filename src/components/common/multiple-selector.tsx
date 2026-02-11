@@ -286,10 +286,12 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
 
     useEffect(() => {
       /** If `onSearch` is provided, do not trigger options updated. */
-      if (!arrayOptions || onSearch) {
+      if (onSearch) {
         return;
       }
-      const newOption = transToGroupOption(arrayOptions || [], groupBy);
+      // Update options when either arrayOptions or arrayDefaultOptions changes
+      const optionsToUse = arrayOptions || arrayDefaultOptions || [];
+      const newOption = transToGroupOption(optionsToUse, groupBy);
       if (JSON.stringify(newOption) !== JSON.stringify(options)) {
         setOptions(newOption);
       }

@@ -80,24 +80,27 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
             <PasswordInput
-               value={newPassword}
+              value={newPassword}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 setNewPassword(e.target.value)
               }
               required
               className="w-full"
+              placeholder="Enter new password"
             />
             <PasswordInput
-               value={confirmPassword}
+              value={confirmPassword}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 setConfirmPassword(e.target.value)
               }
               required
               className="w-full"
+              placeholder="Confirm new password"
             />
           </div>
           <div className="flex justify-end gap-2 mt-4">
             <Button
+              type="button"
               variant="secondary"
               onClick={onClose}
               disabled={changePasswordMutation.isPending}

@@ -397,8 +397,13 @@ export default function WalletPage() {
                             {subtitle && (
                               <p className="text-xs text-muted-foreground">{subtitle}</p>
                             )}
+                            {transaction.deliveryDate && (
+                              <p className="text-xs text-muted-foreground">
+                                <span className="font-medium">Skipped:</span> {new Date(transaction.deliveryDate).toLocaleDateString()}
+                              </p>
+                            )}
                             <p className="text-sm text-muted-foreground">
-                              {new Date(transaction.timestamp).toLocaleDateString()} {new Date(transaction.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              <span className="font-medium">Transaction:</span> {new Date(transaction.timestamp).toLocaleDateString()} {new Date(transaction.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </p>
                           </div>
                         </div>

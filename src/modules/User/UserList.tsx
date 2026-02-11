@@ -103,14 +103,15 @@ const UserList = () => {
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        // const rolesData = await get("/roles");
-        // const formattedRoles: Option[] = Object.entries(rolesData.roles).map(
-        //   ([key, value]) => ({
-        //     label: formatRoleName(value),
-        //     value: value,
-        //   })
-        // );
-        // setAvailableRoles(formattedRoles);
+        const rolesData = await get("/users/roles");
+        // rolesData.roles is expected to be { ROLE_KEY: "role_value" }
+        const formattedRoles: Option[] = Object.entries(rolesData.roles).map(
+          ([key, value]) => ({
+            label: formatRoleName(String(value)),
+            value: String(value),
+          })
+        );
+        setAvailableRoles(formattedRoles);
       } catch (error: any) {
         toast.error("Failed to fetch roles");
       }
@@ -215,7 +216,11 @@ const UserList = () => {
 
   // Handle role filter change
   const handleRoleChange = (selectedRoles: Option[]) => {
-    setRoles(selectedRoles.map((role) => role.value)); // Extract values from selected options
+    // Filter out 'all' option - selecting it means no role filter
+    const roleValues = selectedRoles
+      .filter((role) => role.value !== 'all')
+      .map((role) => role.value);
+    setRoles(roleValues);
     setCurrentPage(1); // Reset to the first page
   };
 
@@ -285,17 +290,30 @@ const UserList = () => {
             {/* Search Input */}
             <div className="flex-grow">
               <Input
-                 value={search}
+                value={search}
                 onChange={handleSearchChange}
                 className="w-full"
+                placeholder="Search by name or email..."
                 icon={<Search className="h-4 w-4" />}
               />
             </div>
 
             {/* Action Buttons */}
             <div className="flex flex-wrap items-center gap-2">
-              
-           
+
+
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className={`shadow-sm transition-all duration-200 ${
+                  search || active !== "all" || roles.length > 0
+                    ? "bg-green-600 hover:bg-green-700 text-white border-green-600"
+                    : "bg-background hover:bg-muted text-foreground border border-input"
+                }`}
+              >
+                <Filter className="mr-2 h-4 w-4" />
+                Filter
+              </Button>
               <Button
                 onClick={() => setShowCreateDialog(true)}
                 className="bg-primary hover:bg-primary/90 text-white shadow-sm transition-all duration-200 hover:shadow-md"
@@ -335,12 +353,13 @@ const UserList = () => {
                   {availableRoles.length > 0 ? (
                     <MultipleSelector
                       defaultOptions={availableRoles}
-                      selectedOptions={roles.map((role) => ({
+                      value={roles.map((role) => ({
                         label: formatRoleName(role),
                         value: role,
                       }))}
                       onChange={handleRoleChange}
-                     />
+                      placeholder="All Roles"
+                    />
                   ) : (
                     <div className="h-10 flex items-center text-gray-500">
                       <Loader className="mr-2 h-4 w-4 animate-spin" />

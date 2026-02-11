@@ -326,6 +326,7 @@ const AgencyList: React.FC = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="pl-6 w-[90px]">ID</TableHead>
                     <TableHead
                       className="pl-6 cursor-pointer hover:bg-muted/80 transition-colors w-[200px]"
                       onClick={() => handleSort("name")}
@@ -363,6 +364,7 @@ const AgencyList: React.FC = () => {
                 <TableBody>
                   {agencies.map((agency: Agency) => (
                     <TableRow key={agency.id}>
+                      <TableCell className="font-medium">{agency.id}</TableCell>
                       <TableCell className="font-medium">{agency.name}</TableCell>
                       <TableCell>{agency.mobile}</TableCell>
                       <TableCell>{agency.email}</TableCell>

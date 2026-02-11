@@ -527,27 +527,29 @@ const ManageSubscriptionPage: React.FC = () => {
                             : "bg-gray-50 border-gray-200 dark:bg-gray-700/30 dark:border-gray-600"
                       }`}
                   >
-                    <div className="flex items-center">
-                      {delivery.status === "SKIPPED" && (
-                        <XCircle className="h-5 w-5 mr-2 text-red-500 flex-shrink-0" />
-                      )}
-                      {delivery.status === "DELIVERED" && (
-                        <CheckCircle className="h-5 w-5 mr-2 text-green-500 flex-shrink-0" />
-                      )}
-                      {delivery.status === "NOT_DELIVERED" && (
-                        <XCircle className="h-5 w-5 mr-2 text-orange-500 flex-shrink-0" />
-                      )}
-                      {delivery.status === "CANCELLED" && (
-                        <XCircle className="h-5 w-5 mr-2 text-gray-400 flex-shrink-0" />
-                      )}
-                      {(delivery.status === "PENDING" ||
-                        delivery.status === "SCHEDULED") && (
-                          <CalendarDays className="h-5 w-5 mr-2 text-gray-500 flex-shrink-0" />
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-500 w-6">{index + 1}.</span>
+                      <div className="flex items-center">
+                        {delivery.status === "SKIPPED" && (
+                          <XCircle className="h-5 w-5 mr-2 text-red-500 flex-shrink-0" />
                         )}
-                      <div>
-                        <span className="font-medium text-gray-800 dark:text-gray-100">
-                          {format(delivery.date, "EEE, dd/MM/yyyy")}
-                        </span>
+                        {delivery.status === "DELIVERED" && (
+                          <CheckCircle className="h-5 w-5 mr-2 text-green-500 flex-shrink-0" />
+                        )}
+                        {delivery.status === "NOT_DELIVERED" && (
+                          <XCircle className="h-5 w-5 mr-2 text-orange-500 flex-shrink-0" />
+                        )}
+                        {delivery.status === "CANCELLED" && (
+                          <XCircle className="h-5 w-5 mr-2 text-gray-400 flex-shrink-0" />
+                        )}
+                        {(delivery.status === "PENDING" ||
+                          delivery.status === "SCHEDULED") && (
+                            <CalendarDays className="h-5 w-5 mr-2 text-gray-500 flex-shrink-0" />
+                          )}
+                        <div>
+                          <span className="font-medium text-gray-800 dark:text-gray-100">
+                            {format(delivery.date, "EEE, dd/MM/yyyy")}
+                          </span>
                         <span
                           className={`ml-2 text-xs font-semibold px-2 py-0.5 rounded-full ${delivery.status === "SKIPPED"
                               ? "bg-red-100 text-red-700 dark:bg-red-700 dark:text-red-100"
@@ -566,6 +568,7 @@ const ManageSubscriptionPage: React.FC = () => {
                           {getStatusLabel(delivery.status, delivery.originalStatus, delivery.date, today)}
                         </span>
                       </div>
+                    </div>
                     </div>
                     {isAfter(startOfDay(delivery.date), today) &&
                       (delivery.status === "PENDING" ||
