@@ -1400,81 +1400,98 @@ const AdminSubscriptionList: React.FC = () => {
         <h1 className="text-2xl font-bold">Admin - Subscriptions Management</h1>
         <div className="flex flex-wrap gap-2 mt-2">
           {/* Search by Member Name */}
-          <div className="flex items-center gap-2">
-            <UserIcon className="h-4 w-4 text-gray-500" />
-            <Input
-              type="text"
-              placeholder="Search by name..."
-              value={filters.memberName || ""}
-              onChange={(e) => {
-                const value = e.target.value;
-                setFilters(prev => ({ ...prev, memberName: value }));
-                setCurrentPage(1); // Reset to page 1 when changing filter
-              }}
-              className="w-48"
-            />
+          <div className="flex flex-col gap-1">
+            <Label className="text-xs font-medium text-gray-600">Search by Name</Label>
+            <div className="flex items-center gap-2">
+              <UserIcon className="h-4 w-4 text-gray-500" />
+              <Input
+                type="text"
+                placeholder="Search by name..."
+                value={filters.memberName || ""}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setFilters(prev => ({ ...prev, memberName: value }));
+                  setCurrentPage(1);
+                }}
+                className="w-48"
+              />
+            </div>
           </div>
 
-          <Button
-            variant={showUnassignedOnly ? "default" : "outline"}
-            onClick={() => {
-              setShowUnassignedOnly(!showUnassignedOnly);
-              setCurrentPage(1); // Reset to page 1 when toggling filter
-            }}
-            className="flex items-center gap-2"
-          >
-            <UserPlus className="h-4 w-4" />
-            {showUnassignedOnly ? "Show All" : "Unassigned Only"}
-          </Button>
+          {/* Unassigned Only Filter */}
+          <div className="flex flex-col gap-1">
+            <Label className="text-xs font-medium text-gray-600">Assignment</Label>
+            <Button
+              variant={showUnassignedOnly ? "default" : "outline"}
+              onClick={() => {
+                setShowUnassignedOnly(!showUnassignedOnly);
+                setCurrentPage(1);
+              }}
+              className="flex items-center gap-2"
+            >
+              <UserPlus className="h-4 w-4" />
+              {showUnassignedOnly ? "Show All" : "Unassigned Only"}
+            </Button>
+          </div>
 
           {/* Expiry Status Filter */}
-          <div className="flex items-center gap-2">
-            <CalendarIcon className="h-4 w-4 text-gray-500" />
-            <Select
-              value={filters.expiryStatus || "ALL"}
-              onValueChange={(value) => {
-                setFilters(prev => ({ ...prev, expiryStatus: value }));
-                setCurrentPage(1); // Reset to page 1 when changing filter
-              }}
-            >
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Expiry Status" />
-              </SelectTrigger>
-              <SelectContent> 
-                <SelectItem value="ALL">All</SelectItem>
-                <SelectItem value="ACTIVE">Active</SelectItem>
-                <SelectItem value="EXPIRING_SOON">Expiring Soon</SelectItem>
-                <SelectItem value="EXPIRED">Expired</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex flex-col gap-1">
+            <Label className="text-xs font-medium text-gray-600">Expiry Status</Label>
+            <div className="flex items-center gap-2">
+              <CalendarIcon className="h-4 w-4 text-gray-500" />
+              <Select
+                value={filters.expiryStatus || "ALL"}
+                onValueChange={(value) => {
+                  setFilters(prev => ({ ...prev, expiryStatus: value }));
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Expiry Status" />
+                </SelectTrigger>
+                <SelectContent> 
+                  <SelectItem value="ALL">All</SelectItem>
+                  <SelectItem value="ACTIVE">Active</SelectItem>
+                  <SelectItem value="EXPIRING_SOON">Expiring Soon</SelectItem>
+                  <SelectItem value="EXPIRED">Expired</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Days Until Expiry Filter */}
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-gray-500" />
-            <Input
-              type="number"
-              placeholder="Days until expiry"
-              value={filters.expiringInDays || ""}
-              onChange={(e) => {
-                const value = e.target.value;
-                setFilters(prev => ({ ...prev, expiringInDays: value }));
-                setCurrentPage(1); // Reset to page 1 when changing filter
-              }}
-              className="w-40"
-              min="0"
-              max="365"
-            />
+          <div className="flex flex-col gap-1">
+            <Label className="text-xs font-medium text-gray-600">Days Until Expiry</Label>
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-gray-500" />
+              <Input
+                type="number"
+                placeholder="Enter days"
+                value={filters.expiringInDays || ""}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setFilters(prev => ({ ...prev, expiringInDays: value }));
+                  setCurrentPage(1);
+                }}
+                className="w-32"
+                min="0"
+                max="365"
+              />
+            </div>
           </div>
 
-          <Button
-            variant="outline"
-            onClick={() => setIsBulkAssignModalOpen(true)}
-            className="flex items-center gap-2"
-          >
-            <Users className="h-4 w-4" />
-            Bulk Assign Agencies
-          </Button>
+          {/* Bulk Assign Button */}
+          <div className="flex flex-col gap-1">
+            <Label className="text-xs font-medium text-gray-600">Bulk Actions</Label>
+            <Button
+              variant="outline"
+              onClick={() => setIsBulkAssignModalOpen(true)}
+              className="flex items-center gap-2"
+            >
+              <Users className="h-4 w-4" />
+              Bulk Assign Agencies
+            </Button>
+          </div>
         </div>
       </div>
 
