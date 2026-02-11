@@ -5,7 +5,7 @@
 
 :root {
   --radius: 0.65rem;
-  --background:oklch(0.9853 0.0029 84.56);
+  --background: oklch(0.9853 0.0029 84.56);
   --foreground: oklch(0.141 0.005 285.823);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.141 0.005 285.823);
@@ -41,37 +41,37 @@
 
 .dark {
   --radius: 0.65rem;
-  --background:oklch(0.9853 0.0029 84.56);
-  --foreground: oklch(0.141 0.005 285.823);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.141 0.005 285.823);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.141 0.005 285.823);
-  --primary: oklch(0.5123 0.1601 23.15);
+  --background: oklch(0.145 0.005 285.823);
+  --foreground: oklch(0.93 0.003 264.54);
+  --card: oklch(0.205 0.006 285.885);
+  --card-foreground: oklch(0.93 0.003 264.54);
+  --popover: oklch(0.205 0.006 285.885);
+  --popover-foreground: oklch(0.93 0.003 264.54);
+  --primary: oklch(0.6135 0.2023 21.52);
   --primary-foreground: oklch(0.971 0.013 17.38);
-  --secondary: oklch(0.1867 0 0);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.8822 0 0);
-  --accent-foreground: oklch(0.8822 0 0);
+  --secondary: oklch(0.269 0.007 286.375);
+  --secondary-foreground: oklch(0.93 0.003 264.54);
+  --muted: oklch(0.269 0.007 286.375);
+  --muted-foreground: oklch(0.63 0.016 285.938);
+  --accent: oklch(0.269 0.007 286.375);
+  --accent-foreground: oklch(0.93 0.003 264.54);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.5123 0.1601 23.15);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
+  --border: oklch(0.30 0.006 286.32);
+  --input: oklch(0.30 0.006 286.32);
+  --ring: oklch(0.6135 0.2023 21.52);
+  --chart-1: oklch(0.696 0.222 41.116);
+  --chart-2: oklch(0.65 0.118 184.704);
+  --chart-3: oklch(0.498 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.98 0.01 240);
-  --sidebar-foreground: oklch(0.3 0.15 240);
-  --sidebar-primary: oklch(0.5 0.25 240);
-  --sidebar-primary-foreground: oklch(0.98 0.01 240);
-  --sidebar-accent: oklch(0.95 0.03 240);
-  --sidebar-accent-foreground: oklch(0.2 0.2 240);
-  --sidebar-border: oklch(0.9 0.05 240);
-  --sidebar-ring: oklch(0.5 0.25 240);
+  --sidebar: oklch(0.18 0.005 285.823);
+  --sidebar-foreground: oklch(0.85 0.01 240);
+  --sidebar-primary: oklch(0.6 0.25 240);
+  --sidebar-primary-foreground: oklch(0.93 0.003 264.54);
+  --sidebar-accent: oklch(0.25 0.01 240);
+  --sidebar-accent-foreground: oklch(0.85 0.01 240);
+  --sidebar-border: oklch(0.28 0.01 240);
+  --sidebar-ring: oklch(0.6 0.25 240);
 }
 
 
@@ -122,6 +122,7 @@
     from {
       height: 0;
     }
+
     to {
       height: var(--radix-accordion-content-height);
     }
@@ -131,6 +132,7 @@
     from {
       height: var(--radix-accordion-content-height);
     }
+
     to {
       height: 0;
     }
@@ -141,67 +143,265 @@
   * {
     @apply border-border outline-ring/50 font-sans;
   }
+
   html {
     font-family: 'Roboto', system-ui, sans-serif;
     @apply overflow-x-hidden;
   }
+
   body {
     @apply bg-background text-foreground font-sans overflow-x-hidden;
     font-family: 'Roboto', system-ui, sans-serif !important;
   }
-  h1, h2, h3, h4, h5, h6 {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-sans;
     font-family: 'Roboto', system-ui, sans-serif !important;
     font-weight: 600;
   }
+
   h1 {
     font-weight: 700;
   }
+
   p {
     @apply font-sans;
     font-family: 'Roboto', system-ui, sans-serif !important;
   }
-  button, .button {
+
+  button,
+  .button {
     @apply font-sans;
     font-family: 'Roboto', system-ui, sans-serif !important;
   }
-  input, textarea, select {
+
+  input,
+  textarea,
+  select {
     font-family: 'Roboto', system-ui, sans-serif !important;
   }
+
   label {
     font-family: 'Roboto', system-ui, sans-serif !important;
   }
-  span, div, section, article, aside, nav, header, footer {
+
+  span,
+  div,
+  section,
+  article,
+  aside,
+  nav,
+  header,
+  footer {
     font-family: 'Roboto', system-ui, sans-serif !important;
   }
+
   /* Add radial gradient overlay in dark mode */
   body.dark {
-    background-image: radial-gradient(
-      circle at top left,
-      oklch(0.18 0 0) 0%,
-      transparent 25%
-    );
+    background-image: radial-gradient(circle at top left,
+        oklch(0.18 0 0) 0%,
+        transparent 25%);
     background-attachment: fixed;
   }
+
   button:not([disabled]),
   [role="button"]:not([disabled]) {
     cursor: pointer;
   }
+
   a {
-    cursor: pointer; /* Add pointer cursor for links */
+    cursor: pointer;
+    /* Add pointer cursor for links */
     @apply font-sans;
     font-family: 'Roboto', system-ui, sans-serif !important;
   }
+
   div[role="menuitem"] {
-    cursor: pointer !important; /* Add pointer cursor for menu items */
+    cursor: pointer !important;
+    /* Add pointer cursor for menu items */
+  }
+}
+
+/* =============================================
+   Global Dark Mode Overrides
+   =============================================
+   These rules automatically remap hardcoded Tailwind utility classes 
+   (bg-white, text-gray-*, border-gray-*, etc.) to dark equivalents
+   when the .dark class is active on <html>. This ensures consistent 
+   dark mode across ALL pages without needing dark: variants on each.
+   ============================================= */
+.dark {
+
+  /* ----- Background overrides ----- */
+  .bg-white {
+    background-color: oklch(0.205 0.006 285.885) !important;
+    /* dark card bg */
+  }
+
+  .bg-gray-50 {
+    background-color: oklch(0.18 0.005 285.823) !important;
+  }
+
+  .bg-gray-100 {
+    background-color: oklch(0.22 0.006 285.885) !important;
+  }
+
+  .bg-gray-200 {
+    background-color: oklch(0.26 0.007 286.375) !important;
+  }
+
+  .bg-slate-50 {
+    background-color: oklch(0.18 0.005 285.823) !important;
+  }
+
+  .bg-slate-100 {
+    background-color: oklch(0.22 0.006 285.885) !important;
+  }
+
+  /* ----- Text color overrides ----- */
+  .text-gray-900 {
+    color: oklch(0.93 0.003 264.54) !important;
+  }
+
+  .text-gray-800 {
+    color: oklch(0.87 0.005 264.54) !important;
+  }
+
+  .text-gray-700 {
+    color: oklch(0.80 0.008 264.54) !important;
+  }
+
+  .text-gray-600 {
+    color: oklch(0.72 0.01 264.54) !important;
+  }
+
+  .text-gray-500 {
+    color: oklch(0.65 0.012 264.54) !important;
+  }
+
+  .text-gray-400 {
+    color: oklch(0.58 0.012 264.54) !important;
+  }
+
+  .text-slate-900 {
+    color: oklch(0.93 0.003 264.54) !important;
+  }
+
+  .text-slate-800 {
+    color: oklch(0.87 0.005 264.54) !important;
+  }
+
+  .text-slate-700 {
+    color: oklch(0.80 0.008 264.54) !important;
+  }
+
+  .text-slate-600 {
+    color: oklch(0.72 0.01 264.54) !important;
+  }
+
+  .text-slate-500 {
+    color: oklch(0.65 0.012 264.54) !important;
+  }
+
+  .text-black {
+    color: oklch(0.93 0.003 264.54) !important;
+  }
+
+  /* ----- Border color overrides ----- */
+  .border-gray-100 {
+    border-color: oklch(0.28 0.007 286.375) !important;
+  }
+
+  .border-gray-200 {
+    border-color: oklch(0.30 0.006 286.32) !important;
+  }
+
+  .border-gray-300 {
+    border-color: oklch(0.33 0.008 286.375) !important;
+  }
+
+  .border-slate-200 {
+    border-color: oklch(0.30 0.006 286.32) !important;
+  }
+
+  .border-slate-300 {
+    border-color: oklch(0.33 0.008 286.375) !important;
+  }
+
+  /* ----- Divide color overrides ----- */
+  .divide-gray-200> :not([hidden])~ :not([hidden]) {
+    border-color: oklch(0.30 0.006 286.32) !important;
+  }
+
+  /* ----- Shadow adjustments ----- */
+  .shadow-sm,
+  .shadow,
+  .shadow-md,
+  .shadow-lg {
+    --tw-shadow-color: oklch(0 0 0 / 0.3);
+  }
+
+  /* ----- Ring overrides ----- */
+  .ring-gray-200,
+  .ring-gray-300 {
+    --tw-ring-color: oklch(0.30 0.006 286.32) !important;
+  }
+
+  /* ----- Input / form overrides ----- */
+  input:not([type="checkbox"]):not([type="radio"]):not([class*="dark:"]),
+  textarea:not([class*="dark:"]),
+  select:not([class*="dark:"]) {
+    background-color: oklch(0.22 0.006 285.885);
+    color: oklch(0.93 0.003 264.54);
+    border-color: oklch(0.33 0.008 286.375);
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: oklch(0.55 0.012 264.54);
+  }
+
+  /* ----- Hover state overrides ----- */
+  .hover\:bg-gray-50:hover {
+    background-color: oklch(0.25 0.006 285.885) !important;
+  }
+
+  .hover\:bg-gray-100:hover {
+    background-color: oklch(0.28 0.006 285.885) !important;
+  }
+
+  /* ----- Table overrides ----- */
+  table,
+  thead,
+  tbody,
+  tr,
+  th,
+  td {
+    border-color: oklch(0.30 0.006 286.32);
+  }
+
+  thead {
+    background-color: oklch(0.18 0.005 285.823);
+  }
+
+  th {
+    color: oklch(0.80 0.008 264.54);
   }
 }
 
 /* Custom animations for subscription modal savings */
 @keyframes gradient-x {
-  0%, 100% {
+
+  0%,
+  100% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
@@ -216,14 +416,13 @@
   .skeleton {
     @apply relative isolate overflow-hidden rounded-md bg-skeleton;
   }
+
   .skeleton::after {
     @apply absolute inset-0 -translate-x-full;
-    background-image: linear-gradient(
-      90deg,
-      transparent 0%,
-      var(--color-skeleton-highlight) 50%,
-      transparent 100%
-    );
+    background-image: linear-gradient(90deg,
+        transparent 0%,
+        var(--color-skeleton-highlight) 50%,
+        transparent 100%);
     animation: skeleton-loading 1.5s infinite;
     content: "";
   }
@@ -240,25 +439,25 @@
   .text-primary {
     color: var(--primary) !important;
   }
-  
+
   .bg-primary {
     background-color: var(--primary) !important;
   }
-  
+
   .border-primary {
     border-color: var(--primary) !important;
   }
-  
+
   /* Ensure primary colors are not overridden on any screen size */
   @media screen and (max-width: 768px) {
     .text-primary {
       color: var(--primary) !important;
     }
-    
+
     .bg-primary {
       background-color: var(--primary) !important;
     }
-    
+
     .border-primary {
       border-color: var(--primary) !important;
     }
@@ -281,15 +480,16 @@
       white-space: nowrap;
       max-width: calc(100% - 32px);
     }
-    
+
     /* Fix table overflow issues on mobile */
     .table-container {
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
     }
-    
+
     /* Improve touch targets for mobile */
-    button, [role="button"] {
+    button,
+    [role="button"] {
       min-height: 44px;
       min-width: 44px;
     }

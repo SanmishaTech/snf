@@ -9,6 +9,7 @@ import {
   Package,
   Leaf,
 } from "lucide-react"; // Removed User, Clock, Added Leaf
+import { useTheme } from "next-themes";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -41,13 +42,7 @@ interface Product {
 export default function MemberLayout({ children }: MemberLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme) {
-      return savedTheme === "dark";
-    }
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
-  });
+  const { setTheme, resolvedTheme } = useTheme();
 
   const storedUserData = localStorage.getItem("user");
   const userData = storedUserData ? JSON.parse(storedUserData) : null;
@@ -57,9 +52,7 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
   const [userName, setUserName] = useState<string | undefined>(initialName);
   const showWallet = isLoggedIn && role === "MEMBER";
 
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", isDarkMode);
-  }, [isDarkMode]);
+
 
   useEffect(() => {
     // Listen for storage changes to update login state (e.g., if user logs out in another tab)
@@ -71,9 +64,9 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
       setIsLoggedIn(!!currentUserData);
       setUserName(
         currentUserData?.name ||
-          currentUserData?.username ||
-          currentUserData?.email ||
-          null
+        currentUserData?.username ||
+        currentUserData?.email ||
+        null
       );
     };
 
@@ -132,23 +125,8 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
     }
   }, [userData, navigate, location.pathname]);
 
-  // Effect to listen for system preference changes
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const handleChange = (e: MediaQueryListEvent) => {
-      if (!localStorage.getItem("theme")) {
-        setIsDarkMode(e.matches);
-      }
-    };
-
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
-  }, []);
-
   const toggleDarkMode = () => {
-    const newDarkMode = !isDarkMode;
-    setIsDarkMode(newDarkMode);
-    localStorage.setItem("theme", newDarkMode ? "dark" : "light");
+    setTheme(resolvedTheme === "dark" ? "light" : "dark");
   };
 
   const handleLogout = () => {

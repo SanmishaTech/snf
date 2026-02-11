@@ -1,13 +1,14 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import React, { useState, useEffect } from "react"; // Added React import
 import { Sun, Moon, LogOut, Settings, Repeat } from "lucide-react"; // Removed User, Clock
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,      
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -30,24 +31,11 @@ interface Product {
 export default function MemberLayout({ children }: MemberLayoutProps) { // Destructure children from props
   const location = useLocation();
   const navigate = useNavigate();
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    // Check localStorage first
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme) {
-      return savedTheme === "dark";
-    }
-    // If no saved preference, check system preference
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
-  });
+  const { setTheme, resolvedTheme } = useTheme();
 
   // Retrieve user data from localStorage
   const storedUserData = localStorage.getItem("user");
   const userData = storedUserData ? JSON.parse(storedUserData) : null;
-  
-  // Effect to sync dark mode state with HTML class
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", isDarkMode);
-  }, [isDarkMode]);
 
   // Effect to redirect to the first product or products page
   useEffect(() => {
@@ -63,7 +51,7 @@ export default function MemberLayout({ children }: MemberLayoutProps) { // Destr
         // Assuming get('/products') returns an object like { data: Product[] } or Product[] directly
         // Adjust based on your actual API response structure
         const response = await get('/products') as { data?: Product[] } | Product[];
-        
+
         let products: Product[] = [];
         if (Array.isArray(response)) {
           products = response;
@@ -89,29 +77,14 @@ export default function MemberLayout({ children }: MemberLayoutProps) { // Destr
     // Only attempt redirect if not already on a product-related page
     // This check is important if the user lands on /dashboard initially
     if (location.pathname === '/dashboard' || !location.pathname.startsWith('/member/')) {
-        // Or any other logic to determine if it's an initial member area entry point
-        fetchAndRedirect();
+      // Or any other logic to determine if it's an initial member area entry point
+      fetchAndRedirect();
     }
 
   }, [userData, navigate, location.pathname]);
 
-  // Effect to listen for system preference changes
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const handleChange = (e: MediaQueryListEvent) => {
-      if (!localStorage.getItem("theme")) {
-        setIsDarkMode(e.matches);
-      }
-    };
-
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
-  }, []);
-
   const toggleDarkMode = () => {
-    const newDarkMode = !isDarkMode;
-    setIsDarkMode(newDarkMode);
-    localStorage.setItem("theme", newDarkMode ? "dark" : "light");
+    setTheme(resolvedTheme === "dark" ? "light" : "dark");
   };
 
   const handleLogout = () => {
@@ -121,7 +94,7 @@ export default function MemberLayout({ children }: MemberLayoutProps) { // Destr
     localStorage.removeItem("user");
     localStorage.removeItem("roles");
     localStorage.removeItem("memberId");
-    
+
     toast.success("You have been logged out");
     navigate("/");
   };
@@ -157,7 +130,7 @@ export default function MemberLayout({ children }: MemberLayoutProps) { // Destr
               <Home className="h-5 w-5 mr-2" />
               Dashboard
             </Button> */}
-         
+
             {/* <Button variant="ghost" onClick={() => navigate("/member/products")}>
               <Package className="h-5 w-5 mr-2" />
               Products
@@ -179,7 +152,7 @@ export default function MemberLayout({ children }: MemberLayoutProps) { // Destr
               size="icon"
               aria-label="Toggle Dark Mode"
             >
-              {isDarkMode ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+              {resolvedTheme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
 
             {/* User dropdown */}
@@ -198,11 +171,11 @@ export default function MemberLayout({ children }: MemberLayoutProps) { // Destr
                     <p className="text-xs leading-none text-muted-foreground">{userData?.email}</p>
                   </div>
                 </DropdownMenuLabel>
-                
-                 
-                
+
+
+
                 <DropdownMenuSeparator />
-{/*                 
+                {/*                 
                 <DropdownMenuItem onClick={() => navigate("/member/profile")}>
                   <User className="mr-2 h-4 w-4" />
                   <span>Profile</span>
@@ -216,9 +189,9 @@ export default function MemberLayout({ children }: MemberLayoutProps) { // Destr
                   <Repeat className="mr-2 h-4 w-4" />
                   <span>My Subscriptions</span>
                 </DropdownMenuItem>
-                
+
                 <DropdownMenuSeparator />
-                
+
                 <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Logout</span>
@@ -233,7 +206,7 @@ export default function MemberLayout({ children }: MemberLayoutProps) { // Destr
       <main className="flex-grow container mx-auto px-4 py-6 ml-4">
         {children || <Outlet />}
       </main>
-      
+
       {/* Footer */}
       <footer className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-4 ml-4">
         <div className="container mx-auto px-4 text-center text-sm text-gray-500 dark:text-gray-400 ml-4">

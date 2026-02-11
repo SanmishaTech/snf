@@ -189,13 +189,13 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      
+
       // Always keep header visible
       setHeaderVisible(true);
-      
+
       // Only change scrolled state for styling (shadow effects)
       setScrolled(currentScrollY > 10);
-      
+
       lastScrollY.current = currentScrollY;
     };
 
@@ -225,47 +225,46 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
   // Mobile menu will stay open/closed based on user interaction only
 
   return (
-<header
-  ref={headerRef}
-  className={`fixed top-0 w-full z-50 transition-all duration-500 ease-out ${
-    headerVisible ? 'translate-y-0' : '-translate-y-full'
-  } ${scrolled ? 'shadow-lg' : 'shadow-sm'} pt-[env(safe-area-inset-top)]`}
->
+    <header
+      ref={headerRef}
+      className={`fixed top-0 w-full z-50 transition-all duration-500 ease-out ${headerVisible ? 'translate-y-0' : '-translate-y-full'
+        } ${scrolled ? 'shadow-lg' : 'shadow-sm'} pt-[env(safe-area-inset-top)]`}
+    >
       {/* Top Bar */}
-      <div className="bg-white transition-colors duration-300">
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="flex justify-between items-center py-2 sm:py-2.5">
-        {/* Logo */}
-        <Link to="/" className="flex items-center">
-          <img src={Indraipng} alt="Logo" className="h-8 sm:h-10 w-auto object-contain mr-2" />
-        </Link>
+      <div className="bg-white dark:bg-gray-900 transition-colors duration-300">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-2 sm:py-2.5">
+            {/* Logo */}
+            <Link to="/" className="flex items-center">
+              <img src={Indraipng} alt="Logo" className="h-8 sm:h-10 w-auto object-contain mr-2" />
+            </Link>
 
-             {/* Right side: Social Icons & Top Links */}
-             <div className="flex items-center space-x-3 sm:space-x-4">
+            {/* Right side: Social Icons & Top Links */}
+            <div className="flex items-center space-x-3 sm:space-x-4">
               <a href="/" aria-label="Sarkhot Logo" className="hidden sm:inline-flex">
                 <img src={Sarkotlogo} alt="Sarkhot Logo" className="h-8 w-auto object-contain" />
               </a>
-             <a
-             target="_blank" 
-             rel="noopener noreferrer"
-             aria-label="Facebook" 
-             href="https://www.facebook.com/sarkhotnaturalfarms" className="hidden sm:inline-flex text-gray-500 hover:text-green-600 transition-colors"
->
+              <a
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Facebook"
+                href="https://www.facebook.com/sarkhotnaturalfarms" className="hidden sm:inline-flex text-gray-500 dark:text-gray-400 hover:text-green-600 transition-colors"
+              >
                 <Facebook size={18} />
               </a>
               <a
-             target="_blank" 
-             rel="noopener noreferrer"
-             aria-label="Instagram" 
-             href="https://www.instagram.com/sarkhotnaturalfarms/" className="hidden sm:inline-flex text-gray-500 hover:text-amber-600 transition-colors"
->
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram"
+                href="https://www.instagram.com/sarkhotnaturalfarms/" className="hidden sm:inline-flex text-gray-500 dark:text-gray-400 hover:text-amber-600 transition-colors"
+              >
                 <Instagram size={18} />
               </a>
               <span className="hidden sm:block border-l border-gray-300 h-6 mx-2"></span>
-              
+
               {/* Notification Bell - Only for logged in MEMBER users */}
               {isLoggedIn && userRole === 'MEMBER' && (
-                <div 
+                <div
                   className="relative"
                   onMouseEnter={() => {
                     if (notificationDropdownTimeoutId.current) clearTimeout(notificationDropdownTimeoutId.current);
@@ -280,7 +279,7 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
                   }}
                 >
                   <button
-                    className="relative flex items-center text-gray-700 hover:text-green-600 transition-colors p-1"
+                    className="relative flex items-center text-gray-700 dark:text-gray-300 hover:text-green-600 transition-colors p-1"
                     onClick={() => {
                       const next = !isNotificationDropdownOpen;
                       setIsNotificationDropdownOpen(next);
@@ -297,11 +296,11 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
                       </span>
                     )}
                   </button>
-                  
+
                   {/* Notification Dropdown */}
                   {isNotificationDropdownOpen && (
-                    <div 
-                      className="absolute right-0 mt-1 w-80 bg-white rounded-md shadow-lg py-2 z-50 border border-gray-100"
+                    <div
+                      className="absolute right-0 mt-1 w-80 bg-white dark:bg-gray-800 rounded-md shadow-lg py-2 z-50 border border-gray-100 dark:border-gray-700"
                       onMouseEnter={() => {
                         if (notificationDropdownTimeoutId.current) clearTimeout(notificationDropdownTimeoutId.current);
                       }}
@@ -311,8 +310,8 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
                         }, 200);
                       }}
                     >
-                      <div className="px-4 py-2 border-b border-gray-100">
-                        <h3 className="text-sm font-semibold text-gray-800">
+                      <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700">
+                        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
                           Notifications
                           {expiringSubscriptions.length > 0 && (
                             <span className="ml-2 bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">
@@ -351,7 +350,7 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
                                     return (
                                       <div
                                         key={sub.id}
-                                        className="px-4 py-3 hover:bg-amber-50 border-b border-gray-50 last:border-b-0 cursor-pointer"
+                                        className="px-4 py-3 hover:bg-amber-50 dark:hover:bg-gray-700 border-b border-gray-50 dark:border-gray-700 last:border-b-0 cursor-pointer"
                                         onClick={() => {
                                           navigate(`/manage-subscription/${sub.id}`);
                                           setIsNotificationDropdownOpen(false);
@@ -368,13 +367,13 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
                                         <div className="flex items-start">
                                           <div className="flex-shrink-0 w-2 h-2 bg-amber-500 rounded-full mt-2 mr-3"></div>
                                           <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-gray-900 truncate">
+                                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                                               {sub.product.name}
                                             </p>
-                                            <p className="text-xs text-gray-600 mt-1">
+                                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                                               Expires {daysLeft === 0 ? 'today' : daysLeft === 1 ? 'tomorrow' : `in ${daysLeft} days`}
                                             </p>
-                                            <p className="text-xs text-gray-500">
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">
                                               {format(parseISO(effectiveExpiryDate), 'dd/MM/yyyy')}
                                               {typeof sub.qty === 'number' && (
                                                 <span className="ml-2 text-gray-400">• Qty: {sub.qty} {sub.product.depotVariant?.unit || sub.product.unit || ''}</span>
@@ -420,9 +419,9 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
                   )}
                 </div>
               )}
-              
+
               {isLoggedIn ? (
-                <div 
+                <div
                   className="relative"
                   onMouseEnter={() => {
                     if (accountDropdownTimeoutId.current) clearTimeout(accountDropdownTimeoutId.current);
@@ -434,15 +433,15 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
                     }, 200);
                   }}
                 >
-                  <button className="flex items-center text-sm text-gray-700 hover:text-green-600 transition-colors">
+                  <button className="flex items-center text-sm text-gray-700 dark:text-gray-300 hover:text-green-600 transition-colors">
                     <div className="bg-gradient-to-r from-green-500 to-amber-500 rounded-full p-0.5 mr-1">
                       <UserCircle size={18} className="text-white bg-gray-100 rounded-full" />
                     </div>
                     <span className="hidden sm:inline">Account</span>
                   </button>
                   {isAccountDropdownOpen && onLogout && (
-                    <div 
-                      className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-100"
+                    <div
+                      className="absolute right-0 mt-1 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-50 border border-gray-100 dark:border-gray-700"
                       onMouseEnter={() => {
                         if (accountDropdownTimeoutId.current) clearTimeout(accountDropdownTimeoutId.current);
                       }}
@@ -453,26 +452,26 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
                       }}
                     >
                       {userName && (
-                        <div className="px-4 py-2 border-b border-gray-100">
-                          <p className="text-xs text-gray-500">Signed in as</p>
-                          <p className="text-sm font-medium text-gray-800 truncate">{userName}</p>
+                        <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Signed in as</p>
+                          <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{userName}</p>
                         </div>
                       )}
-                    
+
                       {userRole !== 'ADMIN' && (
-                        <Link 
-                          to="/member/subscriptions" 
-                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50 transition-colors" 
+                        <Link
+                          to="/member/subscriptions"
+                          className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-gray-700 transition-colors"
                           onClick={() => setIsAccountDropdownOpen(false)}
                         >
                           <ShoppingBag size={16} className="mr-2 text-green-600" />
                           My Subscriptions
                         </Link>
                       )}
-                        {userRole === 'MEMBER' && (
-                        <Link 
-                          to="/member/addresses" 
-                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50 transition-colors" 
+                      {userRole === 'MEMBER' && (
+                        <Link
+                          to="/member/addresses"
+                          className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-gray-700 transition-colors"
                           onClick={() => setIsAccountDropdownOpen(false)}
                         >
                           <ShoppingBag size={16} className="mr-2 text-green-600" />
@@ -480,20 +479,20 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
                         </Link>
                       )}
                       {userRole === 'MEMBER' && (
-                        <button 
-                          onClick={() => { 
-                            setIsChangePasswordDialogOpen(true); 
-                            setIsAccountDropdownOpen(false); 
+                        <button
+                          onClick={() => {
+                            setIsChangePasswordDialogOpen(true);
+                            setIsAccountDropdownOpen(false);
                           }}
-                          className="w-full flex items-center text-left px-4 py-2 text-sm text-gray-700 hover:bg-green-50 transition-colors"
+                          className="w-full flex items-center text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-gray-700 transition-colors"
                         >
                           <KeyRound size={16} className="mr-2 text-green-600" />
                           Change Password
                         </button>
                       )}
-                      <button 
+                      <button
                         onClick={() => { onLogout(); setIsAccountDropdownOpen(false); }}
-                        className="w-full flex items-center text-left px-4 py-2 text-sm text-gray-700 hover:bg-red-50 transition-colors"
+                        className="w-full flex items-center text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-gray-700 transition-colors"
                       >
                         <LogOut size={16} className="mr-2 text-red-500" />
                         Sign out
@@ -502,39 +501,39 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
                   )}
                 </div>
               ) : (
-                <Link to="/login" className="text-sm text-gray-700 hover:text-green-600 transition-colors flex items-center">
+                <Link to="/login" className="text-sm text-gray-700 dark:text-gray-300 hover:text-green-600 transition-colors flex items-center">
                   <div className="bg-gradient-to-r from-green-500 to-amber-500 rounded-full p-0.5 mr-1">
                     <UserCircle size={18} className="text-white bg-gray-100 rounded-full" />
                   </div>
                   <span className="hidden sm:inline">Account</span>
                 </Link>
               )}
-             </div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Main Navigation Bar */}
       <div className="bg-primary transition-colors duration-300">
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="flex justify-between items-center py-2.5 sm:py-3">
-        {/* Desktop Navigation Links - WHITE AND BOLD */}
-        <div className="hidden md:flex space-x-6 items-center">
-          {navLinks.map((link) => (
-            <Link 
-              key={link.name} 
-              to={link.path} 
-              className="text-white font-semibold hover:text-white/90 transition-colors relative group"
-            >
-              {link.name}
-              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-white transition-all duration-300 group-hover:w-full"></span>
-            </Link>
-          ))}
-        </div>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-2.5 sm:py-3">
+            {/* Desktop Navigation Links - WHITE AND BOLD */}
+            <div className="hidden md:flex space-x-6 items-center">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.name}
+                  to={link.path}
+                  className="text-white font-semibold hover:text-white/90 transition-colors relative group"
+                >
+                  {link.name}
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-white transition-all duration-300 group-hover:w-full"></span>
+                </Link>
+              ))}
+            </div>
 
             {/* Search Bar & Cart */}
             <div className="flex items-center space-x-3 sm:space-x-4">
-            {/* <div className="relative hidden sm:block">
+              {/* <div className="relative hidden sm:block">
                 <input 
                   type="search" 
                   placeholder="Search products..." 
@@ -547,13 +546,13 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
 
             {/* Mobile Menu Button */}
             <div className="md:hidden flex items-center">
-            <button 
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
-            className={`p-2 rounded-full transition-colors text-white hover:bg-white/20 ${mobileMenuOpen ? 'bg-white/20' : ''}`}
-            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-          >
-            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className={`p-2 rounded-full transition-colors text-white hover:bg-white/20 ${mobileMenuOpen ? 'bg-white/20' : ''}`}
+                aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              >
+                {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              </button>
             </div>
           </div>
         </div>
@@ -561,23 +560,23 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white border-t border-gray-200 shadow-inner max-h-[calc(100vh-var(--header-height))] overflow-y-auto overscroll-contain">
+        <div className="md:hidden bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-inner max-h-[calc(100vh-var(--header-height))] overflow-y-auto overscroll-contain">
           <div className="container mx-auto px-4 py-4 space-y-2">
             <div className="mb-3">
               <div className="relative">
-                <input 
-                  type="search" 
-                  placeholder="Search products..." 
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full text-sm focus:ring-2 focus:ring-green-300 focus:border-green-500"
+                <input
+                  type="search"
+                  placeholder="Search products..."
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 rounded-full text-sm focus:ring-2 focus:ring-green-300 focus:border-green-500"
                 />
                 <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               </div>
             </div>
             {navLinks.map((link) => (
-              <Link 
-                key={link.name} 
-                to={link.path} 
-                className="block py-3 px-4 text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors flex items-center group"
+              <Link
+                key={link.name}
+                to={link.path}
+                className="block py-3 px-4 text-gray-700 dark:text-gray-300 hover:text-green-600 hover:bg-green-50 dark:hover:bg-gray-800 rounded-lg transition-colors flex items-center group"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <span className="w-1.5 h-1.5 bg-primary rounded-full mr-3 opacity-0 group-hover:opacity-100 transition-opacity"></span>
@@ -585,17 +584,17 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
               </Link>
             ))}
             {isLoggedIn && onLogout ? (
-              <button 
+              <button
                 onClick={() => { onLogout(); setMobileMenuOpen(false); }}
-                className="w-full text-left block py-3 px-4 text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center group"
+                className="w-full text-left block py-3 px-4 text-gray-700 dark:text-gray-300 hover:text-red-600 hover:bg-red-50 dark:hover:bg-gray-800 rounded-lg transition-colors flex items-center group"
               >
                 <span className="w-1.5 h-1.5 bg-red-500 rounded-full mr-3 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                 <LogOut size={16} className="mr-2" /> Sign out
               </button>
             ) : (
-              <Link 
-                to="/login" 
-                className="block py-3 px-4 text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors flex items-center group"
+              <Link
+                to="/login"
+                className="block py-3 px-4 text-gray-700 dark:text-gray-300 hover:text-green-600 hover:bg-green-50 dark:hover:bg-gray-800 rounded-lg transition-colors flex items-center group"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <span className="w-1.5 h-1.5 bg-primary rounded-full mr-3 opacity-0 group-hover:opacity-100 transition-opacity"></span>
@@ -605,13 +604,13 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
           </div>
         </div>
       )}
-      
+
       {/* Change Password Dialog */}
-      		<UserChangePasswordDialog
+      <UserChangePasswordDialog
         isOpen={isChangePasswordDialogOpen}
         onClose={() => setIsChangePasswordDialogOpen(false)}
       />
-      </header>
+    </header>
   );
 };
 
