@@ -16,7 +16,8 @@ const API_URL = backendUrl;
 
 type RevenueReportRow = {
   name: string;
-  memberId: number | string;
+  memberUniqueId?: string;
+  memberId?: number | string;
   saleAmount: number;
   refundAmount?: number;
   netAmount?: number;
@@ -103,7 +104,7 @@ export default function RevenueReport() {
       ...rows,
       {
         name: "TOTAL",
-        memberId: "",
+        memberUniqueId: "",
         saleAmount: totalSaleAmount,
         refundAmount: totalRefundAmount,
         netAmount: totalNetAmount,
@@ -120,7 +121,7 @@ export default function RevenueReport() {
     const worksheet = XLSX.utils.json_to_sheet(
       exportRows.map((r) => ({
         Name: r.name,
-        "Member ID": r.memberId,
+        "Member Unique Id": r.memberUniqueId || "",
         "Sale Amount": Number(r.saleAmount || 0),
         "Refund Amount": Number(r.refundAmount || 0),
         "Net Amount": Number(r.netAmount || 0),
@@ -215,7 +216,7 @@ export default function RevenueReport() {
               <TableHeader className="sticky top-0 z-10 bg-card shadow-sm">
                 <TableRow>
                   <TableHead>Name</TableHead>
-                  <TableHead>Member ID</TableHead>
+                  <TableHead>Member Unique Id</TableHead>
                   <TableHead className="text-right">Sale Amount</TableHead>
                   <TableHead className="text-right">Refund</TableHead>
                   <TableHead className="text-right">Net Amount</TableHead>
@@ -245,7 +246,7 @@ export default function RevenueReport() {
                     {rows.map((r, idx) => (
                       <TableRow key={`${r.memberId}-${idx}`} className="hover:bg-gray-50">
                         <TableCell>{r.name || "-"}</TableCell>
-                        <TableCell>{r.memberId || "-"}</TableCell>
+                        <TableCell>{r.memberUniqueId || "-"}</TableCell>
                         <TableCell className="text-right">
                           ₹{Number(r.saleAmount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                         </TableCell>

@@ -19,6 +19,7 @@ const API_URL = backendUrl;
 type WalletReportRow = {
   name: string;
   memberId: number | string;
+  memberUniqueId?: string;
   memberStatus?: string;
   mobile: string;
   currentVariant?: string;
@@ -96,6 +97,7 @@ export default function WalletReport() {
       {
         name: "TOTAL",
         memberId: "",
+        memberUniqueId: "",
         memberStatus: "",
         mobile: "",
         currentVariant: "",
@@ -112,6 +114,7 @@ export default function WalletReport() {
       exportRows.map((r) => ({
         Name: r.name,
         "Member ID": r.memberId,
+        "Member Unique Id": r.memberUniqueId || "",
         "Member Status": r.memberStatus || "",
         Mobile: r.mobile,
         "Current Variant": r.currentVariant || "",
@@ -193,6 +196,7 @@ export default function WalletReport() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Member ID</TableHead>
+                  <TableHead>Member Unique Id</TableHead>
                   <TableHead>Member Status</TableHead>
                   <TableHead>Mobile</TableHead>
                   <TableHead>Current Variant</TableHead>
@@ -206,13 +210,13 @@ export default function WalletReport() {
               <TableBody>
                 {isFetching ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={11} className="text-center py-8 text-gray-500">
                       Loading...
                     </TableCell>
                   </TableRow>
                 ) : rows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={11} className="text-center py-8 text-gray-500">
                       No data found
                     </TableCell>
                   </TableRow>
@@ -222,6 +226,7 @@ export default function WalletReport() {
                       <TableRow key={`${r.memberId}-${idx}`} className="hover:bg-gray-50">
                         <TableCell>{r.name || "-"}</TableCell>
                         <TableCell>{r.memberId || "-"}</TableCell>
+                        <TableCell>{r.memberUniqueId || "-"}</TableCell>
                         <TableCell>{r.memberStatus || "-"}</TableCell>
                         <TableCell>{r.mobile || "-"}</TableCell>
                         <TableCell>{r.currentVariant || "-"}</TableCell>
@@ -238,6 +243,7 @@ export default function WalletReport() {
                     ))}
                     <TableRow>
                       <TableCell className="font-bold">TOTAL</TableCell>
+                      <TableCell />
                       <TableCell />
                       <TableCell />
                       <TableCell />

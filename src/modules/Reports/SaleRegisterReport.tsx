@@ -24,6 +24,7 @@ type SaleRegisterFilters = {
 
 type SaleRegisterRow = {
   name: string;
+  memberUniqueId?: string;
   customerId: string | number;
   saleAmount: number;
   refundAmount: number;
@@ -87,6 +88,8 @@ function toSaleRegisterRow(raw: any): SaleRegisterRow {
     raw?.deliveryAddress?.mobile ??
     "";
 
+  const memberUniqueId = raw?.memberUniqueId ?? raw?.customerUniqueId ?? raw?.userUniqueId ?? "";
+
   const depot = raw?.depot ?? raw?.depotName ?? raw?.depot?.name ?? "";
 
   const normalizedAddress = String(address || "");
@@ -114,6 +117,7 @@ function toSaleRegisterRow(raw: any): SaleRegisterRow {
 
   return {
     name: String(name || ""),
+    memberUniqueId: String(memberUniqueId || ""),
     customerId,
     saleAmount,
     refundAmount,
@@ -234,6 +238,7 @@ export default function SaleRegisterReport() {
 
     const formattedData = resolvedRows.map((r) => ({
       "Name": r.name,
+      "Customer Unique Id": r.memberUniqueId || "",
       "Customer ID": r.customerId,
       "Sale Amount": Number(r.saleAmount) || 0,
       "Refund Amount": Number(r.refundAmount) || 0,
@@ -347,6 +352,7 @@ export default function SaleRegisterReport() {
               <TableHeader className="sticky top-0 z-10 bg-card shadow-sm">
                 <TableRow>
                   <TableHead>Name</TableHead>
+                  <TableHead>Customer Unique Id</TableHead>
                   <TableHead>Customer ID</TableHead>
                   <TableHead className="text-right">Sale Amount</TableHead>
                   <TableHead className="text-right">Refund</TableHead>
@@ -362,13 +368,13 @@ export default function SaleRegisterReport() {
               <TableBody>
                 {isFetching ? (
                   <TableRow>
-                    <TableCell colSpan={11} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={12} className="text-center py-8 text-gray-500">
                       Loading...
                     </TableCell>
                   </TableRow>
                 ) : rows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={11} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={12} className="text-center py-8 text-gray-500">
                       No data found for selected dates
                     </TableCell>
                   </TableRow>
@@ -376,6 +382,7 @@ export default function SaleRegisterReport() {
                   resolvedRows.map((r, idx) => (
                     <TableRow key={`${r.customerId}-${idx}`} className="hover:bg-gray-50">
                       <TableCell>{r.name || "-"}</TableCell>
+                      <TableCell>{r.memberUniqueId || "-"}</TableCell>
                       <TableCell>{r.customerId || "-"}</TableCell>
                       <TableCell className="text-right font-medium">
                         ₹{(Number(r.saleAmount) || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
@@ -410,7 +417,7 @@ export default function SaleRegisterReport() {
                     <TableCell className="text-right">
                       ₹{totalNetAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                     </TableCell>
-                    <TableCell colSpan={6} />
+                    <TableCell colSpan={7} />
                   </TableRow>
                 ) : null}
               </TableBody>

@@ -195,6 +195,7 @@ export interface DeliveryItem {
   // Customer info
   customerId: number;
   customerName: string;
+  customerUniqueId?: string;
   deliveryAddress: string;
   pincode?: string;
   
@@ -307,6 +308,7 @@ export interface ExceptionReportRow {
   exceptionType?: string;
   date: string;
   customerId: string | number;
+  customerUniqueId?: string;
   customerName?: string;
   address: string;
   pincode: string;

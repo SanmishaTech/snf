@@ -119,6 +119,7 @@ export default function DeliveryAgenciesReport() {
         { key: 'date', label: 'Date', width: 12 },
         { key: 'productName', label: 'Product', width: 25 },
         { key: 'variantName', label: 'Varient', width: 25 },
+        { key: 'customerUniqueId', label: 'Member Unique Id', width: 18 },
         { key: 'customer', label: 'Member Name', width: 20 },
         { key: 'agency', label: 'Agency', width: 20 },
         { key: 'status', label: 'Status', width: 12 },
@@ -178,6 +179,7 @@ export default function DeliveryAgenciesReport() {
           </TableCell>
           <TableCell className="text-sm">{item.productName} - {item.variantName}</TableCell>
           <TableCell className="text-right">{item.quantity}</TableCell>
+          <TableCell>{item.customerUniqueId || '-'}</TableCell>
           <TableCell>{item.customerName}</TableCell>
           <TableCell className="text-sm max-w-xs truncate" title={item.deliveryAddress}>
             {item.deliveryAddress}
@@ -227,7 +229,7 @@ export default function DeliveryAgenciesReport() {
               }`}
             onClick={() => toggleGroupExpansion(groupId)}
           >
-            <TableCell colSpan={9} style={{ paddingLeft: `${indent + 16}px` }}>
+            <TableCell colSpan={10} style={{ paddingLeft: `${indent + 16}px` }}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
@@ -371,6 +373,7 @@ export default function DeliveryAgenciesReport() {
                   <TableHead>Date</TableHead>
                   <TableHead>Product</TableHead>
                   <TableHead className="text-right">Qty</TableHead>
+                  <TableHead>Member Unique Id</TableHead>
                   <TableHead>Customer</TableHead>
                   <TableHead>Address</TableHead>
                   <TableHead>Area</TableHead>
@@ -381,20 +384,20 @@ export default function DeliveryAgenciesReport() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8">
+                    <TableCell colSpan={10} className="text-center py-8">
                       Loading report data...
                     </TableCell>
                   </TableRow>
                 ) : error ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-red-600">
+                    <TableCell colSpan={10} className="text-center py-8 text-red-600">
                       {(error as any)?.message || 'Failed to load report data'}
                     </TableCell>
                   </TableRow>
                 ) : !reportData?.data?.report ||
                   (Array.isArray(reportData.data.report) && reportData.data.report.length === 0) ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8">
+                    <TableCell colSpan={10} className="text-center py-8">
                       No data available for the selected filters
                     </TableCell>
                   </TableRow>

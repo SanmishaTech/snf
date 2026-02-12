@@ -71,6 +71,7 @@ export default function ExceptionReport() {
         "Exception Type": r.exceptionType || "",
         "Date": formatDisplayDate(r.date),
         "Customer ID": r.customerId,
+        "Customer Unique Id": r.customerUniqueId || "",
         "Customer Name": r.customerName || "",
         "Mobile Number": r.mobileNumber,
         "Address": r.address,
@@ -160,6 +161,7 @@ export default function ExceptionReport() {
                   <TableHead>Type</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Customer ID</TableHead>
+                  <TableHead>Customer Unique Id</TableHead>
                   <TableHead>Customer Name</TableHead>
                   <TableHead>Mobile Number</TableHead>
                   <TableHead>Address</TableHead>
@@ -174,13 +176,13 @@ export default function ExceptionReport() {
               <TableBody>
                 {isFetching ? (
                   <TableRow>
-                    <TableCell colSpan={12} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={13} className="text-center py-8 text-gray-500">
                       Loading...
                     </TableCell>
                   </TableRow>
                 ) : rows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={12} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={13} className="text-center py-8 text-gray-500">
                       No data found for selected dates
                     </TableCell>
                   </TableRow>
@@ -190,6 +192,7 @@ export default function ExceptionReport() {
                       <TableCell>{r.exceptionType || "-"}</TableCell>
                       <TableCell>{formatDisplayDate(r.date) || "-"}</TableCell>
                       <TableCell>{r.customerId || "-"}</TableCell>
+                      <TableCell>{r.customerUniqueId || "-"}</TableCell>
                       <TableCell>{r.customerName || "-"}</TableCell>
                       <TableCell>{r.mobileNumber || "-"}</TableCell>
                       <TableCell className="max-w-[360px] whitespace-normal break-words" title={r.address || ""}>
