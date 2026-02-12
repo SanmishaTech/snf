@@ -8,17 +8,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
-import { 
-  SubscriptionReportFilters, 
+import {
+  SubscriptionReportFilters,
   SubscriptionReportResponse,
   SubscriptionReportItem,
   ExcelExportConfig
@@ -53,7 +53,7 @@ export default function SubscriptionReports() {
     if (Number.isNaN(d.getTime())) return '';
     return format(d, 'dd/MM/yyyy');
   };
-  
+
   // State for filters
   const [filters, setFilters] = useState<SubscriptionReportFilters>({
     startDate: format(new Date(new Date().setDate(new Date().getDate() - 30)), 'yyyy-MM-dd'), // 30 days ago
@@ -62,8 +62,8 @@ export default function SubscriptionReports() {
     status: 'all',
     paymentStatus: undefined,
   });
-  
-  
+
+
   // Fetch report data
   const { data: reportData, isLoading, refetch, error } = useQuery<SubscriptionReportResponse>({
     queryKey: ['subscriptionReports', filters],
@@ -75,7 +75,7 @@ export default function SubscriptionReports() {
           params.append(key, value.toString());
         }
       });
-      
+
       const token = localStorage.getItem('authToken') || localStorage.getItem('token');
       const response = await axios.get(`${API_URL}/api/reports/subscriptions?${params.toString()}`, {
         headers: {
@@ -96,11 +96,11 @@ export default function SubscriptionReports() {
       console.log('[SubscriptionReports] first row order keys:', orderKeys);
     }
   }, [reportData]);
-  
+
   // Handle filter changes
   const handleFilterChange = (key: keyof SubscriptionReportFilters, value: any) => {
-    setFilters(prev => ({ 
-      ...prev, 
+    setFilters(prev => ({
+      ...prev,
       [key]: value,
       ...(key !== 'page' ? { page: 1 } : {}) // no-op; pagination disabled but kept for compatibility
     }));
@@ -116,16 +116,16 @@ export default function SubscriptionReports() {
       paymentStatus: undefined,
     });
   };
-  
+
   // Export to Excel
   const handleExportToExcel = () => {
     if (!reportData?.data || reportData.data.length === 0) {
       toast.error('No data to export');
       return;
     }
-    
+
     const exporter = new ExcelExporter();
-    
+
     // Create headers for subscription data
     const headers = [
       { key: 'orderId', label: 'Order ID', width: 12 },
@@ -151,7 +151,7 @@ export default function SubscriptionReports() {
       { key: 'isExpired', label: 'Expired', width: 10 },
       { key: 'deliveryAddress', label: 'Delivery Address', width: 30 }
     ];
-    
+
     // Transform data for Excel export
     const excelData = reportData.data.map((subscription: SubscriptionReportItem) => ({
       orderId: getOrderId(subscription),
@@ -177,7 +177,7 @@ export default function SubscriptionReports() {
       isExpired: subscription.isExpired ? 'Yes' : 'No',
       deliveryAddress: subscription.deliveryAddress?.fullAddress || 'N/A'
     }));
-    
+
     const exportConfig: ExcelExportConfig = {
       fileName: 'Subscription_Reports',
       sheetName: 'Subscriptions',
@@ -188,15 +188,15 @@ export default function SubscriptionReports() {
         showTotals: false
       }
     };
-    
+
     exporter.exportToExcel({
       data: excelData as any,
       config: exportConfig
     });
-    
+
     toast.success('Report exported successfully');
   };
-  
+
   if (!isAdmin) {
     return (
       <Card className="m-4">
@@ -221,27 +221,28 @@ export default function SubscriptionReports() {
       </Card>
     );
   }
-  
+
   return (
-    <div className="container mx-auto p-4 space-y-4 overflow-x-hidden">
-      <Card>
-        	<CardHeader>
-          	<div className="flex items-center justify-between gap-2">
-          		<CardTitle>Subscription Report</CardTitle>
-          		<div className="flex justify-end items-center gap-2">
-            	<Button 
-              onClick={handleExportToExcel} 
-              disabled={!reportData?.data || reportData.data.length === 0}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Export to Excel
-            </Button>
-          		</div>
-          	</div>
-        	</CardHeader>
-        
-          <CardContent className="border-t bg-gray-50">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 py-4">
+    <div className="h-[calc(100vh-6rem)] w-full max-w-full p-4 flex flex-col gap-4 overflow-hidden">
+      <Card className="flex flex-col flex-1 overflow-hidden">
+        <CardHeader className="flex-none pb-4">
+          <div className="flex items-center justify-between gap-2">
+            <CardTitle>Subscription Report</CardTitle>
+            <div className="flex justify-end items-center gap-2">
+              <Button
+                onClick={handleExportToExcel}
+                disabled={!reportData?.data || reportData.data.length === 0}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Export to Excel
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="flex flex-col flex-1 overflow-hidden p-0">
+          <div className="bg-gray-50 p-4 border-b flex-none">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pb-4">
               <div className="space-y-2">
                 <Label htmlFor="nameSearch">Search Name</Label>
                 <Input
@@ -262,7 +263,7 @@ export default function SubscriptionReports() {
                   onChange={(e) => handleFilterChange('startDate', e.target.value)}
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="endDate">End Date</Label>
                 <Input
@@ -272,7 +273,7 @@ export default function SubscriptionReports() {
                   onChange={(e) => handleFilterChange('endDate', e.target.value)}
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="status">Expiry Status</Label>
                 <Select
@@ -289,7 +290,7 @@ export default function SubscriptionReports() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="paymentStatus">Payment Status</Label>
                 <Select
@@ -308,7 +309,7 @@ export default function SubscriptionReports() {
                 </Select>
               </div>
             </div>
-            
+
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={clearFilters}>
                 <X className="mr-2 h-4 w-4" />
@@ -318,93 +319,92 @@ export default function SubscriptionReports() {
                 Apply Filters
               </Button>
             </div>
-          </CardContent>
-      </Card>
+          </div>
 
-      <Card>
-        <CardContent className="pt-6">
-          {isLoading ? (
-            <div className="py-10 text-center text-sm text-gray-600">Loading subscription reports...</div>
-          ) : !reportData?.data || reportData.data.length === 0 ? (
-            <div className="py-10 text-center text-sm text-gray-600">
-              No subscriptions found for the selected filters.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="text-sm text-gray-600">
-                Total: {reportData?.summary?.totalSubscriptions ?? reportData.data.length}
+          <div className="flex-1 overflow-hidden flex flex-col relative p-4">
+            {isLoading ? (
+              <div className="py-10 text-center text-sm text-gray-600">Loading subscription reports...</div>
+            ) : !reportData?.data || reportData.data.length === 0 ? (
+              <div className="py-10 text-center text-sm text-gray-600">
+                No subscriptions found for the selected filters.
               </div>
+            ) : (
+              <div className="space-y-3 flex flex-col flex-1 overflow-hidden">
+                <div className="text-sm text-gray-600 flex-none">
+                  Total: {reportData?.summary?.totalSubscriptions ?? reportData.data.length}
+                </div>
 
-              <div className="overflow-x-auto">
-                <Table className="min-w-[1400px]">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Order ID</TableHead>
-                      <TableHead>Order Date</TableHead>
-                      <TableHead>Member ID</TableHead>
-                      <TableHead>Member</TableHead>
-                      <TableHead>Member Status</TableHead>
-                      <TableHead>Product</TableHead>
-                      <TableHead>Variant</TableHead>
-                      <TableHead>Schedule</TableHead>
-                      <TableHead className="text-right">Daily Qty</TableHead>
-                      <TableHead className="text-right">Total Qty</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
-                      <TableHead>Payment</TableHead>
-                      <TableHead>Agency</TableHead>
-                      <TableHead>From Date</TableHead>
-                      <TableHead>To Date</TableHead>
-                      <TableHead>Expired</TableHead>
-                      <TableHead>Address</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {reportData.data.map((subscription: SubscriptionReportItem) => (
-                      <TableRow key={subscription.id}>
-                        <TableCell>{getOrderId(subscription) || '-'}</TableCell>
-                        <TableCell>
-                          {formatOrderDate(getOrderDateRaw(subscription)) || '-'}
-                        </TableCell>
-                        <TableCell>{subscription.memberId ?? '-'}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{subscription.memberName}</span>
-                            <span className="text-xs text-gray-600">{subscription.memberEmail}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>{subscription.memberActive === false ? 'Inactive' : 'Active'}</TableCell>
-                        <TableCell>{subscription.productName}</TableCell>
-                        <TableCell>{subscription.variantName}</TableCell>
-                        <TableCell>{subscription.deliverySchedule}</TableCell>
-                        <TableCell className="text-right">{subscription.dailyQty}</TableCell>
-                        <TableCell className="text-right">{subscription.totalQty}</TableCell>
-                        <TableCell className="text-right">
-                          ₹{(subscription.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                        </TableCell>
-                        <TableCell>{subscription.paymentStatus}</TableCell>
-                        <TableCell>{subscription.agencyName || 'Unassigned'}</TableCell>
-                        <TableCell>
-                          {subscription.startDate ? format(new Date(subscription.startDate), 'dd/MM/yyyy') : ''}
-                        </TableCell>
-                        <TableCell>
-                          {subscription.expiryDate ? format(new Date(subscription.expiryDate), 'dd/MM/yyyy') : ''}
-                        </TableCell>
-                        <TableCell>{subscription.isExpired ? 'Yes' : 'No'}</TableCell>
-                        <TableCell
-                          className="min-w-[420px] max-w-[520px] whitespace-normal break-words"
-                          title={subscription.deliveryAddress?.fullAddress || ''}
-                        >
-                          {subscription.deliveryAddress?.fullAddress || 'N/A'}
-                        </TableCell>
+                <div className="flex-1 overflow-hidden border rounded-lg">
+                  <Table containerClassName="flex-1 overflow-auto relative h-full" className="min-w-[1400px]">
+                    <TableHeader className="sticky top-0 z-10 bg-card shadow-sm">
+                      <TableRow>
+                        <TableHead>Order ID</TableHead>
+                        <TableHead>Order Date</TableHead>
+                        <TableHead>Member ID</TableHead>
+                        <TableHead>Member</TableHead>
+                        <TableHead>Member Status</TableHead>
+                        <TableHead>Product</TableHead>
+                        <TableHead>Variant</TableHead>
+                        <TableHead>Schedule</TableHead>
+                        <TableHead className="text-right">Daily Qty</TableHead>
+                        <TableHead className="text-right">Total Qty</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                        <TableHead>Payment</TableHead>
+                        <TableHead>Agency</TableHead>
+                        <TableHead>From Date</TableHead>
+                        <TableHead>To Date</TableHead>
+                        <TableHead>Expired</TableHead>
+                        <TableHead>Address</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {reportData.data.map((subscription: SubscriptionReportItem) => (
+                        <TableRow key={subscription.id}>
+                          <TableCell>{getOrderId(subscription) || '-'}</TableCell>
+                          <TableCell>
+                            {formatOrderDate(getOrderDateRaw(subscription)) || '-'}
+                          </TableCell>
+                          <TableCell>{subscription.memberId ?? '-'}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{subscription.memberName}</span>
+                              <span className="text-xs text-gray-600">{subscription.memberEmail}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>{subscription.memberActive === false ? 'Inactive' : 'Active'}</TableCell>
+                          <TableCell>{subscription.productName}</TableCell>
+                          <TableCell>{subscription.variantName}</TableCell>
+                          <TableCell>{subscription.deliverySchedule}</TableCell>
+                          <TableCell className="text-right">{subscription.dailyQty}</TableCell>
+                          <TableCell className="text-right">{subscription.totalQty}</TableCell>
+                          <TableCell className="text-right">
+                            ₹{(subscription.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          </TableCell>
+                          <TableCell>{subscription.paymentStatus}</TableCell>
+                          <TableCell>{subscription.agencyName || 'Unassigned'}</TableCell>
+                          <TableCell>
+                            {subscription.startDate ? format(new Date(subscription.startDate), 'dd/MM/yyyy') : ''}
+                          </TableCell>
+                          <TableCell>
+                            {subscription.expiryDate ? format(new Date(subscription.expiryDate), 'dd/MM/yyyy') : ''}
+                          </TableCell>
+                          <TableCell>{subscription.isExpired ? 'Yes' : 'No'}</TableCell>
+                          <TableCell
+                            className="min-w-[420px] max-w-[520px] whitespace-normal break-words"
+                            title={subscription.deliveryAddress?.fullAddress || ''}
+                          >
+                            {subscription.deliveryAddress?.fullAddress || 'N/A'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
 
-              {null}
-            </div>
-          )}
+                {null}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>

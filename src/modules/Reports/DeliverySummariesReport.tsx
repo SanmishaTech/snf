@@ -11,8 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
-import { 
-  DeliverySummaryFilters, 
+import {
+  DeliverySummaryFilters,
   DeliverySummaryResponse,
   DeliveryAgencyFiltersResponse,
   DeliveryAgencySummary,
@@ -32,7 +32,7 @@ function formatShortDate(value?: string): string {
 
 export default function DeliverySummariesReport() {
   const { isAdmin, isAgency } = useRoleAccess();
-  
+
   // State for filters
   const [draftFilters, setDraftFilters] = useState<DeliverySummaryFilters>({
     startDate: format(new Date(new Date().setDate(new Date().getDate() - 30)), 'yyyy-MM-dd'),
@@ -40,7 +40,7 @@ export default function DeliverySummariesReport() {
   });
 
   const [appliedFilters, setAppliedFilters] = useState<DeliverySummaryFilters>(draftFilters);
-  
+
   // Fetch filter options for agency dropdown / current agency
   const { data: filterOptions } = useQuery<DeliveryAgencyFiltersResponse>({
     queryKey: ['deliveryReportFilters'],
@@ -53,7 +53,7 @@ export default function DeliverySummariesReport() {
     },
     enabled: isAdmin || isAgency
   });
-  
+
   // If AGENCY user, set their current agencyId automatically (locked filter)
   useEffect(() => {
     if (isAgency) {
@@ -67,7 +67,7 @@ export default function DeliverySummariesReport() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAgency, filterOptions]);
-  
+
   // Fetch report data
   const { data: reportData, refetch, isLoading, error } = useQuery<DeliverySummaryResponse>({
     queryKey: ['deliverySummariesReport', appliedFilters],
@@ -76,7 +76,7 @@ export default function DeliverySummariesReport() {
       Object.entries(appliedFilters).forEach(([key, value]) => {
         if (value) params.append(key, value.toString());
       });
-      
+
       const token = localStorage.getItem('authToken') || localStorage.getItem('token');
       const response = await axios.get(`${API_URL}/api/reports/delivery-summaries?${params.toString()}`, {
         headers: {
@@ -87,7 +87,7 @@ export default function DeliverySummariesReport() {
     },
     enabled: isAdmin || isAgency
   });
-  
+
   const handleDraftFilterChange = (key: keyof DeliverySummaryFilters, value: any) => {
     setDraftFilters(prev => ({ ...prev, [key]: value }));
   };
@@ -126,16 +126,16 @@ export default function DeliverySummariesReport() {
     setDraftFilters(cleared);
     setAppliedFilters(cleared);
   };
-  
+
   // Export to Excel
   const handleExportToExcel = () => {
     if (!reportData?.data?.summary) {
       toast.error('No data to export');
       return;
     }
-    
+
     const exporter = new ExcelExporter();
-    
+
     // Create headers - first column is Agency, then dynamic status columns
     const statusList = reportData.data.statusList || [];
     const headers = [
@@ -152,7 +152,7 @@ export default function DeliverySummariesReport() {
       })),
       { key: 'total', label: 'Total', width: 12, align: 'right' as const }
     ];
-    
+
     // Transform data for Excel - each agency becomes a row with status counts as columns
     const excelData = reportData.data.summary.map((agency: DeliveryAgencySummary) => {
       const row: any = {
@@ -163,15 +163,15 @@ export default function DeliverySummariesReport() {
         city: agency.city || '',
         total: agency.totalCount
       };
-      
+
       // Add status counts as columns
       statusList.forEach(status => {
         row[status.toLowerCase()] = agency.statusCounts[status] || 0;
       });
-      
+
       return row;
     });
-    
+
     // Add totals row
     const totalsRow: any = {
       fromDate: '',
@@ -181,13 +181,13 @@ export default function DeliverySummariesReport() {
       city: '',
       total: reportData.data.totals.totalDeliveries
     };
-    
+
     statusList.forEach(status => {
       totalsRow[status.toLowerCase()] = reportData.data.totals.statusTotals[status] || 0;
     });
-    
+
     excelData.push(totalsRow);
-    
+
     const exportConfig: ExcelExportConfig = {
       fileName: 'Delivery_Summaries_Report',
       sheetName: 'Delivery Summaries',
@@ -198,16 +198,16 @@ export default function DeliverySummariesReport() {
         showTotals: false // We manually add totals row
       }
     };
-    
+
     exporter.exportToExcel({
       data: excelData,
       totals: reportData.data.totals,
       config: exportConfig
     });
-    
+
     toast.success('Report exported successfully');
   };
-  
+
   if (!(isAdmin || isAgency)) {
     return (
       <Card className="m-4">
@@ -217,11 +217,11 @@ export default function DeliverySummariesReport() {
       </Card>
     );
   }
-  
+
   return (
-    <div className="container mx-auto p-4 space-y-4">
-      <Card>
-        <CardHeader>
+    <div className="h-[calc(100vh-6rem)] w-full max-w-full p-4 flex flex-col gap-4">
+      <Card className="flex flex-col flex-1 overflow-hidden">
+        <CardHeader className="flex-none pb-4">
           <div className="flex justify-between items-center">
             <div>
               <CardTitle className="flex items-center gap-2">
@@ -238,10 +238,10 @@ export default function DeliverySummariesReport() {
             </Button>
           </div>
         </CardHeader>
-        
-        <CardContent className="space-y-4">
+
+        <CardContent className="flex flex-col flex-1 overflow-hidden gap-4">
           {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 flex-none">
             <div className="space-y-2">
               <Label htmlFor="startDate">Start Date</Label>
               <Input
@@ -251,7 +251,7 @@ export default function DeliverySummariesReport() {
                 onChange={(e) => handleDraftFilterChange('startDate', e.target.value)}
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="endDate">End Date</Label>
               <Input
@@ -296,7 +296,7 @@ export default function DeliverySummariesReport() {
             )}
           </div>
 
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-2 flex-none">
             <Button variant="outline" onClick={clearFilters}>
               <X className="mr-2 h-4 w-4" />
               Clear Filters
@@ -307,19 +307,19 @@ export default function DeliverySummariesReport() {
           </div>
 
           {isLoading ? (
-            <div className="py-10 text-center text-sm text-gray-600">Loading report...</div>
+            <div className="py-10 text-center text-sm text-gray-600 flex-none">Loading report...</div>
           ) : error ? (
-            <div className="py-10 text-center text-sm text-red-600">
+            <div className="py-10 text-center text-sm text-red-600 flex-none">
               Error loading report: {(error as any)?.message || 'Unknown error'}
             </div>
           ) : !reportData?.data?.summary || reportData.data.summary.length === 0 ? (
-            <div className="py-10 text-center text-sm text-gray-600">
+            <div className="py-10 text-center text-sm text-gray-600 flex-none">
               No data found for selected filters.
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
+            <div className="border rounded-lg overflow-hidden flex-1 flex flex-col min-h-0">
+              <Table containerClassName="flex-1 overflow-auto relative h-full">
+                <TableHeader className="sticky top-0 z-10 bg-card shadow-sm">
                   <TableRow>
                     <TableHead>From Date</TableHead>
                     <TableHead>To Date</TableHead>

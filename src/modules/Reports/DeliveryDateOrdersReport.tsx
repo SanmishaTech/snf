@@ -1,4 +1,4 @@
--- Active: 1754551252906@@127.0.0.1@3306@SNF
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Calendar, Download, Filter, ChevronDown, ChevronRight, Search, FileSpreadsheet } from 'lucide-react';
@@ -43,6 +43,11 @@ interface OrderDetail {
   receivedQuantity: number;
   supervisorQuantity: number;
   lineAmount: number;
+  customerName?: string;
+  customerMobile?: string;
+  paymentStatus?: string;
+  deliveryAddress?: string;
+  areaName?: string;
 }
 
 interface DepotVariant {
@@ -348,7 +353,7 @@ export default function DeliveryDateOrdersReport() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="h-[calc(100vh-6rem)] w-full max-w-full p-6 space-y-6 overflow-y-auto">
       {/* Header */}
       <Card>
         <CardHeader>

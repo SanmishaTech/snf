@@ -107,9 +107,9 @@ function toSaleRegisterRow(raw: any): SaleRegisterRow {
 
   const subscriptionStartDate = startDateRaw
     ? (() => {
-        const d = new Date(startDateRaw);
-        return Number.isNaN(d.getTime()) ? String(startDateRaw) : format(d, "dd/MM/yyyy");
-      })()
+      const d = new Date(startDateRaw);
+      return Number.isNaN(d.getTime()) ? String(startDateRaw) : format(d, "dd/MM/yyyy");
+    })()
     : "";
 
   return {
@@ -279,9 +279,9 @@ export default function SaleRegisterReport() {
   }
 
   return (
-    <div className="container mx-auto p-4 space-y-4">
-      <Card>
-        <CardHeader>
+    <div className="h-[calc(100vh-6rem)] w-full max-w-full p-4 flex flex-col gap-4">
+      <Card className="flex flex-col flex-1 overflow-hidden">
+        <CardHeader className="flex-none pb-4">
           <div className="flex justify-between items-center gap-4">
             <div>
               <CardTitle>Sale Register</CardTitle>
@@ -296,8 +296,8 @@ export default function SaleRegisterReport() {
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <CardContent className="flex flex-col flex-1 overflow-hidden gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 flex-none">
             <div className="space-y-2">
               <Label htmlFor="nameSearch">Search Name</Label>
               <Input
@@ -337,14 +337,14 @@ export default function SaleRegisterReport() {
           </div>
 
           {error ? (
-            <div className="text-sm text-red-600">
+            <div className="text-sm text-red-600 flex-none">
               Failed to load report: {(error as any)?.message || "Unknown error"}
             </div>
           ) : null}
 
-          <div className="border rounded-lg overflow-hidden">
-            <Table>
-              <TableHeader>
+          <div className="border rounded-lg overflow-hidden flex-1 flex flex-col min-h-0">
+            <Table containerClassName="flex-1 overflow-auto relative h-full">
+              <TableHeader className="sticky top-0 z-10 bg-card shadow-sm">
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Customer ID</TableHead>

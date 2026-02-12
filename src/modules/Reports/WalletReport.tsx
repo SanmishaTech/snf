@@ -141,9 +141,9 @@ export default function WalletReport() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <Card>
-        <CardHeader>
+    <div className="h-[calc(100vh-6rem)] w-full max-w-full p-4 flex flex-col gap-4">
+      <Card className="flex flex-col flex-1 overflow-hidden">
+        <CardHeader className="flex-none pb-4">
           <div className="flex items-center justify-between gap-2">
             <div>
               <CardTitle className="text-2xl font-bold">Wallet Report</CardTitle>
@@ -160,8 +160,8 @@ export default function WalletReport() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <CardContent className="flex flex-col flex-1 overflow-hidden gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-none">
             <div className="space-y-2">
               <Label htmlFor="nameSearch">Search Name</Label>
               <Input
@@ -184,12 +184,12 @@ export default function WalletReport() {
           </div>
 
           {error ? (
-            <div className="text-sm text-red-600">{(error as any)?.message || "Failed to load report"}</div>
+            <div className="text-sm text-red-600 flex-none">{(error as any)?.message || "Failed to load report"}</div>
           ) : null}
 
-          <div className="border rounded-lg overflow-hidden">
-            <Table>
-              <TableHeader>
+          <div className="border rounded-lg overflow-hidden flex-1 flex flex-col min-h-0">
+            <Table containerClassName="flex-1 overflow-auto relative h-full">
+              <TableHeader className="sticky top-0 z-10 bg-card shadow-sm">
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Member ID</TableHead>

@@ -43,7 +43,7 @@ export default function MainLayout() {
     <SidebarProvider>
       <CommandPalette />
       <AppSidebar />
-      <SidebarInset>
+      <SidebarInset className="overflow-hidden min-w-0">
         {/* Sticky Header */}
         <header className="bg-blue-900 dark:bg-gray-900 sticky top-0 z-20 flex h-16 shrink-0 items-center border-b border-blue-800 dark:border-gray-700 shadow-sm transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-13 -ml-[1px] -mt-0">
           <div className="flex items-center justify-between w-full px-4">
@@ -71,7 +71,7 @@ export default function MainLayout() {
         </header>
 
         {/* Content Area */}
-        <main className="pt-2">
+        <main className="pt-2 overflow-hidden">
           {/* Add padding to prevent content from being hidden */}
           <Outlet />
         </main>
