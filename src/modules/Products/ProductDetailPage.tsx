@@ -62,8 +62,8 @@ const ProductDetailPage: React.FC = () => {
   const [selectedDepotId, setSelectedDepotId] = useState<number | null>(null);
   const [deliveryPreference, setDeliveryPreference] = useState<'home' | 'pickup'>('home');
 
-  // const { id: productId } = useParams<{ id: string }>();
-  const productId = 1
+  const { id } = useParams<{ id: string }>();
+  const productId = id ? parseInt(id, 10) : 1;
   // const showSubscribeButton logic related to location.state?.fromLanding was removed.
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
   const [isBuyOnceModalOpen, setIsBuyOnceModalOpen] = useState(false);
@@ -370,13 +370,13 @@ const ProductDetailPage: React.FC = () => {
 
             {/* <StarRating rating={5} /> */}
 
-            
+
 
             <div className="mt-8">
               <h2 className="text-xl font-semibold mb-1">Description</h2>
               <div
-                style={{textAlign: "justify"}}
-              className="text-gray-700 leading-relaxed prose">
+                style={{ textAlign: "justify" }}
+                className="text-gray-700 leading-relaxed prose">
                 {product.description ? (
                   <>
                     <div
@@ -404,7 +404,7 @@ const ProductDetailPage: React.FC = () => {
             <div className="border-t border-muted/20 my-2"></div>
 
             {/* Delivery Preference and Depot Selection - Only show for logged-in users */}
-            {true&& (
+            {true && (
               <div className="mb-4">
                 {/* Delivery Preference */}
                 <div className="mb-4">
@@ -443,8 +443,8 @@ const ProductDetailPage: React.FC = () => {
                       <Skeleton className="h-10 w-full" />
                     ) : (
                       <Select
-                      value={selectedDepotId !== undefined && selectedDepotId !== null ? selectedDepotId.toString() : ""}
-                      onValueChange={(value) => setSelectedDepotId(parseInt(value, 10))}
+                        value={selectedDepotId !== undefined && selectedDepotId !== null ? selectedDepotId.toString() : ""}
+                        onValueChange={(value) => setSelectedDepotId(parseInt(value, 10))}
                       >
                         <SelectTrigger className="w-full mt-2 border-black">
                           <SelectValue placeholder="Select a store for pickup" />
@@ -466,16 +466,16 @@ const ProductDetailPage: React.FC = () => {
                 {/* Show home delivery areas when home delivery is selected */}
                 {deliveryPreference === 'home' && (
                   <div className="mb-4">
-                    <AreaMastersDisplay 
-                      title="" 
-                      showDeliveryInfo={true} 
+                    <AreaMastersDisplay
+                      title=""
+                      showDeliveryInfo={true}
                       showDairyOnly={product?.isDairyProduct}
-                     />
+                    />
                   </div>
                 )}
 
                 {/* Delivery Locations Button */}
-               {deliveryPreference === 'pickup' &&  <div className="mb-4">
+                {deliveryPreference === 'pickup' && <div className="mb-4">
                   <Button
                     variant="outline"
                     onClick={() => setIsDeliveryLocationsModalOpen(true)}
@@ -487,9 +487,9 @@ const ProductDetailPage: React.FC = () => {
                 </div>}
                 {/* Price Chart Section */}
                 <div className="mt-8">
-                  <PriceChart 
-                    product={product} 
-                    deliveryPreference={deliveryPreference} 
+                  <PriceChart
+                    product={product}
+                    deliveryPreference={deliveryPreference}
                     selectedDepotId={selectedDepotId}
                   />
                 </div>
@@ -523,21 +523,21 @@ const ProductDetailPage: React.FC = () => {
 
             <div className="mt-8 space-y-4">
               {!isLoggedIn ? (
-              <div >
-                    <Button
-                  asChild
-                  className="mb-2 w-full bg-secondary hover:bg-secondary/80 text-white py-6 rounded-lg text-lg font-semibold transition-transform duration-200 hover:scale-105"
-                >
-                  <Link to="/login">Buy Once</Link>
-                </Button>
-                <Button
-                  asChild
-                  className="w-full bg-primary hover:bg-primary/80 text-white py-6 rounded-lg text-lg font-semibold transition-transform duration-200 hover:scale-105"
-                >
-                  <Link to="/login">Subscribe</Link>
-                </Button>
-              </div>
-                
+                <div >
+                  <Button
+                    asChild
+                    className="mb-2 w-full bg-secondary hover:bg-secondary/80 text-white py-6 rounded-lg text-lg font-semibold transition-transform duration-200 hover:scale-105"
+                  >
+                    <Link to="/login">Buy Once</Link>
+                  </Button>
+                  <Button
+                    asChild
+                    className="w-full bg-primary hover:bg-primary/80 text-white py-6 rounded-lg text-lg font-semibold transition-transform duration-200 hover:scale-105"
+                  >
+                    <Link to="/login">Subscribe</Link>
+                  </Button>
+                </div>
+
               ) : (
                 <>
                   {/* Buttons for logged-in users */}
@@ -689,9 +689,9 @@ const ProductDetailPage: React.FC = () => {
             </DialogHeader>
             <div className="mt-4">
               <div className="overflow-y-auto max-h-[60vh]">
-                <AreaMastersDisplay 
-                  title="Home Delivery Areas" 
-                  showDeliveryInfo={true} 
+                <AreaMastersDisplay
+                  title="Home Delivery Areas"
+                  showDeliveryInfo={true}
                   showDairyOnly={product?.isDairyProduct}
                 />
               </div>

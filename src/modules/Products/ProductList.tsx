@@ -234,7 +234,7 @@ const ProductList: React.FC = () => {
 
   const handleTagToggle = (tag: string) => {
     setSelectedTags(prev => {
-      const newTags = prev.includes(tag) 
+      const newTags = prev.includes(tag)
         ? prev.filter(t => t !== tag)
         : [...prev, tag];
       setCurrentPage(1); // Reset to first page when filtering
@@ -263,13 +263,13 @@ const ProductList: React.FC = () => {
   return (
     <div className="p-4 md:p-6 space-y-6">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col items-start gap-4">
           <div>
             <CardTitle>Products</CardTitle>
             <CardDescription>Manage your product inventory.</CardDescription>
           </div>
-          <div className="mb-4 flex items-center gap-4 flex-wrap">
-            <div className="relative w-full max-w-sm">
+          <div className="flex items-center gap-4 w-full flex-wrap">
+            <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
@@ -279,7 +279,7 @@ const ProductList: React.FC = () => {
                 placeholder="Search products..."
               />
             </div>
-            
+
             {/* Tag Filter */}
             {availableTags.length > 0 && (
               <Popover>
@@ -417,6 +417,19 @@ const ProductList: React.FC = () => {
                       >
                         {product.name}
                       </TableCell>
+                      <TableCell>
+                        {product.tags ? (
+                          <div className="flex flex-wrap gap-1">
+                            {product.tags.split(',').map((tag, index) => (
+                              <Badge key={index} variant="secondary" className="text-xs">
+                                {tag.trim()}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">No tags</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu modal={false}>
                           <DropdownMenuTrigger asChild>
@@ -464,14 +477,13 @@ const ProductList: React.FC = () => {
           {products.length > 0 && (
             <div className="mt-6 flex flex-col sm:flex-row justify-between items-center">
               <div className="mb-4 sm:mb-0 text-sm text-muted-foreground">
-                {`Showing ${
-                  products.length > 0
-                    ? (currentPage - 1) * recordsPerPage + 1
-                    : 0
-                } to ${Math.min(
-                  currentPage * recordsPerPage,
-                  totalProducts
-                )} of ${totalProducts} records`}
+                {`Showing ${products.length > 0
+                  ? (currentPage - 1) * recordsPerPage + 1
+                  : 0
+                  } to ${Math.min(
+                    currentPage * recordsPerPage,
+                    totalProducts
+                  )} of ${totalProducts} records`}
               </div>
               <div className="flex items-center space-x-2 sm:space-x-6">
                 <div className="flex items-center space-x-2">
