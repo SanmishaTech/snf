@@ -22,16 +22,22 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
 }) => {
   const { addresses, defaultAddress, isLoading, isError, error } = useAddresses();
   const [localSelectedId, setLocalSelectedId] = useState<string>(
-    selectedAddressId || defaultAddress?.id || ""
+    selectedAddressId || ""
   );
 
   // Auto-select default address if no address is selected
   React.useEffect(() => {
+    // If not selected yet, but we have a default address, select it
     if (!selectedAddressId && defaultAddress && !localSelectedId) {
       setLocalSelectedId(defaultAddress.id);
       onAddressSelect(defaultAddress);
     }
-  }, [defaultAddress, selectedAddressId, localSelectedId, onAddressSelect]);
+    // If no default address but we have addresses and none selected, select the first one
+    else if (!selectedAddressId && !defaultAddress && !localSelectedId && addresses && addresses.length > 0) {
+      setLocalSelectedId(addresses[0].id);
+      onAddressSelect(addresses[0]);
+    }
+  }, [defaultAddress, addresses, selectedAddressId, localSelectedId, onAddressSelect]);
 
   const handleAddressSelection = (addressId: string) => {
     const address = addresses.find(addr => addr.id === addressId);
@@ -187,7 +193,7 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
             </div>
           ))}
         </RadioGroup>
-        
+
         <div className="mt-4 pt-3 border-t">
           <Button asChild variant="outline" size="sm" className="w-full">
             <Link to="/snf/address">

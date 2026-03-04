@@ -23,6 +23,7 @@ import { productService } from "@/modules/SNF/services/api"
 import { Header } from "@/modules/SNF/components/Header"
 import { Footer } from "@/modules/SNF/components/Footer"
 import { useDeliveryLocation } from "@/modules/SNF/hooks/useDeliveryLocation"
+import { useCart } from "@/modules/SNF/context/CartContext"
 import type { Category, ProductWithPricing, DepotVariant } from "@/modules/SNF/types"
 
 export default function CategoryProductsPage() {
@@ -42,6 +43,7 @@ export default function CategoryProductsPage() {
   const [isLoadingCategories, setIsLoadingCategories] = useState(true)
   const [isFiltersOpen, setIsFiltersOpen] = useState(false)
   const { currentDepotId } = useDeliveryLocation();
+  const cart = useCart();
 
   // Fetch products using the real API
   const { products, isLoading: isLoadingProducts, error: productsError } = useProducts(currentDepotId)
@@ -386,16 +388,7 @@ export default function CategoryProductsPage() {
   }
 
   const handleAddToCart = (product: ProductWithPricing, variant?: DepotVariant, qty?: number) => {
-    // Simple add to cart handler - in a real app this would integrate with cart state
-    console.log('Adding to cart:', {
-      product: product.product.name,
-      variant: variant?.name,
-      quantity: qty || 1,
-      price: variant?.buyOncePrice || product.buyOncePrice
-    })
-
-    // You can add toast notification here
-    // toast.success(`Added ${product.product.name} to cart`)
+    cart.addItem(product, variant, qty || 1)
   }
 
   // Show loading state

@@ -33,6 +33,7 @@ const formSchema = z.object({
   isHidden: z.boolean().default(false),
   buyOncePrice: z.coerce.number().nonnegative().optional(),
   purchasePrice: z.coerce.number({ invalid_type_error: 'Purchase price must be a number' }).nonnegative().optional(),
+  salesPrice: z.coerce.number().nonnegative().optional(),
 });
 
 export type DepotVariantFormData = z.infer<typeof formSchema>;
@@ -44,7 +45,7 @@ interface Props {
 }
 
 const DepotProductVariantForm: React.FC<Props> = ({ initialData, onClose, onSuccess }) => {
-  const [productOptions, setProductOptions] = useState<{ id: number; name: string }[]>([]);
+  const [productOptions, setProductOptions] = useState<{ id: number; name: string; isSubscription: boolean }[]>([]);
   const {
     register,
     handleSubmit,
@@ -68,8 +69,13 @@ const DepotProductVariantForm: React.FC<Props> = ({ initialData, onClose, onSucc
       isHidden: initialData?.isHidden || false,
       buyOncePrice: initialData?.buyOncePrice ?? 0,
       purchasePrice: initialData?.purchasePrice ?? 0,
+      salesPrice: initialData?.salesPrice ?? 0,
     },
   });
+
+  const selectedProductId = watch('productId');
+  const selectedProduct = productOptions.find((p) => p.id === Number(selectedProductId));
+  const isSubscriptionProduct = selectedProduct?.isSubscription || false;
 
   // fetch products once
   useEffect(() => {
@@ -99,6 +105,7 @@ const DepotProductVariantForm: React.FC<Props> = ({ initialData, onClose, onSucc
         price1Month: initialData.price1Month ?? 0,
         buyOncePrice: initialData.buyOncePrice ?? 0,
         purchasePrice: initialData.purchasePrice ?? 0,
+        salesPrice: initialData.salesPrice ?? 0,
       });
     }
   }, [initialData, reset]);
@@ -157,57 +164,71 @@ const DepotProductVariantForm: React.FC<Props> = ({ initialData, onClose, onSucc
         {errors.mrp && <p className="text-sm text-red-600">{errors.mrp.message}</p>}
       </div>
 
+      {!isSubscriptionProduct && (
+        <div className="grid gap-2">
+          <Label htmlFor="salesPrice">Sales Price</Label>
+          <Input type="number" step="0.01" id="salesPrice" {...register('salesPrice')} />
+          {errors.salesPrice && <p className="text-sm text-red-600">{errors.salesPrice.message}</p>}
+        </div>
+      )}
+
       <div className="grid gap-2">
         <Label htmlFor="minimumQty">Minimum Qty *</Label>
         <Input type="number" id="minimumQty" {...register('minimumQty')} />
         {errors.minimumQty && <p className="text-sm text-red-600">{errors.minimumQty.message}</p>}
       </div>
 
-      {/* Time-based Pricing */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="grid gap-2">
-          <Label htmlFor="price3Day">Price – 3 Day</Label>
-          <Input type="number" step="0.01" id="price3Day" {...register('price3Day')} />
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="price7Day">Price – 7 Day</Label>
-          <Input type="number" step="0.01" id="price7Day" {...register('price7Day')} />
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="price15Day">Price – 15 Day</Label>
-          <Input type="number" step="0.01" id="price15Day" {...register('price15Day')} />
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="price1Month">Price – 1 Month</Label>
-          <Input type="number" step="0.01" id="price1Month" {...register('price1Month')} />
-        </div>
-      </div>
+      {isSubscriptionProduct && (
+        <>
+          {/* Time-based Pricing */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="price3Day">Price – 3 Day</Label>
+              <Input type="number" step="0.01" id="price3Day" {...register('price3Day')} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="price7Day">Price – 7 Day</Label>
+              <Input type="number" step="0.01" id="price7Day" {...register('price7Day')} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="price15Day">Price – 15 Day</Label>
+              <Input type="number" step="0.01" id="price15Day" {...register('price15Day')} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="price1Month">Price – 1 Month</Label>
+              <Input type="number" step="0.01" id="price1Month" {...register('price1Month')} />
+            </div>
+          </div>
 
-      <div className="grid gap-2">
-        <Label htmlFor="buyOncePrice">Buy Once Price</Label>
-        <Input
-          id="buyOncePrice"
-          type="number"
-          step="0.01"
-          {...register('buyOncePrice')}
-        />
-        {errors.buyOncePrice && (
-          <p className="text-sm text-red-500">{errors.buyOncePrice.message}</p>
-        )}
-      </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="buyOncePrice">Buy Once Price</Label>
+              <Input
+                id="buyOncePrice"
+                type="number"
+                step="0.01"
+                {...register('buyOncePrice')}
+              />
+              {errors.buyOncePrice && (
+                <p className="text-sm text-red-500">{errors.buyOncePrice.message}</p>
+              )}
+            </div>
 
-      <div className="grid gap-2">
-        <Label htmlFor="purchasePrice">Purchase Price</Label>
-        <Input
-          id="purchasePrice"
-          type="number"
-          step="0.01"
-          {...register('purchasePrice')}
-        />
-        {errors.purchasePrice && (
-          <p className="text-sm text-red-500">{errors.purchasePrice.message}</p>
-        )}
-      </div>
+            <div className="grid gap-2">
+              <Label htmlFor="purchasePrice">Purchase Price</Label>
+              <Input
+                id="purchasePrice"
+                type="number"
+                step="0.01"
+                {...register('purchasePrice')}
+              />
+              {errors.purchasePrice && (
+                <p className="text-sm text-red-500">{errors.purchasePrice.message}</p>
+              )}
+            </div>
+          </div>
+        </>
+      )}
 
       <div className="flex items-center space-x-2">
         <Switch

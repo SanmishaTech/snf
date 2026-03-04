@@ -189,7 +189,7 @@ const DepotProductVariantListPage: React.FC = () => {
                     "Depot",
                     "Product",
                     "Name",
-                     "Closing Qty",
+                    "Closing Qty",
                     "Actions",
                   ].map((h) => (
                     <TableHead

@@ -19,6 +19,7 @@ export interface DepotProductVariant {
   isHidden: boolean;
   buyOncePrice?: number;
   purchasePrice?: number;
+  salesPrice?: number;
   createdAt?: string;
   updatedAt?: string;
 }

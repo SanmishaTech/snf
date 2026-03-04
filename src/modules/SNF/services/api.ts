@@ -20,13 +20,13 @@ export class ProductServiceImpl implements ProductService {
       }
 
       const response = await this.fetchWithRetry(url.toString());
-      
+
       if (!response.ok) {
         throw new Error(`API request failed: ${response.status}`);
       }
 
       const result: ApiResponse<any> = await response.json();
-      
+
       if (!result.success || !result.data) {
         return [];
       }
@@ -49,7 +49,7 @@ export class ProductServiceImpl implements ProductService {
         console.log('Total products:', result.data.products.length, 'Non-dairy:', filtered.length);
         return filtered;
       }
-      
+
       return [];
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -67,7 +67,7 @@ export class ProductServiceImpl implements ProductService {
       url.searchParams.append('depotId', depotId.toString());
 
       const response = await this.fetchWithRetry(url.toString());
-      
+
       if (!response.ok) {
         if (response.status === 404) {
           return []; // No variants found
@@ -76,7 +76,7 @@ export class ProductServiceImpl implements ProductService {
       }
 
       const result: ApiResponse<any> = await response.json();
-      
+
       if (!result.success || !result.data) {
         return [];
       }
@@ -84,7 +84,7 @@ export class ProductServiceImpl implements ProductService {
       // Find the specific product and extract its variants
       let productVariants: any[] = [];
       let parentProduct: any | null = null;
-      
+
       if (Array.isArray(result.data)) {
         // Direct array of products with variants
         const product = result.data.find((p: any) => p.id === productId);
@@ -171,7 +171,7 @@ export class ProductServiceImpl implements ProductService {
       url.searchParams.append('depotId', depotId.toString());
 
       const response = await this.fetchWithRetry(url.toString());
-      
+
       if (!response.ok) {
         if (response.status === 404) {
           return []; // No variants found
@@ -180,14 +180,14 @@ export class ProductServiceImpl implements ProductService {
       }
 
       const result: ApiResponse<any> = await response.json();
-      
+
       if (!result.success || !result.data) {
         return [];
       }
 
       // Handle the response format from getPublicProductsWithVariants
       let allVariants: any[] = [];
-      
+
       if (Array.isArray(result.data)) {
         // Direct array of products with variants
         result.data.forEach((product: any) => {
@@ -239,7 +239,7 @@ export class ProductServiceImpl implements ProductService {
           }
         });
       }
-      
+
       return allVariants.map((variant: any) => ({
         id: variant.id,
         depotId: depotId,
@@ -276,20 +276,20 @@ export class ProductServiceImpl implements ProductService {
       const url = new URL(`/api/public/depot-variants`, this.API_ORIGIN);
 
       const response = await this.fetchWithRetry(url.toString());
-      
+
       if (!response.ok) {
         throw new Error(`API request failed: ${response.status}`);
       }
 
       const result: ApiResponse<any> = await response.json();
-      
+
       if (!result.success || !result.data) {
         return [];
       }
 
       // Handle the grouped response format
       let allVariants: any[] = [];
-      
+
       if (Array.isArray(result.data)) {
         allVariants = result.data;
       } else if (result.data.depot && result.data.products) {
@@ -341,13 +341,13 @@ export class ProductServiceImpl implements ProductService {
       const url = new URL(`/api/products/public`, this.API_ORIGIN);
 
       const response = await this.fetchWithRetry(url.toString());
-      
+
       if (!response.ok) {
         throw new Error(`API request failed: ${response.status}`);
       }
 
       const result: ApiResponse<Product[]> = await response.json();
-      
+
       if (!result.success || !result.data) {
         return [];
       }
@@ -372,13 +372,13 @@ export class ProductServiceImpl implements ProductService {
       }
 
       const response = await this.fetchWithRetry(url.toString());
-      
+
       if (!response.ok) {
         throw new Error(`API request failed: ${response.status}`);
       }
 
       const result: ApiResponse<any> = await response.json();
-      
+
       if (!result.success || !result.data) {
         return [];
       }
@@ -413,13 +413,13 @@ export class ProductServiceImpl implements ProductService {
       }
 
       const response = await this.fetchWithRetry(url.toString());
-      
+
       if (!response.ok) {
         throw new Error(`API request failed: ${response.status}`);
       }
 
       const result: ApiResponse<Product[]> = await response.json();
-      
+
       if (!result.success || !result.data) {
         return [];
       }
@@ -439,7 +439,7 @@ export class ProductServiceImpl implements ProductService {
       const url = new URL(`/api/products/${productId}`, this.API_ORIGIN);
 
       const response = await this.fetchWithRetry(url.toString());
-      
+
       if (!response.ok) {
         if (response.status === 404) {
           return null;
@@ -448,7 +448,7 @@ export class ProductServiceImpl implements ProductService {
       }
 
       const result = await response.json();
-      
+
       // Handle both wrapped response format {success: true, data: {...}}
       // and direct response format {...}
       if (result && typeof result === 'object') {
@@ -485,13 +485,13 @@ export class ProductServiceImpl implements ProductService {
         },
         body: JSON.stringify({ productIds }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`API request failed: ${response.status}`);
       }
 
       const result: ApiResponse<Product[]> = await response.json();
-      
+
       if (!result.success || !result.data) {
         return [];
       }
@@ -523,7 +523,7 @@ export class ProductServiceImpl implements ProductService {
         return response;
       } catch (error) {
         lastError = error as Error;
-        
+
         if (attempt === this.MAX_RETRIES) {
           break;
         }
@@ -575,13 +575,13 @@ export class ProductServiceImpl implements ProductService {
       const url = new URL(`/api/admin/categories/public/AllCategories`, this.API_ORIGIN);
 
       const response = await this.fetchWithRetry(url.toString());
-      
+
       if (!response.ok) {
         throw new Error(`API request failed: ${response.status}`);
       }
 
       const result: ApiResponse<any[]> = await response.json();
-      
+
       if (!result.success || !result.data) {
         return [];
       }

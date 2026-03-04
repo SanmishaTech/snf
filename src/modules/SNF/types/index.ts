@@ -17,7 +17,7 @@ export interface LocationData {
 /**
  * Geolocation error types
  */
-export type GeolocationErrorType = 
+export type GeolocationErrorType =
   | 'PERMISSION_DENIED'
   | 'POSITION_UNAVAILABLE'
   | 'TIMEOUT'
@@ -310,7 +310,7 @@ export type DebouncedFunction<T extends (...args: any[]) => any> = {
 /**
  * Event types for real-time updates
  */
-export type PricingEventType = 
+export type PricingEventType =
   | 'PRICE_UPDATE'
   | 'STOCK_UPDATE'
   | 'DEPOT_CHANGE'

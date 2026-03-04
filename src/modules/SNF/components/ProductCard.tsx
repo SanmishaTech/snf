@@ -83,7 +83,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   //   !selectedVariant ||
   //   (selectedVariant as any)?.notInStock ||
   //   ((selectedVariant as any)?.closingQty !== undefined && (selectedVariant as any).closingQty <= 0);
-  
+
   const isOutOfStock = false; // As per requirements, all products are always in stock
   const hasMultipleVariants = showVariants && (allVariants?.length || 0) > 1;
   const showPills = hasMultipleVariants && allVariants.length <= VARIANT_PILLS_THRESHOLD;
@@ -112,106 +112,106 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       depot: { id: DEFAULT_DEPOT_ID, name: 'Default Depot', address: '', isOnline: true },
       product: product.product
     } as DepotVariant;
-    
+
     onAddToCart(product, variantToUse, qty);
 
-      // Enhanced fly-to-cart animation starting from the Add to Cart button
-      try {
-        const imgEl = imgRef.current; // for src only
-        const startEl = addBtnRef.current;
-        const cartEl = document.getElementById("snf-cart-button");
-        if (!startEl || !cartEl) return;
+    // Enhanced fly-to-cart animation starting from the Add to Cart button
+    try {
+      const imgEl = imgRef.current; // for src only
+      const startEl = addBtnRef.current;
+      const cartEl = document.getElementById("snf-cart-button");
+      if (!startEl || !cartEl) return;
 
-        // Button press micro-interaction
-        const prevTransform = startEl.style.transform;
-        const prevTransition = startEl.style.transition;
-        startEl.style.transition = `${prevTransition ? prevTransition + ', ' : ''}transform 120ms ease`;
-        startEl.style.transform = "scale(0.97)";
-        setTimeout(() => {
-          startEl.style.transform = prevTransform;
-          startEl.style.transition = prevTransition;
-        }, 140);
+      // Button press micro-interaction
+      const prevTransform = startEl.style.transform;
+      const prevTransition = startEl.style.transition;
+      startEl.style.transition = `${prevTransition ? prevTransition + ', ' : ''}transform 120ms ease`;
+      startEl.style.transform = "scale(0.97)";
+      setTimeout(() => {
+        startEl.style.transform = prevTransform;
+        startEl.style.transition = prevTransition;
+      }, 140);
 
-        const startRect = startEl.getBoundingClientRect();
-        const cartRect = cartEl.getBoundingClientRect();
+      const startRect = startEl.getBoundingClientRect();
+      const cartRect = cartEl.getBoundingClientRect();
 
-        const flying = document.createElement("img");
-        flying.src = imgEl?.src || "";
-        flying.setAttribute("aria-hidden", "true");
-        const initialSize = 56; // px
-        flying.style.position = "fixed";
-        flying.style.left = `${startRect.left + startRect.width / 2 - initialSize / 2}px`;
-        flying.style.top = `${startRect.top + startRect.height / 2 - initialSize / 2}px`;
-        flying.style.width = `${initialSize}px`;
-        flying.style.height = `${initialSize}px`;
-        flying.style.objectFit = "cover";
-        flying.style.zIndex = "9999";
-        flying.style.borderRadius = "8px";
-        flying.style.pointerEvents = "none";
-        flying.style.boxShadow = "0 4px 12px rgba(0,0,0,0.2)";
+      const flying = document.createElement("img");
+      flying.src = imgEl?.src || "";
+      flying.setAttribute("aria-hidden", "true");
+      const initialSize = 56; // px
+      flying.style.position = "fixed";
+      flying.style.left = `${startRect.left + startRect.width / 2 - initialSize / 2}px`;
+      flying.style.top = `${startRect.top + startRect.height / 2 - initialSize / 2}px`;
+      flying.style.width = `${initialSize}px`;
+      flying.style.height = `${initialSize}px`;
+      flying.style.objectFit = "cover";
+      flying.style.zIndex = "9999";
+      flying.style.borderRadius = "8px";
+      flying.style.pointerEvents = "none";
+      flying.style.boxShadow = "0 4px 12px rgba(0,0,0,0.2)";
 
-        document.body.appendChild(flying);
+      document.body.appendChild(flying);
 
-        const targetX = cartRect.left + cartRect.width / 2 - (startRect.left + startRect.width / 2);
-        const targetY = cartRect.top + cartRect.height / 2 - (startRect.top + startRect.height / 2);
+      const targetX = cartRect.left + cartRect.width / 2 - (startRect.left + startRect.width / 2);
+      const targetY = cartRect.top + cartRect.height / 2 - (startRect.top + startRect.height / 2);
 
-        // Phase 1: slight lift and start movement
-        const p1X = targetX * 0.2;
-        const p1Y = targetY * 0.2 - 20;
-        flying.style.transition = "transform 180ms ease-out, opacity 180ms ease-out";
-        flying.style.transform = "translate(0px, 0px) scale(0.9)";
-        flying.style.opacity = "0.9";
-        requestAnimationFrame(() => {
-          flying.style.transform = `translate(${p1X}px, ${p1Y}px) scale(1.02)`;
-        });
+      // Phase 1: slight lift and start movement
+      const p1X = targetX * 0.2;
+      const p1Y = targetY * 0.2 - 20;
+      flying.style.transition = "transform 180ms ease-out, opacity 180ms ease-out";
+      flying.style.transform = "translate(0px, 0px) scale(0.9)";
+      flying.style.opacity = "0.9";
+      requestAnimationFrame(() => {
+        flying.style.transform = `translate(${p1X}px, ${p1Y}px) scale(1.02)`;
+      });
 
-        const onPhase1End = (e: TransitionEvent) => {
-          if (e.propertyName !== "transform") return;
-          flying.removeEventListener("transitionend", onPhase1End);
-          // Phase 2: travel to cart, shrink and fade with slight rotation
-          flying.style.transition = "transform 520ms cubic-bezier(0.22, 1, 0.36, 1), opacity 520ms ease";
-          flying.style.transform = `translate(${targetX}px, ${targetY}px) scale(0.4) rotate(8deg)`;
-          flying.style.opacity = "0.25";
+      const onPhase1End = (e: TransitionEvent) => {
+        if (e.propertyName !== "transform") return;
+        flying.removeEventListener("transitionend", onPhase1End);
+        // Phase 2: travel to cart, shrink and fade with slight rotation
+        flying.style.transition = "transform 520ms cubic-bezier(0.22, 1, 0.36, 1), opacity 520ms ease";
+        flying.style.transform = `translate(${targetX}px, ${targetY}px) scale(0.4) rotate(8deg)`;
+        flying.style.opacity = "0.25";
 
-          const onArrive = (ev: TransitionEvent) => {
-            if (ev.propertyName !== "transform") return;
-            flying.removeEventListener("transitionend", onArrive);
-            // Ripple at cart icon
-            const color = getComputedStyle(cartEl).color;
-            const ripple = document.createElement("span");
-            const cx = cartRect.left + cartRect.width / 2;
-            const cy = cartRect.top + cartRect.height / 2;
-            const rSize = 14;
-            ripple.style.position = "fixed";
-            ripple.style.left = `${cx - rSize}px`;
-            ripple.style.top = `${cy - rSize}px`;
-            ripple.style.width = `${rSize * 2}px`;
-            ripple.style.height = `${rSize * 2}px`;
-            ripple.style.border = `2px solid ${color}`;
-            ripple.style.borderRadius = "9999px";
-            ripple.style.opacity = "0.5";
-            ripple.style.pointerEvents = "none";
-            ripple.style.zIndex = "9999";
-            ripple.style.transform = "scale(0.4)";
-            ripple.style.transition = "transform 420ms ease, opacity 420ms ease";
-            document.body.appendChild(ripple);
-            requestAnimationFrame(() => {
-              ripple.style.transform = "scale(1.8)";
-              ripple.style.opacity = "0";
-            });
-            setTimeout(() => ripple.remove(), 460);
+        const onArrive = (ev: TransitionEvent) => {
+          if (ev.propertyName !== "transform") return;
+          flying.removeEventListener("transitionend", onArrive);
+          // Ripple at cart icon
+          const color = getComputedStyle(cartEl).color;
+          const ripple = document.createElement("span");
+          const cx = cartRect.left + cartRect.width / 2;
+          const cy = cartRect.top + cartRect.height / 2;
+          const rSize = 14;
+          ripple.style.position = "fixed";
+          ripple.style.left = `${cx - rSize}px`;
+          ripple.style.top = `${cy - rSize}px`;
+          ripple.style.width = `${rSize * 2}px`;
+          ripple.style.height = `${rSize * 2}px`;
+          ripple.style.border = `2px solid ${color}`;
+          ripple.style.borderRadius = "9999px";
+          ripple.style.opacity = "0.5";
+          ripple.style.pointerEvents = "none";
+          ripple.style.zIndex = "9999";
+          ripple.style.transform = "scale(0.4)";
+          ripple.style.transition = "transform 420ms ease, opacity 420ms ease";
+          document.body.appendChild(ripple);
+          requestAnimationFrame(() => {
+            ripple.style.transform = "scale(1.8)";
+            ripple.style.opacity = "0";
+          });
+          setTimeout(() => ripple.remove(), 460);
 
-            // Cleanup flying image
-            if (flying && flying.parentNode) flying.parentNode.removeChild(flying);
-          };
-          flying.addEventListener("transitionend", onArrive);
+          // Cleanup flying image
+          if (flying && flying.parentNode) flying.parentNode.removeChild(flying);
         };
-        flying.addEventListener("transitionend", onPhase1End);
-      } catch (_e) {
-        // no-op if animation fails
-      }
+        flying.addEventListener("transitionend", onArrive);
+      };
+      flying.addEventListener("transitionend", onPhase1End);
+    } catch (_e) {
+      // no-op if animation fails
     }
-  
+  }
+
 
   const incrementQty = () => setQty((q) => Math.min(99, q + 1));
   const decrementQty = () => setQty((q) => Math.max(1, q - 1));
@@ -385,7 +385,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </>
         )}
 
-        
+
 
         {/* Price Display */}
         <div className="flex items-baseline gap-1">
@@ -395,43 +395,43 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           )}
         </div>
 
-          {!isOutOfStock && (
-            <div className="mt-auto flex items-stretch w-full relative z-10">
-              <div className="flex items-center border rounded-md w-full overflow-hidden">
-                <button
-                  type="button"
-                  className="px-2 py-1 hover:bg-accent disabled:opacity-50"
-                  onClick={(e) => { e.stopPropagation(); e.preventDefault(); decrementQty(); }}
-                  disabled={qty <= 1}
-                  aria-label="Decrease quantity"
-                >
-                  <Minus className="h-3 w-3" />
-                </button>
-                <div className="flex-1 min-w-0 text-center text-[12px] md:text-sm font-medium select-none py-1">
-                  {qty}
-                </div>
-                <button
-                  type="button"
-                  className="px-2 py-1 hover:bg-accent disabled:opacity-50"
-                  onClick={(e) => { e.stopPropagation(); e.preventDefault(); incrementQty(); }}
-                  aria-label="Increase quantity"
-                  disabled={
-                    selectedVariant?.closingQty != null && selectedVariant.closingQty > 0
-                      ? qty >= selectedVariant.closingQty
-                      : false
-                  }
-                >
-                  <Plus className="h-3 w-3" />
-                </button>
+        {!isOutOfStock && (
+          <div className="mt-auto flex items-stretch w-full relative z-10">
+            <div className="flex items-center border rounded-md w-full overflow-hidden">
+              <button
+                type="button"
+                className="px-2 py-1 hover:bg-accent disabled:opacity-50"
+                onClick={(e) => { e.stopPropagation(); e.preventDefault(); decrementQty(); }}
+                disabled={qty <= 1}
+                aria-label="Decrease quantity"
+              >
+                <Minus className="h-3 w-3" />
+              </button>
+              <div className="flex-1 min-w-0 text-center text-[12px] md:text-sm font-medium select-none py-1">
+                {qty}
               </div>
+              <button
+                type="button"
+                className="px-2 py-1 hover:bg-accent disabled:opacity-50"
+                onClick={(e) => { e.stopPropagation(); e.preventDefault(); incrementQty(); }}
+                aria-label="Increase quantity"
+                disabled={
+                  selectedVariant?.closingQty != null && selectedVariant.closingQty > 0
+                    ? qty >= selectedVariant.closingQty
+                    : false
+                }
+              >
+                <Plus className="h-3 w-3" />
+              </button>
             </div>
-          )}
+          </div>
+        )}
 
 
         {/* Action Row */}
         <div className="flex items-center gap-1 pt-1 mt-1">
           {/* Optional quantity stepper (hide if OOS) */}
-          
+
           <Button
             ref={addBtnRef}
             className="flex-1 h-7 text-[12px]"
@@ -441,7 +441,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           >
             {isOutOfStock ? "Notify Me" : "Add to Cart"}
           </Button>
- 
+
         </div>
       </div>
     </article>

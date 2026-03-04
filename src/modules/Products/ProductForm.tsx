@@ -63,6 +63,7 @@ const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
   description: z.string().optional().nullable(),
   isDairyProduct: z.boolean().default(false),
+  isSubscription: z.boolean().default(false),
   categoryId: z.coerce
     .number()
     .positive("Please select a category")
@@ -112,10 +113,10 @@ const ProductForm: React.FC<ProductFormProps> = ({
     queryKey: ["categories"],
     queryFn: getAllCategories,
   });
-  const [currentAttachmentPreview, setCurrentAttachmentPreview] = useState<
-    string | null
-  >(null);
+  const [currentAttachmentPreview, setCurrentAttachmentPreview] = useState<string | null>(null);
   const [attachmentFileName, setAttachmentFileName] = useState<string>("");
+  const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
+  const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
 
   const form = useForm<ProductFormInputs>({
     resolver: zodResolver(productSchema),
@@ -123,6 +124,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
       name: "",
       description: "",
       isDairyProduct: false,
+      isSubscription: false,
       maintainStock: false,
       attachmentUrl: null,
       variants: [],
@@ -152,15 +154,15 @@ const ProductForm: React.FC<ProductFormProps> = ({
         description: (initialData as any).description || "",
         tags: (initialData as any).tags || "",
         isDairyProduct: initialData.isDairyProduct || false,
+        isSubscription: initialData.isSubscription || false,
         maintainStock: initialData.maintainStock || false,
         variants: initialData.variants || [],
         categoryId: (initialData as any).categoryId || null,
       };
       reset(resetValues as any);
       if ((initialData as any).attachmentUrl) {
-        const initialurl = `${import.meta.env.VITE_BACKEND_URL}${
-          initialData?.attachmentUrl
-        }`;
+        const initialurl = `${import.meta.env.VITE_BACKEND_URL}${initialData?.attachmentUrl
+          }`;
         setCurrentAttachmentPreview(initialurl);
       } else {
         setCurrentAttachmentPreview(null);
@@ -175,24 +177,33 @@ const ProductForm: React.FC<ProductFormProps> = ({
   const mutation = useMutation<
     any,
     Error,
-    { productData: FormData; variants: ProductVariantDto[] }
+    { productData: FormData; variants: ProductVariantDto[]; newImages?: File[] }
   >({
-    mutationFn: async ({ productData, variants }) => {
-      // Step 1: Create or Update the product
-      const endpoint =
-        mode === "create" ? "/products" : `/products/${productId}`;
+    mutationFn: async ({ productData, variants, newImages }) => {
+      const endpoint = mode === "create" ? "/products" : `/products/${productId}`;
       const method = mode === "create" ? post : put;
-      if (mode === "edit" && !productId)
-        throw new Error("Product ID is required for update.");
+      if (mode === "edit" && !productId) throw new Error("Product ID is required for update.");
 
       const productResult = await method(endpoint, productData);
       const returnedProductId = productResult?.id || productId;
-
       if (!returnedProductId) throw new Error("Failed to get product ID.");
 
-      // Step 2: Bulk update the variants for that product
       if (variants && variants.length > 0) {
         await bulkUpdateVariants(returnedProductId, variants);
+      }
+
+      // Upload additional images
+      if (newImages && newImages.length > 0) {
+        const imgFormData = new FormData();
+        newImages.forEach(f => imgFormData.append("productImages", f, f.name));
+        await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/api/products/${returnedProductId}/images`,
+          {
+            method: "POST",
+            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+            body: imgFormData,
+          }
+        );
       }
 
       return productResult;
@@ -206,6 +217,8 @@ const ProductForm: React.FC<ProductFormProps> = ({
       if (returnedId) {
         queryClient.invalidateQueries({ queryKey: ["product", returnedId] });
       }
+      setNewImageFiles([]);
+      setNewImagePreviews([]);
       if (onSuccess) onSuccess();
     },
     onError: (error: any) => {
@@ -222,6 +235,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
     const formData = new FormData();
     formData.append("name", data.name);
     formData.append("isDairyProduct", String(data.isDairyProduct));
+    formData.append("isSubscription", String(data.isSubscription));
     formData.append("maintainStock", String(data.maintainStock));
     if (data.description) formData.append("description", data.description);
     if (data.tags) formData.append("tags", data.tags);
@@ -240,7 +254,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
       formData.append("attachmentUrl", "");
     }
 
-    mutation.mutate({ productData: formData, variants: data.variants || [] });
+    mutation.mutate({ productData: formData, variants: data.variants || [], newImages: newImageFiles });
   };
 
   return (
@@ -370,59 +384,151 @@ const ProductForm: React.FC<ProductFormProps> = ({
             <Label htmlFor="isDairyProduct">Is this a Dairy Product?</Label>
           </div>
 
-          <div className="md:col-span-2 space-y-2">
-            <Label htmlFor="attachmentUrl">Product Image</Label>
-            <Input
-              id="attachmentUrl"
-              type="file"
-              accept={ACCEPTED_IMAGE_TYPES.join(",")}
-              {...register("attachmentUrl", {
-                onChange: (e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    const previewUrl = URL.createObjectURL(file);
-                    setCurrentAttachmentPreview(previewUrl);
-                    setAttachmentFileName(file.name);
-                  } else {
-                    setCurrentAttachmentPreview(null);
-                    setAttachmentFileName("");
-                  }
-                },
-              })}
-              disabled={mutation.isPending}
-            />
-            {attachmentFileName && (
-              <p className="text-xs text-gray-500 mt-1">
-                Selected: {attachmentFileName}
-              </p>
-            )}
-            {errors.attachmentUrl && (
-              <p className="text-red-500 text-xs mt-1">
-                {errors.attachmentUrl.message as string}
-              </p>
-            )}
-            {currentAttachmentPreview && (
-              <div className="mt-4 relative w-48 h-48 border rounded-md overflow-hidden">
-                <img
-                  src={currentAttachmentPreview}
-                  alt="Preview"
-                  className="w-full h-full object-cover"
+          <div className="flex items-center space-x-2 pt-8">
+            <Controller
+              name="isSubscription"
+              control={control}
+              render={({ field }) => (
+                <Checkbox
+                  id="isSubscription"
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                  disabled={mutation.isPending}
                 />
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="sm"
-                  className="absolute top-1 right-1 h-6 w-6 p-0"
-                  onClick={() => {
-                    setCurrentAttachmentPreview(null);
-                    setAttachmentFileName("");
-                    form.setValue("attachmentUrl", null, { shouldDirty: true });
-                  }}
-                >
-                  X
-                </Button>
+              )}
+            />
+            <Label htmlFor="isSubscription">Is Subscription?</Label>
+          </div>
+
+          <div className="md:col-span-2 space-y-3">
+            <Label>Product Images</Label>
+
+            {/* Existing saved images */}
+            {(initialData as any)?.images && (initialData as any).images.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Saved images (click ✕ to remove)</p>
+                <div className="flex flex-wrap gap-3">
+                  {(initialData as any).images.map((img: any) => (
+                    <div key={img.id} className="relative w-24 h-24 border rounded-md overflow-hidden group">
+                      <img
+                        src={`${import.meta.env.VITE_BACKEND_URL}${img.url}`}
+                        alt="Product"
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/products/${productId}/images/${img.id}`, {
+                              method: "DELETE",
+                              headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+                            });
+                            queryClient.invalidateQueries({ queryKey: ["product", productId] });
+                          } catch {
+                            toast.error("Failed to delete image");
+                          }
+                        }}
+                        className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
+
+            {/* New image previews */}
+            {newImagePreviews.length > 0 && (
+              <div className="flex flex-wrap gap-3">
+                {newImagePreviews.map((src, idx) => (
+                  <div key={idx} className="relative w-24 h-24 border rounded-md overflow-hidden group">
+                    <img src={src} alt={`New ${idx + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewImagePreviews(p => p.filter((_, i) => i !== idx));
+                        setNewImageFiles(f => f.filter((_, i) => i !== idx));
+                      }}
+                      className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* File picker */}
+            <label className="flex items-center gap-2 cursor-pointer px-4 py-2 border border-dashed rounded-md text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors w-fit">
+              <span>+ Add Images</span>
+              <input
+                type="file"
+                multiple
+                accept={ACCEPTED_IMAGE_TYPES.join(",")}
+                className="hidden"
+                disabled={mutation.isPending}
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || []);
+                  if (files.length === 0) return;
+                  const validFiles = files.filter(f => f.size <= MAX_FILE_SIZE && ACCEPTED_IMAGE_TYPES.includes(f.type));
+                  if (validFiles.length < files.length) toast.warning("Some files were skipped (too large or wrong type)");
+                  setNewImageFiles(prev => [...prev, ...validFiles]);
+                  const newPreviews = validFiles.map(f => URL.createObjectURL(f));
+                  setNewImagePreviews(prev => [...prev, ...newPreviews]);
+                  e.target.value = ""; // reset so same files can be re-added
+                }}
+              />
+            </label>
+            <p className="text-xs text-muted-foreground">Max 5MB per image. JPG, PNG, WebP, GIF supported.</p>
+
+            {/* Legacy single image for backwards compatibility */}
+            <div className="space-y-2 pt-2 border-t">
+              <Label htmlFor="attachmentUrl" className="text-xs text-muted-foreground">Primary/Cover Image (replaces existing)</Label>
+              <Input
+                id="attachmentUrl"
+                type="file"
+                accept={ACCEPTED_IMAGE_TYPES.join(",")}
+                {...register("attachmentUrl", {
+                  onChange: (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const previewUrl = URL.createObjectURL(file);
+                      setCurrentAttachmentPreview(previewUrl);
+                      setAttachmentFileName(file.name);
+                    } else {
+                      setCurrentAttachmentPreview(null);
+                      setAttachmentFileName("");
+                    }
+                  },
+                })}
+                disabled={mutation.isPending}
+              />
+              {attachmentFileName && (
+                <p className="text-xs text-gray-500 mt-1">Selected: {attachmentFileName}</p>
+              )}
+              {errors.attachmentUrl && (
+                <p className="text-red-500 text-xs mt-1">{errors.attachmentUrl.message as string}</p>
+              )}
+              {currentAttachmentPreview && (
+                <div className="mt-2 relative w-24 h-24 border rounded-md overflow-hidden">
+                  <img src={currentAttachmentPreview} alt="Preview" className="w-full h-full object-cover" />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-1 right-1 h-5 w-5 p-0 text-xs"
+                    onClick={() => {
+                      setCurrentAttachmentPreview(null);
+                      setAttachmentFileName("");
+                      form.setValue("attachmentUrl", null, { shouldDirty: true });
+                    }}
+                  >
+                    X
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
