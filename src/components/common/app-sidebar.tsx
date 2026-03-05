@@ -424,11 +424,11 @@ const initialData = {
   ],
 };
 
-interface AppSidebarProps {}
+interface AppSidebarProps { }
 
 export function AppSidebar(props: AppSidebarProps) {
   const { pathname } = useLocation();
-  const { state, isMobile } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const showCollapsedTooltips = state === "collapsed" && !isMobile;
   const [data, setData] = React.useState({
     ...initialData,
@@ -555,7 +555,11 @@ export function AppSidebar(props: AppSidebarProps) {
               className="data-[slot=sidebar-menu-button]:!p-2 hover:bg-white/10 transition-colors rounded-lg"
             >
               <div className="flex items-center gap-2 justify-between">
-                <Link to="/admin/dashboard" className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0">
+                <Link
+                  to="/admin/dashboard"
+                  onClick={() => isMobile && setOpenMobile(false)}
+                  className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0"
+                >
                   <ArrowUpCircleIcon className="h-5 w-5 text-white" />
                   <span className="text-sm font-medium text-white group-data-[collapsible=icon]:hidden">
                     {appName}
@@ -583,6 +587,7 @@ export function AppSidebar(props: AppSidebarProps) {
                     <Link
                       key={item.url}
                       to={item.url}
+                      onClick={() => isMobile && setOpenMobile(false)}
                       className={cn(
                         "block w-full px-3 py-2 text-sm transition-colors",
                         pathname === item.url
@@ -613,9 +618,8 @@ export function AppSidebar(props: AppSidebarProps) {
                       <div className="px-3 py-2 flex items-center justify-between text-sm font-medium text-blue-200 hover:bg-white/10 cursor-pointer transition-colors rounded-md group-data-[collapsible=icon]:justify-center">
                         <div className="flex items-center gap-2">
                           <ChevronDown
-                            className={`h-4 w-4 transition-transform text-blue-300 ${
-                              openGroups[groupLabel] ? "rotate-0" : "-rotate-90"
-                            }`}
+                            className={`h-4 w-4 transition-transform text-blue-300 ${openGroups[groupLabel] ? "rotate-0" : "-rotate-90"
+                              }`}
                           />
                           <span className="group-data-[collapsible=icon]:hidden">{groupLabel}</span>
                         </div>
@@ -636,6 +640,7 @@ export function AppSidebar(props: AppSidebarProps) {
                         <TooltipTrigger asChild>
                           <Link
                             to={item.url}
+                            onClick={() => isMobile && setOpenMobile(false)}
                             className={cn(
                               "flex items-center gap-2 px-3 py-2 text-sm transition-colors group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:px-2",
                               pathname === item.url
@@ -679,6 +684,7 @@ export function AppSidebar(props: AppSidebarProps) {
                 <TooltipTrigger asChild>
                   <Link
                     to={item.url}
+                    onClick={() => isMobile && setOpenMobile(false)}
                     className={cn(
                       "flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2",
                       pathname === item.url

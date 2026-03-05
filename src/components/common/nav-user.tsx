@@ -42,10 +42,10 @@ export function NavUser({
   const handleLogout = () => {
     // Clear all cached query data to prevent stale data issues
     queryClient.clear();
-    
+
     // Clear all authentication data from localStorage
     clearAuthData();
-    
+
     setShowConfirmation(false);
     navigate("/"); // Redirect to login page
   };
@@ -54,7 +54,7 @@ export function NavUser({
     <>
       <SidebarMenu>
         <SidebarMenuItem>
-          <DropdownMenu modal={false}>
+          <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
                 size="lg"
@@ -106,8 +106,8 @@ export function NavUser({
                 <span>Change Password</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-                 <DropdownMenuItem
-                  onSelect={(e) => {
+              <DropdownMenuItem
+                onSelect={(e) => {
                   e.preventDefault();
                   console.log('[nav-user.tsx] Logout DropdownMenuItem clicked. Setting showConfirmation to true.');
                   setShowConfirmation(true);
