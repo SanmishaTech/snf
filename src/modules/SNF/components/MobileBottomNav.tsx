@@ -303,7 +303,7 @@ export const MobileBottomNav: React.FC = () => {
 
         <button
           className="ml-2 bg-[#22c55e] text-white px-4 py-2 rounded-xl flex items-center justify-center font-bold text-sm italic shadow-sm"
-          onClick={() => navigate("/snf/bistro")}
+          onClick={() => navigate("/snf")}
         >
           SNF
         </button>

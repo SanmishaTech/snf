@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Facebook, Instagram, Search, Menu, X, UserCircle, LogOut, ShoppingBag, KeyRound, Bell } from 'lucide-react';
+import { Facebook, Instagram, Search, Menu, X, UserCircle, LogOut, ShoppingBag, KeyRound, Bell, LayoutDashboard } from 'lucide-react';
 import UserChangePasswordDialog from '@/components/common/UserChangePasswordDialog';
 import WalletButton from '@/modules/Wallet/Components/Walletmenu';
 import Sarkotlogo from "@/images/Sarkhot-Natural-Farms-Png.webp"
@@ -490,6 +490,16 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
                           Change Password
                         </button>
                       )}
+                      {userRole === 'ADMIN' && (
+                        <Link
+                          to="/admin/dashboard"
+                          className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-gray-700 transition-colors"
+                          onClick={() => setIsAccountDropdownOpen(false)}
+                        >
+                          <LayoutDashboard size={16} className="mr-2 text-green-600" />
+                          Dashboard
+                        </Link>
+                      )}
                       <button
                         onClick={() => { onLogout(); setIsAccountDropdownOpen(false); }}
                         className="w-full flex items-center text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-gray-700 transition-colors"
@@ -583,6 +593,16 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
                 {link.name}
               </Link>
             ))}
+            {userRole === 'ADMIN' && (
+              <Link
+                to="/admin/dashboard"
+                className="block py-3 px-4 text-gray-700 dark:text-gray-300 hover:text-green-600 hover:bg-green-50 dark:hover:bg-gray-800 rounded-lg transition-colors flex items-center group"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full mr-3 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                <LayoutDashboard size={16} className="mr-2" /> Dashboard
+              </Link>
+            )}
             {isLoggedIn && onLogout ? (
               <button
                 onClick={() => { onLogout(); setMobileMenuOpen(false); }}
