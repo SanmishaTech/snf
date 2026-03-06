@@ -12,12 +12,14 @@ export class ProductServiceImpl implements ProductService {
   /**
    * Get public products with optional depot filtering
    */
-  async getProducts(depotId?: number): Promise<Product[]> {
+  async getProducts(depotId?: number, page: number = 1, limit: number = 10): Promise<Product[]> {
     try {
       const url = new URL(`/api/products/public`, this.API_ORIGIN);
       if (depotId) {
         url.searchParams.append('depotId', depotId.toString());
       }
+      url.searchParams.append('page', page.toString());
+      url.searchParams.append('limit', limit.toString());
 
       const response = await this.fetchWithRetry(url.toString());
 
@@ -362,7 +364,7 @@ export class ProductServiceImpl implements ProductService {
   /**
    * Get products by category
    */
-  async getProductsByCategory(categoryId: number, depotId?: number): Promise<Product[]> {
+  async getProductsByCategory(categoryId: number, depotId?: number, page: number = 1, limit: number = 10): Promise<Product[]> {
     try {
       const url = new URL(`/api/products/public`, this.API_ORIGIN);
       // Backend may ignore categoryId; we still send it for forward compatibility
@@ -370,6 +372,8 @@ export class ProductServiceImpl implements ProductService {
       if (depotId) {
         url.searchParams.append('depotId', depotId.toString());
       }
+      url.searchParams.append('page', page.toString());
+      url.searchParams.append('limit', limit.toString());
 
       const response = await this.fetchWithRetry(url.toString());
 
@@ -404,13 +408,15 @@ export class ProductServiceImpl implements ProductService {
   /**
    * Search products by name or description
    */
-  async searchProducts(query: string, depotId?: number): Promise<Product[]> {
+  async searchProducts(query: string, depotId?: number, page: number = 1, limit: number = 10): Promise<Product[]> {
     try {
       const url = new URL(`/api/products/public`, this.API_ORIGIN);
       url.searchParams.append('search', query);
       if (depotId) {
         url.searchParams.append('depotId', depotId.toString());
       }
+      url.searchParams.append('page', page.toString());
+      url.searchParams.append('limit', limit.toString());
 
       const response = await this.fetchWithRetry(url.toString());
 

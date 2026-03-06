@@ -160,12 +160,12 @@ export interface DepotVariant {
  * API service interface for products and variants
  */
 export interface ProductService {
-  getProducts(depotId: number): Promise<Product[]>;
+  getProducts(depotId?: number, page?: number, limit?: number): Promise<Product[]>;
   getProductById(id: number): Promise<Product | null>;
   getDepotVariants(depotId: number): Promise<DepotVariant[]>;
   getProductVariants(productId: number, depotId: number): Promise<DepotVariant[]>;
-  getProductsByCategory(categoryId: number, depotId: number): Promise<Product[]>;
-  searchProducts(query: string, depotId: number): Promise<Product[]>;
+  getProductsByCategory(categoryId: number, depotId?: number, page?: number, limit?: number): Promise<Product[]>;
+  searchProducts(query: string, depotId?: number, page?: number, limit?: number): Promise<Product[]>;
   getCategories(): Promise<Category[]>;
 }
 
@@ -199,6 +199,8 @@ export interface PricingState {
   products: Product[];
   depotVariants: DepotVariant[];
   isLoading: boolean;
+  page: number;
+  hasMore: boolean;
   error: PricingError | GeolocationError | null;
   isLocationPermissionGranted: boolean;
   serviceAvailability: ServiceAvailability | null;
@@ -216,6 +218,7 @@ export interface PricingActions {
   setLoading: (loading: boolean) => void;
   setLocationPermission: (granted: boolean) => void;
   setServiceAvailability: (availability: ServiceAvailability) => void;
+  loadMoreProducts: () => Promise<void>;
 }
 
 /**

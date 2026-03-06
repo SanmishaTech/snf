@@ -12,6 +12,9 @@ export const Footer: React.FC = () => {
               </span>
               <span className="text-xl font-bold">SNF Market</span>
             </div>
+
+            {/* Removed extra navigation icons that duplicated mobile nav */}
+
             <p className="text-sm mb-6 leading-relaxed">
               Fresh groceries delivered fast. Pure, natural, and carefully curated selection.
             </p>
@@ -77,7 +80,7 @@ export const Footer: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-gray-200 dark:bg-gray-800 py-4 border-t border-gray-300 dark:border-gray-700">
+      <div className="bg-gray-200 dark:bg-gray-800 pt-4 pb-20 md:py-4 border-t border-gray-300 dark:border-gray-700">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-xs text-gray-600 dark:text-gray-400">
           <p className="mb-2 md:mb-0 text-center md:text-left">
             &copy; {new Date().getFullYear()} SNF Market. All Rights Reserved.

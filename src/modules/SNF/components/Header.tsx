@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { User, Search, MapPin, LocateFixed, Loader2, Check } from "lucide-react";
-import GlobalSearch from "@/components/GlobalSearch";
+import { User, MapPin, LocateFixed, Loader2, Check } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,17 +18,17 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = (_props) => {
   const [sticky, setSticky] = useState(false);
   const [open, setOpen] = useState(false);
-  const [deliveryLocation, setDeliveryLocation] = useState<DeliveryLocation | null>(() => 
+  const [deliveryLocation, setDeliveryLocation] = useState<DeliveryLocation | null>(() =>
     DeliveryLocationService.getCurrentLocation()
   );
   const [pincode, setPincode] = useState<string>(() => deliveryLocation?.pincode || "");
   const [loading, setLoading] = useState<"geo" | "pin" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const isValidPin = /^\d{6}$/.test(pincode);
-  
+
   // Get pricing context to trigger product refetch when location changes
   const { actions: pricingActions } = usePricing();
-  
+
   // Get cart context to validate cart when depot changes
   const { validateCart, state: cartState } = useCart();
 
@@ -58,13 +57,13 @@ export const Header: React.FC<HeaderProps> = (_props) => {
     try {
       // Update delivery location with depot mapping
       const location = await DeliveryLocationService.updateLocationByPincode(pincode);
-      
+
       if (location) {
         setDeliveryLocation(location);
         setPincode(location.pincode);
         setOpen(false);
         console.log(`Location updated: ${location.pincode} -> Depot: ${location.depotName} (${location.depotId})`);
-        
+
         // Trigger product refetch in PricingContext with new location and depot
         if (location.depotId && location.depotName) {
           try {
@@ -75,7 +74,7 @@ export const Header: React.FC<HeaderProps> = (_props) => {
               longitude: 0,
               address: `${location.areaName || ''}, ${location.pincode}`.trim().replace(/^,\s*/, ''),
             };
-            
+
             // Create depot data for PricingContext
             const depotData = {
               id: parseInt(location.depotId),
@@ -84,10 +83,10 @@ export const Header: React.FC<HeaderProps> = (_props) => {
               pincode: location.pincode,
               isActive: true,
             };
-            
+
             // Use the new setLocationWithDepot action to avoid duplicate API calls
             await pricingActions.setLocationWithDepot(locationData, depotData);
-            
+
             // Validate cart items for the new depot if cart has items
             if (cartState.items.length > 0) {
               console.log(`[Header] Validating cart for new depot: ${depotData.id}`);
@@ -113,20 +112,20 @@ export const Header: React.FC<HeaderProps> = (_props) => {
     setLoading("geo");
     try {
       const data = await geolocationService.requestLocationWithExplanation();
-      
+
       // Update delivery location with the detected pincode
       const location = await DeliveryLocationService.updateLocationByPincode(data.pincode);
-      
+
       if (location) {
         setDeliveryLocation(location);
         setPincode(location.pincode);
         setOpen(false);
         console.log(`Location detected: ${location.pincode} -> Depot: ${location.depotName} (${location.depotId})`);
-        
+
         // Trigger product refetch in PricingContext with detected location
         try {
           await pricingActions.setLocation(data);
-          
+
           // Validate cart items for the new depot if cart has items
           if (cartState.items.length > 0 && location.depotId) {
             console.log(`[Header] Validating cart for detected depot: ${location.depotId}`);
@@ -140,7 +139,7 @@ export const Header: React.FC<HeaderProps> = (_props) => {
         // Still set the pincode even if no depot is found
         setPincode(data.pincode);
         setError("We don't deliver to this location yet. Check back soon!");
-        
+
         // Still update PricingContext with the detected location even if no depot
         try {
           await pricingActions.setLocation(data);
@@ -157,9 +156,8 @@ export const Header: React.FC<HeaderProps> = (_props) => {
 
   return (
     <header
-      className={`top-0 inset-x-0 z-40 bg-background/95 supports-[backdrop-filter]:bg-background/60 backdrop-blur border-b transition-all pt-[env(safe-area-inset-top)] ${
-        sticky ? "sticky shadow-sm" : "relative"
-      }`}
+      className={`hidden md:block top-0 inset-x-0 z-40 bg-background/95 supports-[backdrop-filter]:bg-background/60 backdrop-blur border-b transition-all pt-[env(safe-area-inset-top)] ${sticky ? "sticky shadow-sm" : "relative"
+        }`}
       aria-label="SNF store global header"
     >
       <div className="container mx-auto px-3 md:px-6 lg:px-8">
@@ -171,12 +169,7 @@ export const Header: React.FC<HeaderProps> = (_props) => {
             <span className="hidden sm:inline text-base md:text-lg font-semibold tracking-tight truncate">SNF Market</span>
           </a>
 
-          {/* Replace submit-based search with search-as-you-type preview dropdown */}
-          <div className="flex-1 max-w-xl hidden md:flex items-center min-w-0">
-            <GlobalSearch />
-          </div>
-
-          <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 md:gap-2 shrink-0 ml-auto">
             {/* Location selector using shadcn DropdownMenu with portal and safe z-index */}
             <DropdownMenu open={open} onOpenChange={setOpen}>
               <DropdownMenuTrigger asChild>
@@ -250,15 +243,6 @@ export const Header: React.FC<HeaderProps> = (_props) => {
               <WalletButton isLoggedIn={true} />
             </div>
 
-            {/* Mobile search icon focuses input inside GlobalSearch if desired (future enhancement) */}
-            <a
-              href="/snf"
-              className="md:hidden inline-flex items-center justify-center rounded-md h-9 w-9 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ring"
-              aria-label="Search"
-            >
-              <Search className="size-5" aria-hidden="true" />
-            </a>
-
             {/* Account dropdown opens on click */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -281,11 +265,6 @@ export const Header: React.FC<HeaderProps> = (_props) => {
 
             <CartDropdown />
           </div>
-        </div>
-
-        {/* Mobile search (uses same GlobalSearch component) */}
-        <div className="md:hidden pb-2">
-          <GlobalSearch />
         </div>
       </div>
     </header>

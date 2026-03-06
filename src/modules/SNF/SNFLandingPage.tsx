@@ -4,13 +4,14 @@ import { Header } from "./components/Header.tsx";
 import { Footer } from "./components/Footer.tsx";
 import { Hero } from "./components/Hero.tsx";
 import { ProductGrid } from "./components/ProductGrid.tsx";
+import { ProductCard } from "./components/ProductCard.tsx";
+import { MobileBottomNav } from "./components/MobileBottomNav.tsx";
 import { usePricing } from "./context/PricingContext.tsx";
 import { useLocation, useNavigate } from "react-router-dom";
 // import { geolocationService } from "./services/geolocation";
 import { ProductWithPricing, DepotVariant } from "./types";
 import { productService } from "./services/api";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useCart } from "./context/CartContext";
 import { useDeliveryLocation } from "./hooks/useDeliveryLocation";
 import type { Category as FilterCategory } from "./components/CategoryFilters.tsx";
@@ -33,19 +34,21 @@ const SNFContent: React.FC = () => {
   const { state: pricingState, actions: pricingActions } = usePricing();
   const { addItem, state: cartState } = useCart();
   const { currentDepotId } = useDeliveryLocation();
+  const { hasMore } = pricingState;
+  const { loadMoreProducts } = pricingActions;
 
   // Use pricing context data directly instead of individual hooks
   // const location = pricingState.userLocation;
   const products = pricingState.products.map(product => {
     const productVariants = pricingState.depotVariants.filter(v => v.productId === product.id);
-    
+
     // Calculate buyOncePrice only from available variants
     const availableVariants = productVariants.filter(v => !v.notInStock && !v.isHidden);
     const buyOncePrices = availableVariants.map(v => {
       const price = v.buyOncePrice || v.mrp || 0;
       return typeof price === 'number' && isFinite(price) && price > 0 ? price : 0;
     }).filter(price => price > 0);
-    
+
     const buyOncePrice = buyOncePrices.length > 0 ? Math.min(...buyOncePrices) : 0;
     const inStock = availableVariants.length > 0;
     const mrpPrices = availableVariants.map(v => {
@@ -53,7 +56,7 @@ const SNFContent: React.FC = () => {
       return typeof price === 'number' && isFinite(price) && price > 0 ? price : 0;
     }).filter(price => price > 0);
     const mrp = mrpPrices.length > 0 ? Math.max(...mrpPrices) : 0;
-    
+
     return {
       product,
       variants: productVariants, // may be empty for products without variants; still display
@@ -107,10 +110,12 @@ const SNFContent: React.FC = () => {
             name: `Depot ${currentDepotId}`,
             address: '',
             pincode: '',
+            city: '',
+            isOnline: true,
             isActive: true,
           };
-          
-          await pricingActions.setDepot(depot);
+
+          await pricingActions.setDepot(depot as any);
         } catch (error) {
           console.error('Failed to load products for depot:', error);
         }
@@ -301,10 +306,10 @@ const SNFContent: React.FC = () => {
       <main className="flex-1">
         <Hero />
 
-        {/* Categories Grid - fetched from API, 6 columns per row on large screens */}
-        <section className="container mx-auto px-4 md:px-6 lg:px-8 py-8">
+        {/* Categories Grid - horizontal scrollable tab row */}
+        <section className="container mx-auto px-4 md:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl md:text-2xl font-semibold">Browse by Category</h2>
+            <h2 className="text-xl md:text-2xl font-bold">Browse by Category</h2>
             {catError && (
               <Button size="sm" variant="outline" onClick={() => {
                 setCatLoading(true);
@@ -333,110 +338,74 @@ const SNFContent: React.FC = () => {
           </div>
 
           {catLoading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-              {Array.from({ length: 12 }).map((_, i) => (
-                <div key={i} className="animate-pulse">
-                  <div className="aspect-square w-full rounded-lg bg-muted/30" />
-                  <div className="h-3 w-2/3 bg-muted/40 rounded mt-3" />
-                </div>
-              ))}
+            <div className="border-b border-border">
+              <div className="flex overflow-x-auto gap-6 px-1 scrollbar-hide items-center py-1">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="shrink-0 animate-pulse">
+                    <div className="h-4 rounded bg-muted/40" style={{ width: `${56 + i * 12}px` }} />
+                    <div className={i === 1 ? "mt-2 h-0.5 w-full rounded bg-foreground/70" : "mt-2 h-0.5 w-full rounded bg-transparent"} />
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-              {/* All category to clear filters */}
-              <button
-                key="all"
-                id="category-all"
-                type="button"
-                onClick={() => { 
-                  setSelectedCats([]); 
-                  setSelectedTag(null);
-                  const params = new URLSearchParams(location.search || '');
-                  params.delete('tag');
-                  navigate({ search: params.toString() ? `?${params.toString()}` : '' }, { replace: true });
-                }}
-                className="group text-left"
-                aria-label="Show all products"
-              >
-                <div className={`relative aspect-square w-full overflow-hidden rounded-full border bg-accent/10 ${selectedCats.length === 0 ? 'ring-2 ring-primary border-primary' : ''}`}>
-                  <div className="h-full w-full grid place-items-center text-muted-foreground bg-gradient-to-br from-muted/30 to-transparent rounded-full">
-                    All
-                  </div>
-                </div>
-                <div className="mt-3 text-center">
-                  <p className={`text-sm font-medium line-clamp-2 transition-colors ${selectedCats.length === 0 ? 'text-primary' : 'group-hover:text-primary'}`}>
-                    All
-                  </p>
-                </div>
-              </button>
+            <div className="border-b border-border">
+              <div className="flex overflow-x-auto gap-6 px-1 scrollbar-hide items-center">
+                <button
+                  key="all"
+                  id="category-all"
+                  type="button"
+                  onClick={() => {
+                    setSelectedCats([]);
+                    setSelectedTag(null);
+                    const params = new URLSearchParams(location.search || "");
+                    params.delete("tag");
+                    navigate({ search: params.toString() ? `?${params.toString()}` : "" }, { replace: true });
+                  }}
+                  className={
+                    selectedCats.length === 0
+                      ? "relative py-2 text-sm font-medium text-foreground after:absolute after:left-0 after:right-0 after:bottom-0 after:h-0.5 after:bg-foreground"
+                      : "py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+                  }
+                  aria-label="Show all products"
+                >
+                  All Types
+                </button>
 
-              {categories.map((cat: any) => {
-                const catIdNum = parseInt(cat.id, 10);
-                const isSelected = selectedCats.includes(catIdNum);
-                return (
-                  <a
-                    key={cat.id}
-                    id={`category-${catIdNum}`}
-                    href={`/snf/category/${catIdNum}`}
-                    className="group text-left"
-                    aria-label={`Filter by category ${cat.name}`}
-                  >
-                    <div className={`relative aspect-square w-full overflow-hidden rounded-full border bg-accent/10 ${isSelected ? 'ring-2 ring-primary border-primary' : ''}`}>
-                      {cat.imageUrl ? (
-                        <img
-                          src={`${import.meta.env.VITE_BACKEND_URL}${cat.imageUrl}`}
-                          alt={cat.name}
-                          className=" h-full w-full  object-cover rounded-full transition-transform duration-300 group-hover:scale-[1.03]"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="h-full w-full grid place-items-center text-muted-foreground bg-gradient-to-br from-muted/30 to-transparent rounded-full">
-                          {cat.name?.charAt(0) || "C"}
-                        </div>
-                      )}
-                    </div>
-                    <div className="mt-3 text-center">
-                      <p className={`text-sm font-medium line-clamp-2 transition-colors ${isSelected ? 'text-primary' : 'group-hover:text-primary'}`}>
-                        {cat.name}
-                      </p>
-                    </div>
-                  </a>
-                );
-              })}
-              {categories.length === 0 && !catError && (
-                <p className="col-span-2 sm:col-span-3 lg:col-span-6 text-muted-foreground">
-                  No categories available.
-                </p>
-              )}
+                {categories.map((cat: any) => {
+                  const catIdNum = parseInt(cat.id, 10);
+                  const isSelected = selectedCats.includes(catIdNum);
+                  return (
+                    <button
+                      key={cat.id}
+                      id={`category-${catIdNum}`}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setSelectedCats([catIdNum]);
+                      }}
+                      className={
+                        isSelected
+                          ? "relative py-2 text-sm font-medium text-foreground after:absolute after:left-0 after:right-0 after:bottom-0 after:h-0.5 after:bg-foreground"
+                          : "py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+                      }
+                      aria-label={`Filter by category ${cat.name}`}
+                    >
+                      {cat.name}
+                    </button>
+                  );
+                })}
+
+                {categories.length === 0 && !catError && (
+                  <p className="py-2 text-sm text-muted-foreground">No categories available.</p>
+                )}
+              </div>
             </div>
           )}
         </section>
 
-        {/* Separation heading between Categories and Products */}
-        <section className="container mx-auto px-4 md:px-6 lg:px-8">
-          <div className="h-px w-full bg-border/60" />
-          <div className="flex items-end justify-between py-4">
-            <div>
-              <h2 className="text-xl md:text-2xl font-semibold">Products</h2>
-              <p className="text-sm text-muted-foreground">
-                Click a category above to filter products below
-              </p>
-            </div>
-          </div>
-        </section>
-
         {/* Product filters + grid */}
         <section id="products" className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6">
-          {/* Local search input for products */}
-          <div className="mb-4">
-            <Input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search products"
-              aria-label="Search products"
-            />
-          </div>
-
           {isLoading && products.length === 0 ? (
             <div className="mt-6">
               {/* basic skeletons */}
@@ -449,19 +418,89 @@ const SNFContent: React.FC = () => {
                 ))}
               </div>
             </div>
-          ) : (
+          ) : q.trim() || selectedTag || selectedCats.length > 0 ? (
             <div className="">
               <ProductGrid
                 products={filtered}
                 onAddToCart={onAddToCart}
                 isLoading={isLoading}
               />
+              {hasMore && filtered.length > 0 && (
+                <div className="mt-8 flex justify-center pb-10">
+                  <Button
+                    onClick={loadMoreProducts}
+                    disabled={isLoading}
+                    variant="outline"
+                    size="lg"
+                    className="min-w-[200px] border-primary text-primary hover:bg-primary/5 h-12"
+                  >
+                    {isLoading ? (
+                      <div className="flex items-center gap-2">
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                        Loading...
+                      </div>
+                    ) : (
+                      'Load More Products'
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-8 mt-4">
+              {categories.map((cat: any) => {
+                const catProducts = filtered.filter(p => p.product.categoryId === parseInt(cat.id));
+                if (catProducts.length === 0) return null;
+                return (
+                  <div key={cat.id} className="pt-2">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg md:text-xl font-bold">{cat.name}</h3>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedCats([parseInt(cat.id)]);
+                          document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                        className="text-sm font-medium text-primary hover:underline cursor-pointer"
+                      >
+                        See all
+                      </button>
+                    </div>
+                    <div className="flex overflow-x-auto gap-3 sm:gap-4 scrollbar-hide snap-x pb-4 px-1">
+                      {catProducts.map(p => (
+                        <div key={p.product.id} className="flex-shrink-0 w-[140px] sm:w-[160px] md:w-[180px] snap-start h-auto flex">
+                          <ProductCard product={p} onAddToCart={onAddToCart} showVariants={true} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Render any uncategorized products */}
+              {(() => {
+                const uncategorized = filtered.filter(p => !categories.find((c: any) => parseInt(c.id) === p.product.categoryId));
+                if (uncategorized.length === 0) return null;
+                return (
+                  <div className="pt-2">
+                    <h3 className="text-lg md:text-xl font-bold mb-4">Other Products</h3>
+                    <div className="flex overflow-x-auto gap-3 sm:gap-4 scrollbar-hide snap-x pb-4 px-1">
+                      {uncategorized.map(p => (
+                        <div key={p.product.id} className="flex-shrink-0 w-[140px] sm:w-[160px] md:w-[180px] snap-start h-auto flex">
+                          <ProductCard product={p} onAddToCart={onAddToCart} showVariants={true} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           )}
         </section>
       </main>
 
       <Footer />
+      <MobileBottomNav />
     </div>
   );
 };

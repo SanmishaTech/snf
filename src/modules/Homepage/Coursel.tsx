@@ -39,13 +39,13 @@ const HeroSection: React.FC<HeroSectionProps> = ({
     const checkIsMobile = () => {
       setIsMobile(window.innerWidth < 436); // Mobile breakpoint at 768px
     };
-    
+
     // Check on mount
     checkIsMobile();
-    
+
     // Listen for resize events
     window.addEventListener('resize', checkIsMobile);
-    
+
     return () => {
       window.removeEventListener('resize', checkIsMobile);
     };
@@ -54,7 +54,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
   useEffect(() => {
     if (images && images.length > 1) {
       intervalRef.current = setInterval(() => {
-        setCurrentImageIndex((prevIndex) => 
+        setCurrentImageIndex((prevIndex) =>
           prevIndex === images.length - 1 ? 0 : prevIndex + 1
         );
       }, 5000);
@@ -77,7 +77,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
     // Always scroll to product detail section regardless of login status
     const productSection = document.getElementById('product-detail-section');
     if (productSection) {
-      productSection.scrollIntoView({ 
+      productSection.scrollIntoView({
         behavior: 'smooth',
         block: 'start'
       });
@@ -86,23 +86,23 @@ const HeroSection: React.FC<HeroSectionProps> = ({
 
   if (!images || images.length === 0) {
     return (
-        <section className={cn("relative w-full h-screen overflow-hidden flex items-center justify-center bg-gray-200", className)}>
-            <div className="text-center">
-                <p>Loading Banners...</p>
-            </div>
-        </section>
+      <section className={cn("relative w-full h-screen overflow-hidden flex items-center justify-center bg-gray-200", className)}>
+        <div className="text-center">
+          <p>Loading Banners...</p>
+        </div>
+      </section>
     );
   }
 
   return (
     <section className={cn("relative w-full overflow-hidden", className)}>
       {/* Hero Container with specific aspect ratio */}
-      <div 
+      <div
         className="relative w-full mx-auto max-sm:w-full max-sm:h-[16rem] max-[439px]:min-h-[39rem] "
         style={{
           maxWidth: '1920px',
-           aspectRatio: '1584 / 632',
-         }}
+          aspectRatio: '1584 / 632',
+        }}
       >
         {/* Background Images */}
         <div className="absolute inset-0 ">
@@ -112,7 +112,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
               className={cn(
                 "absolute inset-0 transition-opacity duration-1000 ease-in-out",
                 index === currentImageIndex ? "opacity-100" : "opacity-100"
-               )}
+              )}
             >
               {/* Image Container with proper aspect ratio handling */}
               <div className="relative w-full h-full flex items-center justify-center">
@@ -124,9 +124,9 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                   loading={index === 0 ? "eager" : "lazy"}
                 />
               </div>
-              
+
               {/* Gradient overlay for better text readability */}
-             </div>
+            </div>
           ))}
         </div>
 
@@ -139,25 +139,25 @@ const HeroSection: React.FC<HeroSectionProps> = ({
               transition={{ duration: 0.8, delay: 0.2 }}
               className="space-y-6"
             >
-            {/* Main Title */}
-            <motion.h1
-              initial={{ opacity: 1, y: 30 }}
-              animate={{ opacity: isLoaded ? 1 : 0, y: isLoaded ? 1 : 30 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
-              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight"
-            >
-              {subtitle}
-            </motion.h1>
+              {/* Main Title */}
+              <motion.h1
+                initial={{ opacity: 1, y: 30 }}
+                animate={{ opacity: isLoaded ? 1 : 0, y: isLoaded ? 1 : 30 }}
+                transition={{ duration: 0.8, delay: 0.6 }}
+                className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight"
+              >
+                {subtitle}
+              </motion.h1>
 
-            {/* Description */}
-            <motion.p
-              initial={{ opacity: 1, y: 20 }}
-              animate={{ opacity: isLoaded ? 1 : 0, y: isLoaded ? 1 : 20 }}
-              transition={{ duration: 0.6, delay: 0.8 }}
-              className="text-lg sm:text-xl text-white/80 max-w-2xl mx-auto leading-relaxed"
-            >
-              {description}
-            </motion.p>
+              {/* Description */}
+              <motion.p
+                initial={{ opacity: 1, y: 20 }}
+                animate={{ opacity: isLoaded ? 1 : 0, y: isLoaded ? 1 : 20 }}
+                transition={{ duration: 0.6, delay: 0.8 }}
+                className="text-lg sm:text-xl text-white/80 max-w-2xl mx-auto leading-relaxed"
+              >
+                {description}
+              </motion.p>
 
             </motion.div>
           </div>
@@ -195,7 +195,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                      sm:bottom-8 
                      max-sm:bottom-6"
         >
-          <button 
+          <button
             onClick={handleJoinMilkClub}
             className="px-8 py-3 bg-primary text-white font-semibold rounded-full hover:bg-red-400/90 transition-colors duration-300 
                        min-w-[240px] 

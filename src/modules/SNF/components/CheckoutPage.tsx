@@ -4,6 +4,7 @@ import { useCart } from "../context/CartContext";
 import { useDeliveryLocation } from "../hooks/useDeliveryLocation";
 import { Header } from "./Header.tsx";
 import { Footer } from "./Footer.tsx";
+import { MobileBottomNav } from "./MobileBottomNav.tsx";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,17 +24,17 @@ const currency = new Intl.NumberFormat("en-IN", {
 });
 
 const CheckoutPage: React.FC = () => {
-  const { 
-    state, 
-    subtotal, 
-    availableSubtotal, 
-    increment, 
-    decrement, 
-    removeItem, 
-    clear, 
+  const {
+    state,
+    subtotal,
+    availableSubtotal,
+    increment,
+    decrement,
+    removeItem,
+    clear,
     validateCart,
     getAvailableItems,
-    getUnavailableItems 
+    getUnavailableItems
   } = useCart();
   const { currentDepotId } = useDeliveryLocation();
   const totalQty = state.items.reduce((n, it) => n + it.quantity, 0);
@@ -67,7 +68,7 @@ const CheckoutPage: React.FC = () => {
       console.log('[CheckoutPage] Initial validation on mount');
       setIsValidating(true);
       lastValidatedDepotRef.current = currentDepotId;
-      
+
       validateCart(currentDepotId).finally(() => {
         console.log('[CheckoutPage] Initial validation completed');
         setIsValidating(false);
@@ -79,27 +80,27 @@ const CheckoutPage: React.FC = () => {
   useEffect(() => {
     const hasItems = hasItemsRef.current;
     const depotChanged = currentDepotId !== lastValidatedDepotRef.current;
-    
-    console.log('[CheckoutPage] Effect triggered:', { 
+
+    console.log('[CheckoutPage] Effect triggered:', {
       hasItems,
-      currentDepotId, 
+      currentDepotId,
       lastValidatedDepot: lastValidatedDepotRef.current,
       depotChanged,
-      isValidating 
+      isValidating
     });
-    
+
     if (hasItems && currentDepotId && depotChanged && !isValidating) {
       console.log('[CheckoutPage] Starting validation for depot:', currentDepotId);
       setIsValidating(true);
       lastValidatedDepotRef.current = currentDepotId;
-      
+
       validateCart(currentDepotId).finally(() => {
         console.log('[CheckoutPage] Validation completed');
         setIsValidating(false);
       });
     } else {
-      console.log('[CheckoutPage] Skipping validation:', { 
-        hasItems, 
+      console.log('[CheckoutPage] Skipping validation:', {
+        hasItems,
         hasDepotId: !!currentDepotId,
         depotChanged,
         isValidating
@@ -136,7 +137,7 @@ const CheckoutPage: React.FC = () => {
 
   const handlePlaceOrder = async () => {
     if (availableItems.length === 0 || !isFormValid || loading) return;
-    
+
     // Show confirmation if there are unavailable items
     if (unavailableItems.length > 0) {
       const confirmed = window.confirm(
@@ -147,12 +148,12 @@ const CheckoutPage: React.FC = () => {
 
     try {
       setLoading(true);
-      
+
       // Get depot ID from selected delivery location
       const depotIdString = DeliveryLocationService.getCurrentDepotId();
       const depotId = depotIdString ? parseInt(depotIdString.toString()) : null;
       console.log('[Checkout] Using depot ID:', depotId);
-      
+
       // Only include available items in the order
       const itemsPayload = availableItems.map((it) => ({
         name: it.name,
@@ -208,7 +209,7 @@ const CheckoutPage: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header cartCount={totalQty} onSearch={() => {}} />
+      <Header cartCount={totalQty} onSearch={() => { }} />
 
       <main className="flex-1">
         <section className="container mx-auto px-4 md:px-6 lg:px-8 py-6">
@@ -478,14 +479,14 @@ const CheckoutPage: React.FC = () => {
                         </div>
                       </>
                     )}
-                    
+
                     {unavailableItems.length === 0 && (
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">Subtotal</span>
                         <span className="font-medium">{currency.format(availableSubtotal)}</span>
                       </div>
                     )}
-                    
+
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Delivery</span>
                       <span className="font-medium">₹0</span>
@@ -506,13 +507,13 @@ const CheckoutPage: React.FC = () => {
                         })()}
                       </span>
                     </div>
-                    
+
                     {unavailableItems.length > 0 && (
                       <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded mt-2">
                         {unavailableItems.length} item{unavailableItems.length > 1 ? 's' : ''} will be removed from your order
                       </div>
                     )}
-                    
+
                     {walletError && (
                       <p className="text-xs text-destructive">{walletError}</p>
                     )}
@@ -539,7 +540,7 @@ const CheckoutPage: React.FC = () => {
                       disabled={availableItems.length === 0 || !isFormValid || loading}
                     >
                       {loading ? "Placing order..." : (
-                        unavailableItems.length > 0 
+                        unavailableItems.length > 0
                           ? `Proceed with ${availableItems.length} item${availableItems.length > 1 ? 's' : ''}`
                           : "Proceed to payment"
                       )}
@@ -566,6 +567,7 @@ const CheckoutPage: React.FC = () => {
       </main>
 
       <Footer />
+      <MobileBottomNav />
     </div>
   );
 };

@@ -51,6 +51,18 @@ function DropdownMenuContent({
   )
 }
 
+function DropdownMenuArrow({
+  className,
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Arrow>) {
+  return (
+    <DropdownMenuPrimitive.Arrow
+      className={cn("fill-popover top-[-1px] relative", className)}
+      {...props}
+    />
+  )
+}
+
 function DropdownMenuGroup({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Group>) {
@@ -254,4 +266,5 @@ export {
   DropdownMenuSub,
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
+  DropdownMenuArrow,
 }

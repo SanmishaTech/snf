@@ -448,6 +448,16 @@
     border-color: var(--primary) !important;
   }
 
+  /* Utility to hide scrollbar while allowing scrolling */
+  .scrollbar-hide {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
+
   /* Ensure primary colors are not overridden on any screen size */
   @media screen and (max-width: 768px) {
     .text-primary {

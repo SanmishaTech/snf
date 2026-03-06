@@ -14,6 +14,9 @@ export const useProducts = (depotId?: number) => {
   const [variants, setVariants] = useState<DepotVariant[]>([]);
   const [error, setError] = useState<PricingError | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const LIMIT = 10;
 
   // Transform products and variants into ProductWithPricing
   const transformProducts = useCallback((productsData: Product[], variantsData: DepotVariant[]): ProductWithPricing[] => {
@@ -58,7 +61,7 @@ export const useProducts = (depotId?: number) => {
   }, []);
 
   // Fetch products and variants
-  const fetchProducts = useCallback(async () => {
+  const fetchProducts = useCallback(async (pageNum: number = 1, append: boolean = false) => {
     if (!depotId) {
       return;
     }
@@ -68,15 +71,28 @@ export const useProducts = (depotId?: number) => {
 
     try {
       // Fetch from API directly
-      const productsData = await productService.getProducts(depotId);
+      const productsData = await productService.getProducts(depotId, pageNum, LIMIT);
       const variantsData = await productService.getDepotVariants(depotId);
 
-      setRawProducts(productsData);
+      setRawProducts(prev => append ? [...prev, ...productsData] : productsData);
       setVariants(variantsData);
 
       // Transform and set products with pricing
       const productsWithPricing = transformProducts(productsData, variantsData);
-      setProducts(productsWithPricing);
+
+      setProducts(prev => {
+        if (append) {
+          // Filter out duplicates if any
+          const existingIds = new Set(prev.map(p => p.product.id));
+          const netNew = productsWithPricing.filter(p => !existingIds.has(p.product.id));
+          return [...prev, ...netNew];
+        }
+        return productsWithPricing;
+      });
+
+      // Update pagination state
+      setHasMore(productsData.length === LIMIT);
+      setPage(pageNum);
     } catch (err) {
       const pricingError: PricingError = {
         type: 'API_ERROR',
@@ -91,20 +107,32 @@ export const useProducts = (depotId?: number) => {
     }
   }, [depotId, transformProducts]);
 
+  // Load more function
+  const loadMore = useCallback(async () => {
+    if (isLoading || !hasMore) return;
+    await fetchProducts(page + 1, true);
+  }, [fetchProducts, page, isLoading, hasMore]);
+
   // Refresh products
   const refreshProducts = useCallback(async () => {
     if (!depotId) {
       return;
     }
 
-    // Fetch fresh data
-    await fetchProducts();
+    // Reset pagination and fetch fresh data
+    setPage(1);
+    setHasMore(true);
+    await fetchProducts(1, false);
   }, [depotId, fetchProducts]);
 
   // Fetch products when depot changes
   useEffect(() => {
     if (depotId) {
-      fetchProducts();
+      // Reset state for new depot
+      setProducts([]);
+      setPage(1);
+      setHasMore(true);
+      fetchProducts(1, false);
     }
   }, [depotId, fetchProducts]);
 
@@ -114,6 +142,8 @@ export const useProducts = (depotId?: number) => {
     variants,
     error,
     isLoading,
+    hasMore,
+    loadMore,
     refresh: refreshProducts,
   };
 };
@@ -349,8 +379,11 @@ export const useProductsByCategory = (categoryId?: number, depotId?: number) => 
   const [products, setProducts] = useState<ProductWithPricing[]>([]);
   const [error, setError] = useState<PricingError | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const LIMIT = 10;
 
-  const fetchProductsByCategory = useCallback(async () => {
+  const fetchProductsByCategory = useCallback(async (pageNum: number = 1, append: boolean = false) => {
     if (!categoryId || !depotId) {
       setProducts([]);
       return;
@@ -361,7 +394,7 @@ export const useProductsByCategory = (categoryId?: number, depotId?: number) => 
 
     try {
       // Fetch from API
-      const categoryProducts = await productService.getProductsByCategory(categoryId, depotId);
+      const categoryProducts = await productService.getProductsByCategory(categoryId, depotId, pageNum, LIMIT);
 
       // Get variants for each product
       const productsWithVariants = await Promise.all(
@@ -398,7 +431,17 @@ export const useProductsByCategory = (categoryId?: number, depotId?: number) => 
         })
       );
 
-      setProducts(productsWithVariants);
+      setProducts(prev => {
+        if (append) {
+          const existingIds = new Set(prev.map(p => p.product.id));
+          const netNew = productsWithVariants.filter(p => !existingIds.has(p.product.id));
+          return [...prev, ...netNew];
+        }
+        return productsWithVariants;
+      });
+
+      setHasMore(categoryProducts.length === LIMIT);
+      setPage(pageNum);
     } catch (err) {
       const pricingError: PricingError = {
         type: 'API_ERROR',
@@ -413,10 +456,26 @@ export const useProductsByCategory = (categoryId?: number, depotId?: number) => 
     }
   }, [categoryId, depotId]);
 
+  // Load more function
+  const loadMore = useCallback(async () => {
+    if (isLoading || !hasMore) return;
+    await fetchProductsByCategory(page + 1, true);
+  }, [fetchProductsByCategory, page, isLoading, hasMore]);
+
+  // Refresh function
+  const refresh = useCallback(async () => {
+    setPage(1);
+    setHasMore(true);
+    await fetchProductsByCategory(1, false);
+  }, [fetchProductsByCategory]);
+
   // Fetch products when category or depot changes
   useEffect(() => {
     if (categoryId && depotId) {
-      fetchProductsByCategory();
+      setProducts([]);
+      setPage(1);
+      setHasMore(true);
+      fetchProductsByCategory(1, false);
     }
   }, [categoryId, depotId, fetchProductsByCategory]);
 
@@ -424,6 +483,8 @@ export const useProductsByCategory = (categoryId?: number, depotId?: number) => 
     products,
     error,
     isLoading,
-    refresh: fetchProductsByCategory,
+    hasMore,
+    loadMore,
+    refresh,
   };
 };

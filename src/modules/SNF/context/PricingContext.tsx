@@ -11,6 +11,8 @@ const initialState: PricingState = {
   products: [],
   depotVariants: [],
   isLoading: false,
+  page: 1,
+  hasMore: true,
   error: null,
   isLocationPermissionGranted: false,
   serviceAvailability: null,
@@ -20,7 +22,7 @@ const initialState: PricingState = {
 type PricingAction =
   | { type: 'SET_DEPOT'; payload: Depot }
   | { type: 'SET_LOCATION'; payload: LocationData }
-  | { type: 'SET_PRODUCTS'; payload: Product[] }
+  | { type: 'SET_PRODUCTS'; payload: { products: Product[]; page: number; hasMore: boolean; append: boolean } }
   | { type: 'SET_DEPOT_VARIANTS'; payload: DepotVariant[] }
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: PricingError | GeolocationError | null }
@@ -47,7 +49,9 @@ function pricingReducer(state: PricingState, action: PricingAction): PricingStat
     case 'SET_PRODUCTS':
       return {
         ...state,
-        products: action.payload,
+        products: action.payload.append ? [...state.products, ...action.payload.products] : action.payload.products,
+        page: action.payload.page,
+        hasMore: action.payload.hasMore,
         isLoading: false,
       };
     case 'SET_DEPOT_VARIANTS':
@@ -128,7 +132,7 @@ export const PricingProvider: React.FC<PricingProviderProps> = ({ children }) =>
         const depot = await depotMappingService.getOptimalDepot(location.pincode);
         if (depot) {
           dispatch({ type: 'SET_DEPOT', payload: depot });
-          
+
           // Check service availability
           const serviceAvailability = await depotMappingService.validateServiceAvailability(location.pincode);
           dispatch({ type: 'SET_SERVICE_AVAILABILITY', payload: serviceAvailability });
@@ -142,8 +146,8 @@ export const PricingProvider: React.FC<PricingProviderProps> = ({ children }) =>
             dispatch({ type: 'SET_DEPOT', payload: onlineDepot });
             await loadProductsAndVariants(onlineDepot.id);
           } else {
-            dispatch({ 
-              type: 'SET_ERROR', 
+            dispatch({
+              type: 'SET_ERROR',
               payload: {
                 type: 'DEPOT_NOT_FOUND',
                 message: 'No depot found for your location. Please try again later.',
@@ -167,7 +171,7 @@ export const PricingProvider: React.FC<PricingProviderProps> = ({ children }) =>
         } catch (error) {
           const geolocationError = error as GeolocationError;
           dispatch({ type: 'SET_ERROR', payload: geolocationError });
-          
+
           // Fallback to online depot
           const onlineDepot = await depotMappingService.getOnlineDepot();
           if (onlineDepot) {
@@ -182,8 +186,8 @@ export const PricingProvider: React.FC<PricingProviderProps> = ({ children }) =>
           dispatch({ type: 'SET_DEPOT', payload: onlineDepot });
           await loadProductsAndVariants(onlineDepot.id);
         } else {
-          dispatch({ 
-            type: 'SET_ERROR', 
+          dispatch({
+            type: 'SET_ERROR',
             payload: {
               type: 'DEPOT_NOT_FOUND',
               message: 'Location access denied and no online depot available.',
@@ -194,8 +198,8 @@ export const PricingProvider: React.FC<PricingProviderProps> = ({ children }) =>
       }
     } catch (error) {
       console.error('Error initializing location and depot:', error);
-      dispatch({ 
-        type: 'SET_ERROR', 
+      dispatch({
+        type: 'SET_ERROR',
         payload: {
           type: 'API_ERROR',
           message: 'Failed to initialize location services. Please try again.',
@@ -208,13 +212,19 @@ export const PricingProvider: React.FC<PricingProviderProps> = ({ children }) =>
   }, []);
 
   // Load products and variants for a depot
-  const loadProductsAndVariants = useCallback(async (depotId: number) => {
+  const loadProductsAndVariants = useCallback(async (depotId: number, pageNum: number = 1, append: boolean = false) => {
     try {
+      const LIMIT = 10;
       dispatch({ type: 'SET_LOADING', payload: true });
 
       // Fetch from API
-      const products = await productService.getProducts(depotId);
-      dispatch({ type: 'SET_PRODUCTS', payload: products });
+      const products = await productService.getProducts(depotId, pageNum, LIMIT);
+      const hasMore = products.length === LIMIT;
+
+      dispatch({
+        type: 'SET_PRODUCTS',
+        payload: { products, page: pageNum, hasMore, append }
+      });
 
       // Fetch variants from API
       const variants = await productService.getDepotVariants(depotId);
@@ -243,7 +253,7 @@ export const PricingProvider: React.FC<PricingProviderProps> = ({ children }) =>
 
     setLocation: useCallback(async (location: LocationData) => {
       dispatch({ type: 'SET_LOCATION', payload: location });
-      
+
       try {
         const depot = await depotMappingService.getOptimalDepot(location.pincode);
         if (depot) {
@@ -291,6 +301,11 @@ export const PricingProvider: React.FC<PricingProviderProps> = ({ children }) =>
     setServiceAvailability: useCallback((availability: ServiceAvailability) => {
       dispatch({ type: 'SET_SERVICE_AVAILABILITY', payload: availability });
     }, []),
+
+    loadMoreProducts: useCallback(async () => {
+      if (state.isLoading || !state.hasMore || !state.currentDepot) return;
+      await loadProductsAndVariants(state.currentDepot.id, state.page + 1, true);
+    }, [state.isLoading, state.hasMore, state.currentDepot, state.page, loadProductsAndVariants]),
   };
 
   const value: PricingContextType = {

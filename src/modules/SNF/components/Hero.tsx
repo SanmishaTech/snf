@@ -142,7 +142,7 @@ export const Hero: React.FC = () => {
             className="hidden sm:flex absolute inset-y-0 left-2 z-10 items-center justify-center w-10 text-white/90 hover:text-white transition-opacity opacity-0 group-hover:opacity-100 focus:opacity-100"
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
           <button
@@ -152,7 +152,7 @@ export const Hero: React.FC = () => {
             className="hidden sm:flex absolute inset-y-0 right-2 z-10 items-center justify-center w-10 text-white/90 hover:text-white transition-opacity opacity-0 group-hover:opacity-100 focus:opacity-100"
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
           <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
@@ -163,7 +163,8 @@ export const Hero: React.FC = () => {
                 aria-label={`Go to slide ${i + 1}`}
                 onClick={() => setCurrent(i)}
                 aria-current={i === current}
-                className={`h-2.5 w-2.5 rounded-full transition-all ${i === current ? 'bg-white' : 'bg-white/50 hover:bg-white/70'}`}
+                className={`!p-0 !m-0 !border-none !min-w-0 !min-h-0 rounded-full transition-all ${i === current ? 'bg-white w-[16px] h-[6px]' : 'bg-white/50 hover:bg-white/70 w-[6px] h-[6px]'
+                  }`}
               />
             ))}
           </div>

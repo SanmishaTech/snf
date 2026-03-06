@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { ShoppingCart, Trash2, Minus, Plus, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger, PopoverArrow } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 
 import { useCart } from "../context/CartContext";
@@ -10,18 +10,18 @@ import { useDeliveryLocation } from "../hooks/useDeliveryLocation";
 
 const currency = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
 
-export const CartDropdown: React.FC = () => {
-  const { 
-    state, 
-    subtotal, 
-    availableSubtotal, 
-    totalQuantity, 
-    increment, 
-    decrement, 
-    removeItem, 
+export const CartDropdown: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
+  const {
+    state,
+    subtotal,
+    availableSubtotal,
+    totalQuantity,
+    increment,
+    decrement,
+    removeItem,
     validateCart,
     getAvailableItems,
-    getUnavailableItems 
+    getUnavailableItems
   } = useCart();
   const { currentDepotId } = useDeliveryLocation();
   const [bump, setBump] = useState(false);
@@ -47,7 +47,7 @@ export const CartDropdown: React.FC = () => {
       console.log('[CartDropdown] Initial validation on mount');
       setIsValidating(true);
       lastValidatedDepotRef.current = currentDepotId;
-      
+
       validateCart(currentDepotId).finally(() => {
         console.log('[CartDropdown] Initial validation completed');
         setIsValidating(false);
@@ -59,27 +59,27 @@ export const CartDropdown: React.FC = () => {
   useEffect(() => {
     const hasItems = hasItemsRef.current;
     const depotChanged = currentDepotId !== lastValidatedDepotRef.current;
-    
-    console.log('[CartDropdown] Effect triggered:', { 
+
+    console.log('[CartDropdown] Effect triggered:', {
       hasItems,
-      currentDepotId, 
+      currentDepotId,
       lastValidatedDepot: lastValidatedDepotRef.current,
       depotChanged,
-      isValidating 
+      isValidating
     });
-    
+
     if (hasItems && currentDepotId && depotChanged && !isValidating) {
       console.log('[CartDropdown] Starting validation for depot:', currentDepotId);
       setIsValidating(true);
       lastValidatedDepotRef.current = currentDepotId;
-      
+
       validateCart(currentDepotId).finally(() => {
         console.log('[CartDropdown] Validation completed');
         setIsValidating(false);
       });
     } else {
-      console.log('[CartDropdown] Skipping validation:', { 
-        hasItems, 
+      console.log('[CartDropdown] Skipping validation:', {
+        hasItems,
         hasDepotId: !!currentDepotId,
         depotChanged,
         isValidating
@@ -90,22 +90,25 @@ export const CartDropdown: React.FC = () => {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button
-          id="snf-cart-button"
-          className="relative inline-flex items-center justify-center rounded-md h-9 w-9 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ring"
-          aria-label="Cart"
-        >
-          <ShoppingCart className="size-5" aria-hidden={true} />
-          <span
-            className={`absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-primary text-[10px] text-primary-foreground grid place-items-center transition-transform duration-300 ${bump ? "scale-110" : ""}`}
-            aria-live="polite"
-            aria-atomic="true"
+        {children || (
+          <button
+            id="snf-cart-button"
+            className="relative inline-flex items-center justify-center rounded-md h-9 w-9 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ring"
+            aria-label="Cart"
           >
-            {totalQuantity}
-          </span>
-        </button>
+            <ShoppingCart className="size-5" aria-hidden={true} />
+            <span
+              className={`absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-primary text-[10px] text-primary-foreground grid place-items-center transition-transform duration-300 ${bump ? "scale-110" : ""}`}
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              {totalQuantity}
+            </span>
+          </button>
+        )}
       </PopoverTrigger>
-      <PopoverContent align="end" sideOffset={8} className="z-[60] w-80 sm:w-96 p-0">
+      <PopoverContent align="center" sideOffset={16} alignOffset={0} className="z-[60] w-[calc(100vw-2rem)] sm:w-96 p-0 rounded-2xl shadow-xl overflow-hidden">
+        <PopoverArrow className="fill-popover w-4 h-2 opacity-100 drop-shadow-sm" />
         <div className="p-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold">Your Cart</h3>
@@ -124,7 +127,7 @@ export const CartDropdown: React.FC = () => {
                   Checking availability...
                 </div>
               )}
-              
+
               {/* Available Items */}
               {availableItems.length > 0 && (
                 <ul className="divide-y">
@@ -194,7 +197,7 @@ export const CartDropdown: React.FC = () => {
                           <div className="size-14 shrink-0 rounded-md overflow-hidden bg-muted/50 grid place-items-center">
                             {it.imageUrl ? (
                               <img src={it.imageUrl} alt={it.name} className="h-full w-full object-cover grayscale" loading="lazy" />
-                            ) : ( 
+                            ) : (
                               <span className="text-xs text-muted-foreground">No image</span>
                             )}
                           </div>
@@ -255,21 +258,21 @@ export const CartDropdown: React.FC = () => {
               </div>
             </>
           )}
-          
+
           {unavailableItems.length === 0 && (
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Subtotal</span>
               <span className="font-semibold">{currency.format(subtotal)}</span>
             </div>
           )}
-          
+
           <div className="grid grid-cols-2 gap-2">
             <Button variant="outline" size="sm" asChild>
               <Link to="/snf">Continue shopping</Link>
             </Button>
-            <Button 
-              size="sm" 
-              disabled={availableItems.length === 0} 
+            <Button
+              size="sm"
+              disabled={availableItems.length === 0}
               asChild
             >
               <Link to="/snf/checkout">
@@ -277,13 +280,13 @@ export const CartDropdown: React.FC = () => {
               </Link>
             </Button>
           </div>
-          
+
           {/* Debug button - remove in production */}
           {process.env.NODE_ENV === 'development' && (
             <div className="pt-2 border-t">
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 className="w-full text-xs"
                 onClick={() => currentDepotId && validateCart(currentDepotId)}
                 disabled={isValidating || !currentDepotId}

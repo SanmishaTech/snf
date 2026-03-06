@@ -82,9 +82,8 @@ const Carousel: React.FC = () => {
         {slides.map((slide, index) => (
           <div
             key={slide.id}
-            className={`absolute inset-0 transition-opacity duration-1000 ${
-              index === currentSlide ? 'opacity-100' : 'opacity-0'
-            }`}
+            className={`absolute inset-0 transition-opacity duration-1000 ${index === currentSlide ? 'opacity-100' : 'opacity-0'
+              }`}
           >
             {/* Background Image Container */}
             <div className="relative w-full h-full">
@@ -96,10 +95,10 @@ const Carousel: React.FC = () => {
                   objectPosition: 'center',
                 }}
               />
-              
+
               {/* Optional: Add a subtle background for better contrast */}
               <div className="absolute inset-0 bg-black/20" />
-              
+
               {/* Content Overlay */}
               {(slide.title || slide.subtitle) && (
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -130,7 +129,7 @@ const Carousel: React.FC = () => {
       >
         <ChevronLeft className="w-6 h-6 md:w-8 md:h-8" />
       </button>
-      
+
       <button
         onClick={goToNext}
         className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/30 backdrop-blur-sm text-white p-2 md:p-3 rounded-full hover:bg-white/50 transition-colors duration-300"
@@ -145,11 +144,10 @@ const Carousel: React.FC = () => {
           <button
             key={index}
             onClick={() => goToSlide(index)}
-            className={`w-3 h-3 rounded-full transition-all duration-300 ${
-              index === currentSlide
+            className={`w-3 h-3 rounded-full transition-all duration-300 ${index === currentSlide
                 ? 'bg-white w-8'
                 : 'bg-white/50 hover:bg-white/75'
-            }`}
+              }`}
             aria-label={`Go to slide ${index + 1}`}
           />
         ))}

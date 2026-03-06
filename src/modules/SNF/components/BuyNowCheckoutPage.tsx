@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Header } from "./Header.tsx";
 import { Footer } from "./Footer.tsx";
+import { MobileBottomNav } from "./MobileBottomNav.tsx";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -217,6 +218,7 @@ const BuyNowCheckoutPage: React.FC = () => {
           </div>
         </main>
         <Footer />
+        <MobileBottomNav />
       </div>
     );
   }
@@ -239,6 +241,7 @@ const BuyNowCheckoutPage: React.FC = () => {
           </Card>
         </main>
         <Footer />
+        <MobileBottomNav />
       </div>
     );
   }
@@ -467,6 +470,7 @@ const BuyNowCheckoutPage: React.FC = () => {
       </main>
 
       <Footer />
+      <MobileBottomNav />
     </div>
   );
 };

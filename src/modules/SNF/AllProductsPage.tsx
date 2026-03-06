@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { useCart } from "./context/CartContext";
 import { Header } from "./components/Header.tsx";
 import { Footer } from "./components/Footer.tsx";
+import { MobileBottomNav } from "./components/MobileBottomNav.tsx";
 import { productService } from "./services/api";
 import type { Category as FilterCategory } from "./components/CategoryFilters.tsx";
 
@@ -30,7 +31,7 @@ const AllProductsContent: React.FC = () => {
       const price = v.buyOncePrice || v.mrp || 0;
       return typeof price === 'number' && isFinite(price) && price > 0 ? price : 0;
     }).filter(price => price > 0);
-    
+
     const buyOncePrice = buyOncePrices.length > 0 ? Math.min(...buyOncePrices) : 0;
     const inStock = availableVariants.length > 0;
     const mrpPrices = availableVariants.map(v => {
@@ -38,7 +39,7 @@ const AllProductsContent: React.FC = () => {
       return typeof price === 'number' && isFinite(price) && price > 0 ? price : 0;
     }).filter(price => price > 0);
     const mrp = mrpPrices.length > 0 ? Math.max(...mrpPrices) : 0;
-    
+
     return {
       product,
       variants: productVariants,
@@ -60,7 +61,7 @@ const AllProductsContent: React.FC = () => {
         setSelectedCats([idNum]);
       }
     } else {
-        setSelectedCats([]);
+      setSelectedCats([]);
     }
   }, [location.search]);
 
@@ -123,7 +124,7 @@ const AllProductsContent: React.FC = () => {
               </p>
             </div>
           </div>
-        
+
           <div className="mb-4">
             <Input
               value={q}
@@ -157,6 +158,7 @@ const AllProductsContent: React.FC = () => {
       </main>
 
       <Footer />
+      <MobileBottomNav />
     </div>
   );
 };

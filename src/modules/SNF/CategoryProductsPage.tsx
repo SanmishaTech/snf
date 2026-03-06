@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react"
 import { useSearchParams } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Filter, X } from "lucide-react"
+import { Loader2, Filter } from "lucide-react"
 import {
   Drawer,
   DrawerClose,
@@ -22,6 +22,7 @@ import { useProducts } from "@/modules/SNF/hooks/useProducts"
 import { productService } from "@/modules/SNF/services/api"
 import { Header } from "@/modules/SNF/components/Header"
 import { Footer } from "@/modules/SNF/components/Footer"
+import { MobileBottomNav } from "@/modules/SNF/components/MobileBottomNav"
 import { useDeliveryLocation } from "@/modules/SNF/hooks/useDeliveryLocation"
 import { useCart } from "@/modules/SNF/context/CartContext"
 import type { Category, ProductWithPricing, DepotVariant } from "@/modules/SNF/types"
@@ -46,7 +47,9 @@ export default function CategoryProductsPage() {
   const cart = useCart();
 
   // Fetch products using the real API
-  const { products, isLoading: isLoadingProducts, error: productsError } = useProducts(currentDepotId)
+  const { products, isLoading: isLoadingProducts, error: productsError, pricingState, pricingActions } = useProducts(currentDepotId)
+  const { hasMore } = pricingState;
+  const { loadMoreProducts } = pricingActions;
 
   // Initialize filters from URL params
   useEffect(() => {
@@ -388,7 +391,9 @@ export default function CategoryProductsPage() {
   }
 
   const handleAddToCart = (product: ProductWithPricing, variant?: DepotVariant, qty?: number) => {
-    cart.addItem(product, variant, qty || 1)
+    if (variant) {
+      cart.addItem(product, variant, qty || 1)
+    }
   }
 
   // Show loading state
@@ -418,7 +423,7 @@ export default function CategoryProductsPage() {
   return (
     <div className="min-h-screen bg-background">
       <div>
-        <Header />
+        <Header cartCount={cart.state.items.reduce((n, it) => n + it.quantity, 0)} onSearch={(q) => setFilters(f => ({ ...f, searchQuery: q }))} />
       </div>
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
@@ -574,6 +579,28 @@ export default function CategoryProductsPage() {
             // showVariants={false}
             />
 
+            {/* Load More Button */}
+            {hasMore && filteredProducts.length > 0 && (
+              <div className="mt-12 flex justify-center pb-8">
+                <Button
+                  onClick={loadMore}
+                  disabled={isLoadingProducts}
+                  variant="outline"
+                  size="lg"
+                  className="min-w-[200px] border-primary text-primary hover:bg-primary/5"
+                >
+                  {isLoadingProducts ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    'Load More Products'
+                  )}
+                </Button>
+              </div>
+            )}
+
             {filteredProducts.length === 0 && (
               <div className="text-center py-12">
                 <p className="text-muted-foreground">No products found matching your filters.</p>
@@ -586,6 +613,7 @@ export default function CategoryProductsPage() {
         </div>
       </div>
       <Footer />
+      <MobileBottomNav />
     </div>
   )
 }

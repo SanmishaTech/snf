@@ -1,6 +1,5 @@
 import { DepotMappingService, Depot, ServiceAvailability, ApiResponse } from '../types';
-
-// Define AreaMaster interface since it's not exported from types
+import { backendUrl } from '@/config';// Define AreaMaster interface since it's not exported from types
 interface AreaMaster {
   id: number;
   name: string;
@@ -17,7 +16,7 @@ interface AreaMaster {
  * Implements fallback to online depot if geolocation fails
  */
 export class DepotMappingServiceImpl implements DepotMappingService {
-  private readonly API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+  private readonly API_BASE_URL = `${backendUrl}/api`;
   private readonly CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
   /**

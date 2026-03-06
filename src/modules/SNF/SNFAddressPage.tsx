@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Header } from "./components/Header.tsx";
 import { Footer } from "./components/Footer.tsx";
+import { MobileBottomNav } from "./components/MobileBottomNav.tsx";
 import { useCart } from "./context/CartContext";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as apiService from "@/services/apiService";
@@ -61,7 +62,7 @@ const SNFAddressPage: React.FC = () => {
   };
 
   // simple placeholder for search in header
-  const onSearch = (_q: string) => {};
+  const onSearch = (_q: string) => { };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -167,6 +168,7 @@ const SNFAddressPage: React.FC = () => {
       </main>
 
       <Footer />
+      <MobileBottomNav />
 
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="sm:max-w-[620px]">
