@@ -55,12 +55,14 @@ interface ProductData {
   attachmentUrl: string | null;
   isDairyProduct?: boolean;
   tags?: string;
+  images?: { id: number; url: string; order: number }[];
 }
 
 const ProductDetailPage: React.FC = () => {
   // depot state
   const [selectedDepotId, setSelectedDepotId] = useState<number | null>(null);
   const [deliveryPreference, setDeliveryPreference] = useState<'home' | 'pickup'>('home');
+  const [activeImage, setActiveImage] = useState<string | null>(null);
 
   const { id } = useParams<{ id: string }>();
   const productId = id ? parseInt(id, 10) : 1;
@@ -148,6 +150,13 @@ const ProductDetailPage: React.FC = () => {
     staleTime: 0,
     cacheTime: 0,
   });
+
+  // Sync active image when product data transitions
+  useEffect(() => {
+    if (product?.attachmentUrl) {
+      setActiveImage(product.attachmentUrl);
+    }
+  }, [product]);
 
   const selectedDepot = depots.find(d => d.id === selectedDepotId);
 
@@ -335,25 +344,60 @@ const ProductDetailPage: React.FC = () => {
         className="max-w-6xl mx-auto"
       >
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-          {/* Product Image */}
-          <div className="bg-muted/10 rounded-2xl flex items-center justify-center  border border-muted/20 max-h-[558px] max-sm:max-h-[380px]">
-            {product.attachmentUrl ? (
-              <motion.img
-                src={`${import.meta.env.VITE_BACKEND_URL}${product.attachmentUrl}`}
-                alt={product.name}
-                className="object-cover max-md:object-fit max-sm:object-contain rounded-2xl w-full h-full"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5 }}
-              />
-            ) : (
-              <div className="flex flex-col items-center justify-center h-[400px] text-gray-700">
-                <div className="bg-muted/30 rounded-full p-6 mb-4">
-                  <Leaf className="w-16 h-16" />
-                </div>
-                <p className="text-lg">Fresh Milk Image</p>
+          <div className="flex flex-col md:flex-row gap-4">
+            {/* Gallery Thumbnails */}
+            {product.images && product.images.length > 0 && (
+              <div className="flex md:flex-col gap-3 overflow-x-auto md:overflow-y-auto md:max-h-[600px] pb-2 md:pb-0 pr-1 p-1 scrollbar-thin scrollbar-thumb-gray-200">
+                {/* Cover Image Thumbnail */}
+                <button
+                  onClick={() => setActiveImage(product.attachmentUrl)}
+                  className={`flex-shrink-0 relative w-12 h-12 rounded-lg overflow-hidden transition-all duration-200 ${activeImage === product.attachmentUrl ? 'ring-2 ring-primary ring-offset-1 scale-105' : 'opacity-70 hover:opacity-100'}`}
+                >
+                  <img
+                    src={`${import.meta.env.VITE_BACKEND_URL}${product.attachmentUrl}`}
+                    alt="Thumbnail 0"
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+
+                {/* Additional Images Thumbnails */}
+                {[...product.images].sort((a, b) => a.order - b.order).map((img, idx) => (
+                  <button
+                    key={img.id}
+                    onClick={() => setActiveImage(img.url)}
+                    className={`flex-shrink-0 relative w-12 h-12 rounded-lg overflow-hidden transition-all duration-200 ${activeImage === img.url ? 'ring-2 ring-primary ring-offset-1 scale-105' : 'opacity-70 hover:opacity-100'}`}
+                  >
+                    <img
+                      src={`${import.meta.env.VITE_BACKEND_URL}${img.url}`}
+                      alt={`Thumbnail ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
               </div>
             )}
+
+            {/* Main Product Image Display */}
+            <div className="flex-1 rounded-2xl flex items-center justify-center min-h-[400px] md:max-h-[600px] overflow-hidden relative group">
+              {activeImage || product.attachmentUrl ? (
+                <motion.img
+                  key={activeImage}
+                  src={`${import.meta.env.VITE_BACKEND_URL}${activeImage || product.attachmentUrl}`}
+                  alt={product.name}
+                  className="object-contain rounded-2xl w-full h-full p-2"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-[400px] text-gray-400">
+                  <div className="bg-gray-50 rounded-full p-6 mb-4">
+                    <Leaf className="w-16 h-16" />
+                  </div>
+                  <p className="text-lg">Image Not Available</p>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Product Details */}

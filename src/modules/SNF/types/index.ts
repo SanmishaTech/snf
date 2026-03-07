@@ -116,6 +116,7 @@ export interface Product {
   createdAt: Date;
   updatedAt: Date;
   category?: Category;
+  images?: { id: number; url: string; order: number }[];
 }
 
 /**

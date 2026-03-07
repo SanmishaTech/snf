@@ -29,6 +29,7 @@ interface ProductFormDataForPage {
   price: string;
   date: Date; // Date as Date object for the form
   quantity: number;
+  categoryId?: number | null;
 }
 
 const EditProductPage: React.FC = () => {
@@ -36,15 +37,16 @@ const EditProductPage: React.FC = () => {
   const { id: productId } = useParams<{ id: string }>();
 
   const fetchProductById = async (id: string): Promise<ProductData> => {
-    const response = await get(`/products/${id}`);
+    // Append timestamp to bypass aggressive browser HTTP caching on back navigation
+    const response = await get(`/products/${id}?t=${Date.now()}`);
     return response;
   };
 
-  const { data: productData, isLoading, isError, error } = useQuery<ProductData, Error> ({
+  const { data: productData, isLoading, isError, error } = useQuery<ProductData, Error>({
     queryKey: ['product', productId],
     queryFn: () => fetchProductById(productId!),
     enabled: !!productId,
-    staleTime: 1000 * 60 * 2, // Cache for 2 minutes
+    staleTime: 0, // Force fresh fetch every time we mount the edit page
   });
 
   const handleSuccess = () => {
@@ -97,7 +99,7 @@ const EditProductPage: React.FC = () => {
   if (isError || !productData) {
     return (
       <div className="container mx-auto p-6">
-         <Button variant="outline" size="sm" onClick={() => navigate("/admin/products")} className="mb-4">
+        <Button variant="outline" size="sm" onClick={() => navigate("/admin/products")} className="mb-4">
           <ArrowLeft size={16} className="mr-2" />
           Back to Product List
         </Button>
@@ -115,7 +117,7 @@ const EditProductPage: React.FC = () => {
   // Prepare initialData for the form, converting date string to Date object
   const initialFormData: ProductFormDataForPage = {
     ...productData,
-    date: productData.date ? new Date(productData.date) : undefined,
+    date: productData.date ? new Date(productData.date) : new Date(),
     categoryId: (productData as any).categoryId ?? null, // ensure categoryId is passed if present
   };
 

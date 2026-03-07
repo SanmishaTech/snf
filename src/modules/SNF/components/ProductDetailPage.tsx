@@ -20,15 +20,38 @@ type GalleryImage = {
   label?: string; // optional tag/label for UI chips (not used for product tags)
 };
 
-const buildGallery = (src: string): GalleryImage[] => {
-  // Create variations of the main image with different widths and labels for tags.
-  const baseUrl = `${import.meta.env.VITE_BACKEND_URL}${src}`;
-  const withW = (w: number) => `${baseUrl}${baseUrl.includes("?") ? "&" : "?"}w=${w}`;
-  return [
-    { src: withW(1200), alt: "Product image" },
-    { src: withW(800), alt: "Product image alt" },
-    { src: withW(600), alt: "Product close-up" },
-  ];
+const buildGallery = (product: any): GalleryImage[] => {
+  const gallery: GalleryImage[] = [];
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+  // Add primary cover image
+  if (product.attachmentUrl) {
+    gallery.push({
+      src: `${backendUrl}${product.attachmentUrl}`,
+      alt: product.name,
+    });
+  }
+
+  // Add additional images from the gallery relation
+  if (product.images && Array.isArray(product.images)) {
+    const sortedImages = [...product.images].sort((a, b) => a.order - b.order);
+    sortedImages.forEach((img) => {
+      gallery.push({
+        src: `${backendUrl}${img.url}`,
+        alt: product.name,
+      });
+    });
+  }
+
+  // If no images at all, add a fallback placeholder
+  if (gallery.length === 0) {
+    gallery.push({
+      src: `https://images.unsplash.com/photo-1546470427-0fd2788c37e3?auto=format&fit=crop&w=800&q=80`,
+      alt: "Product placeholder",
+    });
+  }
+
+  return gallery;
 };
 
 const ProductDetailPage: React.FC = () => {
@@ -73,7 +96,7 @@ const ProductDetailPage: React.FC = () => {
   const discount = mrpPrice > displayPrice ? ((mrpPrice - displayPrice) / mrpPrice) : 0;
 
   const gallery = useMemo(() => (
-    productData ? buildGallery(productData.product.attachmentUrl || '') : []
+    productData ? buildGallery(productData.product) : []
   ), [productData]);
 
   // Derive product attribute tags from backend data
@@ -862,54 +885,58 @@ const Gallery: React.FC<{ gallery: GalleryImage[]; title: string; tags?: string[
 
   return (
     <div className="space-y-3">
-      <div className="relative rounded-md overflow-hidden border h-[360px] md:h-[420px]">
-        {/* Current image (fade/scale in) */}
-        <img
-          key={active}
-          src={current.src}
-          alt={`${title} - image ${active + 1}`}
-          className={`absolute inset-0 w-full h-full object-cover transition-[opacity,transform] duration-300 ease-out cursor-zoom-in ${entering ? "opacity-100 scale-100" : "opacity-0 scale-[1.02]"
-            }`}
-          width={1200}
-          height={420}
-          loading="lazy"
-          decoding="async"
-        />
+      <div className="flex flex-col-reverse md:flex-row gap-4">
+        {/* Thumbnails list on the left for desktop, bottom for mobile */}
+        {gallery.length > 1 && (
+          <div className="flex md:flex-col gap-3 overflow-x-auto md:overflow-y-auto md:max-h-[480px] pb-2 md:pb-0 pr-1 p-1 scrollbar-thin scrollbar-thumb-gray-200">
+            {gallery.map((g, i) => (
+              <button
+                key={`thumb-${i}`}
+                onClick={() => switchTo(i)}
+                className={`flex-shrink-0 relative w-12 h-12 rounded-lg overflow-hidden transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${i === active ? "ring-2 ring-primary ring-offset-1 scale-105" : "opacity-70 hover:opacity-100"
+                  }`}
+                aria-label={`Show image ${i + 1}`}
+              >
+                <img
+                  src={g.src}
+                  alt={`${title} thumbnail ${i + 1}`}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </button>
+            ))}
+          </div>
+        )}
 
-        {/* Previous image (cross-fade out) */}
-        {prevIndex !== null && (
+        <div className="flex-1 relative rounded-md overflow-hidden h-[360px] md:h-[480px] group">
+          {/* Current image (fade/scale in) */}
           <img
-            key={`prev-${prevIndex}`}
-            src={gallery[prevIndex].src}
-            alt={`${title} - previous image ${prevIndex + 1}`}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ease-out ${prevFading ? "opacity-0" : "opacity-100"
+            key={active}
+            src={current.src}
+            alt={`${title} - image ${active + 1}`}
+            className={`absolute inset-0 w-full h-full object-contain transition-[opacity,transform] duration-300 ease-out cursor-zoom-in ${entering ? "opacity-100 scale-100" : "opacity-0 scale-[1.02]"
               }`}
             width={1200}
             height={420}
-            aria-hidden="true"
+            loading="lazy"
+            decoding="async"
           />
-        )}
-      </div>
 
-      {/* Thumbnails */}
-      <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-        {gallery.map((g, i) => (
-          <button
-            key={`thumb-${i}`}
-            onClick={() => switchTo(i)}
-            className={`relative h-16 rounded border overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${i === active ? "ring-2 ring-primary" : ""
-              }`}
-            aria-label={`Show image ${i + 1}`}
-          >
+          {/* Previous image (cross-fade out) */}
+          {prevIndex !== null && (
             <img
-              src={g.src}
-              alt={`${title} thumbnail ${i + 1}`}
-              className="w-full h-full object-cover"
-              loading="lazy"
-              decoding="async"
+              key={`prev-${prevIndex}`}
+              src={gallery[prevIndex].src}
+              alt={`${title} - previous image ${prevIndex + 1}`}
+              className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-300 ease-out ${prevFading ? "opacity-0" : "opacity-100"
+                }`}
+              width={1200}
+              height={420}
+              aria-hidden="true"
             />
-          </button>
-        ))}
+          )}
+        </div>
       </div>
 
       {/* Product attribute tags (clickable links to landing page anchors) */}

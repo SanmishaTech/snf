@@ -13,10 +13,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { LoaderCircle, Trash2 } from "lucide-react";
+import { LoaderCircle, Trash2, Plus, X, Image as ImageIcon, Upload, Info, Lightbulb } from "lucide-react";
 import { toast } from "sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { post, put } from "@/services/apiService";
+import { post, put, postupload } from "@/services/apiService";
 import { getAllCategories } from "@/services/categoryService";
 import {
   Select,
@@ -160,10 +160,13 @@ const ProductForm: React.FC<ProductFormProps> = ({
         categoryId: (initialData as any).categoryId || null,
       };
       reset(resetValues as any);
-      if ((initialData as any).attachmentUrl) {
-        const initialurl = `${import.meta.env.VITE_BACKEND_URL}${initialData?.attachmentUrl
-          }`;
-        setCurrentAttachmentPreview(initialurl);
+      if ((initialData as any).attachmentUrl && (initialData as any).attachmentUrl !== "null" && (initialData as any).attachmentUrl !== "undefined") {
+        const attachmentUrl = (initialData as any).attachmentUrl;
+        let initialurl = attachmentUrl;
+        if (typeof attachmentUrl === 'string' && !attachmentUrl.startsWith("http")) {
+          initialurl = `${import.meta.env.VITE_BACKEND_URL}${attachmentUrl.startsWith("/") ? "" : "/"}${attachmentUrl}`;
+        }
+        setCurrentAttachmentPreview(`${initialurl}?t=${Date.now()}`);
       } else {
         setCurrentAttachmentPreview(null);
       }
@@ -196,27 +199,24 @@ const ProductForm: React.FC<ProductFormProps> = ({
       if (newImages && newImages.length > 0) {
         const imgFormData = new FormData();
         newImages.forEach(f => imgFormData.append("productImages", f, f.name));
-        await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/api/products/${returnedProductId}/images`,
-          {
-            method: "POST",
-            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-            body: imgFormData,
-          }
-        );
+        await postupload(`/products/${returnedProductId}/images`, imgFormData);
       }
 
       return productResult;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       toast.success(
         `Product ${mode === "create" ? "created" : "updated"} successfully!`
       );
-      queryClient.invalidateQueries({ queryKey: ["products"] });
+
       const returnedId = data?.id || productId;
+
+      // Wait for queries to invalidate so the list/edit pages get fresh data
+      await queryClient.invalidateQueries({ queryKey: ["products"] });
       if (returnedId) {
-        queryClient.invalidateQueries({ queryKey: ["product", returnedId] });
+        await queryClient.invalidateQueries({ queryKey: ["product", returnedId] });
       }
+
       setNewImageFiles([]);
       setNewImagePreviews([]);
       if (onSuccess) onSuccess();
@@ -400,134 +400,209 @@ const ProductForm: React.FC<ProductFormProps> = ({
             <Label htmlFor="isSubscription">Is Subscription?</Label>
           </div>
 
-          <div className="md:col-span-2 space-y-3">
-            <Label>Product Images</Label>
-
-            {/* Existing saved images */}
-            {(initialData as any)?.images && (initialData as any).images.length > 0 && (
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">Saved images (click ✕ to remove)</p>
-                <div className="flex flex-wrap gap-3">
-                  {(initialData as any).images.map((img: any) => (
-                    <div key={img.id} className="relative w-24 h-24 border rounded-md overflow-hidden group">
-                      <img
-                        src={`${import.meta.env.VITE_BACKEND_URL}${img.url}`}
-                        alt="Product"
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          try {
-                            await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/products/${productId}/images/${img.id}`, {
-                              method: "DELETE",
-                              headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-                            });
-                            queryClient.invalidateQueries({ queryKey: ["product", productId] });
-                          } catch {
-                            toast.error("Failed to delete image");
-                          }
-                        }}
-                        className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                </div>
+          <div className="md:col-span-2 space-y-4">
+            <div className="flex items-center justify-between">
+              <Label className="text-base font-semibold">Product Gallery</Label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="file"
+                  id="additional-images"
+                  multiple
+                  accept={ACCEPTED_IMAGE_TYPES.join(",")}
+                  onChange={(e) => {
+                    if (e.target.files) {
+                      const filesArray = Array.from(e.target.files);
+                      const validFiles = filesArray.filter(f => f.size <= MAX_FILE_SIZE && ACCEPTED_IMAGE_TYPES.includes(f.type));
+                      if (validFiles.length < filesArray.length) toast.warning("Some files were skipped (too large or wrong type)");
+                      setNewImageFiles((prev) => [...prev, ...validFiles]);
+                      const newPreviews = validFiles.map((file) => URL.createObjectURL(file));
+                      setNewImagePreviews((prev) => [...prev, ...newPreviews]);
+                      e.target.value = "";
+                    }
+                  }}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-9 px-3 border-dashed border-blue-200 hover:border-blue-400 hover:bg-blue-50 transition-all text-blue-600 font-medium"
+                  onClick={() => document.getElementById("additional-images")?.click()}
+                  disabled={mutation.isPending}
+                >
+                  <Plus size={16} className="mr-1.5" />
+                  Add Images
+                </Button>
               </div>
-            )}
+            </div>
 
-            {/* New image previews */}
-            {newImagePreviews.length > 0 && (
-              <div className="flex flex-wrap gap-3">
-                {newImagePreviews.map((src, idx) => (
-                  <div key={idx} className="relative w-24 h-24 border rounded-md overflow-hidden group">
-                    <img src={src} alt={`New ${idx + 1}`} className="w-full h-full object-cover" />
-                    <button
+            {/* Image Grid */}
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+              {/* Existing saved images */}
+              {(initialData as any)?.images && (initialData as any).images.map((img: any) => (
+                <div key={img.id} className="group relative aspect-square rounded-lg border border-gray-100 overflow-hidden bg-gray-50 hover:border-blue-200 transition-all duration-300 shadow-sm">
+                  <img
+                    src={`${import.meta.env.VITE_BACKEND_URL}${img.url}?t=${Date.now()}`}
+                    alt="Product"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <Button
                       type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="h-7 w-7 rounded-full shadow-lg scale-90 group-hover:scale-100 transition-transform"
+                      onClick={async () => {
+                        try {
+                          await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/products/${productId}/images/${img.id}`, {
+                            method: "DELETE",
+                            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+                          });
+                          queryClient.invalidateQueries({ queryKey: ["product", productId] });
+                        } catch {
+                          toast.error("Failed to delete image");
+                        }
+                      }}
+                    >
+                      <X size={14} />
+                    </Button>
+                  </div>
+                  <div className="absolute bottom-2 left-2 px-1.5 py-0.5 bg-white/90 backdrop-blur-sm border border-gray-100 rounded text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                    Saved
+                  </div>
+                </div>
+              ))}
+
+              {/* New image previews */}
+              {newImagePreviews.map((src, idx) => (
+                <div key={`new-${idx}`} className="group relative aspect-square rounded-lg border border-dashed border-blue-200 overflow-hidden bg-blue-50/30 hover:border-blue-400 transition-all duration-300 shadow-sm">
+                  <img src={src} alt={`New upload ${idx + 1}`} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="h-7 w-7 rounded-full shadow-lg scale-90 group-hover:scale-100 transition-transform"
                       onClick={() => {
                         setNewImagePreviews(p => p.filter((_, i) => i !== idx));
                         setNewImageFiles(f => f.filter((_, i) => i !== idx));
                       }}
-                      className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
                     >
-                      ✕
-                    </button>
+                      <X size={14} />
+                    </Button>
                   </div>
-                ))}
-              </div>
-            )}
+                  <div className="absolute bottom-2 left-2 px-1.5 py-0.5 bg-blue-600 border border-blue-500 rounded text-[10px] font-bold text-white uppercase tracking-wider">
+                    New
+                  </div>
+                </div>
+              ))}
 
-            {/* File picker */}
-            <label className="flex items-center gap-2 cursor-pointer px-4 py-2 border border-dashed rounded-md text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors w-fit">
-              <span>+ Add Images</span>
-              <input
-                type="file"
-                multiple
-                accept={ACCEPTED_IMAGE_TYPES.join(",")}
-                className="hidden"
-                disabled={mutation.isPending}
-                onChange={(e) => {
-                  const files = Array.from(e.target.files || []);
-                  if (files.length === 0) return;
-                  const validFiles = files.filter(f => f.size <= MAX_FILE_SIZE && ACCEPTED_IMAGE_TYPES.includes(f.type));
-                  if (validFiles.length < files.length) toast.warning("Some files were skipped (too large or wrong type)");
-                  setNewImageFiles(prev => [...prev, ...validFiles]);
-                  const newPreviews = validFiles.map(f => URL.createObjectURL(f));
-                  setNewImagePreviews(prev => [...prev, ...newPreviews]);
-                  e.target.value = ""; // reset so same files can be re-added
-                }}
-              />
-            </label>
-            <p className="text-xs text-muted-foreground">Max 5MB per image. JPG, PNG, WebP, GIF supported.</p>
-
-            {/* Legacy single image for backwards compatibility */}
-            <div className="space-y-2 pt-2 border-t">
-              <Label htmlFor="attachmentUrl" className="text-xs text-muted-foreground">Primary/Cover Image (replaces existing)</Label>
-              <Input
-                id="attachmentUrl"
-                type="file"
-                accept={ACCEPTED_IMAGE_TYPES.join(",")}
-                {...register("attachmentUrl", {
-                  onChange: (e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      const previewUrl = URL.createObjectURL(file);
-                      setCurrentAttachmentPreview(previewUrl);
-                      setAttachmentFileName(file.name);
-                    } else {
-                      setCurrentAttachmentPreview(null);
-                      setAttachmentFileName("");
-                    }
-                  },
-                })}
-                disabled={mutation.isPending}
-              />
-              {attachmentFileName && (
-                <p className="text-xs text-gray-500 mt-1">Selected: {attachmentFileName}</p>
-              )}
-              {errors.attachmentUrl && (
-                <p className="text-red-500 text-xs mt-1">{errors.attachmentUrl.message as string}</p>
-              )}
-              {currentAttachmentPreview && (
-                <div className="mt-2 relative w-24 h-24 border rounded-md overflow-hidden">
-                  <img src={currentAttachmentPreview} alt="Preview" className="w-full h-full object-cover" />
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    className="absolute top-1 right-1 h-5 w-5 p-0 text-xs"
-                    onClick={() => {
-                      setCurrentAttachmentPreview(null);
-                      setAttachmentFileName("");
-                      form.setValue("attachmentUrl", null, { shouldDirty: true });
-                    }}
-                  >
-                    X
-                  </Button>
+              {/* Empty placeholder */}
+              {!((initialData as any)?.images?.length > 0 || newImageFiles.length > 0) && (
+                <div
+                  className="aspect-square flex flex-col items-center justify-center gap-2 border border-dashed border-gray-200 rounded-lg bg-gray-50 text-gray-400 hover:text-blue-500 hover:border-blue-200 hover:bg-blue-50 transition-all cursor-pointer group"
+                  onClick={() => document.getElementById("additional-images")?.click()}
+                >
+                  <ImageIcon size={24} className="group-hover:scale-110 transition-transform" />
+                  <span className="text-[10px] font-medium">Add Gallery</span>
                 </div>
               )}
+            </div>
+
+            <div className="flex items-center gap-2 p-2.5 bg-blue-50/50 rounded-lg border border-blue-100 border-l-4 border-l-blue-400">
+              <Info size={14} className="text-blue-500 shrink-0" />
+              <p className="text-[11px] text-blue-700 leading-tight">
+                <span className="font-bold uppercase tracking-wider mr-1">Guidelines:</span>
+                Max 5MB per image. High-quality JPG, PNG, and WebP are supported for best results.
+              </p>
+            </div>
+          </div>
+
+          {/* Primary Attachment Section */}
+          <div className="md:col-span-2 pt-4 border-t border-gray-100">
+            <Label className="text-(sm) font-semibold mb-3 block text-gray-700">Cover Image</Label>
+            <div className="flex flex-col md:flex-row gap-6 items-start">
+              <div className="w-full md:w-32 lg:w-40">
+                <div className="group relative aspect-square rounded-xl border border-gray-100 overflow-hidden bg-gray-50 hover:border-blue-200 transition-all duration-300 shadow-sm">
+                  {currentAttachmentPreview ? (
+                    <>
+                      <img
+                        src={currentAttachmentPreview}
+                        alt="Primary Preview"
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="h-8 rounded-full shadow-lg font-medium text-xs px-3"
+                          onClick={() => {
+                            setCurrentAttachmentPreview(null);
+                            setAttachmentFileName("");
+                            form.setValue("attachmentUrl", null, { shouldDirty: true });
+                          }}
+                        >
+                          <Trash2 size={13} className="mr-1.5" /> Remove
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full gap-2 text-gray-400 py-6">
+                      <Upload size={32} strokeWidth={1.5} className="mb-0.5" />
+                      <span className="text-xs font-medium">No Photo</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex-1 w-full space-y-3">
+                <div
+                  className="relative flex items-center justify-center w-full min-h-[100px] border-2 border-dashed border-gray-200 rounded-xl bg-gray-50 hover:bg-white hover:border-blue-400 transition-all cursor-pointer group"
+                  onClick={() => document.getElementById("primary-image-input")?.click()}
+                >
+                  <div className="flex flex-col items-center gap-2 p-4 text-center">
+                    <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                      <Upload size={20} />
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-xs font-semibold text-gray-700">
+                        {attachmentFileName ? "Change Cover" : "Upload Main Image"}
+                      </p>
+                      <p className="text-[10px] text-gray-500">
+                        {attachmentFileName || "Recommend high quality JPG/PNG"}
+                      </p>
+                    </div>
+                  </div>
+                  <input
+                    id="primary-image-input"
+                    type="file"
+                    className="hidden"
+                    accept={ACCEPTED_IMAGE_TYPES.join(",")}
+                    {...register("attachmentUrl", {
+                      onChange: (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          if (file.size > MAX_FILE_SIZE) {
+                            toast.error("File size too large (max 5MB)");
+                            e.target.value = "";
+                            return;
+                          }
+                          setAttachmentFileName(file.name);
+                          setCurrentAttachmentPreview(URL.createObjectURL(file));
+                        }
+                      },
+                    })}
+                  />
+                </div>
+
+                <div className="flex items-start gap-2.5 p-3 bg-amber-50/50 rounded-lg border border-amber-100 border-l-4 border-l-amber-400 text-amber-900 shadow-sm transition-all hover:bg-amber-50">
+                  <Lightbulb className="mt-0.5 shrink-0 text-amber-600" size={16} />
+                  <div className="space-y-0.5">
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-amber-700">Expert Tip</p>
+                    <p className="text-[11px] leading-relaxed opacity-90 font-medium">The cover image is your first impression. Crisp, well-lit photos can significantly improve engagement and sales conversion.</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -663,7 +738,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
         >
           Cancel
         </Button>
-        <Button type="submit" disabled={mutation.isPending || !isDirty}>
+        <Button type="submit" disabled={mutation.isPending || (!isDirty && newImageFiles.length === 0)}>
           {mutation.isPending ? (
             <LoaderCircle className="animate-spin mr-2" />
           ) : null}
