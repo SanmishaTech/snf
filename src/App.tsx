@@ -1,4 +1,4 @@
- //Vipul
+//Vipul
 import React, { useEffect } from "react";
 import { appName } from "./config"; // Import appName from config
 import {
@@ -8,7 +8,6 @@ import {
   Navigate,
 } from "react-router-dom";
 import { ThemeProvider } from "./providers/theme-provider"; // Import ThemeProvider
-import { MobileThemeEnforcer } from "./components/MobileThemeEnforcer"; // Import MobileThemeEnforcer
 
 import AuthLayout from "./layouts/AuthLayout";
 import MainLayout from "./layouts/MainLayout";
@@ -95,8 +94,8 @@ import DepotOrderDetails from "./modules/Order/DepotOrderDetails";
 import { AdminDashboard } from "./modules/Dashboard/Dashboard.tsx";
 import "./App.css";
 // MembershipList wrapper component to handle showing all memberships
- 
- 
+
+
 import SNFOrdersListPage from "./modules/SNFOrders/SNFOrdersListPage";
 import SNFOrderDetailPage from "./modules/SNFOrders/SNFOrderDetailPage";
 import PurchaseOrderReport from "./modules/Reports/PurchaseOrderReport";
@@ -123,7 +122,7 @@ const App = () => {
   const SNFCheckoutWrapper = React.lazy(() => import("./modules/SNF/SNFCheckoutWrapper"));
   // Lazy-load the Buy Now page wrapper for SNF
   const SNFBuyNowWrapper = React.lazy(() => import("./modules/SNF/SNFBuyNowWrapper"));
-  
+
   // Lazy-load the Cart Debug page wrapper for SNF
   const SNFCartDebugWrapper = React.lazy(() => import("./modules/SNF/SNFCartDebugWrapper"));
   // Lazy-load the Address page wrapper for SNF
@@ -142,8 +141,7 @@ const App = () => {
   void user;
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-      <MobileThemeEnforcer />
+    <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light">
       <Toaster richColors position="top-center" />
       <Router>
         <Routes>
@@ -155,8 +153,8 @@ const App = () => {
           <Route path="/talukas" element={<Navigate to="/admin/locations" replace />} />
 
           {/* New SNF routes - independent landing page and product detail, both lazy-loaded */}
-           <Route
-            path="/snf" 
+          <Route
+            path="/snf"
             element={
               <React.Suspense
                 fallback={
@@ -182,7 +180,7 @@ const App = () => {
                 <SNFWrapper />
               </React.Suspense>
             }
-          /> 
+          />
 
           <Route
             path="/snf/checkout"
@@ -413,7 +411,7 @@ const App = () => {
             <Route path="/vendor/orders/:id/record-delivery" element={<OrderDeliveryPage />} />
             {/* Add any other non-admin routes here that should use MainLayout but not admin protection */}
           </Route>
-          
+
           {/* Member specific routes with MemberLayout */}
           <Route element={<MemberLayout />}>
             <Route path="/member/orders" element={<Orderlist />} />

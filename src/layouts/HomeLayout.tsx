@@ -1,7 +1,6 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import React, { useState, useEffect } from "react"; // Added React import
-import { Sun, Moon, LogOut, Settings, Repeat } from "lucide-react"; // Removed User, Clock
-import { useTheme } from "next-themes";
+import React, { useEffect } from "react"; // Added React import
+import { LogOut, Settings, Repeat } from "lucide-react"; // Removed User, Clock
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -31,7 +30,6 @@ interface Product {
 export default function MemberLayout({ children }: MemberLayoutProps) { // Destructure children from props
   const location = useLocation();
   const navigate = useNavigate();
-  const { setTheme, resolvedTheme } = useTheme();
 
   // Retrieve user data from localStorage
   const storedUserData = localStorage.getItem("user");
@@ -83,9 +81,6 @@ export default function MemberLayout({ children }: MemberLayoutProps) { // Destr
 
   }, [userData, navigate, location.pathname]);
 
-  const toggleDarkMode = () => {
-    setTheme(resolvedTheme === "dark" ? "light" : "dark");
-  };
 
   const handleLogout = () => {
     // Clear all authentication data from localStorage
@@ -151,15 +146,6 @@ export default function MemberLayout({ children }: MemberLayoutProps) { // Destr
 
           {/* Right side controls */}
           <div className="flex items-center space-x-4">
-            {/* Dark mode toggle */}
-            <Button
-              onClick={toggleDarkMode}
-              variant="ghost"
-              size="icon"
-              aria-label="Toggle Dark Mode"
-            >
-              {resolvedTheme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            </Button>
 
             {/* User dropdown */}
             {userData && <DropdownMenu>

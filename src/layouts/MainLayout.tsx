@@ -9,8 +9,6 @@ import {
 } from "@/components/ui/sidebar";
 import { Outlet, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Sun, Moon } from "lucide-react";
-import { useTheme } from "next-themes";
 
 import { useNavigate } from "react-router-dom";
 import BottomNavBar from "../components/BottomNavBar";
@@ -19,7 +17,6 @@ import CommandPalette from "@/components/common/CommandPalette";
 
 export default function MainLayout() {
   const navigate = useNavigate()
-  const { setTheme, resolvedTheme } = useTheme();
 
   // Retrieve user data from localStorage
   const storedUserData = localStorage.getItem("user");
@@ -27,9 +24,6 @@ export default function MainLayout() {
 
   const location = useLocation();
 
-  const toggleDarkMode = () => {
-    setTheme(resolvedTheme === "dark" ? "light" : "dark");
-  };
 
   const [role, setRole] = useState<string | undefined>(undefined);
 
@@ -55,18 +49,6 @@ export default function MainLayout() {
               <h1 className="text-white">Welcome, {userData?.name} <span className="text-blue-200 dark:text-gray-400 text-sm">({userData?.role})</span></h1>
             </div>
 
-            {/* Dark Mode Switcher - On the right side */}
-            <div className="flex items-center gap-4">
-              <Button
-                onClick={toggleDarkMode}
-                className="text-white size-7 cursor-pointer"
-                variant="ghost"
-                size="icon"
-                aria-label="Toggle Dark Mode"
-              >
-                {resolvedTheme === "dark" ? <Sun /> : <Moon />}
-              </Button>
-            </div>
           </div>
         </header>
 

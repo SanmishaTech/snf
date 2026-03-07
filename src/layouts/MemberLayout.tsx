@@ -1,28 +1,10 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import React, { useState, useEffect } from "react"; // Added React import
 import {
-  Sun,
-  Moon,
-  LogOut,
-  Settings,
-  Repeat,
-  Package,
   Leaf,
 } from "lucide-react"; // Removed User, Clock, Added Leaf
-import { useTheme } from "next-themes";
 
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { appName } from "@/config";
 import { get } from "@/services/apiService"; // For fetching products
 import Header from "@/layouts/Header";
 import BottomNavBar from "@/components/BottomNavBar";
@@ -42,7 +24,6 @@ interface Product {
 export default function MemberLayout({ children }: MemberLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { setTheme, resolvedTheme } = useTheme();
 
   const storedUserData = localStorage.getItem("user");
   const userData = storedUserData ? JSON.parse(storedUserData) : null;
@@ -125,9 +106,6 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
     }
   }, [userData, navigate, location.pathname]);
 
-  const toggleDarkMode = () => {
-    setTheme(resolvedTheme === "dark" ? "light" : "dark");
-  };
 
   const handleLogout = () => {
     // Clear all authentication data from localStorage
@@ -141,16 +119,6 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
     navigate("/");
   };
 
-  // Get user initials for avatar
-  const getUserInitials = () => {
-    if (!userData?.name) return "U";
-    return userData.name
-      .split(" ")
-      .map((n: string) => n[0])
-      .join("")
-      .toUpperCase()
-      .substring(0, 2);
-  };
 
   return (
     <div className="flex flex-col min-h-screen">
