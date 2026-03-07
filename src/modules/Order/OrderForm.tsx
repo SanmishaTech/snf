@@ -14,8 +14,8 @@ import { toast } from "sonner";
 import { format, addDays } from "date-fns";
 import { LoaderCircle, CalendarIcon, Plus, Trash2, Package, Truck, ShoppingCart, Save, PackageSearch, ListOrdered, ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {Textarea } from "@/components/ui/textarea"
-import {Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { useNavigate } from "react-router-dom";
 import { formatCurrency } from "@/lib/formatter";
 
@@ -32,9 +32,22 @@ const orderSchema = z.object({
     agencyId: z.string().min(1, "Agency is required"),
     productId: z.string().min(1, "Product is required"),
     depotVariantId: z.string().min(1, "Depot variant is required"),
-    quantity: z.number().min(1, "Quantity must be at least 1"),
+    quantity: z.number().optional().nullable(),
     variantUnit: z.string().optional(),
-  })).min(1, "At least one product item is required"),
+  })).min(1, "At least one product item is required")
+    .superRefine((items, ctx) => {
+      items.forEach((item, index) => {
+        if (item.depotId && item.agencyId) {
+          if (item.quantity === undefined || item.quantity === null || item.quantity < 1) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Quantity must be at least 1 when Depot and Agency are selected",
+              path: [index, "quantity"]
+            });
+          }
+        }
+      });
+    }),
 });
 
 type OrderFormData = z.infer<typeof orderSchema>;
@@ -137,7 +150,7 @@ function ControlledCalendar28({ value, onChange, label, id, fromDate }: Controll
   useEffect(() => {
     setInputValue(formatDate(value));
     if (isValidDate(value)) {
-        setMonth(value);
+      setMonth(value);
     }
   }, [value]);
 
@@ -233,12 +246,12 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
     }));
   };
 
-  const { 
-    register, 
-    control, 
-    handleSubmit, 
-    setValue, 
-    watch, 
+  const {
+    register,
+    control,
+    handleSubmit,
+    setValue,
+    watch,
     getValues,
     formState: { errors, isSubmitting },
   } = useForm<OrderFormData>({
@@ -255,13 +268,13 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
       notes: (mode === 'edit' && initialData?.notes) ? initialData.notes : '',
       orderItems: (mode === 'edit' && initialData?.orderItems && initialData.orderItems.length > 0)
         ? initialData.orderItems.map(item => ({
-            productId: String(item?.productId || ''),
-            quantity: Number(item?.quantity || 1),
-            agencyId: String(item?.agencyId || ''),
-            depotId: String(item?.depotId || ''),
-            depotVariantId: String(item?.depotVariantId || '')
-          }))
-        : [{ productId: "", quantity: 1, agencyId: "", depotId: "", depotVariantId: "" }],
+          productId: String(item?.productId || ''),
+          quantity: Number(item?.quantity || 1),
+          agencyId: String(item?.agencyId || ''),
+          depotId: String(item?.depotId || ''),
+          depotVariantId: String(item?.depotVariantId || '')
+        }))
+        : [{ productId: "", quantity: undefined, agencyId: "", depotId: "", depotVariantId: "" }],
     },
     mode: "onChange", // Changed to onChange for more responsive validation feedback
   });
@@ -289,10 +302,10 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
   // Enhanced grouped product summary with variant details
   const groupedProductSummary = React.useMemo(() => {
     console.log("[OrderForm] Recalculating groupedProductSummary. Watched items (stringified for dep):", watchedOrderItemsString, "Product count:", products.length);
-    const summary: { 
-      [productId: string]: { 
-        name: string; 
-        totalQuantity: number; 
+    const summary: {
+      [productId: string]: {
+        name: string;
+        totalQuantity: number;
         totalPrice?: number;
         variants: {
           [variantId: string]: {
@@ -304,9 +317,9 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
             price?: number;
           }
         }
-      } 
+      }
     } = {};
-    
+
     if (!watchedOrderItems || watchedOrderItems.length === 0 || !products || products.length === 0) {
       return summary;
     }
@@ -320,12 +333,12 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
       const variant = depotVariants.find(v => String(v.id) === item.depotVariantId);
       const agency = agencies.find(a => String(a.id) === item.agencyId);
       const depot = depots.find(d => String(d.id) === item.depotId);
-      
+
       if (product && variant) {
         // Prioritize purchasePrice if available, then fallback to mrp or buyOncePrice
         const variantPrice = Number(variant.purchasePrice) || Number(variant.mrp) || Number(variant.buyOncePrice) || 0;
         const itemQuantity = Number(item.quantity);
-        
+
         if (!summary[item.productId]) {
           summary[item.productId] = {
             name: product.name,
@@ -334,10 +347,10 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
             variants: {}
           };
         }
-        
+
         summary[item.productId].totalQuantity += itemQuantity;
         summary[item.productId].totalPrice = (summary[item.productId].totalPrice || 0) + (variantPrice * itemQuantity);
-        
+
         // Handle variants
         if (variant && item.depotVariantId) {
           if (!summary[item.productId].variants[item.depotVariantId]) {
@@ -350,9 +363,9 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
               price: variantPrice
             };
           }
-          
+
           summary[item.productId].variants[item.depotVariantId].quantity += itemQuantity;
-          
+
           // Add unique agencies and depots
           if (agency && !summary[item.productId].variants[item.depotVariantId].agencies.includes(agency.name)) {
             summary[item.productId].variants[item.depotVariantId].agencies.push(agency.name);
@@ -363,7 +376,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
         }
       }
     });
-    
+
     console.log("[OrderForm] Enhanced groupedProductSummary result:", JSON.parse(JSON.stringify(summary)));
     return summary;
   }, [watchedOrderItemsString, products, depotVariants, agencies, depots]); // Use stringified version in dependency
@@ -386,16 +399,16 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
   };
 
   // Check if all products are expanded or collapsed
-  const allProductsExpanded = Object.keys(groupedProductSummary).length > 0 && 
+  const allProductsExpanded = Object.keys(groupedProductSummary).length > 0 &&
     Object.keys(groupedProductSummary).every(productId => expandedProducts[productId] !== false);
-  const allProductsCollapsed = Object.keys(groupedProductSummary).length > 0 && 
+  const allProductsCollapsed = Object.keys(groupedProductSummary).length > 0 &&
     Object.keys(groupedProductSummary).every(productId => expandedProducts[productId] === false);
 
   const { fields, append, remove } = useFieldArray({
     control,
     name: "orderItems",
   });
-  
+
   // Log field changes
   useEffect(() => {
     console.log("[OrderForm] Fields updated:", fields);
@@ -405,47 +418,47 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
   // Enhanced remove function that ensures form state consistency
   const handleRemoveItem = (index: number) => {
     console.log("[OrderForm] Removing item at index:", index);
-    
+
     // Don't allow removal if only one item remains
     if (fields.length <= 1) {
       console.log("[OrderForm] Cannot remove last item");
       return;
     }
-    
+
     // Remove the item
     remove(index);
-    
+
     // Force form re-validation after removal to ensure field states are consistent
     setTimeout(() => {
       const currentItems = getValues("orderItems");
       console.log("[OrderForm] After removal, current items:", currentItems);
-      
+
       // Re-validate all remaining fields to ensure they're properly registered
       currentItems.forEach((_, itemIndex) => {
-        setValue(`orderItems.${itemIndex}.depotId`, currentItems[itemIndex]?.depotId || "", { 
-          shouldValidate: true, 
-          shouldDirty: true, 
-          shouldTouch: true 
+        setValue(`orderItems.${itemIndex}.depotId`, currentItems[itemIndex]?.depotId || "", {
+          shouldValidate: true,
+          shouldDirty: true,
+          shouldTouch: true
         });
-        setValue(`orderItems.${itemIndex}.agencyId`, currentItems[itemIndex]?.agencyId || "", { 
-          shouldValidate: true, 
-          shouldDirty: true, 
-          shouldTouch: true 
+        setValue(`orderItems.${itemIndex}.agencyId`, currentItems[itemIndex]?.agencyId || "", {
+          shouldValidate: true,
+          shouldDirty: true,
+          shouldTouch: true
         });
-        setValue(`orderItems.${itemIndex}.productId`, currentItems[itemIndex]?.productId || "", { 
-          shouldValidate: true, 
-          shouldDirty: true, 
-          shouldTouch: true 
+        setValue(`orderItems.${itemIndex}.productId`, currentItems[itemIndex]?.productId || "", {
+          shouldValidate: true,
+          shouldDirty: true,
+          shouldTouch: true
         });
-        setValue(`orderItems.${itemIndex}.depotVariantId`, currentItems[itemIndex]?.depotVariantId || "", { 
-          shouldValidate: true, 
-          shouldDirty: true, 
-          shouldTouch: true 
+        setValue(`orderItems.${itemIndex}.depotVariantId`, currentItems[itemIndex]?.depotVariantId || "", {
+          shouldValidate: true,
+          shouldDirty: true,
+          shouldTouch: true
         });
-        setValue(`orderItems.${itemIndex}.quantity`, currentItems[itemIndex]?.quantity || 1, { 
-          shouldValidate: true, 
-          shouldDirty: true, 
-          shouldTouch: true 
+        setValue(`orderItems.${itemIndex}.quantity`, currentItems[itemIndex]?.quantity || 1, {
+          shouldValidate: true,
+          shouldDirty: true,
+          shouldTouch: true
         });
       });
     }, 0);
@@ -457,12 +470,12 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
       try {
         const response = await get("/vendors?limit=1000&dairyOnly=true"); // Fetch only dairy vendors, up to 1000
         if (response && Array.isArray(response)) {
-            setVendors(response.map(v => ({ ...v, id: String(v.id) })));
+          setVendors(response.map(v => ({ ...v, id: String(v.id) })));
         } else if (response && response.data && Array.isArray(response.data)) {
-            setVendors(response.data.map((v: any) => ({ ...v, id: String(v.id) })));
+          setVendors(response.data.map((v: any) => ({ ...v, id: String(v.id) })));
         } else {
-            setVendors([]);
-            toast.error("Failed to fetch farmer or data is not in expected format.");
+          setVendors([]);
+          toast.error("Failed to fetch farmer or data is not in expected format.");
         }
       } catch (error) {
         toast.error("Failed to fetch farmer");
@@ -478,7 +491,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
       try {
         const response = await get("/products");
         let productsList: Product[] = [];
-        
+
         if (response && Array.isArray(response)) {
           productsList = response;
         } else if (response && response.data && Array.isArray(response.data)) {
@@ -487,9 +500,9 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
           console.error("Unexpected product API response structure:", response);
           toast.error("Products data is not in the expected array format.");
         }
-        
+
         setProducts(productsList);
-        
+
         // If in edit mode, initialData has orderItems, and both products and agencies are loaded, set them
         if (mode === "edit" && initialData?.orderItems && Array.isArray(initialData.orderItems) && initialData.orderItems.length > 0 && productsList.length > 0 && agencies.length > 0) {
           console.log("Attempting to set order items. initialData.orderItems:", initialData.orderItems);
@@ -504,7 +517,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
           }));
 
           // Optional: Check if products for these items actually exist in the fetched list
-          const allProductsExist = itemsToSet.every(item => 
+          const allProductsExist = itemsToSet.every(item =>
             productsList.some(p => String(p.id) === item.productId)
           );
 
@@ -512,7 +525,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
             console.warn("Some products in initialData.orderItems do not exist in the fetched products list. Items might not display correctly or be selectable.");
             // Consider filtering itemsToSet here if products must exist, or provide feedback
           }
-          
+
           setValue("orderItems", itemsToSet as { productId: string; quantity: number; agencyId: string; depotId: string; depotVariantId: string; }[]);
           console.log("Order items set in form with:", itemsToSet);
         }
@@ -533,7 +546,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
         let agenciesData: Agency[] = [];
         if (response && Array.isArray(response.data)) {
           agenciesData = response.data.map((ag: any) => ({ ...ag, id: String(ag.id) }));
-        } else if (response && Array.isArray(response)) { 
+        } else if (response && Array.isArray(response)) {
           agenciesData = response.map((ag: any) => ({ ...ag, id: String(ag.id) }));
         }
         setAgencies(agenciesData);
@@ -609,10 +622,10 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
         try {
           const formattedDate = format(watchedDeliveryDate, "yyyy-MM-dd");
           console.log("[OrderForm] Fetching prefill data for date:", formattedDate);
-          
+
           const response = await get(`/vendor-orders/get-order-details?date=${formattedDate}`);
           console.log("[OrderForm] Raw API response:", response);
-          
+
           // Handle the new enhanced API response format
           // The API returns { date, summary, data } directly
           const responseData = response;
@@ -621,17 +634,17 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
           console.log("[OrderForm] responseData.data exists:", !!responseData.data);
           console.log("[OrderForm] responseData.data is Array:", Array.isArray(responseData.data));
           console.log("[OrderForm] responseData.data length:", responseData.data ? responseData.data.length : 'N/A');
-          
+
           if (responseData && responseData.data && Array.isArray(responseData.data) && responseData.data.length > 0) {
             console.log("[OrderForm] Number of depot-variant groups from API:", responseData.data.length);
             console.log("[OrderForm] Summary:", responseData.summary);
-            
+
             const newOrderItems: any[] = [];
-            
+
             // Process each depot-variant group
             responseData.data.forEach((group: any) => {
               console.log("[OrderForm] Processing group:", group);
-              
+
               // Each group can have multiple agencies and members
               if (group.depot && group.variant && group.product) {
                 // Check if we should split by agencies or create a single item
@@ -639,7 +652,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                   // Multiple agencies - create separate items for each agency
                   // Calculate quantity per agency based on member distribution
                   const membersByAgency: Record<string, number> = {};
-                  
+
                   // If we have member details, use them to distribute quantity accurately
                   if (group.members && Array.isArray(group.members)) {
                     group.members.forEach((member: any) => {
@@ -650,14 +663,14 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                       }
                     });
                   }
-                  
+
                   // Distribute quantities based on member counts or evenly if no member data
                   const hasValidMemberData = Object.keys(membersByAgency).length > 0;
-                  
+
                   group.agencies.ids.forEach((agencyId: number, index: number) => {
                     const agencyIdStr = String(agencyId);
                     let agencyQuantity = 0;
-                    
+
                     if (hasValidMemberData && membersByAgency[agencyIdStr]) {
                       // Use actual member-based quantity for this agency
                       agencyQuantity = membersByAgency[agencyIdStr];
@@ -666,7 +679,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                       const quantityPerAgency = Math.ceil(group.statistics.totalQuantity / group.agencies.ids.length);
                       agencyQuantity = quantityPerAgency;
                     }
-                    
+
                     const mappedItem = {
                       depotId: String(group.depot.id || ''),
                       agencyId: agencyIdStr,
@@ -674,26 +687,26 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                       depotVariantId: String(group.variant.id || ''),
                       quantity: agencyQuantity,
                     };
-                    
+
                     console.log(`[OrderForm] Mapped item for agency ${group.agencies.names[index]} (${agencyIdStr}):`, mappedItem);
                     if (hasValidMemberData) {
                       console.log(`[OrderForm] Using member-based quantity: ${agencyQuantity} for agency ${agencyIdStr}`);
                     } else {
                       console.log(`[OrderForm] Using evenly distributed quantity: ${agencyQuantity} for agency ${agencyIdStr}`);
                     }
-                    
+
                     // Only add valid items
-                    if (mappedItem.depotId && mappedItem.agencyId && mappedItem.productId && 
-                        mappedItem.depotVariantId && mappedItem.quantity > 0) {
+                    if (mappedItem.depotId && mappedItem.agencyId && mappedItem.productId &&
+                      mappedItem.depotVariantId && mappedItem.quantity > 0) {
                       newOrderItems.push(mappedItem);
                     }
                   });
                 } else {
                   // Single agency or no agency - create one item
-                  const agencyId = group.agencies && group.agencies.ids.length > 0 
-                    ? String(group.agencies.ids[0]) 
+                  const agencyId = group.agencies && group.agencies.ids.length > 0
+                    ? String(group.agencies.ids[0])
                     : "";
-                  
+
                   const mappedItem = {
                     depotId: String(group.depot.id || ''),
                     agencyId: agencyId,
@@ -701,16 +714,16 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                     depotVariantId: String(group.variant.id || ''),
                     quantity: Number(group.statistics.totalQuantity || 0),
                   };
-                  
+
                   console.log("[OrderForm] Mapped item:", mappedItem);
-                  
+
                   // Validate mapped item
                   if (!mappedItem.depotId) console.warn("[OrderForm] Item missing depotId");
                   if (!mappedItem.agencyId) console.warn("[OrderForm] Item missing agencyId - user will need to select");
                   if (!mappedItem.productId) console.warn("[OrderForm] Item missing productId");
                   if (!mappedItem.depotVariantId) console.warn("[OrderForm] Item missing depotVariantId");
                   if (mappedItem.quantity <= 0) console.warn("[OrderForm] Item has invalid quantity:", mappedItem.quantity);
-                  
+
                   // Only add valid items (allow missing agencyId as user can select it)
                   if (mappedItem.depotId && mappedItem.productId && mappedItem.depotVariantId && mappedItem.quantity > 0) {
                     newOrderItems.push(mappedItem);
@@ -718,10 +731,10 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                 }
               }
             });
-            
+
             console.log("[OrderForm] Final mapped order items:", newOrderItems);
             console.log("[OrderForm] Setting form with", newOrderItems.length, "items");
-            
+
             if (newOrderItems.length > 0) {
               setValue("orderItems", newOrderItems, { shouldValidate: true });
               toast.success(
@@ -730,7 +743,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
               );
             } else {
               console.warn("[OrderForm] No valid items could be mapped from the response");
-              setValue("orderItems", [{ depotId: "", agencyId: "", productId: "", depotVariantId: "", quantity: 1 }], { shouldValidate: true });
+              setValue("orderItems", [{ depotId: "", agencyId: "", productId: "", depotVariantId: "", quantity: undefined }], { shouldValidate: true });
               toast.warning(`Data found but could not map items for ${format(watchedDeliveryDate, "dd/MM/yyyy")}.`);
             }
           } else {
@@ -742,14 +755,14 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
               isDataArray: Array.isArray(responseData && responseData.data),
               dataLength: responseData && responseData.data ? responseData.data.length : 0
             });
-            setValue("orderItems", [{ depotId: "", agencyId: "", productId: "", depotVariantId: "", quantity: 1 }], { shouldValidate: true });
+            setValue("orderItems", [{ depotId: "", agencyId: "", productId: "", depotVariantId: "", quantity: undefined }], { shouldValidate: true });
             toast.info(`No scheduled order items found for ${format(watchedDeliveryDate, "dd/MM/yyyy")}.`);
           }
         } catch (error: any) {
           console.error("[OrderForm] Error fetching prefill data:", error);
           toast.error(error.message || "Failed to fetch prefill order items.");
           // Set empty item on error
-          setValue("orderItems", [{ depotId: "", agencyId: "", productId: "", depotVariantId: "", quantity: 1 }], { shouldValidate: true });
+          setValue("orderItems", [{ depotId: "", agencyId: "", productId: "", depotVariantId: "", quantity: undefined }], { shouldValidate: true });
         } finally {
           setIsFetchingPrefill(false);
         }
@@ -826,7 +839,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
   const onSubmit: SubmitHandler<OrderFormData> = (data) => {
     console.log("[OrderForm] Form submitted with data:", data);
     console.log("[OrderForm] Form validation errors:", errors);
-    
+
     // Prepare the complete order data with all required fields
     const completeOrderData = {
       ...data,
@@ -844,17 +857,17 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
       // Include additional order-level data
       totalAmount: orderTotal || 0
     };
-    
+
     console.log("[OrderForm] Submitting complete order data:", completeOrderData);
     mutation.mutate(completeOrderData);
   };
 
   const onError = (errors: any) => {
     console.log("[OrderForm] Form validation failed:", errors);
-    
+
     // Extract specific error messages
     const errorMessages: string[] = [];
-    
+
     if (errors.vendorId) {
       errorMessages.push(`Farmer: ${errors.vendorId.message}`);
     }
@@ -882,7 +895,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
         });
       }
     }
-    
+
     // Show specific errors or generic message
     if (errorMessages.length > 0) {
       const errorText = errorMessages.slice(0, 3).join('; '); // Show first 3 errors
@@ -893,12 +906,12 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
     }
   };
 
- 
+
 
   useEffect(() => {
     console.log(
-      "[OrderForm] Recalculating orderTotal. groupedProductSummary:", JSON.parse(JSON.stringify(groupedProductSummary)), 
-      "Product count:", products.length, 
+      "[OrderForm] Recalculating orderTotal. groupedProductSummary:", JSON.parse(JSON.stringify(groupedProductSummary)),
+      "Product count:", products.length,
       "Watched items (stringified for dep):", watchedOrderItemsString
     );
     const calculatedTotalPrice = Object.values(groupedProductSummary).reduce((accumulator, summaryItem) => {
@@ -912,27 +925,27 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
   const renderStepContent = () => {
     return (
       <React.Fragment>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6"> 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           {/* Order Details Section */}
           <div className="bg-gray-50 dark:bg-gray-900 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800">
             <div className="flex items-center gap-2 mb-4">
               <ShoppingCart className="h-5 w-5 text-gray-600 dark:text-gray-400" />
               {/* <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Order Information</h3> */}
             </div>
-            
+
             <div className="grid gap-4">
               {mode !== "create" && (
                 <div className="relative">
                   <Label htmlFor="poNumber" className="text-gray-700 dark:text-gray-300 font-medium">PO Number</Label>
-                  <Input 
-                    id="poNumber" 
+                  <Input
+                    id="poNumber"
                     className="bg-white/80 dark:bg-gray-900/80 border-gray-300 dark:border-gray-700"
-                    {...register("poNumber")} 
-                    disabled 
+                    {...register("poNumber")}
+                    disabled
                   />
                 </div>
               )}
-              
+
               <div className="grid grid-cols-2 gap-4  max-md:grid-cols-1">
                 <div className="relative">
                   <Controller
@@ -950,7 +963,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                   />
                   {errors.orderDate && <span className="text-red-500 text-xs absolute -bottom-5">{errors.orderDate.message}</span>}
                 </div>
-                
+
                 <div className="relative">
                   <Controller
                     control={control}
@@ -975,7 +988,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                           Checking for scheduled items...
                         </div>
                       )}
-                 
+
                     </>
                   )}
                 </div>
@@ -983,11 +996,11 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
 
               <div className="relative mt-2">
                 <Label htmlFor="notes" className="text-gray-700 dark:text-gray-300 font-medium mb-2">Notes / Special Instructions</Label>
-                <Textarea 
-                  id="notes" 
-                  {...register("notes")} 
-                   
-                  rows={3} 
+                <Textarea
+                  id="notes"
+                  {...register("notes")}
+
+                  rows={3}
                   className="bg-white/80 dark:bg-gray-900/80 border-gray-300 dark:border-gray-700"
                 />
                 {errors.notes && <span className="text-red-500 text-xs mt-1">{errors.notes.message}</span>}
@@ -995,14 +1008,14 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
 
             </div>
           </div>
-          
+
           {/* Vendor Section */}
           <div className="bg-gray-50 dark:bg-gray-900 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800">
             <div className="flex items-center gap-2 mb-4">
               <Truck className="h-5 w-5 text-gray-600 dark:text-gray-400" />
               <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Farmer Information</h3>
             </div>
-            
+
             <div className="grid gap-4">
               <div className="relative">
                 <Label htmlFor="vendorId" className="text-gray-700 dark:text-gray-300 font-medium mb-2">Select Farmer</Label>
@@ -1010,11 +1023,11 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                   control={control}
                   name="vendorId"
                   render={({ field }) => (
-                    <Select 
+                    <Select
                       onValueChange={(val) => {
                         field.onChange(val);
                         setValue("vendorId", val, { shouldDirty: true, shouldValidate: true, shouldTouch: true });
-                      }} 
+                      }}
                       value={field.value || undefined}
                     >
                       <SelectTrigger className="bg-white dark:bg-gray-700 w-full">
@@ -1030,14 +1043,14 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                 />
                 {errors.vendorId && <span className="text-red-500 text-xs absolute -bottom-5">{errors.vendorId.message}</span>}
               </div>
-              
+
               <div className="relative">
                 <Label htmlFor="contactPersonName" className="text-gray-700 dark:text-gray-300 font-medium mb-2">Contact Person</Label>
-                <Input 
-                  id="contactPersonName" 
+                <Input
+                  id="contactPersonName"
                   disabled
                   className="bg-white/80 dark:bg-gray-900/80 border-emerald-200 dark:border-emerald-800"
-                  {...register("contactPersonName")} 
+                  {...register("contactPersonName")}
                 />
                 {errors.contactPersonName && <span className="text-red-500 text-xs absolute -bottom-5">{errors.contactPersonName.message}</span>}
               </div>
@@ -1048,7 +1061,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Farmer Details</p>
                 <div className="grid grid-cols-2 gap-2 mt-2 text-sm max-md:grid-cols-1">
                   <div>
-                  <span className="text-gray-500 dark:text-gray-400">Email:</span>
+                    <span className="text-gray-500 dark:text-gray-400">Email:</span>
                     <p className="font-medium text-gray-700 dark:text-gray-300 max-sm:text-xs">{selectedVendor.email}</p>
                   </div>
                   <div>
@@ -1076,7 +1089,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                 onClick={() =>
                   append({
                     productId: "",
-                    quantity: 1,
+                    quantity: undefined,
                     agencyId: "",
                     depotId: "",
                     depotVariantId: ""
@@ -1110,37 +1123,258 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                         <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Product</th>
                         <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Depot Variant</th>
                         <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">QTY</th>
-                         <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                    {fields.map((itemField, index) => {
-                      console.log(`[OrderForm] Rendering field ${index}:`, itemField, "Row item:", getValues(`orderItems.${index}`));
-                      const rowItem = getValues(`orderItems.${index}`);
-                      const variantInfo = depotVariants.find(v => String(v.id) === rowItem?.depotVariantId);
-                      // Prioritize purchasePrice if available, then fallback to mrp or buyOncePrice
-                      const unitPrice = variantInfo ? (Number(variantInfo.purchasePrice) || Number(variantInfo.mrp) || Number(variantInfo.buyOncePrice) || 0) : 0;
-                      const itemTotal = unitPrice * (rowItem?.quantity || 0);
+                      {fields.map((itemField, index) => {
+                        console.log(`[OrderForm] Rendering field ${index}:`, itemField, "Row item:", getValues(`orderItems.${index}`));
+                        const rowItem = getValues(`orderItems.${index}`);
+                        const variantInfo = depotVariants.find(v => String(v.id) === rowItem?.depotVariantId);
+                        // Prioritize purchasePrice if available, then fallback to mrp or buyOncePrice
+                        const unitPrice = variantInfo ? (Number(variantInfo.purchasePrice) || Number(variantInfo.mrp) || Number(variantInfo.buyOncePrice) || 0) : 0;
+                        const itemTotal = unitPrice * (rowItem?.quantity || 0);
 
-                      return (
-                        <tr key={itemField.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                          <td className="px-4 py-3 whitespace-nowrap min-w-[200px]">
+                        return (
+                          <tr key={itemField.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                            <td className="px-4 py-3 whitespace-nowrap min-w-[200px]">
+                              <Controller
+                                key={`depot-${itemField.id}-${index}`}
+                                control={control}
+                                name={`orderItems.${index}.depotId`}
+                                render={({ field }) => (
+                                  <Select
+                                    onValueChange={(val) => {
+                                      field.onChange(val);
+                                      // Clear dependent fields when depot changes
+                                      setValue(`orderItems.${index}.depotId`, val, { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+                                      setValue(`orderItems.${index}.agencyId`, "", { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+                                      setValue(`orderItems.${index}.depotVariantId`, "", { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+                                    }}
+                                    value={field.value || ""}
+                                  >
+                                    <SelectTrigger className={cn("h-9 text-sm bg-white dark:bg-gray-700 min-w-full", errors.orderItems?.[index]?.depotId && "border-red-500")}>
+                                      <SelectValue placeholder="Select Depot" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {depots.map(depot => (
+                                        <SelectItem key={depot.id} value={depot.id}>{depot.name}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                )}
+                              />
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap min-w-[200px]">
+                              <Controller
+                                key={`agency-${itemField.id}-${index}`}
+                                control={control}
+                                name={`orderItems.${index}.agencyId`}
+                                render={({ field: agencyField }) => {
+                                  // Filter agencies based on selected depot
+                                  const currentItem = getValues(`orderItems.${index}`);
+                                  const filteredAgencies = currentItem?.depotId
+                                    ? agencies.filter(agency =>
+                                      // Show agencies that are assigned to the selected depot
+                                      String(agency.depotId) === String(currentItem.depotId) ||
+                                      String(agency.depot?.id) === String(currentItem.depotId)
+                                    )
+                                    : agencies; // If no depot selected, show all agencies
+
+                                  return (
+                                    <Select
+                                      onValueChange={(val) => {
+                                        agencyField.onChange(val);
+                                        setValue(`orderItems.${index}.agencyId`, val, { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+                                      }}
+                                      value={agencyField.value || ""}
+                                    >
+                                      <SelectTrigger className={cn("h-9 text-sm bg-white dark:bg-gray-700 min-w-full",
+                                        errors.orderItems?.[index]?.agencyId && "border-red-500")}>
+                                        <SelectValue placeholder={filteredAgencies.length === 0 ? "No agencies for this depot" : "Select Agency"} />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {filteredAgencies.length === 0 ? (
+                                          <div className="px-2 py-1.5 text-sm text-gray-500 dark:text-gray-400">
+                                            No agencies available for selected depot
+                                          </div>
+                                        ) : (
+                                          filteredAgencies.map(agency => (
+                                            <SelectItem key={agency.id} value={agency.id}>
+                                              {agency.name}
+                                            </SelectItem>
+                                          ))
+                                        )}
+                                      </SelectContent>
+                                    </Select>
+                                  );
+                                }}
+                              />
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap min-w-[200px]">
+                              <Controller
+                                key={`product-${itemField.id}-${index}`}
+                                control={control}
+                                name={`orderItems.${index}.productId`}
+                                render={({ field: controllerField }) => (
+                                  <Select
+                                    onValueChange={(val) => {
+                                      controllerField.onChange(val);
+                                      // Clear variant when product changes
+                                      setValue(`orderItems.${index}.productId`, val, { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+                                      setValue(`orderItems.${index}.depotVariantId`, "", { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+                                    }}
+                                    value={controllerField.value || ""}
+                                  >
+                                    <SelectTrigger className="h-9 text-sm bg-white dark:bg-gray-700/50 border-gray-300 dark:border-gray-600 w-full">
+                                      <SelectValue placeholder="Select Product" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {products.map((product) => (
+                                        <SelectItem key={product.id} value={String(product.id)}>
+                                          {product.name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                )}
+                              />
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap min-w-[200px]">
+                              <Controller
+                                key={`variant-${itemField.id}-${index}`}
+                                control={control}
+                                name={`orderItems.${index}.depotVariantId`}
+                                render={({ field }) => {
+                                  // Filter depot variants based on selected depot and product
+                                  const currentItem = getValues(`orderItems.${index}`);
+                                  const filteredVariants = depotVariants.filter(variant => {
+                                    // Only show variants that match the selected depot and product
+                                    const matchesDepot = !currentItem?.depotId || String(variant.depotId) === currentItem.depotId;
+                                    const matchesProduct = !currentItem?.productId || String(variant.productId) === currentItem.productId;
+                                    return matchesDepot && matchesProduct;
+                                  });
+
+                                  return (
+                                    <Select
+                                      onValueChange={(val) => {
+                                        field.onChange(val);
+                                        setValue(`orderItems.${index}.depotVariantId`, val, { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+                                      }}
+                                      value={field.value || ""}
+                                    >
+                                      <SelectTrigger className="h-9 text-sm bg-white dark:bg-gray-700 min-w-full">
+                                        <SelectValue placeholder="Select Depot Variant" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {filteredVariants.map(variant => (
+                                          <SelectItem key={variant.id} value={variant.id}>
+                                            {variant.name} {variant.purchasePrice ? `(₹${variant.purchasePrice})` : variant.mrp ? `(₹${variant.mrp})` : ''}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  );
+                                }}
+                              />
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap min-w-[100px]">
+                              <Controller
+                                key={`quantity-${itemField.id}-${index}`}
+                                control={control}
+                                name={`orderItems.${index}.quantity`}
+                                render={({ field }) => (
+                                  <Input
+                                    id={`orderItems.${index}.quantity`}
+                                    type="number"
+                                    min="1"
+                                    placeholder="Qty"
+                                    value={field.value === undefined || field.value === null ? '' : field.value}
+                                    onChange={(e) => {
+                                      const raw = e.target.value;
+                                      if (raw === '') {
+                                        field.onChange(undefined as any);
+                                        return;
+                                      }
+                                      const value = Number(raw);
+                                      if (Number.isNaN(value)) {
+                                        field.onChange(undefined as any);
+                                      } else {
+                                        field.onChange(value);
+                                      }
+                                    }}
+                                    onBlur={() => {
+                                      // Removed default to 1 on blur to allow empty state
+                                    }}
+                                    className="h-9 text-sm bg-white dark:bg-gray-700/50 border-gray-300 dark:border-gray-600 w-full"
+                                  />
+                                )}
+                              />
+                            </td>
+
+                            <td className="px-4 py-3 whitespace-nowrap text-center">
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => handleRemoveItem(index)}
+                                className="h-8 w-8 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800/50"
+                                disabled={fields.length === 1}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile card layout */}
+                <div className="md:hidden space-y-4">
+                  {fields.map((itemField, index) => {
+                    console.log(`[OrderForm] Rendering mobile field ${index}:`, itemField, "Row item:", getValues(`orderItems.${index}`));
+                    const rowItemMobile = getValues(`orderItems.${index}`);
+                    const variantInfo = depotVariants.find(v => String(v.id) === rowItemMobile?.depotVariantId);
+                    const unitPrice = variantInfo ? (Number(variantInfo.purchasePrice) || Number(variantInfo.mrp) || Number(variantInfo.buyOncePrice) || 0) : 0;
+                    const itemTotal = unitPrice * (rowItemMobile?.quantity || 0);
+
+                    return (
+                      <div key={itemField.id} className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 space-y-4">
+                        <div className="flex justify-between items-center">
+                          <h3 className="font-semibold text-gray-800 dark:text-gray-200">Item {index + 1}</h3>
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => handleRemoveItem(index)}
+                            className="h-8 w-8 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800/50"
+                            disabled={fields.length === 1}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4">
+                          <div>
+                            <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Depot</Label>
                             <Controller
-                              key={`depot-${itemField.id}-${index}`}
+                              key={`mobile-depot-${itemField.id}-${index}`}
                               control={control}
                               name={`orderItems.${index}.depotId`}
                               render={({ field }) => (
-                                <Select 
+                                <Select
                                   onValueChange={(val) => {
                                     field.onChange(val);
                                     // Clear dependent fields when depot changes
                                     setValue(`orderItems.${index}.depotId`, val, { shouldDirty: true, shouldValidate: true, shouldTouch: true });
                                     setValue(`orderItems.${index}.agencyId`, "", { shouldDirty: true, shouldValidate: true, shouldTouch: true });
                                     setValue(`orderItems.${index}.depotVariantId`, "", { shouldDirty: true, shouldValidate: true, shouldTouch: true });
-                                  }} 
+                                  }}
                                   value={field.value || ""}
                                 >
-                                  <SelectTrigger className={cn("h-9 text-sm bg-white dark:bg-gray-700 min-w-full", errors.orderItems?.[index]?.depotId && "border-red-500")}> 
+                                  <SelectTrigger className={cn("mt-1 bg-white dark:bg-gray-700", errors.orderItems?.[index]?.depotId && "border-red-500")}>
                                     <SelectValue placeholder="Select Depot" />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -1151,32 +1385,34 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                                 </Select>
                               )}
                             />
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap min-w-[200px]">
+                          </div>
+
+                          <div>
+                            <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Agency</Label>
                             <Controller
-                              key={`agency-${itemField.id}-${index}`}
+                              key={`mobile-agency-${itemField.id}-${index}`}
                               control={control}
                               name={`orderItems.${index}.agencyId`}
                               render={({ field: agencyField }) => {
                                 // Filter agencies based on selected depot
                                 const currentItem = getValues(`orderItems.${index}`);
-                                const filteredAgencies = currentItem?.depotId 
-                                  ? agencies.filter(agency => 
-                                      // Show agencies that are assigned to the selected depot
-                                      String(agency.depotId) === String(currentItem.depotId) || 
-                                      String(agency.depot?.id) === String(currentItem.depotId)
-                                    )
+                                const filteredAgencies = currentItem?.depotId
+                                  ? agencies.filter(agency =>
+                                    // Show agencies that are assigned to the selected depot
+                                    String(agency.depotId) === String(currentItem.depotId) ||
+                                    String(agency.depot?.id) === String(currentItem.depotId)
+                                  )
                                   : agencies; // If no depot selected, show all agencies
-                                
+
                                 return (
-                                  <Select 
+                                  <Select
                                     onValueChange={(val) => {
                                       agencyField.onChange(val);
                                       setValue(`orderItems.${index}.agencyId`, val, { shouldDirty: true, shouldValidate: true, shouldTouch: true });
-                                    }} 
+                                    }}
                                     value={agencyField.value || ""}
                                   >
-                                    <SelectTrigger className={cn("h-9 text-sm bg-white dark:bg-gray-700 min-w-full", 
+                                    <SelectTrigger className={cn("mt-1 bg-white dark:bg-gray-700",
                                       errors.orderItems?.[index]?.agencyId && "border-red-500")}>
                                       <SelectValue placeholder={filteredAgencies.length === 0 ? "No agencies for this depot" : "Select Agency"} />
                                     </SelectTrigger>
@@ -1197,60 +1433,62 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                                 );
                               }}
                             />
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap min-w-[200px]">
+                          </div>
+
+                          <div>
+                            <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Product</Label>
                             <Controller
-                              key={`product-${itemField.id}-${index}`}
+                              key={`mobile-product-${itemField.id}-${index}`}
                               control={control}
                               name={`orderItems.${index}.productId`}
                               render={({ field: controllerField }) => (
-                                <Select 
+                                <Select
                                   onValueChange={(val) => {
                                     controllerField.onChange(val);
                                     // Clear variant when product changes
                                     setValue(`orderItems.${index}.productId`, val, { shouldDirty: true, shouldValidate: true, shouldTouch: true });
                                     setValue(`orderItems.${index}.depotVariantId`, "", { shouldDirty: true, shouldValidate: true, shouldTouch: true });
-                                  }} 
+                                  }}
                                   value={controllerField.value || ""}
                                 >
-                                  <SelectTrigger className="h-9 text-sm bg-white dark:bg-gray-700/50 border-gray-300 dark:border-gray-600 w-full">
+                                  <SelectTrigger className="mt-1 bg-white dark:bg-gray-700">
                                     <SelectValue placeholder="Select Product" />
                                   </SelectTrigger>
                                   <SelectContent>
                                     {products.map((product) => (
                                       <SelectItem key={product.id} value={String(product.id)}>
-                                        {product.name} 
+                                        {product.name}
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
                                 </Select>
                               )}
                             />
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap min-w-[200px]">
+                          </div>
+
+                          <div>
+                            <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Depot Variant</Label>
                             <Controller
-                              key={`variant-${itemField.id}-${index}`}
+                              key={`mobile-variant-${itemField.id}-${index}`}
                               control={control}
                               name={`orderItems.${index}.depotVariantId`}
                               render={({ field }) => {
-                                // Filter depot variants based on selected depot and product
                                 const currentItem = getValues(`orderItems.${index}`);
                                 const filteredVariants = depotVariants.filter(variant => {
-                                  // Only show variants that match the selected depot and product
                                   const matchesDepot = !currentItem?.depotId || String(variant.depotId) === currentItem.depotId;
                                   const matchesProduct = !currentItem?.productId || String(variant.productId) === currentItem.productId;
                                   return matchesDepot && matchesProduct;
                                 });
-                                
+
                                 return (
-                                  <Select 
+                                  <Select
                                     onValueChange={(val) => {
                                       field.onChange(val);
                                       setValue(`orderItems.${index}.depotVariantId`, val, { shouldDirty: true, shouldValidate: true, shouldTouch: true });
-                                    }} 
+                                    }}
                                     value={field.value || ""}
                                   >
-                                    <SelectTrigger className="h-9 text-sm bg-white dark:bg-gray-700 min-w-full">
+                                    <SelectTrigger className="mt-1 bg-white dark:bg-gray-700">
                                       <SelectValue placeholder="Select Depot Variant" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -1264,10 +1502,12 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                                 );
                               }}
                             />
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap min-w-[100px]">
+                          </div>
+
+                          <div>
+                            <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Quantity</Label>
                             <Controller
-                              key={`quantity-${itemField.id}-${index}`}
+                              key={`mobile-quantity-${itemField.id}-${index}`}
                               control={control}
                               name={`orderItems.${index}.quantity`}
                               render={({ field }) => (
@@ -1275,6 +1515,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                                   id={`orderItems.${index}.quantity`}
                                   type="number"
                                   min="1"
+                                  placeholder="Qty"
                                   value={field.value === undefined || field.value === null ? '' : field.value}
                                   onChange={(e) => {
                                     const raw = e.target.value;
@@ -1290,277 +1531,47 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                                     }
                                   }}
                                   onBlur={() => {
-                                    if (field.value === undefined || field.value === null || (typeof field.value === 'number' && field.value <= 0)) {
-                                      field.onChange(1);
-                                    }
+                                    // Removed default to 1 on blur to allow empty state
                                   }}
-                                  className="h-9 text-sm bg-white dark:bg-gray-700/50 border-gray-300 dark:border-gray-600 w-full"
+                                  className="mt-1 bg-white dark:bg-gray-700"
                                 />
                               )}
                             />
-                          </td>
-                         
-                          <td className="px-4 py-3 whitespace-nowrap text-center">
-                            <Button
-                              type="button"
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => handleRemoveItem(index)}
-                              className="h-8 w-8 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800/50"
-                              disabled={fields.length === 1}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-              
-              {/* Mobile card layout */}
-              <div className="md:hidden space-y-4">
-                {fields.map((itemField, index) => {
-                  console.log(`[OrderForm] Rendering mobile field ${index}:`, itemField, "Row item:", getValues(`orderItems.${index}`));
-                  const rowItemMobile = getValues(`orderItems.${index}`);
-                  const variantInfo = depotVariants.find(v => String(v.id) === rowItemMobile?.depotVariantId);
-                  const unitPrice = variantInfo ? (Number(variantInfo.purchasePrice) || Number(variantInfo.mrp) || Number(variantInfo.buyOncePrice) || 0) : 0;
-                  const itemTotal = unitPrice * (rowItemMobile?.quantity || 0);
+                          </div>
+                        </div>
 
-                  return (
-                    <div key={itemField.id} className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 space-y-4">
-                      <div className="flex justify-between items-center">
-                        <h3 className="font-semibold text-gray-800 dark:text-gray-200">Item {index + 1}</h3>
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => handleRemoveItem(index)}
-                          className="h-8 w-8 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800/50"
-                          disabled={fields.length === 1}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 gap-4">
-                        <div>
-                          <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Depot</Label>
-                          <Controller
-                            key={`mobile-depot-${itemField.id}-${index}`}
-                            control={control}
-                            name={`orderItems.${index}.depotId`}
-                            render={({ field }) => (
-                              <Select 
-                                onValueChange={(val) => {
-                                  field.onChange(val);
-                                  // Clear dependent fields when depot changes
-                                  setValue(`orderItems.${index}.depotId`, val, { shouldDirty: true, shouldValidate: true, shouldTouch: true });
-                                  setValue(`orderItems.${index}.agencyId`, "", { shouldDirty: true, shouldValidate: true, shouldTouch: true });
-                                  setValue(`orderItems.${index}.depotVariantId`, "", { shouldDirty: true, shouldValidate: true, shouldTouch: true });
-                                }} 
-                                value={field.value || ""}
-                              >
-                                <SelectTrigger className={cn("mt-1 bg-white dark:bg-gray-700", errors.orderItems?.[index]?.depotId && "border-red-500")}> 
-                                  <SelectValue placeholder="Select Depot" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {depots.map(depot => (
-                                    <SelectItem key={depot.id} value={depot.id}>{depot.name}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            )}
-                          />
-                        </div>
-                        
-                        <div>
-                          <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Agency</Label>
-                          <Controller
-                            key={`mobile-agency-${itemField.id}-${index}`}
-                            control={control}
-                            name={`orderItems.${index}.agencyId`}
-                            render={({ field: agencyField }) => {
-                              // Filter agencies based on selected depot
-                              const currentItem = getValues(`orderItems.${index}`);
-                              const filteredAgencies = currentItem?.depotId 
-                                ? agencies.filter(agency => 
-                                    // Show agencies that are assigned to the selected depot
-                                    String(agency.depotId) === String(currentItem.depotId) || 
-                                    String(agency.depot?.id) === String(currentItem.depotId)
-                                  )
-                                : agencies; // If no depot selected, show all agencies
-                              
-                              return (
-                                <Select 
-                                  onValueChange={(val) => {
-                                    agencyField.onChange(val);
-                                    setValue(`orderItems.${index}.agencyId`, val, { shouldDirty: true, shouldValidate: true, shouldTouch: true });
-                                  }} 
-                                  value={agencyField.value || ""}
-                                >
-                                  <SelectTrigger className={cn("mt-1 bg-white dark:bg-gray-700", 
-                                    errors.orderItems?.[index]?.agencyId && "border-red-500")}>
-                                    <SelectValue placeholder={filteredAgencies.length === 0 ? "No agencies for this depot" : "Select Agency"} />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {filteredAgencies.length === 0 ? (
-                                      <div className="px-2 py-1.5 text-sm text-gray-500 dark:text-gray-400">
-                                        No agencies available for selected depot
-                                      </div>
-                                    ) : (
-                                      filteredAgencies.map(agency => (
-                                        <SelectItem key={agency.id} value={agency.id}>
-                                          {agency.name}
-                                        </SelectItem>
-                                      ))
-                                    )}
-                                  </SelectContent>
-                                </Select>
-                              );
-                            }}
-                          />
-                        </div>
-                        
-                        <div>
-                          <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Product</Label>
-                          <Controller
-                            key={`mobile-product-${itemField.id}-${index}`}
-                            control={control}
-                            name={`orderItems.${index}.productId`}
-                            render={({ field: controllerField }) => (
-                              <Select 
-                                onValueChange={(val) => {
-                                  controllerField.onChange(val);
-                                  // Clear variant when product changes
-                                  setValue(`orderItems.${index}.productId`, val, { shouldDirty: true, shouldValidate: true, shouldTouch: true });
-                                  setValue(`orderItems.${index}.depotVariantId`, "", { shouldDirty: true, shouldValidate: true, shouldTouch: true });
-                                }} 
-                                value={controllerField.value || ""}
-                              >
-                                <SelectTrigger className="mt-1 bg-white dark:bg-gray-700">
-                                  <SelectValue placeholder="Select Product" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {products.map((product) => (
-                                    <SelectItem key={product.id} value={String(product.id)}>
-                                      {product.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            )}
-                          />
-                        </div>
-                        
-                        <div>
-                          <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Depot Variant</Label>
-                          <Controller
-                            key={`mobile-variant-${itemField.id}-${index}`}
-                            control={control}
-                            name={`orderItems.${index}.depotVariantId`}
-                            render={({ field }) => {
-                              const currentItem = getValues(`orderItems.${index}`);
-                              const filteredVariants = depotVariants.filter(variant => {
-                                const matchesDepot = !currentItem?.depotId || String(variant.depotId) === currentItem.depotId;
-                                const matchesProduct = !currentItem?.productId || String(variant.productId) === currentItem.productId;
-                                return matchesDepot && matchesProduct;
-                              });
-                              
-                              return (
-                                <Select 
-                                  onValueChange={(val) => {
-                                    field.onChange(val);
-                                    setValue(`orderItems.${index}.depotVariantId`, val, { shouldDirty: true, shouldValidate: true, shouldTouch: true });
-                                  }} 
-                                  value={field.value || ""}
-                                >
-                                  <SelectTrigger className="mt-1 bg-white dark:bg-gray-700">
-                                    <SelectValue placeholder="Select Depot Variant" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {filteredVariants.map(variant => (
-                                      <SelectItem key={variant.id} value={variant.id}>
-                                        {variant.name} {variant.purchasePrice ? `(₹${variant.purchasePrice})` : variant.mrp ? `(₹${variant.mrp})` : ''}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              );
-                            }}
-                          />
-                        </div>
-                        
-                        <div>
-                          <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Quantity</Label>
-                          <Controller
-                            key={`mobile-quantity-${itemField.id}-${index}`}
-                            control={control}
-                            name={`orderItems.${index}.quantity`}
-                            render={({ field }) => (
-                              <Input
-                                id={`orderItems.${index}.quantity`}
-                                type="number"
-                                min="1"
-                                value={field.value === undefined || field.value === null ? '' : field.value}
-                                onChange={(e) => {
-                                  const raw = e.target.value;
-                                  if (raw === '') {
-                                    field.onChange(undefined as any);
-                                    return;
-                                  }
-                                  const value = Number(raw);
-                                  if (Number.isNaN(value)) {
-                                    field.onChange(undefined as any);
-                                  } else {
-                                    field.onChange(value);
-                                  }
-                                }}
-                                onBlur={() => {
-                                  if (field.value === undefined || field.value === null || (typeof field.value === 'number' && field.value <= 0)) {
-                                    field.onChange(1);
-                                  }
-                                }}
-                                className="mt-1 bg-white dark:bg-gray-700"
-                              />
-                            )}
-                          />
-                        </div>
-                      </div>
-                      
-                      {variantInfo && (
-                        <div className="pt-3 border-t border-gray-200 dark:border-gray-600">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600 dark:text-gray-400">Unit Price:</span>
-                            <span className="font-medium">₹{unitPrice.toFixed(2)}</span>
+                        {variantInfo && (
+                          <div className="pt-3 border-t border-gray-200 dark:border-gray-600">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600 dark:text-gray-400">Unit Price:</span>
+                              <span className="font-medium">₹{unitPrice.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between text-sm font-semibold">
+                              <span className="text-gray-800 dark:text-gray-200">Item Total:</span>
+                              <span className="text-green-600 dark:text-green-400">₹{itemTotal.toFixed(2)}</span>
+                            </div>
                           </div>
-                          <div className="flex justify-between text-sm font-semibold">
-                            <span className="text-gray-800 dark:text-gray-200">Item Total:</span>
-                            <span className="text-green-600 dark:text-green-400">₹{itemTotal.toFixed(2)}</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
-            
+
             {errors.orderItems && typeof errors.orderItems === 'object' && 'message' in errors.orderItems && (
               <p className="text-red-500 text-sm mt-2">{(errors.orderItems as any).message}</p>
             )}
 
-             {fields.length > 0 && (
+            {fields.length > 0 && (
               <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <div className="flex justify-between items-center text-lg">
-                    <span className="font-semibold text-gray-800 dark:text-gray-300">Current Order Total :</span>
-                    <span className="font-bold text-lg text-gray-800 dark:text-gray-300">{formatCurrency(orderTotal)}</span>
-                  </div>
-                  {/* <p className="text-xs text-right text-gray-500 dark:text-gray-400">(Subtotal: ₹{(orderTotal || 0).toFixed(2)})</p> */}
+                <div className="flex justify-between items-center text-lg">
+                  <span className="font-semibold text-gray-800 dark:text-gray-300">Current Order Total :</span>
+                  <span className="font-bold text-lg text-gray-800 dark:text-gray-300">{formatCurrency(orderTotal)}</span>
+                </div>
+                {/* <p className="text-xs text-right text-gray-500 dark:text-gray-400">(Subtotal: ₹{(orderTotal || 0).toFixed(2)})</p> */}
               </div>
-            )} 
+            )}
           </CardContent>
         </Card>
 
@@ -1568,7 +1579,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
         {fields.length > 0 && (
           <Card className="shadow-lg mt-6 border-2 border-blue-100 dark:border-blue-900">
             <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
-              <div 
+              <div
                 className="flex flex-col md:flex-row md:items-center md:justify-between cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/50 transition-colors rounded p-2 -m-2"
                 onClick={toggleOrderSummary}
                 onKeyDown={(e) => {
@@ -1602,7 +1613,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                   )}
                 </Button>
               </div>
-              
+
               {/* Expand/Collapse All Controls - Only show when summary is expanded */}
               {isOrderSummaryExpanded && Object.keys(groupedProductSummary).length > 1 && (
                 <div className="flex items-center justify-between mt-2 pt-2 border-t border-blue-200 dark:border-blue-800">
@@ -1639,11 +1650,11 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                   </div>
                 </div>
               )}
-              
+
               {/* Simple description when collapsed or no expand/collapse controls needed */}
               {(!isOrderSummaryExpanded || Object.keys(groupedProductSummary).length <= 1) && (
                 <CardDescription className="text-blue-600 dark:text-blue-300">
-                  {isOrderSummaryExpanded 
+                  {isOrderSummaryExpanded
                     ? "Detailed breakdown of products, variants, and distribution."
                     : `${Object.values(groupedProductSummary).reduce((sum, item) => sum + item.totalQuantity, 0)} total items • ${formatCurrency(orderTotal || 0)}`
                   }
@@ -1655,196 +1666,196 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
               isOrderSummaryExpanded ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
             )}>
               <CardContent className="p-6">
-              {(() => {
-                const summaryEntries = Object.entries(groupedProductSummary);
-                
-                if (summaryEntries.length === 0) {
-                  const validItems = watchedOrderItems?.filter(item => item.productId && Number(item.quantity) > 0) || [];
-                  if (products.length === 0 && validItems.length > 0) {
+                {(() => {
+                  const summaryEntries = Object.entries(groupedProductSummary);
+
+                  if (summaryEntries.length === 0) {
+                    const validItems = watchedOrderItems?.filter(item => item.productId && Number(item.quantity) > 0) || [];
+                    if (products.length === 0 && validItems.length > 0) {
+                      return (
+                        <div className="space-y-3">
+                          {Array.from({ length: Math.min(validItems.length, 3) }).map((_, index) => (
+                            <div key={`summary-loading-${index}`} className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg animate-pulse">
+                              <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+                              <div className="h-3 bg-gray-200 dark:bg-gray-600 rounded w-1/2"></div>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    }
                     return (
-                      <div className="space-y-3">
-                        {Array.from({ length: Math.min(validItems.length, 3) }).map((_, index) => (
-                          <div key={`summary-loading-${index}`} className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg animate-pulse">
-                            <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
-                            <div className="h-3 bg-gray-200 dark:bg-gray-600 rounded w-1/2"></div>
-                          </div>
-                        ))}
+                      <div className="text-center py-8">
+                        <PackageSearch className="h-12 w-12 mx-auto mb-3 text-gray-400 dark:text-gray-500" />
+                        <p className="text-gray-500 dark:text-gray-400">No products selected yet</p>
                       </div>
                     );
                   }
+
                   return (
-                    <div className="text-center py-8">
-                      <PackageSearch className="h-12 w-12 mx-auto mb-3 text-gray-400 dark:text-gray-500" />
-                      <p className="text-gray-500 dark:text-gray-400">No products selected yet</p>
-                    </div>
-                  );
-                }
-                
-                return (
-                  <div className="space-y-6">
-                    {summaryEntries.map(([productId, summaryItem]) => {
-                      const hasVariants = Object.keys(summaryItem.variants).length > 0;
-                      const totalOrderValue = (summaryItem.totalPrice || 0);
-                      
-                      const isProductExpanded = expandedProducts[productId] ?? true; // Default to expanded
-                      
-                      return (
-                        <div key={`summary-group-${productId}`} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
-                          {/* Collapsible Product Header */}
-                          <div 
-                            className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                            onClick={() => toggleProductExpansion(productId)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                toggleProductExpansion(productId);
-                              }
-                            }}
-                            tabIndex={0}
-                            role="button"
-                            aria-expanded={isProductExpanded}
-                            aria-label={`${isProductExpanded ? 'Collapse' : 'Expand'} ${summaryItem.name} details`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="flex items-center gap-2">
-                                <div className="w-2 h-8 bg-secondary rounded-full"></div>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0 text-gray-500 dark:text-gray-400"
-                                >
-                                  {isProductExpanded ? (
-                                    <ChevronDown className="h-4 w-4" />
-                                  ) : (
-                                    <ChevronRight className="h-4 w-4" />
-                                  )}
-                                </Button>
+                    <div className="space-y-6">
+                      {summaryEntries.map(([productId, summaryItem]) => {
+                        const hasVariants = Object.keys(summaryItem.variants).length > 0;
+                        const totalOrderValue = (summaryItem.totalPrice || 0);
+
+                        const isProductExpanded = expandedProducts[productId] ?? true; // Default to expanded
+
+                        return (
+                          <div key={`summary-group-${productId}`} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
+                            {/* Collapsible Product Header */}
+                            <div
+                              className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                              onClick={() => toggleProductExpansion(productId)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  toggleProductExpansion(productId);
+                                }
+                              }}
+                              tabIndex={0}
+                              role="button"
+                              aria-expanded={isProductExpanded}
+                              aria-label={`${isProductExpanded ? 'Collapse' : 'Expand'} ${summaryItem.name} details`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-2 h-8 bg-secondary rounded-full"></div>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0 text-gray-500 dark:text-gray-400"
+                                  >
+                                    {isProductExpanded ? (
+                                      <ChevronDown className="h-4 w-4" />
+                                    ) : (
+                                      <ChevronRight className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                </div>
+                                <div>
+                                  <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-200">
+                                    {summaryItem.name}
+                                  </h3>
+                                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                                    {!isProductExpanded && hasVariants && (
+                                      <span className="ml-2 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">
+                                        {Object.keys(summaryItem.variants).length} variant{Object.keys(summaryItem.variants).length !== 1 ? 's' : ''}
+                                      </span>
+                                    )}
+                                  </p>
+                                </div>
                               </div>
-                              <div>
-                                <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-200">
-                                  {summaryItem.name}
-                                </h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">
-                                  {!isProductExpanded && hasVariants && (
-                                    <span className="ml-2 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">
-                                      {Object.keys(summaryItem.variants).length} variant{Object.keys(summaryItem.variants).length !== 1 ? 's' : ''}
-                                    </span>
-                                  )}
+                              <div className="text-right">
+                                <p className="text-lg font-bold text-gray-800 dark:text-gray-200">
+                                  {summaryItem.totalQuantity} items
+                                </p>
+                                <p className="text-sm font-semibold text-green-600 dark:text-green-400">
+                                  {formatCurrency(totalOrderValue)}
                                 </p>
                               </div>
                             </div>
-                            <div className="text-right">
-                              <p className="text-lg font-bold text-gray-800 dark:text-gray-200">
-                                {summaryItem.totalQuantity} items
-                              </p>
-                              <p className="text-sm font-semibold text-green-600 dark:text-green-400">
-                                {formatCurrency(totalOrderValue)}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          {/* Collapsible Variants Breakdown */}
-                          {isProductExpanded && hasVariants && (
-                            <div className="p-4 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50">
-                              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-600 pb-2 mb-3">
-                                Variant Distribution
-                              </h4>
-                              <div className="grid gap-3">
-                                {Object.entries(summaryItem.variants).map(([variantId, variantInfo]) => (
-                                  <div key={`variant-${variantId}`} className="bg-white dark:bg-gray-800 rounded-md p-3 border border-gray-200 dark:border-gray-700">
-                                    <div className="flex items-center justify-between mb-2">
-                                      <div>
-                                        <span className="font-medium text-gray-700 dark:text-gray-300">
-                                          {variantInfo.name}
+
+                            {/* Collapsible Variants Breakdown */}
+                            {isProductExpanded && hasVariants && (
+                              <div className="p-4 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50">
+                                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-600 pb-2 mb-3">
+                                  Variant Distribution
+                                </h4>
+                                <div className="grid gap-3">
+                                  {Object.entries(summaryItem.variants).map(([variantId, variantInfo]) => (
+                                    <div key={`variant-${variantId}`} className="bg-white dark:bg-gray-800 rounded-md p-3 border border-gray-200 dark:border-gray-700">
+                                      <div className="flex items-center justify-between mb-2">
+                                        <div>
+                                          <span className="font-medium text-gray-700 dark:text-gray-300">
+                                            {variantInfo.name}
+                                          </span>
+
+                                        </div>
+                                        <span className="font-semibold text-blue-600 dark:text-blue-400">
+                                          {variantInfo.quantity} {variantInfo.unit || 'Quantity'}
                                         </span>
-                                       
                                       </div>
-                                      <span className="font-semibold text-blue-600 dark:text-blue-400">
-                                        {variantInfo.quantity} {variantInfo.unit || 'Quantity'}
-                                      </span>
-                                    </div>
-                                    
-                                    {/* Agencies and Depots */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                                      {variantInfo.agencies.length > 0 && (
-                                        <div>
-                                          <span className="text-gray-500 dark:text-gray-400">Agencies:</span>
-                                          <div className="flex flex-wrap gap-1 mt-1">
-                                            {variantInfo.agencies.map((agency, idx) => (
-                                              <span key={`agency-${idx}`} className="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full text-xs">
-                                                {agency}
-                                              </span>
-                                            ))}
+
+                                      {/* Agencies and Depots */}
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                                        {variantInfo.agencies.length > 0 && (
+                                          <div>
+                                            <span className="text-gray-500 dark:text-gray-400">Agencies:</span>
+                                            <div className="flex flex-wrap gap-1 mt-1">
+                                              {variantInfo.agencies.map((agency, idx) => (
+                                                <span key={`agency-${idx}`} className="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full text-xs">
+                                                  {agency}
+                                                </span>
+                                              ))}
+                                            </div>
                                           </div>
-                                        </div>
-                                      )}
-                                      
-                                      {variantInfo.depots.length > 0 && (
-                                        <div>
-                                          <span className="text-gray-500 dark:text-gray-400">Depots:</span>
-                                          <div className="flex flex-wrap gap-1 mt-1">
-                                            {variantInfo.depots.map((depot, idx) => (
-                                              <span key={`depot-${idx}`} className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-1 rounded-full text-xs">
-                                                {depot}
-                                              </span>
-                                            ))}
+                                        )}
+
+                                        {variantInfo.depots.length > 0 && (
+                                          <div>
+                                            <span className="text-gray-500 dark:text-gray-400">Depots:</span>
+                                            <div className="flex flex-wrap gap-1 mt-1">
+                                              {variantInfo.depots.map((depot, idx) => (
+                                                <span key={`depot-${idx}`} className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-1 rounded-full text-xs">
+                                                  {depot}
+                                                </span>
+                                              ))}
+                                            </div>
                                           </div>
-                                        </div>
-                                      )}
+                                        )}
+                                      </div>
                                     </div>
-                                  </div>
-                                ))}
+                                  ))}
+                                </div>
                               </div>
-                            </div>
-                          )}
-                          
-                          {/* No variants fallback - only show when expanded */}
-                          {isProductExpanded && !hasVariants && (
-                            <div className="p-4 border-t border-gray-200 dark:border-gray-600 bg-yellow-50 dark:bg-yellow-900/20">
-                              <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                                No variant details available for this product
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                    
-                    {/* Order Totals */}
-                    <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-lg p-4 border-2 border-gray-200 dark:border-gray-600">
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray-600 dark:text-gray-400">Total Items:</span>
-                          <span className="font-medium text-gray-800 dark:text-gray-200">
-                            {Object.values(groupedProductSummary).reduce((sum, item) => sum + item.totalQuantity, 0)} Quantity
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray-600 dark:text-gray-400">Product Types:</span>
-                          <span className="font-medium text-gray-800 dark:text-gray-200">
-                            {Object.keys(groupedProductSummary).length}
-                          </span>
-                        </div>
-                        <div className="border-t border-gray-300 dark:border-gray-500 pt-2">
-                          <div className="flex justify-between items-center">
-                            <span className="text-lg font-semibold text-gray-800 dark:text-gray-200">Total Order Value:</span>
-                            <span className="text-xl font-bold text-green-600 dark:text-green-400">
-                              {formatCurrency(orderTotal || 0)}
+                            )}
+
+                            {/* No variants fallback - only show when expanded */}
+                            {isProductExpanded && !hasVariants && (
+                              <div className="p-4 border-t border-gray-200 dark:border-gray-600 bg-yellow-50 dark:bg-yellow-900/20">
+                                <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                                  No variant details available for this product
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      {/* Order Totals */}
+                      <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-lg p-4 border-2 border-gray-200 dark:border-gray-600">
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-600 dark:text-gray-400">Total Items:</span>
+                            <span className="font-medium text-gray-800 dark:text-gray-200">
+                              {Object.values(groupedProductSummary).reduce((sum, item) => sum + item.totalQuantity, 0)} Quantity
                             </span>
                           </div>
-                          <div className="flex justify-between items-center text-sm mt-1">
-                            <span className="text-gray-600 dark:text-gray-400">Total Liters:</span>
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-600 dark:text-gray-400">Product Types:</span>
                             <span className="font-medium text-gray-800 dark:text-gray-200">
-                              {(Number.isFinite(totalLiters) ? totalLiters : 0).toFixed(2)} L
+                              {Object.keys(groupedProductSummary).length}
                             </span>
+                          </div>
+                          <div className="border-t border-gray-300 dark:border-gray-500 pt-2">
+                            <div className="flex justify-between items-center">
+                              <span className="text-lg font-semibold text-gray-800 dark:text-gray-200">Total Order Value:</span>
+                              <span className="text-xl font-bold text-green-600 dark:text-green-400">
+                                {formatCurrency(orderTotal || 0)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm mt-1">
+                              <span className="text-gray-600 dark:text-gray-400">Total Liters:</span>
+                              <span className="font-medium text-gray-800 dark:text-gray-200">
+                                {(Number.isFinite(totalLiters) ? totalLiters : 0).toFixed(2)} L
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })()}
+                  );
+                })()}
               </CardContent>
             </div>
           </Card>
@@ -1859,9 +1870,9 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
         <h2 className="text-2xl font-bold">
           {mode === "create" ? "Create New Order" : "Edit Order"}
         </h2>
-        
+
         <form onSubmit={handleSubmit(onSubmit, onError)}>
-          {renderStepContent()} 
+          {renderStepContent()}
 
           {/* Submit Button */}
           <div className="flex justify-end items-center pt-6 border-t dark:border-gray-700">
