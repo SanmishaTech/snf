@@ -319,6 +319,8 @@ export interface ApiDeliveryAddress {
 export interface ApiSubscriptionInfo {
   id: number;
   deliveryInstructions?: string; // Added delivery instructions from subscription
+  startDate?: string;
+  expiryDate?: string;
   // Add other relevant subscription fields if needed by the frontend for context
 }
 

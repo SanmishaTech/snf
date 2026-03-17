@@ -110,7 +110,7 @@ const Spinner: React.FC<SpinnerProps> = ({ size = 'md', color = 'blue', classNam
 
 // Status options configuration
 const getStatusOptions = (userRole: string) => {
-  const baseOptions = [
+  const baseOptions: Array<{ value: DeliveryStatus; label: string; description: string; color: string; adminOnly?: boolean }> = [
     { value: DeliveryStatus.PENDING, label: 'Pending', description: 'Awaiting delivery', color: 'bg-yellow-100 text-yellow-800' },
     { value: DeliveryStatus.DELIVERED, label: 'Delivered', description: 'Successfully delivered to customer', color: 'bg-green-100 text-green-800' },
     { value: DeliveryStatus.NOT_DELIVERED, label: 'Not Delivered', description: 'Delivery attempt failed', color: 'bg-red-100 text-red-800' },
@@ -308,6 +308,8 @@ const EnhancedDeliveryView: React.FC = () => {
       'Delivery Address': `${delivery.deliveryAddress.plotBuilding || ''}${delivery.deliveryAddress.plotBuilding && delivery.deliveryAddress.streetArea ? ', ' : ''}${delivery.deliveryAddress.streetArea || ''}, ${delivery.deliveryAddress.city}, ${delivery.deliveryAddress.pincode}${delivery.member.user?.mobile ? ` (Phone: ${delivery.member.user.mobile})` : ''}`,
       'Landmark': delivery.deliveryAddress?.landmark || 'N/A',
       'Delivery Instructions': delivery.subscription?.deliveryInstructions || 'N/A',
+      'Subscription Start': delivery.subscription?.startDate ? new Date(delivery.subscription.startDate).toLocaleDateString() : 'N/A',
+      'Subscription Expiry': delivery.subscription?.expiryDate ? new Date(delivery.subscription.expiryDate).toLocaleDateString() : 'N/A',
       'Status': delivery.status,
       'Agency': delivery.subscription?.agency?.name || 'N/A',
       'Handler': delivery.agent?.name || 'Not assigned',
@@ -327,6 +329,8 @@ const EnhancedDeliveryView: React.FC = () => {
       { wch: 40 }, // Delivery Address
       { wch: 15 }, // Landmark
       { wch: 30 }, // Delivery Instructions
+      { wch: 15 }, // Subscription Start
+      { wch: 15 }, // Subscription Expiry
       { wch: 15 }, // Status
       { wch: 20 }, // Agency
       { wch: 20 }, // Handler
@@ -637,6 +641,7 @@ const EnhancedDeliveryView: React.FC = () => {
                 <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Delivery Date</th>
                 <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
                 <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Delivery Instructions</th>
+                <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subscription Validity</th>
                 <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Handler</th>
                 <th scope="col" className="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -696,6 +701,30 @@ const EnhancedDeliveryView: React.FC = () => {
                 <div className="text-sm text-gray-900" title={delivery.subscription?.deliveryInstructions || 'N/A'}>
                   {truncateText(delivery.subscription?.deliveryInstructions, 40)}
                 </div>
+              </td>
+              <td className="px-3 py-4 whitespace-nowrap">
+                {(() => {
+                  if (!delivery.subscription?.startDate || !delivery.subscription?.expiryDate) {
+                    return <div className="text-sm text-gray-500">N/A</div>;
+                  }
+                  const start = new Date(delivery.subscription.startDate);
+                  const expiry = new Date(delivery.subscription.expiryDate);
+                  const now = new Date();
+                  const diffTime = expiry.getTime() - now.getTime();
+                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                  let expiryClass = "text-gray-900";
+                  if (diffDays < 0) expiryClass = "text-red-600 font-bold";
+                  else if (diffDays <= 5) expiryClass = "text-orange-500 font-semibold";
+                  return (
+                    <div className="text-sm flex flex-col space-y-1">
+                      <div><span className="text-gray-500 text-xs">Start:</span> {start.toLocaleDateString()}</div>
+                      <div className={expiryClass}><span className="text-gray-500 text-xs">Expiry:</span> {expiry.toLocaleDateString()}
+                        {diffDays < 0 && <span className="bg-red-100 text-red-800 text-[10px] px-1.5 py-0.5 rounded ml-1 uppercase border border-red-200">Expired</span>}
+                        {diffDays >= 0 && diffDays <= 5 && <span className="bg-orange-100 text-orange-800 text-[10px] px-1.5 py-0.5 rounded ml-1 uppercase border border-orange-200">Expiring Soon</span>}
+                      </div>
+                    </div>
+                  );
+                })()}
               </td>
               <td className="px-3 py-4 whitespace-nowrap">
                 <div className="flex flex-col space-y-2">
