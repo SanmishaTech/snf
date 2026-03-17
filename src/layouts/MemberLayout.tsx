@@ -116,7 +116,7 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
     localStorage.removeItem("memberId");
 
     toast.success("You have been logged out");
-    navigate("/");
+    window.location.href = "/";
   };
 
 

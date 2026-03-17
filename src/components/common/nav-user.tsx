@@ -4,7 +4,6 @@ import { useState } from "react";
 import UserChangePasswordDialog from "@/components/common/UserChangePasswordDialog"; // Assuming moved to auth directory
 import { LogOut, ChevronsUpDown, KeySquare } from "lucide-react";
 import ConfirmDialog from "@/components/common/confirm-dialog";
-import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { clearAuthData } from "@/utils/auth";
 import {
@@ -34,7 +33,6 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false);
@@ -47,7 +45,7 @@ export function NavUser({
     clearAuthData();
 
     setShowConfirmation(false);
-    navigate("/"); // Redirect to login page
+    window.location.href = "/"; // Redirect to login page
   };
 
   return (
