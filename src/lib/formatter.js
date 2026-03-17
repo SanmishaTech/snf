@@ -48,3 +48,20 @@ export function formatDateTime(dateTime) {
     // second: '2-digit',
   }).format(parsedDateTime);
 }
+
+/**
+ * Formats a time as a localized string with seconds.
+ * @param {Date|string} dateTime - The date and time to format.
+ * @returns {string} - The formatted time string.
+ */
+export function formatTime(dateTime) {
+  const locale = import.meta.env.VITE_LOCALE || "en-US";
+
+  const parsedDateTime =
+    typeof dateTime === "string" ? new Date(dateTime) : dateTime;
+  return new Intl.DateTimeFormat(locale, {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).format(parsedDateTime);
+}

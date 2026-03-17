@@ -105,9 +105,9 @@ const LandingPage = () => {
           setIsLoggedIn(true);
           setUserName(
             userDetails.name ||
-              userDetails.username ||
-              userDetails.email ||
-              "User"
+            userDetails.username ||
+            userDetails.email ||
+            "User"
           ); // Adjust based on your user object
           if (userDetails.role) {
             setCurrentUserRole(userDetails.role);

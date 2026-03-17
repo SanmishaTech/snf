@@ -1232,7 +1232,7 @@ const AdminSubscriptionList: React.FC = () => {
 
       // Refresh the list to show updated status
       fetchProductOrders(currentPage, limit, filters, showUnassignedOnly);
-      
+
       // Close the dialog
       setIsCancelDialogOpen(false);
       setOrderToCancel(null);
@@ -1449,7 +1449,7 @@ const AdminSubscriptionList: React.FC = () => {
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Expiry Status" />
                 </SelectTrigger>
-                <SelectContent> 
+                <SelectContent>
                   <SelectItem value="ALL">All</SelectItem>
                   <SelectItem value="ACTIVE">Active</SelectItem>
                   <SelectItem value="EXPIRING_SOON">Expiring Soon</SelectItem>
@@ -1649,7 +1649,7 @@ const AdminSubscriptionList: React.FC = () => {
           ) : productOrders.length > 0 ? (
             productOrders.map((order) => {
               const firstSub = order.subscriptions?.[0];
-              
+
               // Check if order is expired
               const today = new Date();
               today.setHours(0, 0, 0, 0);
@@ -1659,7 +1659,7 @@ const AdminSubscriptionList: React.FC = () => {
                 expiryDate.setHours(0, 0, 0, 0);
                 return expiryDate < today;
               });
-              
+
               // Check if order is cancelled
               const hasCancelledSubs = order.subscriptions.some(sub => sub.paymentStatus === 'CANCELLED');
               const isCancelled =
@@ -1669,12 +1669,11 @@ const AdminSubscriptionList: React.FC = () => {
               return (
                 <div
                   key={order.id}
-                  className={`rounded-xl border shadow-sm hover:shadow-md transition-shadow p-6 ${
-                    isCancelled
-                      ? 'opacity-60 bg-gray-50 border-gray-300'
-                      : isExpired
-                        ? 'bg-red-50 border-red-200 opacity-75'
-                        : 'bg-white'
+                  className={`rounded-xl border shadow-sm hover:shadow-md transition-shadow p-6 ${isCancelled
+                    ? 'opacity-60 bg-gray-50 border-gray-300'
+                    : isExpired
+                      ? 'bg-red-50 border-red-200 opacity-75'
+                      : 'bg-white'
                     }`}
                 >
                   <div className="space-y-4">
@@ -1685,12 +1684,11 @@ const AdminSubscriptionList: React.FC = () => {
                           <UserIcon className="h-5 w-5 text-gray-400" />
                         </div>
                         <div>
-                          <div className={`font-medium flex items-center gap-2 ${
-                            isCancelled
-                              ? 'line-through text-gray-500'
-                              : isExpired
-                                ? 'text-red-700'
-                                : 'text-gray-900'
+                          <div className={`font-medium flex items-center gap-2 ${isCancelled
+                            ? 'line-through text-gray-500'
+                            : isExpired
+                              ? 'text-red-700'
+                              : 'text-gray-900'
                             }`}>
                             {order.member?.user?.name || "N/A"}
                             {isCancelled && (
@@ -1729,12 +1727,11 @@ const AdminSubscriptionList: React.FC = () => {
                           {order.subscriptions.map((sub: Subscription) => (
                             <div
                               key={sub.id}
-                              className={`px-2.5 py-1 rounded-full flex items-center gap-1.5 text-xs ${
-                                sub.paymentStatus === 'CANCELLED' 
-                                  ? 'line-through opacity-60 bg-gray-100 text-gray-500'
-                                  : isExpired
-                                    ? 'bg-red-100 text-red-700'
-                                    : 'bg-blue-50 text-blue-700'
+                              className={`px-2.5 py-1 rounded-full flex items-center gap-1.5 text-xs ${sub.paymentStatus === 'CANCELLED'
+                                ? 'line-through opacity-60 bg-gray-100 text-gray-500'
+                                : isExpired
+                                  ? 'bg-red-100 text-red-700'
+                                  : 'bg-blue-50 text-blue-700'
                                 }`}
                             >
                               <PackageIcon className="h-3.5 w-3.5" />
@@ -1899,20 +1896,19 @@ const AdminSubscriptionList: React.FC = () => {
                       <h3 className="text-sm font-semibold text-gray-700 mb-2">Payment Status</h3>
                       <div className="flex flex-col gap-1">
                         <div
-                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                            order.paymentStatus === "PAID"
-                              ? isExpired ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"
-                              : order.paymentStatus === "PENDING"
-                                ? isExpired ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-800"
-                                : order.paymentStatus === "CANCELLED"
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-red-100 text-red-800"
+                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${order.paymentStatus === "PAID"
+                            ? isExpired ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"
+                            : order.paymentStatus === "PENDING"
+                              ? isExpired ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-800"
+                              : order.paymentStatus === "CANCELLED"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-red-100 text-red-800"
                             } ${order.paymentStatus === 'CANCELLED' ? 'line-through' : ''
                             }`}
                         >
                           {order.paymentStatus}
                         </div>
-                        
+
                         <p>
                           {order?.subscriptions?.[0]?.deliveryAddressId
                             ? "Home Delivery"
@@ -2065,131 +2061,131 @@ const AdminSubscriptionList: React.FC = () => {
                             Order has been cancelled - No actions available
                           </span>
                         </div>
-                      ) : isExpired ? (
-                        <div className="flex items-center justify-center p-4 bg-red-100 rounded-md">
-                          <span className="text-sm text-red-700 font-medium">
-                            Subscription has expired - Limited actions available
-                          </span>
-                        </div>
                       ) : (
-                        <div className="flex justify-start gap-1.5">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  className={`h-8 w-8 rounded-full ${
-                                    isExpired 
-                                      ? 'bg-red-50 hover:bg-red-100 border-red-200' 
-                                      : 'bg-white hover:bg-gray-50'
-                                  }`}
-                                  onClick={() => handleOpenPaymentModal(order)}
-                                  disabled={order.paymentStatus === "PAID" || isExpired}
-                                >
-                                  <PackageIcon className={`h-4 w-4 ${isExpired ? 'text-red-400' : ''}`} />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent side="top">
-                                <p>
-                                  {isExpired 
-                                    ? "Cannot update payment for expired subscription"
-                                    : "Update Payment"}
-                                </p>
-                              </TooltipContent>
-                            </Tooltip>
+                        <div className="flex flex-col gap-3">
+                          {isExpired && (
+                            <div className="flex items-center justify-center p-3 bg-red-50 border border-red-100 rounded-md">
+                              <span className="text-sm text-red-700 font-medium text-center">
+                                Subscription has expired
+                              </span>
+                            </div>
+                          )}
 
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  className={`h-8 w-8 rounded-full ${
-                                    isExpired 
-                                      ? 'bg-red-50 hover:bg-red-100 border-red-200' 
+                          <div className="flex justify-start gap-1.5">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className={`h-8 w-8 rounded-full ${isExpired
+                                      ? 'bg-red-50 hover:bg-red-100 border-red-200'
                                       : 'bg-white hover:bg-gray-50'
-                                  }`}
-                                  onClick={() =>
-                                    handleOpenAssignAgentModal(order)
-                                  }
-                                  disabled={order.paymentStatus !== "PAID" || isExpired}
-                                >
-                                  <UserPlus className={`h-4 w-4 ${isExpired ? 'text-red-400' : ''}`} />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent side="top">
-                                <p>
-                                  {isExpired
-                                    ? "Cannot assign agent to expired subscription"
-                                    : order.paymentStatus !== "PAID"
-                                      ? "Complete payment first"
-                                      : order.subscriptions.some(sub => sub.agencyId)
-                                        ? "Update Agent Assignment (Future Deliveries Only)"
-                                        : "Assign Agent to Order (Future Deliveries Only)"}
-                                </p>
-                              </TooltipContent>
-                            </Tooltip>
+                                      }`}
+                                    onClick={() => handleOpenPaymentModal(order)}
+                                    disabled={order.paymentStatus === "PAID" || isExpired}
+                                  >
+                                    <PackageIcon className={`h-4 w-4 ${isExpired ? 'text-red-400' : ''}`} />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                  <p>
+                                    {isExpired
+                                      ? "Cannot update payment for expired subscription"
+                                      : "Update Payment"}
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
 
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  className={`h-8 w-8 rounded-full ${
-                                    isExpired 
-                                      ? 'bg-red-50 hover:bg-red-100 border-red-200' 
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className={`h-8 w-8 rounded-full ${isExpired
+                                      ? 'bg-red-50 hover:bg-red-100 border-red-200'
                                       : 'bg-white hover:bg-gray-50'
-                                  }`}
-                                  onClick={() => handleDownloadInvoice(order)}
-                                  disabled={downloadingInvoices.has(order.id)}
-                                >
-                                  {downloadingInvoices.has(order.id) ? (
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
-                                  ) : (
-                                    <Download className={`h-4 w-4 ${isExpired ? 'text-red-400' : ''}`} />
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent side="top">
-                                <p>
-                                  {downloadingInvoices.has(order.id)
-                                    ? "Downloading..."
-                                    : isExpired
-                                      ? "Download Invoice (Expired Subscription)"
+                                      }`}
+                                    onClick={() =>
+                                      handleOpenAssignAgentModal(order)
+                                    }
+                                    disabled={order.paymentStatus !== "PAID" || isExpired}
+                                  >
+                                    <UserPlus className={`h-4 w-4 ${isExpired ? 'text-red-400' : ''}`} />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                  <p>
+                                    {isExpired
+                                      ? "Cannot assign agent to expired subscription"
                                       : order.paymentStatus !== "PAID"
-                                        ? "Invoice available after payment"
-                                        : "Download Invoice"}
-                                </p>
-                              </TooltipContent>
-                            </Tooltip>
+                                        ? "Complete payment first"
+                                        : order.subscriptions.some(sub => sub.agencyId)
+                                          ? "Update Agent Assignment (Future Deliveries Only)"
+                                          : "Assign Agent to Order (Future Deliveries Only)"}
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
 
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  className={`h-8 w-8 rounded-full ${
-                                    isExpired || isCancelled
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className={`h-8 w-8 rounded-full ${isExpired
+                                      ? 'bg-red-50 hover:bg-red-100 border-red-200'
+                                      : 'bg-white hover:bg-gray-50'
+                                      }`}
+                                    onClick={() => handleDownloadInvoice(order)}
+                                    disabled={downloadingInvoices.has(order.id)}
+                                  >
+                                    {downloadingInvoices.has(order.id) ? (
+                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                                    ) : (
+                                      <Download className={`h-4 w-4 ${isExpired ? 'text-red-400' : ''}`} />
+                                    )}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                  <p>
+                                    {downloadingInvoices.has(order.id)
+                                      ? "Downloading..."
+                                      : isExpired
+                                        ? "Download Invoice (Expired Subscription)"
+                                        : order.paymentStatus !== "PAID"
+                                          ? "Invoice available after payment"
+                                          : "Download Invoice"}
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className={`h-8 w-8 rounded-full ${isExpired || isCancelled
                                       ? 'bg-red-50 border-red-200'
                                       : 'bg-white hover:bg-red-50 border-red-200'
-                                  }`}
-                                  onClick={() => handleCancelSubscriptions(order)}
-                                  disabled={isExpired || isCancelled}
-                                >
-                                  <Ban className={`h-4 w-4 ${isExpired || isCancelled ? 'text-red-300' : 'text-red-600'}`} />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent side="top">
-                                <p>
-                                  {isExpired
-                                    ? "Cannot cancel expired subscription"
-                                    : isCancelled
-                                      ? "Subscriptions already cancelled"
-                                      : "Cancel pending deliveries"}
-                                </p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                                      }`}
+                                    onClick={() => handleCancelSubscriptions(order)}
+                                    disabled={isExpired || isCancelled}
+                                  >
+                                    <Ban className={`h-4 w-4 ${isExpired || isCancelled ? 'text-red-300' : 'text-red-600'}`} />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                  <p>
+                                    {isExpired
+                                      ? "Cannot cancel expired subscription"
+                                      : isCancelled
+                                        ? "Subscriptions already cancelled"
+                                        : "Cancel pending deliveries"}
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -2211,27 +2207,29 @@ const AdminSubscriptionList: React.FC = () => {
           )}
         </div>
 
-        {totalPages > 1 && (
-          <div className="mt-6 flex justify-center items-center space-x-2">
-            <Button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-              variant="outline"
-            >
-              Previous
-            </Button>
-            <span className="text-sm">
-              Page {currentPage} of {totalPages}
-            </span>
-            <Button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              variant="outline"
-            >
-              Next
-            </Button>
-          </div>
-        )}
+        {
+          totalPages > 1 && (
+            <div className="mt-6 flex justify-center items-center space-x-2">
+              <Button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                variant="outline"
+              >
+                Previous
+              </Button>
+              <span className="text-sm">
+                Page {currentPage} of {totalPages}
+              </span>
+              <Button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                variant="outline"
+              >
+                Next
+              </Button>
+            </div>
+          )
+        }
       </div>
 
       {selectedOrder && (

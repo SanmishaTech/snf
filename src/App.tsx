@@ -103,6 +103,7 @@ import SaleRegisterReport from "./modules/Reports/SaleRegisterReport";
 import RevenueReport from "./modules/Reports/RevenueReport";
 import WalletReport from "./modules/Reports/WalletReport";
 import ExceptionReport from "./modules/Reports/ExceptionReport";
+import ActivityLogPage from "./modules/ActivityLog/ActivityLogPage";
 
 const App = () => {
   useEffect(() => {
@@ -128,17 +129,6 @@ const App = () => {
   // Lazy-load the Address page wrapper for SNF
   const SNFAddressWrapper = React.lazy(() => import("./modules/SNF/SNFAddressWrapper"));
   const SNFCategoryPageWrapper = React.lazy(() => import("./modules/SNF/SNFCategoryPageWrapper"));
-
-  // Get user from localStorage to restrict access to admin-only routes
-  let user: any = null;
-  try {
-    const userString = localStorage.getItem("user");
-    user = userString ? JSON.parse(userString) : null;
-  } catch {
-    user = null;
-  }
-
-  void user;
 
   return (
     <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light">
@@ -402,6 +392,7 @@ const App = () => {
             <Route path="/admin/reports/delivery-summaries" element={<DeliverySummariesReport />} /> {/* Delivery Summaries Report */}
             <Route path="/admin/reports/subscriptions" element={<SubscriptionReports />} /> {/* Subscription Reports */}
             <Route path="/admin/reports/exceptions" element={<ExceptionReport />} /> {/* Exception Report */}
+            <Route path="/admin/activity-log" element={<ActivityLogPage />} />
           </Route>
 
           {/* Other routes using MainLayout (e.g., Vendor routes) - not protected by AdminProtectedRoute */}

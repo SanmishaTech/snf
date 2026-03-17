@@ -11,6 +11,8 @@ import {
   Briefcase,
   ChevronDown,
   BarChart3,
+  ClipboardList,
+  type LucideIcon,
 } from "lucide-react";
 
 import { NavUser } from "@/components/common/nav-user";
@@ -34,6 +36,37 @@ import {
 } from "@/components/ui/collapsible";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+
+type SidebarSubItem = {
+  title: string;
+  url: string;
+  icon?: LucideIcon;
+};
+
+type SidebarProject = {
+  title: string;
+  url: string;
+  icon?: LucideIcon;
+  groupLabel: string;
+  isActive?: boolean;
+  items?: SidebarSubItem[];
+};
+
+type OfficeBearerNavigationGroup = {
+  title: string;
+  url: string;
+  icon: LucideIcon;
+  isActive: boolean;
+  items: SidebarSubItem[];
+};
+
+type SidebarUser = {
+  name: string;
+  email: string;
+  avatar: string;
+  avatarName: string;
+  role?: string;
+};
 
 // This is sample data.
 const initialData = {
@@ -241,6 +274,12 @@ const initialData = {
           icon: Briefcase,
           groupLabel: "System",
         },
+        {
+          title: "Activity Log",
+          url: "/admin/activity-log",
+          icon: ClipboardList,
+          groupLabel: "System",
+        },
       ],
       navMain: [],
     },
@@ -269,8 +308,14 @@ const initialData = {
             { title: "Exception Report", url: "/admin/reports/exceptions" },
           ],
         },
+        {
+          title: "Activity Log",
+          url: "/admin/activity-log",
+          icon: ClipboardList,
+          groupLabel: "System",
+        },
       ],
-      navMain: [] as any[],
+      navMain: [] as SidebarProject[],
     },
     member: {
       projects: [
@@ -310,7 +355,7 @@ const initialData = {
           ],
         },
       ],
-      navMain: [] as any[],
+      navMain: [] as SidebarProject[],
     },
     VENDOR: {
       projects: [
@@ -327,7 +372,7 @@ const initialData = {
           groupLabel: "Reports",
         },
       ],
-      navMain: [] as any[],
+      navMain: [] as SidebarProject[],
     },
     DepotAdmin: {
       projects: [
@@ -356,7 +401,7 @@ const initialData = {
           groupLabel: "Depot",
         },
       ],
-      navMain: [] as any[],
+      navMain: [] as SidebarProject[],
     },
     AGENCY: {
       projects: [
@@ -385,7 +430,7 @@ const initialData = {
           groupLabel: "Reports",
         },
       ],
-      navMain: [] as any[],
+      navMain: [] as SidebarProject[],
     },
     SUPERVISOR: {
       projects: [
@@ -396,7 +441,7 @@ const initialData = {
           groupLabel: "Supervisor Portal",
         },
       ],
-      navMain: [] as any[],
+      navMain: [] as SidebarProject[],
     },
   },
   user: {
@@ -424,16 +469,22 @@ const initialData = {
   ],
 };
 
-interface AppSidebarProps { }
+type AppSidebarProps = React.ComponentProps<typeof Sidebar>;
 
 export function AppSidebar(props: AppSidebarProps) {
   const { pathname } = useLocation();
   const { state, isMobile, setOpenMobile } = useSidebar();
   const showCollapsedTooltips = state === "collapsed" && !isMobile;
-  const [data, setData] = React.useState({
+  const [data, setData] = React.useState<{
+    projects: SidebarProject[];
+    navMain: SidebarProject[];
+    obNav: OfficeBearerNavigationGroup[];
+    isOB: boolean;
+    user: SidebarUser;
+  }>({
     ...initialData,
     projects: [] as typeof initialData.roles.super_admin.projects,
-    navMain: [] as any[],
+    navMain: [],
     obNav: [] as typeof initialData.obNavigation,
     isOB: false,
   });

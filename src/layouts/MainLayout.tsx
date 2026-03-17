@@ -13,14 +13,27 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import BottomNavBar from "../components/BottomNavBar";
 import CommandPalette from "@/components/common/CommandPalette";
+import AdminActivityTracker from "@/components/common/AdminActivityTracker";
 
+type StoredUser = {
+  name?: string;
+  role?: string;
+};
+
+function getStoredUser(): StoredUser | null {
+  try {
+    const storedUserData = localStorage.getItem("user");
+    return storedUserData ? (JSON.parse(storedUserData) as StoredUser) : null;
+  } catch {
+    return null;
+  }
+}
 
 export default function MainLayout() {
   const navigate = useNavigate()
 
   // Retrieve user data from localStorage
-  const storedUserData = localStorage.getItem("user");
-  const userData = storedUserData ? JSON.parse(storedUserData) : null;
+  const userData = getStoredUser();
 
   const location = useLocation();
 
@@ -28,14 +41,14 @@ export default function MainLayout() {
   const [role, setRole] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-    const storedUserData = localStorage.getItem("user");
-    const userData = storedUserData ? JSON.parse(storedUserData) : null;
-    setRole((userData as any)?.role?.toString().toUpperCase() || undefined);
+    const nextUser = getStoredUser();
+    setRole(nextUser?.role?.toString().toUpperCase() || undefined);
   }, [location.pathname]);
 
   return (
     <SidebarProvider>
       <CommandPalette />
+      <AdminActivityTracker />
       <AppSidebar />
       <SidebarInset className="overflow-hidden min-w-0">
         {/* Sticky Header */}

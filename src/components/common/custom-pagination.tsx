@@ -61,7 +61,7 @@ const CustomPagination: React.FC<CustomPaginationProps> = ({
             value={recordsPerPage?.toString() || "10"}
             onValueChange={(value) => onRecordsPerPageChange(Number(value))}
           >
-            <SelectTrigger className="w-[70px] h-8">
+            <SelectTrigger className="w-[85px] h-8">
               <SelectValue placeholder={`${recordsPerPage || 10}`} />
             </SelectTrigger>
             <SelectContent>

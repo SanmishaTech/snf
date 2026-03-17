@@ -17,4 +17,11 @@ export function formatDate(date: Date | string): string;
  * @param dateTime - The date and time to format.
  * @returns The formatted date and time string.
  */
-export function formatDateTime(dateTime: Date | string): string; 
+export function formatDateTime(dateTime: Date | string): string;
+
+/**
+ * Formats a time as a localized string with seconds.
+ * @param dateTime - The time to format.
+ * @returns The formatted time string.
+ */
+export function formatTime(dateTime: Date | string): string; 
