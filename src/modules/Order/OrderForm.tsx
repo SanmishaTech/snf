@@ -325,12 +325,15 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
     }
 
     watchedOrderItems.forEach(item => {
-      if (!item || !item.productId || item.quantity === undefined || item.quantity === null || Number(item.quantity) <= 0) {
+      // Find variant first to get its productId if item.productId is missing
+      const variant = depotVariants.find(v => String(v.id) === item.depotVariantId);
+      const effectiveProductId = item.productId || (variant?.productId ? String(variant.productId) : null);
+
+      if (!effectiveProductId || item.quantity === undefined || item.quantity === null || Number(item.quantity) <= 0) {
         return; // Skip if essential data is missing or quantity is not positive
       }
 
-      const product = products.find(p => String(p.id) === item.productId);
-      const variant = depotVariants.find(v => String(v.id) === item.depotVariantId);
+      const product = products.find(p => String(p.id) === effectiveProductId);
       const agency = agencies.find(a => String(a.id) === item.agencyId);
       const depot = depots.find(d => String(d.id) === item.depotId);
 
@@ -339,8 +342,8 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
         const variantPrice = Number(variant.purchasePrice) || Number(variant.mrp) || Number(variant.buyOncePrice) || 0;
         const itemQuantity = Number(item.quantity);
 
-        if (!summary[item.productId]) {
-          summary[item.productId] = {
+        if (!summary[effectiveProductId]) {
+          summary[effectiveProductId] = {
             name: product.name,
             totalQuantity: 0,
             totalPrice: 0,
@@ -348,8 +351,8 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
           };
         }
 
-        summary[item.productId].totalQuantity += itemQuantity;
-        summary[item.productId].totalPrice = (summary[item.productId].totalPrice || 0) + (variantPrice * itemQuantity);
+        summary[effectiveProductId].totalQuantity += itemQuantity;
+        summary[effectiveProductId].totalPrice = (summary[effectiveProductId].totalPrice || 0) + (variantPrice * itemQuantity);
 
         // Handle variants
         if (variant && item.depotVariantId) {
@@ -489,7 +492,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
   useEffect(() => {
     const fetchProductsAndSetItems = async () => {
       try {
-        const response = await get("/products");
+        const response = await get("/products?isSubscription=true&limit=1000"); // Filter only subscription products
         let productsList: Product[] = [];
 
         if (response && Array.isArray(response)) {
@@ -1260,6 +1263,15 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                                       onValueChange={(val) => {
                                         field.onChange(val);
                                         setValue(`orderItems.${index}.depotVariantId`, val, { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+
+                                        // Automatically set productId if it's missing or doesn't match the variant
+                                        const selectedVariant = depotVariants.find(v => String(v.id) === val);
+                                        if (selectedVariant?.productId) {
+                                          const currentProductId = getValues(`orderItems.${index}.productId`);
+                                          if (!currentProductId || currentProductId !== String(selectedVariant.productId)) {
+                                            setValue(`orderItems.${index}.productId`, String(selectedVariant.productId), { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+                                          }
+                                        }
                                       }}
                                       value={field.value || ""}
                                     >
@@ -1485,6 +1497,15 @@ const OrderForm: React.FC<OrderFormProps> = ({ mode, orderId, initialData, onSuc
                                     onValueChange={(val) => {
                                       field.onChange(val);
                                       setValue(`orderItems.${index}.depotVariantId`, val, { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+
+                                      // Automatically set productId if it's missing or doesn't match the variant
+                                      const selectedVariant = depotVariants.find(v => String(v.id) === val);
+                                      if (selectedVariant?.productId) {
+                                        const currentProductId = getValues(`orderItems.${index}.productId`);
+                                        if (!currentProductId || currentProductId !== String(selectedVariant.productId)) {
+                                          setValue(`orderItems.${index}.productId`, String(selectedVariant.productId), { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+                                        }
+                                      }
                                     }}
                                     value={field.value || ""}
                                   >
