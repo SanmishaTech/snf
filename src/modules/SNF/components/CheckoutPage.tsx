@@ -16,6 +16,7 @@ import { DeliveryLocationService, DeliveryLocation } from "@/services/deliveryLo
 import { toast } from "sonner";
 import AddressSelector from "./AddressSelector";
 import { type DeliveryAddress } from "../hooks/useAddresses";
+import ProductImage from "./ProductImage";
 
 const currency = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -251,18 +252,13 @@ const CheckoutPage: React.FC = () => {
                       <Card key={it.variantId}>
                         <CardContent className="py-4">
                           <div className="flex gap-4 items-start">
-                            <div className="size-20 shrink-0 rounded-md overflow-hidden bg-muted/30 grid place-items-center">
-                              {it.imageUrl ? (
-                                <img
-                                  src={it.imageUrl}
-                                  alt={it.name}
-                                  className="h-full w-full object-cover"
-                                  loading="lazy"
-                                />
-                              ) : (
-                                <span className="text-xs text-muted-foreground">No image</span>
-                              )}
-                            </div>
+                            <ProductImage
+                              src={it.imageUrl}
+                              alt={it.name}
+                              name={it.name}
+                              showNameFallback={false}
+                              containerClassName="size-20 shrink-0 rounded-md"
+                            />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-start justify-between gap-2">
                                 <div className="min-w-0">
@@ -322,18 +318,14 @@ const CheckoutPage: React.FC = () => {
                       <Card key={it.variantId} className="opacity-60 border-amber-200">
                         <CardContent className="py-4">
                           <div className="flex gap-4 items-start">
-                            <div className="size-20 shrink-0 rounded-md overflow-hidden bg-muted/50 grid place-items-center">
-                              {it.imageUrl ? (
-                                <img
-                                  src={it.imageUrl}
-                                  alt={it.name}
-                                  className="h-full w-full object-cover grayscale"
-                                  loading="lazy"
-                                />
-                              ) : (
-                                <span className="text-xs text-muted-foreground">No image</span>
-                              )}
-                            </div>
+                            <ProductImage
+                              src={it.imageUrl}
+                              alt={it.name}
+                              name={it.name}
+                              showNameFallback={false}
+                              containerClassName="size-20 shrink-0 rounded-md opacity-60"
+                              className="grayscale"
+                            />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-start justify-between gap-2">
                                 <div className="min-w-0">

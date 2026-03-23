@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 
 import { useCart } from "../context/CartContext";
 import { useDeliveryLocation } from "../hooks/useDeliveryLocation";
+import ProductImage from "./ProductImage";
 
 const currency = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
 
@@ -133,13 +134,13 @@ export const CartDropdown: React.FC<{ children?: React.ReactNode }> = ({ childre
                 <ul className="divide-y">
                   {availableItems.map((it) => (
                     <li key={it.variantId} className="p-3 flex gap-3">
-                      <div className="size-14 shrink-0 rounded-md overflow-hidden bg-muted/30 grid place-items-center">
-                        {it.imageUrl ? (
-                          <img src={it.imageUrl} alt={it.name} className="h-full w-full object-cover" loading="lazy" />
-                        ) : (
-                          <span className="text-xs text-muted-foreground">No image</span>
-                        )}
-                      </div>
+                      <ProductImage
+                        src={it.imageUrl}
+                        alt={it.name}
+                        name={it.name}
+                        showNameFallback={false}
+                        containerClassName="size-14 shrink-0 rounded-md"
+                      />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
@@ -194,13 +195,14 @@ export const CartDropdown: React.FC<{ children?: React.ReactNode }> = ({ childre
                     <ul className="divide-y divide-muted-foreground/20">
                       {unavailableItems.map((it) => (
                         <li key={it.variantId} className="py-2 flex gap-3 opacity-60">
-                          <div className="size-14 shrink-0 rounded-md overflow-hidden bg-muted/50 grid place-items-center">
-                            {it.imageUrl ? (
-                              <img src={it.imageUrl} alt={it.name} className="h-full w-full object-cover grayscale" loading="lazy" />
-                            ) : (
-                              <span className="text-xs text-muted-foreground">No image</span>
-                            )}
-                          </div>
+                          <ProductImage
+                            src={it.imageUrl}
+                            alt={it.name}
+                            name={it.name}
+                            showNameFallback={false}
+                            containerClassName="size-14 shrink-0 rounded-md opacity-60"
+                            className="grayscale"
+                          />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-2">
                               <div className="min-w-0">

@@ -13,6 +13,7 @@ import { ProductCard } from "./ProductCard";
 import { productService } from "../services/api";
 import { useDeliveryLocation } from "../hooks/useDeliveryLocation";
 import { ProductWithPricing, DepotVariant } from "../types";
+import ProductImage from "./ProductImage";
 
 type GalleryImage = {
   src: string;
@@ -897,12 +898,12 @@ const Gallery: React.FC<{ gallery: GalleryImage[]; title: string; tags?: string[
                   }`}
                 aria-label={`Show image ${i + 1}`}
               >
-                <img
+                <ProductImage
                   src={g.src}
                   alt={`${title} thumbnail ${i + 1}`}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                  decoding="async"
+                  name={title}
+                  showNameFallback={false}
+                  containerClassName="w-full h-full"
                 />
               </button>
             ))}
@@ -911,29 +912,26 @@ const Gallery: React.FC<{ gallery: GalleryImage[]; title: string; tags?: string[
 
         <div className="flex-1 relative rounded-md overflow-hidden h-[360px] md:h-[480px] group">
           {/* Current image (fade/scale in) */}
-          <img
+          <ProductImage
             key={active}
             src={current.src}
             alt={`${title} - image ${active + 1}`}
-            className={`absolute inset-0 w-full h-full object-contain transition-[opacity,transform] duration-300 ease-out cursor-zoom-in ${entering ? "opacity-100 scale-100" : "opacity-0 scale-[1.02]"
+            name={title}
+            containerClassName="absolute inset-0 w-full h-full bg-transparent"
+            className={`object-contain transition-[opacity,transform] duration-300 ease-out cursor-zoom-in ${entering ? "opacity-100 scale-100" : "opacity-0 scale-[1.02]"
               }`}
-            width={1200}
-            height={420}
-            loading="lazy"
-            decoding="async"
           />
 
           {/* Previous image (cross-fade out) */}
           {prevIndex !== null && (
-            <img
+            <ProductImage
               key={`prev-${prevIndex}`}
               src={gallery[prevIndex].src}
               alt={`${title} - previous image ${prevIndex + 1}`}
-              className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-300 ease-out ${prevFading ? "opacity-0" : "opacity-100"
+              name={title}
+              containerClassName="absolute inset-0 w-full h-full bg-transparent"
+              className={`object-contain transition-opacity duration-300 ease-out ${prevFading ? "opacity-0" : "opacity-100"
                 }`}
-              width={1200}
-              height={420}
-              aria-hidden="true"
             />
           )}
         </div>

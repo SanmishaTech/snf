@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ProductWithPricing, DepotVariant } from "../types";
 import { Check, ChevronDown, Search, X, Minus, Plus } from "lucide-react";
+import ProductImage from "./ProductImage";
 
 const DEFAULT_DEPOT_ID = 1;
 
@@ -227,33 +228,31 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     });
   }, [allVariants, variantSearch]);
 
+
   const rawAttachment = product?.product?.attachmentUrl;
   const producturl = rawAttachment ? `${import.meta.env.VITE_BACKEND_URL}${rawAttachment}` : "";
+
   return (
     <article className="group rounded-md border border-border/60 bg-card text-card-foreground overflow-hidden shadow-sm hover:shadow-md hover:border-border transition-all duration-200 h-full flex flex-col">
       {/* Product Image with Link */}
       <Link
         to={`/snf/product/${product.product.id}`}
-        className="block relative aspect-square min-h-[88px] sm:min-h-[96px] bg-muted/30 overflow-hidden"
+        className="block relative aspect-square min-h-[88px] sm:min-h-[96px] bg-muted/20 overflow-hidden"
       >
-        <img
-          ref={imgRef}
-          src={
-            producturl && producturl.trim().length > 0
-              ? producturl
-              : `https://images.unsplash.com/photo-1546470427-0fd2788c37e3?auto=format&fit=crop&w=400&q=80`
-          }
+        <ProductImage
+          src={producturl}
           alt={product.product.name}
-          loading="lazy"
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+          name={product.product.name}
+          className="group-hover:scale-[1.03]"
+          containerClassName="h-full w-full"
         />
         {showVariants && discount > 0 && (
-          <div className="absolute left-2 top-2 rounded-full bg-destructive/90 text-white text-xs px-2.5 py-1 shadow-sm font-medium">
-            -{Math.round(discount * 100)}%
+          <div className="absolute left-2 top-2 rounded bg-destructive text-white text-[10px] md:text-xs px-2 py-0.5 shadow-md font-bold z-10 uppercase tracking-wide">
+            {Math.round(discount * 100)}% OFF
           </div>
         )}
         {isOutOfStock && (
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
             <span className="bg-white/90 text-foreground px-3 py-1.5 rounded-md font-medium text-sm">Out of Stock</span>
           </div>
         )}
@@ -261,7 +260,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
       <div className="p-2 md:p-2.5 space-y-2 md:space-y-2.5 flex-1 flex flex-col">
         {/* Product Name */}
-        <h3 className="font-semibold text-[12px] md:text-[13px] leading-tight line-clamp-1 min-h-[1.25rem]">
+        <h3 className="font-semibold text-[11px] md:text-[13px] leading-tight min-h-[2.5rem]">
           <Link to={`/snf/product/${product.product.id}`} className="hover:text-primary transition-colors">
             {product.product.name}
           </Link>

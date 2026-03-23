@@ -16,6 +16,7 @@ import { type DeliveryAddress } from "../hooks/useAddresses";
 import { useProduct } from "../hooks/useProducts";
 import { usePricing } from "../context/PricingContext";
 import { useCart } from "../context/CartContext";
+import ProductImage from "./ProductImage";
 
 const currency = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -139,7 +140,8 @@ const BuyNowCheckoutPage: React.FC = () => {
     try {
       setLoading(true);
 
-      const depotId = DeliveryLocationService.getCurrentDepotId();
+      const depotIdRaw = DeliveryLocationService.getCurrentDepotId();
+      const depotId = depotIdRaw ? parseInt(depotIdRaw.toString()) : null;
       console.log('[BuyNow Checkout] Using depot ID:', depotId);
 
       const itemsPayload = [{
@@ -262,18 +264,13 @@ const BuyNowCheckoutPage: React.FC = () => {
               <Card>
                 <CardContent className="py-4">
                   <div className="flex gap-4 items-start">
-                    <div className="size-20 shrink-0 rounded-md overflow-hidden bg-muted/30 grid place-items-center">
-                      {buyNowItem.imageUrl ? (
-                        <img
-                          src={buyNowItem.imageUrl}
-                          alt={buyNowItem.name}
-                          className="h-full w-full object-cover"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <span className="text-xs text-muted-foreground">No image</span>
-                      )}
-                    </div>
+                      <ProductImage
+                        src={buyNowItem.imageUrl}
+                        alt={buyNowItem.name}
+                        name={buyNowItem.name}
+                        showNameFallback={false}
+                        containerClassName="size-20 shrink-0 rounded-md"
+                      />
                     <div className="flex-1 min-w-0">
                       <div className="min-w-0">
                         <p className="text-sm md:text-base font-medium">{buyNowItem.name}</p>
