@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { toast } from "sonner"
 import { Wallet, Plus, IndianRupee, CreditCard, TrendingUp, AlertCircle, CheckCircle2, Clock, XCircle } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
+import { useNavigate } from "react-router-dom"
 import { get, post } from "../../services/apiService" // Adjust path if needed
 import { formatCurrency } from "@/lib/formatter" // Adjust path if needed
 
@@ -30,6 +31,7 @@ interface ApiTransaction {
     name: string;
     email: string;
   } | null;
+  deliveryDate?: string;
 }
 
 interface UserWalletData {
@@ -54,8 +56,17 @@ const deduplicateTransactions = (txs: ApiTransaction[]): ApiTransaction[] => {
 const WALLET_POLL_INTERVAL = 15000; // 15 seconds – adjust as needed
 
 export default function WalletPage() {
+  const navigate = useNavigate();
   const [balance, setBalance] = useState(0) // Initial balance, will be updated from API
   const [transactions, setTransactions] = useState<ApiTransaction[]>([]);
+  const [userRole] = useState<string | null>(() => {
+    try {
+      const userDataString = localStorage.getItem('user');
+      return userDataString ? JSON.parse(userDataString).role : null;
+    } catch (error) {
+      return null;
+    }
+  });
   const [amount, setAmount] = useState("")
   const [isLoadingForm, setIsLoadingForm] = useState(false) // For the add funds form
   const [formError, setFormError] = useState<string | null>("") // For the add funds form
@@ -168,8 +179,13 @@ export default function WalletPage() {
   };
 
   useEffect(() => {
+    if (userRole && userRole !== 'MEMBER') {
+       toast.error(`${userRole} role does not have the wallet part`);
+       navigate('/'); 
+       return;
+    }
     fetchWalletDetails();
-  }, []);
+  }, [userRole, navigate]);
 
   /* -------------------------------------------------------------------------- */
   /*                               Auto Refreshing                              */
@@ -216,9 +232,7 @@ export default function WalletPage() {
       <IndianRupee className="h-5 w-5 text-green-600" />
                 Current Balance
               </CardTitle>
-              <CardDescription>Available funds in your wallet</CardDescription>
             </CardHeader>
-            {console.log(balance)}
             <CardContent className="relative">
               <div className="text-4xl font-bold text-green-600 mb-4">
                 {isFetchingWallet ? (

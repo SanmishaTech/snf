@@ -214,7 +214,7 @@ export const PricingProvider: React.FC<PricingProviderProps> = ({ children }) =>
   // Load products and variants for a depot
   const loadProductsAndVariants = useCallback(async (depotId: number, pageNum: number = 1, append: boolean = false) => {
     try {
-      const LIMIT = 10;
+      const LIMIT = 500;
       dispatch({ type: 'SET_LOADING', payload: true });
 
       // Fetch from API

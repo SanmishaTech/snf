@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { User, MapPin, LocateFixed, Loader2, Check } from "lucide-react";
+import { User, MapPin, LocateFixed, Loader2, Check, LogOut } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { usePricing } from "@/modules/SNF/context/PricingContext";
 import { useCart } from "@/modules/SNF/context/CartContext";
 import { CartDropdown } from "./CartDropdown";
 import WalletButton from "@/modules/Wallet/Components/Walletmenu";
+import { clearAuthData } from "@/utils/auth";
 
 interface HeaderProps {
   cartCount: number;
@@ -18,9 +19,11 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = (_props) => {
   const [sticky, setSticky] = useState(false);
   const [open, setOpen] = useState(false);
+  const isAuthenticated = Boolean(localStorage.getItem("authToken"));
   const [deliveryLocation, setDeliveryLocation] = useState<DeliveryLocation | null>(() =>
     DeliveryLocationService.getCurrentLocation()
   );
+
   const [pincode, setPincode] = useState<string>(() => deliveryLocation?.pincode || "");
   const [loading, setLoading] = useState<"geo" | "pin" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -51,9 +54,15 @@ export const Header: React.FC<HeaderProps> = (_props) => {
     initializeLocation();
   }, []);
 
+  const handleLogout = () => {
+    clearAuthData();
+    window.location.href = "/";
+  };
+
   const applyPincode = async () => {
     setError(null);
     setLoading("pin");
+
     try {
       // Update delivery location with depot mapping
       const location = await DeliveryLocationService.updateLocationByPincode(pincode);
@@ -80,8 +89,8 @@ export const Header: React.FC<HeaderProps> = (_props) => {
               id: parseInt(location.depotId),
               name: location.depotName,
               address: location.areaName || '',
-              pincode: location.pincode,
-              isActive: true,
+              city: '',
+              isOnline: false,
             };
 
             // Use the new setLocationWithDepot action to avoid duplicate API calls
@@ -260,6 +269,20 @@ export const Header: React.FC<HeaderProps> = (_props) => {
                 <DropdownMenuItem asChild>
                   <a href="/snf/address" className="w-full">Address</a>
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                {isAuthenticated ? (
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="text-red-600 focus:text-red-600"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem asChild>
+                    <a href="/login" className="w-full">Login</a>
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
 

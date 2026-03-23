@@ -168,9 +168,9 @@ export class ProductServiceImpl implements ProductService {
    */
   async getDepotVariants(depotId: number): Promise<DepotVariant[]> {
     try {
-      // Use the correct endpoint that returns products with variants
       const url = new URL(`/api/products/public`, this.API_ORIGIN);
       url.searchParams.append('depotId', depotId.toString());
+      url.searchParams.append('limit', '1000'); // Ensure we fetch variants for all products
 
       const response = await this.fetchWithRetry(url.toString());
 

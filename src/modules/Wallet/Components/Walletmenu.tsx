@@ -27,13 +27,24 @@ export default function WalletButton({ isLoggedIn }: WalletButtonProps) {
   const [balance, setBalance] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(() => {
+    try {
+      const userDataString = localStorage.getItem('user');
+      return userDataString ? JSON.parse(userDataString).role : null;
+    } catch (error) {
+      return null;
+    }
+  });
 
   /* -------------------------------------------------------------------------- */
   /*                        Fetching & Auto-refresh Balance                      */
   /* -------------------------------------------------------------------------- */
 
   useEffect(() => {
-    if (!isLoggedIn) return;
+    if (!isLoggedIn || userRole !== 'MEMBER') {
+       setIsLoading(false);
+       return;
+    }
 
     let isMounted = true;
 
@@ -85,10 +96,27 @@ export default function WalletButton({ isLoggedIn }: WalletButtonProps) {
       isMounted = false;
       clearInterval(intervalId);
     };
-  }, [isLoggedIn]);
+  }, [isLoggedIn, userRole]);
 
   if (!isLoggedIn) {
     return null; // Don't render anything if not logged in
+  }
+
+  // Handle roles that don't have a wallet
+  if (userRole && userRole !== 'MEMBER') {
+    return (
+      <Button
+        variant="outline"
+        className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 h-auto py-1.5"
+        onClick={() => toast.info(`${userRole} role does not have the wallet part`)}
+      >
+        <Wallet className="w-5 h-5 text-orange-500" />
+        <div className="flex flex-col items-start leading-tight">
+          <span className="text-[10px] font-bold uppercase text-gray-700">{userRole}</span>
+          <span className="text-[9px] text-gray-500 font-medium">does not have wallet</span>
+        </div>
+      </Button>
+    );
   }
 
   if (isLoading) {
