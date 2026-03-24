@@ -507,7 +507,11 @@ const CheckoutPage: React.FC = () => {
                     )}
 
                     {walletError && (
-                      <p className="text-xs text-destructive">{walletError}</p>
+                      <p className="text-xs text-destructive">
+                        {walletError.toLowerCase().includes("member not found") || walletError.includes("404")
+                          ? "Member login required. Please sign in to your member account to continue with your order."
+                          : walletError}
+                      </p>
                     )}
                     {!walletError && (
                       <p className="text-xs text-muted-foreground">

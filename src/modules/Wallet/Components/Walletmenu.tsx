@@ -27,7 +27,7 @@ export default function WalletButton({ isLoggedIn }: WalletButtonProps) {
   const [balance, setBalance] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userRole, setUserRole] = useState<string | null>(() => {
+  const [userRole] = useState<string | null>(() => {
     try {
       const userDataString = localStorage.getItem('user');
       return userDataString ? JSON.parse(userDataString).role : null;
@@ -108,12 +108,12 @@ export default function WalletButton({ isLoggedIn }: WalletButtonProps) {
       <Button
         variant="outline"
         className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 h-auto py-1.5"
-        onClick={() => toast.info(`${userRole} role does not have the wallet part`)}
+        onClick={() => toast.info("Wallet features are reserved for member accounts. Your current account role does not have an active wallet.")}
       >
         <Wallet className="w-5 h-5 text-orange-500" />
         <div className="flex flex-col items-start leading-tight">
-          <span className="text-[10px] font-bold uppercase text-gray-700">{userRole}</span>
-          <span className="text-[9px] text-gray-500 font-medium">does not have wallet</span>
+          <span className="text-[10px] font-bold uppercase text-gray-700">{userRole} Account</span>
+          <span className="text-[9px] text-gray-500 font-medium">No Wallet Associated</span>
         </div>
       </Button>
     );

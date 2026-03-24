@@ -95,7 +95,11 @@ const SNFAddressPage: React.FC = () => {
               ))}
             </div>
           ) : isError ? (
-            <div className="p-4 text-destructive text-sm">{(error as any)?.message || "Failed to load addresses"}</div>
+            <div className="p-4 text-destructive text-sm font-medium">
+              {((error as any)?.message?.toLowerCase().includes("member not found"))
+                ? "Membership verification failed. Please ensure you are logged in with an active member account to proceed."
+                : ((error as any)?.message || "Failed to load addresses")}
+            </div>
           ) : (
             <div className="space-y-3">
               {addresses && addresses.length > 0 ? (

@@ -80,7 +80,9 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
         </CardHeader>
         <CardContent>
           <p className="text-sm text-red-600 mb-3">
-            {(error as any)?.message || "Failed to load addresses"}
+            {((error as any)?.message?.toLowerCase().includes("member not found"))
+              ? "Member login required. Please sign in to your member account to continue with your order."
+              : ((error as any)?.message || "Failed to load addresses")}
           </p>
           <Button asChild variant="outline" size="sm">
             <Link to="/snf/address">Manage Addresses</Link>

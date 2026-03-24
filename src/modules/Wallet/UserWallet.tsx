@@ -171,7 +171,12 @@ export default function WalletPage() {
         }
       }
     } catch (err: any) {
-      setFetchWalletError(err.message || "Failed to load wallet details.");
+      const msg = err.message || "";
+      if (msg.toLowerCase().includes("member not found") || msg.includes("404")) {
+        setFetchWalletError("Membership verification failed. Please ensure you are logged in with an active member account.");
+      } else {
+        setFetchWalletError(msg || "Failed to load wallet details.");
+      }
       setTransactions([]);
     } finally {
       setIsFetchingWallet(false);
@@ -180,7 +185,7 @@ export default function WalletPage() {
 
   useEffect(() => {
     if (userRole && userRole !== 'MEMBER') {
-       toast.error(`${userRole} role does not have the wallet part`);
+       toast.error("Membership verification required. This feature is reserved for registered members.");
        navigate('/'); 
        return;
     }
