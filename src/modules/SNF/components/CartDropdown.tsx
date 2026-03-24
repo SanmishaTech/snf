@@ -45,12 +45,10 @@ export const CartDropdown: React.FC<{ children?: React.ReactNode }> = ({ childre
   // Initial validation when component mounts with existing items
   useEffect(() => {
     if (state.items.length > 0 && currentDepotId && lastValidatedDepotRef.current === null) {
-      console.log('[CartDropdown] Initial validation on mount');
       setIsValidating(true);
       lastValidatedDepotRef.current = currentDepotId;
 
       validateCart(currentDepotId).finally(() => {
-        console.log('[CartDropdown] Initial validation completed');
         setIsValidating(false);
       });
     }
@@ -61,29 +59,12 @@ export const CartDropdown: React.FC<{ children?: React.ReactNode }> = ({ childre
     const hasItems = hasItemsRef.current;
     const depotChanged = currentDepotId !== lastValidatedDepotRef.current;
 
-    console.log('[CartDropdown] Effect triggered:', {
-      hasItems,
-      currentDepotId,
-      lastValidatedDepot: lastValidatedDepotRef.current,
-      depotChanged,
-      isValidating
-    });
-
     if (hasItems && currentDepotId && depotChanged && !isValidating) {
-      console.log('[CartDropdown] Starting validation for depot:', currentDepotId);
       setIsValidating(true);
       lastValidatedDepotRef.current = currentDepotId;
 
       validateCart(currentDepotId).finally(() => {
-        console.log('[CartDropdown] Validation completed');
         setIsValidating(false);
-      });
-    } else {
-      console.log('[CartDropdown] Skipping validation:', {
-        hasItems,
-        hasDepotId: !!currentDepotId,
-        depotChanged,
-        isValidating
       });
     }
   }, [currentDepotId, isValidating]);
@@ -283,20 +264,6 @@ export const CartDropdown: React.FC<{ children?: React.ReactNode }> = ({ childre
             </Button>
           </div>
 
-          {/* Debug button - remove in production */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="pt-2 border-t">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full text-xs"
-                onClick={() => currentDepotId && validateCart(currentDepotId)}
-                disabled={isValidating || !currentDepotId}
-              >
-                {isValidating ? 'Validating...' : 'Revalidate Cart'}
-              </Button>
-            </div>
-          )}
         </div>
       </PopoverContent>
     </Popover>

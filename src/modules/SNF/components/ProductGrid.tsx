@@ -1,13 +1,43 @@
 import React from "react";
 import { ProductCard } from "./ProductCard";
 import { ProductWithPricing, DepotVariant } from "../types";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ProductGridProps {
   products: ProductWithPricing[];
   onAddToCart: (p: ProductWithPricing, variant?: DepotVariant, qty?: number) => void;
   isLoading?: boolean;
-  showVariants?: boolean; // New prop to control variant display
+  showVariants?: boolean;
 }
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20, scale: 0.95 },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    scale: 1,
+    transition: {
+      type: "spring",
+      stiffness: 260,
+      damping: 20,
+    }
+  },
+  exit: { 
+    opacity: 0, 
+    scale: 0.95,
+    transition: { duration: 0.2 }
+  }
+};
 
 export const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToCart, isLoading = false, showVariants = true }) => {
   if (isLoading) {
@@ -35,23 +65,40 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToCart,
   }
 
   return (
-    <div
+    <motion.div
       id="products"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
       className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-6 sm:gap-x-5 sm:gap-y-8"
     >
-      {products.map((p) => (
-        <ProductCard
-          key={p.product.id}
-          product={p}
-          onAddToCart={onAddToCart}
-          showVariants={showVariants}
-        />
-      ))}
+      <AnimatePresence mode="popLayout">
+        {products.map((p) => (
+          <motion.div
+            key={p.product.id}
+            layout
+            variants={itemVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+          >
+            <ProductCard
+              product={p}
+              onAddToCart={onAddToCart}
+              showVariants={showVariants}
+            />
+          </motion.div>
+        ))}
+      </AnimatePresence>
       {products.length === 0 && (
-        <div className="col-span-full text-center text-muted-foreground py-10">
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="col-span-full text-center text-muted-foreground py-10"
+        >
           No products found. Try adjusting filters or search.
-        </div>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 };

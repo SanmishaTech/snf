@@ -199,24 +199,16 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const clear = () => dispatch({ type: "CLEAR" });
 
   const validateCart = useCallback(async (currentDepotId: number) => {
-    console.log('[CartContext] Starting cart validation for depot:', currentDepotId);
-    
     // Get current items from state at the time of validation
     const currentItems = state.items;
     
     if (currentItems.length === 0) {
-      console.log('[CartContext] No items to validate');
       return;
     }
     
     try {
       const validationResult = await CartValidationService.validateCartItems(currentItems, currentDepotId);
       
-      console.log('[CartContext] Validation completed:', {
-        total: validationResult.validatedItems.length,
-        available: validationResult.availableItems.length,
-        unavailable: validationResult.unavailableItems.length
-      });
       dispatch({ type: "VALIDATE_CART", payload: { items: validationResult.validatedItems } });
     } catch (error) {
       console.error('[CartContext] Error validating cart:', error);

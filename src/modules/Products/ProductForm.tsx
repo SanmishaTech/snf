@@ -16,7 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { LoaderCircle, Trash2, Plus, X, Image as ImageIcon, Upload, Info, Lightbulb } from "lucide-react";
 import { toast } from "sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { post, put, postupload } from "@/services/apiService";
+import { post, put, postupload, del } from "@/services/apiService";
 import { getAllCategories } from "@/services/categoryService";
 import {
   Select,
@@ -454,13 +454,12 @@ const ProductForm: React.FC<ProductFormProps> = ({
                       className="h-7 w-7 rounded-full shadow-lg scale-90 group-hover:scale-100 transition-transform"
                       onClick={async () => {
                         try {
-                          await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/products/${productId}/images/${img.id}`, {
-                            method: "DELETE",
-                            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-                          });
+                          await del(`/products/${productId}/images/${img.id}`);
                           queryClient.invalidateQueries({ queryKey: ["product", productId] });
-                        } catch {
-                          toast.error("Failed to delete image");
+                          toast.success("Image removed");
+                        } catch (err: any) {
+                          console.error("Delete image error:", err);
+                          toast.error(err.message || "Failed to delete image");
                         }
                       }}
                     >

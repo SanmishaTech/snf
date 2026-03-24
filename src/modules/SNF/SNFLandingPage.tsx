@@ -15,6 +15,8 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "./context/CartContext";
 import { useDeliveryLocation } from "./hooks/useDeliveryLocation";
 import type { Category as FilterCategory } from "./components/CategoryFilters.tsx";
+import { CategoryBar } from "./components/CategoryBar.tsx";
+import { useTransition } from "react";
 
 export type SortKey = "relevance" | "price_asc" | "price_desc" | "popularity_desc";
 
@@ -23,13 +25,17 @@ const SNFContent: React.FC = () => {
   const [selectedCats, setSelectedCats] = useState<number[]>([]);
   const [sort] = useState<SortKey>("relevance");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
   const location = useLocation();
   const navigate = useNavigate();
+  // Scroll state managed in CategoryBar component
 
   // CategoryFilters expects ids as string; keep a lightweight shape for filters
   const [categories, setCategories] = useState<FilterCategory[]>([]);
   const [catLoading, setCatLoading] = useState<boolean>(false);
   const [catError, setCatError] = useState<string | null>(null);
+
+  // Category scroll checking now handled inside CategoryBar
 
   const { state: pricingState, actions: pricingActions } = usePricing();
   const { addItem, state: cartState } = useCart();
@@ -39,33 +45,36 @@ const SNFContent: React.FC = () => {
 
   // Use pricing context data directly instead of individual hooks
   // const location = pricingState.userLocation;
-  const products = pricingState.products.map(product => {
-    const productVariants = pricingState.depotVariants.filter(v => v.productId === product.id);
+  // Memoize products mapping to avoid re-creation on every render
+  const products = useMemo(() => {
+    return pricingState.products.map(product => {
+      const productVariants = pricingState.depotVariants.filter(v => v.productId === product.id);
 
-    // Calculate buyOncePrice only from available variants
-    const availableVariants = productVariants.filter(v => !v.notInStock && !v.isHidden);
-    const buyOncePrices = availableVariants.map(v => {
-      const price = v.buyOncePrice || v.mrp || 0;
-      return typeof price === 'number' && isFinite(price) && price > 0 ? price : 0;
-    }).filter(price => price > 0);
+      // Calculate buyOncePrice only from available variants
+      const availableVariants = productVariants.filter(v => !v.notInStock && !v.isHidden);
+      const buyOncePrices = availableVariants.map(v => {
+        const price = v.buyOncePrice || v.mrp || 0;
+        return typeof price === 'number' && isFinite(price) && price > 0 ? price : 0;
+      }).filter(price => price > 0);
 
-    const buyOncePrice = buyOncePrices.length > 0 ? Math.min(...buyOncePrices) : 0;
-    const inStock = availableVariants.length > 0;
-    const mrpPrices = availableVariants.map(v => {
-      const price = v.mrp || 0;
-      return typeof price === 'number' && isFinite(price) && price > 0 ? price : 0;
-    }).filter(price => price > 0);
-    const mrp = mrpPrices.length > 0 ? Math.max(...mrpPrices) : 0;
+      const buyOncePrice = buyOncePrices.length > 0 ? Math.min(...buyOncePrices) : 0;
+      const inStock = availableVariants.length > 0;
+      const mrpPrices = availableVariants.map(v => {
+        const price = v.mrp || 0;
+        return typeof price === 'number' && isFinite(price) && price > 0 ? price : 0;
+      }).filter(price => price > 0);
+      const mrp = mrpPrices.length > 0 ? Math.max(...mrpPrices) : 0;
 
-    return {
-      product,
-      variants: productVariants, // may be empty for products without variants; still display
-      buyOncePrice,
-      mrp,
-      inStock,
-      deliveryTime: 'Same day delivery'
-    };
-  });
+      return {
+        product,
+        variants: productVariants,
+        buyOncePrice,
+        mrp,
+        inStock,
+        deliveryTime: 'Same day delivery'
+      };
+    });
+  }, [pricingState.products, pricingState.depotVariants]);
   const isLoading = pricingState.isLoading;
   // const error = pricingState.error;
 
@@ -132,11 +141,9 @@ const SNFContent: React.FC = () => {
     }
   }, [pricingState.userLocation, pricingState.isLoading]);
 
-  // Log when products are refetched due to location/depot changes
   useEffect(() => {
     if (pricingState.currentDepot) {
-      console.log(`Products loaded for depot: ${pricingState.currentDepot.name} (${pricingState.currentDepot.id})`);
-      console.log(`Total products: ${pricingState.products.length}, Total variants: ${pricingState.depotVariants.length}`);
+      // Products loaded
     }
   }, [pricingState.currentDepot, pricingState.products.length, pricingState.depotVariants.length]);
 
@@ -307,101 +314,48 @@ const SNFContent: React.FC = () => {
         <Hero />
 
         {/* Categories Grid - horizontal scrollable tab row */}
-        <section className="container mx-auto px-4 md:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl md:text-2xl font-bold">Browse by Category</h2>
-            {catError && (
-              <Button size="sm" variant="outline" onClick={() => {
-                setCatLoading(true);
-                productService.getCategories()
-                  .then((data) => {
-                    const normalized: (FilterCategory & { imageUrl?: string })[] = (Array.isArray(data) ? data : []).map((c: any) => ({
-                      id: String(c.id ?? c._id ?? c.slug ?? ""),
-                      name: c.name || c.title || "Category",
-                      imageUrl: c.imageUrl || c.attachmentUrl || c.iconUrl || c.url || undefined,
-                    }));
-                    const sortedCats = [...normalized].sort((a, b) => {
-                      const aMilk = typeof a.name === "string" && a.name.toLowerCase().includes("milk") ? 1 : 0;
-                      const bMilk = typeof b.name === "string" && b.name.toLowerCase().includes("milk") ? 1 : 0;
-                      if (aMilk !== bMilk) return bMilk - aMilk;
-                      return (a.name || "").localeCompare(b.name || "");
-                    });
-                    setCategories(sortedCats as FilterCategory[]);
-                    setCatError(null);
-                  })
-                  .catch((e: any) => setCatError(e?.message || "Failed to load categories"))
-                  .finally(() => setCatLoading(false));
-              }}>
-                Retry
-              </Button>
-            )}
-          </div>
-
-          {catLoading ? (
-            <div className="border-b border-border">
-              <div className="flex overflow-x-auto gap-6 px-1 scrollbar-hide items-center py-1">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="shrink-0 animate-pulse">
-                    <div className="h-4 rounded bg-muted/40" style={{ width: `${56 + i * 12}px` }} />
-                    <div className={i === 1 ? "mt-2 h-0.5 w-full rounded bg-foreground/70" : "mt-2 h-0.5 w-full rounded bg-transparent"} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="border-b border-border">
-              <div className="flex overflow-x-auto gap-6 px-1 scrollbar-hide items-center">
-                <button
-                  key="all"
-                  id="category-all"
-                  type="button"
-                  onClick={() => {
-                    setSelectedCats([]);
-                    setSelectedTag(null);
-                    const params = new URLSearchParams(location.search || "");
-                    params.delete("tag");
-                    navigate({ search: params.toString() ? `?${params.toString()}` : "" }, { replace: true });
-                  }}
-                  className={
-                    selectedCats.length === 0
-                      ? "relative py-2 text-sm font-medium text-foreground after:absolute after:left-0 after:right-0 after:bottom-0 after:h-0.5 after:bg-foreground"
-                      : "py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
-                  }
-                  aria-label="Show all products"
-                >
-                  All Types
-                </button>
-
-                {categories.map((cat: any) => {
-                  const catIdNum = parseInt(cat.id, 10);
-                  const isSelected = selectedCats.includes(catIdNum);
-                  return (
-                    <button
-                      key={cat.id}
-                      id={`category-${catIdNum}`}
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setSelectedCats([catIdNum]);
-                      }}
-                      className={
-                        isSelected
-                          ? "relative py-2 text-sm font-medium text-foreground after:absolute after:left-0 after:right-0 after:bottom-0 after:h-0.5 after:bg-foreground"
-                          : "py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
-                      }
-                      aria-label={`Filter by category ${cat.name}`}
-                    >
-                      {cat.name}
-                    </button>
-                  );
-                })}
-
-                {categories.length === 0 && !catError && (
-                  <p className="py-2 text-sm text-muted-foreground">No categories available.</p>
-                )}
-              </div>
-            </div>
-          )}
+        <section className={`container mx-auto px-4 md:px-6 lg:px-8 py-6 transition-opacity duration-200 ${isPending ? 'opacity-70' : 'opacity-100'}`}>
+          <CategoryBar
+            categories={categories}
+            selectedCats={selectedCats}
+            isLoading={catLoading}
+            error={catError}
+            onSelectCategory={(id) => {
+              startTransition(() => {
+                setSelectedCats([id]);
+              });
+            }}
+            onSelectAll={() => {
+              startTransition(() => {
+                setSelectedCats([]);
+                setSelectedTag(null);
+                const params = new URLSearchParams(location.search || "");
+                params.delete("tag");
+                navigate({ search: params.toString() ? `?${params.toString()}` : "" }, { replace: true });
+              });
+            }}
+            onRetry={() => {
+              setCatLoading(true);
+              productService.getCategories()
+                .then((data) => {
+                  const normalized: (FilterCategory & { imageUrl?: string })[] = (Array.isArray(data) ? data : []).map((c: any) => ({
+                    id: String(c.id ?? c._id ?? c.slug ?? ""),
+                    name: c.name || c.title || "Category",
+                    imageUrl: c.imageUrl || c.attachmentUrl || c.iconUrl || c.url || undefined,
+                  }));
+                  const sortedCats = [...normalized].sort((a, b) => {
+                    const aMilk = typeof a.name === "string" && a.name.toLowerCase().includes("milk") ? 1 : 0;
+                    const bMilk = typeof b.name === "string" && b.name.toLowerCase().includes("milk") ? 1 : 0;
+                    if (aMilk !== bMilk) return bMilk - aMilk;
+                    return (a.name || "").localeCompare(b.name || "");
+                  });
+                  setCategories(sortedCats as FilterCategory[]);
+                  setCatError(null);
+                })
+                .catch((e: any) => setCatError(e?.message || "Failed to load categories"))
+                .finally(() => setCatLoading(false));
+            }}
+          />
         </section>
 
         {/* Product filters + grid */}

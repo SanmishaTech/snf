@@ -24,18 +24,6 @@ export class CartValidationService {
     cartItems: CartItem[], 
     currentDepotId: number
   ): Promise<CartValidationResult> {
-    console.log('[CartValidation] Starting validation:', { 
-      cartItems: cartItems.length, 
-      depotId: currentDepotId,
-      itemDetails: cartItems.map(item => ({
-        productId: item.productId,
-        variantId: item.variantId,
-        name: item.name,
-        variantName: item.variantName,
-        fromDepot: item.depotId
-      }))
-    });
-    
     if (cartItems.length === 0) {
       console.log('[CartValidation] No items to validate');
       return {
@@ -48,7 +36,6 @@ export class CartValidationService {
 
     try {
       // Get all variants for the current depot
-      console.log('[CartValidation] Fetching depot variants for depot:', currentDepotId);
       
       // Add timeout to the API call
       const apiTimeout = new Promise<never>((_, reject) => {
@@ -60,11 +47,8 @@ export class CartValidationService {
         apiTimeout
       ]);
       
-      console.log('[CartValidation] Fetched variants:', currentDepotVariants.length);
-      
       // If no variants returned, use fallback validation
       if (currentDepotVariants.length === 0) {
-        console.log('[CartValidation] No variants found, using fallback validation');
         return this.fallbackValidation(cartItems, currentDepotId);
       }
       
@@ -99,40 +83,21 @@ export class CartValidationService {
       for (const cartItem of cartItems) {
         let currentVariant: DepotVariant | undefined;
         let updatedItem: CartItem;
-        let swappedVariant = false;
 
         // Check if we're switching back to the original depot
         const isOriginalDepot = cartItem.originalDepotId === currentDepotId;
-        
-        console.log(`[CartValidation] Processing item:`, {
-          name: cartItem.name,
-          variantId: cartItem.variantId,
-          originalVariantId: cartItem.originalVariantId,
-          depotId: cartItem.depotId,
-          originalDepotId: cartItem.originalDepotId,
-          currentDepotId,
-          isOriginalDepot
-        });
         
         // If switching back to original depot, try to restore original variant
         if (isOriginalDepot && cartItem.originalVariantId) {
           currentVariant = variantMap.get(cartItem.originalVariantId);
           if (currentVariant) {
-            console.log(`[CartValidation] Restoring original variant for ${cartItem.name}: variant ${cartItem.originalVariantId} in depot ${currentDepotId}`);
-            swappedVariant = cartItem.variantId !== cartItem.originalVariantId;
+            // Found original variant
           }
         }
         
         // If not found or not original depot, check if the current variant ID exists
         if (!currentVariant) {
           currentVariant = variantMap.get(cartItem.variantId);
-          if (currentVariant) {
-            console.log(`[CartValidation] Found variant ${cartItem.variantId} in current depot`, {
-              variantName: currentVariant.name,
-              closingQty: currentVariant.closingQty,
-              notInStock: currentVariant.notInStock
-            });
-          }
         }
         
         // If exact variant ID not found, it means we switched depots
@@ -146,25 +111,11 @@ export class CartValidationService {
           if (productVariants.length === 0) {
             const normalizedProductName = cartItem.name.trim().toLowerCase();
             productVariants = productNameMap.get(normalizedProductName) || [];
-            
-            if (productVariants.length > 0) {
-              console.log(`[CartValidation] Found ${productVariants.length} variants by product name '${cartItem.name}' in depot ${currentDepotId}`);
-            }
           }
           
           if (productVariants.length > 0) {
             // Simplified variant matching using normalized names
             const normalizedCartVariant = this.normalizeVariantName(cartItem.variantName);
-            
-            console.log(`[CartValidation] Attempting to match variant '${cartItem.variantName}' (normalized: '${normalizedCartVariant}')`);
-            console.log('[CartValidation] Available variants in depot:', productVariants.map(v => ({
-              id: v.id,
-              name: v.name,
-              normalized: this.normalizeVariantName(v.name),
-              closingQty: v.closingQty,
-              notInStock: v.notInStock,
-              isHidden: v.isHidden
-            })));
             
             // Try to find matching variant (prioritize available ones)
             let equivalentVariant = productVariants.find(variant => {
@@ -174,68 +125,20 @@ export class CartValidationService {
                      !variant.isHidden &&
                      (variant.closingQty === undefined || variant.closingQty >= cartItem.quantity);
               
-              if (normalizedDepotVariant === normalizedCartVariant) {
-                console.log(`[CartValidation] Name match found for variant ${variant.id}:`, {
-                  matches: true,
-                  available: isMatch,
-                  reason: !isMatch ? {
-                    notInStock: variant.notInStock,
-                    isHidden: variant.isHidden,
-                    insufficientQty: variant.closingQty !== undefined && variant.closingQty < cartItem.quantity,
-                    closingQty: variant.closingQty,
-                    requestedQty: cartItem.quantity
-                  } : 'available'
-                });
-              }
-              
               return isMatch;
             });
             
             // If not found with stock, try to find any matching variant
             if (!equivalentVariant) {
-              console.log('[CartValidation] No available variant found, trying to find any matching variant...');
               equivalentVariant = productVariants.find(variant => {
                 const normalizedDepotVariant = this.normalizeVariantName(variant.name);
-                const isMatch = normalizedDepotVariant === normalizedCartVariant;
-                if (isMatch) {
-                  console.log(`[CartValidation] Found matching variant ${variant.id} (but may have stock issues)`);
-                }
-                return isMatch;
+                return normalizedDepotVariant === normalizedCartVariant;
               });
             }
             
-            // Add debug logging for non-matches
-            if (!equivalentVariant && productVariants.length > 0) {
-              console.log('[CartValidation] ❌ No variant match found for item:', {
-                productName: cartItem.name,
-                cartVariant: cartItem.variantName,
-                normalizedCart: normalizedCartVariant,
-                availableVariants: productVariants.map(v => ({
-                  id: v.id,
-                  name: v.name,
-                  normalized: this.normalizeVariantName(v.name),
-                  closingQty: v.closingQty,
-                  inStock: !v.notInStock
-                }))
-              });
-            }
-
             if (equivalentVariant) {
               currentVariant = equivalentVariant;
-              swappedVariant = true;
-              console.log(`[CartValidation] Hot-swapped variant for ${cartItem.name} (${cartItem.variantName}): ${cartItem.variantId} -> ${equivalentVariant.id} (${equivalentVariant.name})`);
-            } else {
-              // Log all available variants for debugging
-              console.log(`[CartValidation] Could not find matching variant for ${cartItem.name} (${cartItem.variantName})`);
-              console.log(`[CartValidation] Available variants for this product:`, productVariants.map(v => ({
-                id: v.id,
-                name: v.name,
-                notInStock: v.notInStock,
-                isHidden: v.isHidden
-              })));
             }
-          } else {
-            console.log(`[CartValidation] No variants found for product ${cartItem.productId} (${cartItem.name}) in depot ${currentDepotId}`);
           }
         }
 
@@ -285,13 +188,6 @@ export class CartValidationService {
           
           if (isInOriginalDepot) {
             // Keep item available in original depot even if stock depleted
-            console.log(`[CartValidation] Keeping item available in original depot despite low stock:`, {
-              variantName: currentVariant.name,
-              closingQty: currentVariant.closingQty,
-              requestedQty: cartItem.quantity,
-              reason: 'Item was added from this depot originally'
-            });
-            
             const currentPrice = currentVariant.buyOncePrice || currentVariant.mrp || 0;
             updatedItem = {
               ...cartItem,
@@ -320,12 +216,6 @@ export class CartValidationService {
               originalDepotId: cartItem.originalDepotId || cartItem.depotId,
               originalVariantId: cartItem.originalVariantId || cartItem.variantId,
             };
-            console.log(`[CartValidation] Variant ${currentVariant.id} has insufficient stock in different depot:`, {
-              variantName: currentVariant.name,
-              closingQty: currentVariant.closingQty,
-              requestedQty: cartItem.quantity,
-              message: stockMessage
-            });
             unavailableItems.push(updatedItem);
           }
         } else {
@@ -343,34 +233,11 @@ export class CartValidationService {
             originalDepotId: cartItem.originalDepotId || cartItem.depotId,
             originalVariantId: cartItem.originalVariantId || cartItem.variantId,
           };
-          
-          // Log if we hot-swapped the variant
-          if (swappedVariant) {
-            console.log(`[CartValidation] Successfully swapped to depot ${currentDepotId} variant:`, {
-              productName: cartItem.name,
-              oldVariantId: cartItem.variantId,
-              newVariantId: currentVariant.id,
-              newVariantName: currentVariant.name,
-              newPrice: currentPrice
-            });
-          }
           availableItems.push(updatedItem);
         }
 
         validatedItems.push(updatedItem);
       }
-
-      console.log('[CartValidation] Validation complete:', {
-        depotId: currentDepotId,
-        totalItems: cartItems.length,
-        availableCount: availableItems.length,
-        unavailableCount: unavailableItems.length,
-        swappedItems: validatedItems.filter(item => 
-          cartItems.find(original => 
-            original.variantId !== item.variantId && original.productId === item.productId
-          )
-        ).length
-      });
 
       return {
         isValid: unavailableItems.length === 0,
@@ -388,7 +255,6 @@ export class CartValidationService {
         unavailableReason: 'Unable to verify availability',
       }));
 
-      console.log('[CartValidation] Returning error result');
       return {
         isValid: false,
         availableItems: [],
@@ -506,8 +372,6 @@ export class CartValidationService {
     cartItems: CartItem[], 
     currentDepotId: number
   ): CartValidationResult {
-    console.log('[CartValidation] Using fallback validation');
-    
     const validatedItems: CartItem[] = [];
     const availableItems: CartItem[] = [];
     const unavailableItems: CartItem[] = [];

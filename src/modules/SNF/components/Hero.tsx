@@ -1,4 +1,5 @@
 import React from "react";
+import { animate } from "framer-motion";
 
 export const Hero: React.FC = () => {
   const slides = [
@@ -9,7 +10,7 @@ export const Hero: React.FC = () => {
       primaryLabel: "Shop now",
       primaryHref: "#products",
       secondaryLabel: "View deals",
-      secondaryHref: "#deals",
+      secondaryHref: "#products", // Point to products as well or a specific section if available
       image:
         "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=1200&auto=format&fit=crop",
       alt: "Fresh produce assortment including fruits and vegetables",
@@ -20,9 +21,9 @@ export const Hero: React.FC = () => {
       description:
         "Milk, bread, eggs, snacks, and more — delivered fast with freshness guaranteed.",
       primaryLabel: "Browse essentials",
-      primaryHref: "#essentials",
+      primaryHref: "#products",
       secondaryLabel: "Today’s offers",
-      secondaryHref: "#offers",
+      secondaryHref: "#products",
       image:
         "https://images.unsplash.com/photo-1506806732259-39c2d0268443?q=80&w=1200&auto=format&fit=crop",
       alt: "Assorted vegetables and herbs on a table",
@@ -34,9 +35,9 @@ export const Hero: React.FC = () => {
       description:
         "Locally sourced produce and top brands — curated for your kitchen.",
       primaryLabel: "Explore categories",
-      primaryHref: "#categories",
+      primaryHref: "#products",
       secondaryLabel: "Best sellers",
-      secondaryHref: "#bestsellers",
+      secondaryHref: "#products",
       image:
         "https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?q=80&w=1200&auto=format&fit=crop",
       alt: "Grocery basket with assorted products",
@@ -71,6 +72,25 @@ export const Hero: React.FC = () => {
   const prev = () => setCurrent((c) => (c - 1 + slides.length) % slides.length);
   const next = () => setCurrent((c) => (c + 1) % slides.length);
 
+  const handleScrollTo = (e: React.MouseEvent, href: string) => {
+    e.preventDefault();
+    if (href.startsWith("#")) {
+      const id = href.substring(1);
+      const element = document.getElementById(id);
+      if (element) {
+        const headerOffset = 80;
+        const targetPosition = element.getBoundingClientRect().top + window.scrollY - headerOffset;
+        const startPosition = window.scrollY;
+
+        animate(startPosition, targetPosition, {
+          duration: 0.8,
+          ease: [0.32, 0.72, 0, 1], // Custom cubic-bezier for a premium, snappy-yet-smooth feel
+          onUpdate: (latest) => window.scrollTo(0, latest),
+        });
+      }
+    }
+  };
+
   return (
     <section className="relative bg-gradient-to-br from-green-600 via-green-500 to-emerald-500 text-white">
       <div className="w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] p-0">
@@ -102,20 +122,20 @@ export const Hero: React.FC = () => {
                     <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-tight">{s.title}</h1>
                     <p className="mt-4 text-white/90 text-base md:text-lg">{s.description}</p>
                     <div className="mt-6 flex flex-wrap gap-3">
-                      <a
-                        href={s.primaryHref}
-                        className="inline-flex items-center justify-center rounded-md bg-white text-green-700 font-medium h-10 px-6 shadow hover:shadow-md transition"
+                      <button
+                        onClick={(e) => handleScrollTo(e, s.primaryHref)}
+                        className="inline-flex items-center justify-center rounded-md bg-white text-green-700 font-medium h-10 px-6 shadow hover:shadow-md transition cursor-pointer"
                         aria-label={s.primaryLabel}
                       >
                         {s.primaryLabel}
-                      </a>
-                      <a
-                        href={s.secondaryHref}
-                        className="inline-flex items-center justify-center rounded-md border border-white/80 text-white font-medium h-10 px-6 hover:bg-white/10 transition"
+                      </button>
+                      <button
+                        onClick={(e) => handleScrollTo(e, s.secondaryHref)}
+                        className="inline-flex items-center justify-center rounded-md border border-white/80 text-white font-medium h-10 px-6 hover:bg-white/10 transition cursor-pointer"
                         aria-label={s.secondaryLabel}
                       >
                         {s.secondaryLabel}
-                      </a>
+                      </button>
                     </div>
                   </div>
                   <div className="relative h-full">

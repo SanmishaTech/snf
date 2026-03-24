@@ -17,7 +17,7 @@ interface ProductCardProps {
 
 const VARIANT_PILLS_THRESHOLD = 4;
 
-export const ProductCard: React.FC<ProductCardProps> = ({
+const ProductCardComponent: React.FC<ProductCardProps> = ({
   product,
   onAddToCart,
   initialVariantId = null,
@@ -259,130 +259,102 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       </Link>
 
       <div className="p-2 md:p-2.5 space-y-2 md:space-y-2.5 flex-1 flex flex-col">
-        {/* Product Name */}
-        <h3 className="font-semibold text-[11px] md:text-[13px] leading-tight min-h-[2.5rem]">
+        {/* Product Name - standard height (3 lines) for better wrapping */}
+        <h3 className="font-semibold text-[11px] md:text-[13px] leading-tight h-[48px] mb-1 overflow-y-auto scrollbar-hide">
           <Link to={`/snf/product/${product.product.id}`} className="hover:text-primary transition-colors">
             {product.product.name}
           </Link>
         </h3>
 
-        {/* Variant UX */}
-        {hasMultipleVariants && (
-          <>
-            {showPills ? (
-              // Show variant pills directly (<= threshold)
-              <div className="flex flex-wrap gap-1 md:gap-1.5">
-                {allVariants.map((variant: any) => {
-                  const variantPrice = variant.buyOncePrice || variant.mrp || 0;
-                  const isSelected = variant.id === selectedVariant?.id;
-                  const isAvailable =
-                    !variant.isHidden && !variant.notInStock;
+        {/* Variant UX - Standardized height container */}
+        <div className="h-[64px] flex flex-col justify-center">
+          {hasMultipleVariants ? (
+            <>
+              {showPills ? (
+                // Show variant pills directly (<= threshold)
+                <div className="flex flex-wrap gap-1 md:gap-1.5 overflow-y-auto scrollbar-hide">
+                  {allVariants.map((variant: any) => {
+                    const variantPrice = variant.buyOncePrice || variant.mrp || 0;
+                    const isSelected = variant.id === selectedVariant?.id;
+                    const isAvailable =
+                      !variant.isHidden && !variant.notInStock;
 
-                  return (
-                    <button
-                      key={variant.id}
-                      onClick={() => handleVariantSelect(variant.id)}
-                      disabled={!isAvailable}
-                      className={[
-                        "inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] transition-colors",
-                        isSelected ? "bg-primary/10 border-primary text-primary" : "hover:bg-accent",
-                        !isAvailable ? "opacity-50 cursor-not-allowed" : "",
-                      ].join(" ")}
-                      aria-pressed={isSelected}
-                    >
-                      <span className="font-medium">{variant.name}</span>
-                      <span className="text-muted-foreground">₹{variantPrice.toFixed(0)}</span>
-                      {!isAvailable && <span className="text-muted-foreground">(OOS)</span>}
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              // More than threshold: show a compact selector with search
-              <div className="relative" ref={dropdownRef}>
-                <button
-                  onClick={() => setIsVariantDropdownOpen((o) => !o)}
-                  className="w-full flex items-center justify-between px-2 py-1.5 border rounded-md text-[13px] hover:bg-accent transition-colors"
-                  aria-expanded={isVariantDropdownOpen}
-                >
-                  <span className="flex items-center gap-2">
-                    <span className="font-medium">{selectedVariant ? selectedVariant.name : "Select variant"}</span>
-                    {selectedVariant && displayPrice > 0 && (
-                      <span className="text-muted-foreground">₹{displayPrice.toFixed(2)}</span>
-                    )}
-                  </span>
-                  <ChevronDown className={`h-4 w-4 transition-transform ${isVariantDropdownOpen ? "rotate-180" : ""}`} />
-                </button>
+                    return (
+                      <button
+                        key={variant.id}
+                        onClick={() => handleVariantSelect(variant.id)}
+                        disabled={!isAvailable}
+                        className={[
+                          "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] md:text-[11px] transition-colors",
+                          isSelected ? "bg-primary/10 border-primary text-primary" : "hover:bg-accent",
+                          !isAvailable ? "opacity-50 cursor-not-allowed" : "",
+                        ].join(" ")}
+                        aria-pressed={isSelected}
+                      >
+                        <span className="font-medium">{variant.name}</span>
+                        <span className="text-muted-foreground">₹{variantPrice.toFixed(0)}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                // More than threshold: show a compact selector
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    onClick={() => setIsVariantDropdownOpen((o) => !o)}
+                    className="w-full flex items-center justify-between px-2 py-1 border rounded-md text-[12px] md:text-[13px] hover:bg-accent transition-colors"
+                    aria-expanded={isVariantDropdownOpen}
+                  >
+                    <span className="flex items-center gap-2 truncate">
+                      <span className="font-medium truncate">{selectedVariant ? selectedVariant.name : "Select variant"}</span>
+                    </span>
+                    <ChevronDown className={`h-3 w-3 md:h-4 md:w-4 transition-transform ${isVariantDropdownOpen ? "rotate-180" : ""}`} />
+                  </button>
 
-                {isVariantDropdownOpen && (
-                  <div className="absolute z-20 w-full mt-1 bg-popover border rounded-md shadow-lg overflow-hidden">
-                    {/* Search bar */}
-                    <div className="flex items-center gap-1.5 p-1.5 border-b bg-background">
-                      <Search className="h-4 w-4 text-muted-foreground" />
-                      <input
-                        value={variantSearch}
-                        onChange={(e) => setVariantSearch(e.target.value)}
-                        placeholder="Search variant..."
-                        className="w-full bg-transparent text-sm outline-none"
-                      />
-                      {variantSearch && (
-                        <button
-                          className="p-1 rounded hover:bg-accent"
-                          onClick={() => setVariantSearch("")}
-                          aria-label="Clear search"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      )}
-                    </div>
+                  {isVariantDropdownOpen && (
+                    <div className="absolute bottom-full mb-1 z-20 w-48 sm:w-full bg-popover border rounded-md shadow-lg overflow-hidden">
+                      {/* Search bar inside expanded view */}
+                      <div className="flex items-center gap-1.5 p-1.5 border-b bg-background">
+                        <Search className="h-3 w-3 text-muted-foreground" />
+                        <input
+                          value={variantSearch}
+                          onChange={(e) => setVariantSearch(e.target.value)}
+                          placeholder="Search..."
+                          className="w-full bg-transparent text-xs outline-none"
+                        />
+                      </div>
 
-                    <div className="max-h-48 overflow-y-auto">
-                      {filteredVariants.length === 0 ? (
-                        <div className="p-3 text-sm text-muted-foreground">No variants found</div>
-                      ) : (
-                        filteredVariants.map((variant) => {
+                      <div className="max-h-32 overflow-y-auto">
+                        {filteredVariants.map((variant) => {
                           const variantPrice = variant.buyOncePrice || variant.mrp || 0;
                           const isSelected = variant.id === selectedVariant?.id;
-                          const isAvailable =
-                            !variant.isHidden &&
-                            !variant.notInStock &&
-                            (variant.closingQty === undefined || variant.closingQty > 0);
-
-                          const lowStock =
-                            variant.closingQty !== undefined && variant.closingQty > 0 && variant.closingQty <= 10;
-
                           return (
                             <button
                               key={variant.id}
                               onClick={() => handleVariantSelect(variant.id)}
-                              disabled={!isAvailable}
                               className={[
-                                "w-full px-2 py-1.5 text-left hover:bg-accent transition-colors flex items-center justify-between",
-                                !isAvailable ? "opacity-50 cursor-not-allowed" : "",
+                                "w-full px-2 py-1.5 text-left hover:bg-accent transition-colors flex items-center justify-between text-xs",
                                 isSelected ? "bg-accent" : "",
                               ].join(" ")}
                             >
-                              <div className="flex flex-col gap-0.5">
-                                <span className="font-medium text-sm">{variant.name}</span>
-                                <span className="text-xs text-muted-foreground">
-                                  {lowStock ? `Only ${variant.closingQty} left` : isAvailable ? "In Stock" : "Out of stock"}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-semibold">₹{variantPrice.toFixed(2)}</span>
-                                {isSelected && <Check className="h-4 w-4 text-primary" />}
-                              </div>
+                              <span className="truncate">{variant.name}</span>
+                              <span className="font-semibold ml-2">₹{variantPrice.toFixed(0)}</span>
                             </button>
                           );
-                        })
-                      )}
+                        })}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </>
-        )}
+                  )}
+                </div>
+              )}
+            </>
+          ) : (
+            /* Placeholder for single-variant products to maintain height alignment */
+            <div className="text-[11px] text-muted-foreground italic px-1">
+              {selectedVariant?.name || "Standard Pack"}
+            </div>
+          )}
+        </div>
 
 
 
@@ -444,5 +416,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </div>
       </div>
     </article>
-  )
+  );
 };
+
+export const ProductCard = React.memo(ProductCardComponent);

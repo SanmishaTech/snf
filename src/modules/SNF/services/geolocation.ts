@@ -270,19 +270,16 @@ export class GeolocationServiceImpl implements GeolocationService {
     // First, try to find a known area match
     const roundedKey = `${latitude.toFixed(1)}_${longitude.toFixed(1)}`;
     if (this.KNOWN_AREA_PINCODES[roundedKey]) {
-      console.log(`Using known area pincode for ${roundedKey}: ${this.KNOWN_AREA_PINCODES[roundedKey]}`);
       return this.KNOWN_AREA_PINCODES[roundedKey];
     }
 
     // More precise check for Dombivli area (19.2-19.3 lat, 72.9-73.1 lon)
     if (latitude >= 19.15 && latitude <= 19.35 && longitude >= 72.85 && longitude <= 73.15) {
-      console.log('Detected Dombivli/Kalyan area, returning 421202');
       return '421202';
     }
 
     // Mumbai metropolitan region
     if (latitude >= 18.9 && latitude <= 19.5 && longitude >= 72.7 && longitude <= 73.2) {
-      console.log('Detected Mumbai metropolitan region, returning default Mumbai pincode');
       return '400001';
     }
 
@@ -359,7 +356,6 @@ export class GeolocationServiceImpl implements GeolocationService {
 
         // Check if we have this pincode in our known mappings
         if (knownPincodes[pincode]) {
-          console.log(`Using known mapping for pincode ${pincode}`);
           return knownPincodes[pincode];
         }
 

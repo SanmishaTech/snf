@@ -36,19 +36,13 @@ export class ProductServiceImpl implements ProductService {
       // Handle different response formats and filter to non-dairy products only
       if (Array.isArray(result.data)) {
         // Direct array of products
-        console.log('Raw products data:', result.data);
         // Temporarily show all products for debugging
         const filtered = result.data; // .filter((p: any) => p && p.isDairyProduct !== true);
-        console.log('Filtered non-dairy products:', filtered);
-        console.log('Total products:', result.data.length, 'Non-dairy:', filtered.length);
         return filtered;
       } else if (result.data.products && Array.isArray(result.data.products)) {
         // Object with products array
-        console.log('Raw products data:', result.data.products);
         // Temporarily show all products for debugging
         const filtered = result.data.products; // .filter((p: any) => p && p.isDairyProduct !== true);
-        console.log('Filtered non-dairy products:', filtered);
-        console.log('Total products:', result.data.products.length, 'Non-dairy:', filtered.length);
         return filtered;
       }
 
