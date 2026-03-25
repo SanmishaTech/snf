@@ -139,7 +139,14 @@ const initialData = {
           groupLabel: "Master",
         },
         {
+          title: "Coupon Master",
+          url: "/admin/coupons",
+          icon: FileText,
+          groupLabel: "Master",
+        },
+        {
           title: "Banners",
+
           url: "/admin/banners",
           icon: GalleryVerticalEnd,
           groupLabel: "Master",
@@ -291,7 +298,11 @@ const initialData = {
           icon: SquareTerminal,
           groupLabel: "Master",
           isActive: false,
-          items: [{ title: "Farmer", url: "/admin/vendors", icon: Briefcase }],
+          items: [
+            { title: "Farmer", url: "/admin/vendors", icon: Briefcase },
+            { title: "Coupons", url: "/admin/coupons", icon: FileText },
+          ],
+
         },
         {
           title: "Reports",

@@ -104,6 +104,8 @@ import RevenueReport from "./modules/Reports/RevenueReport";
 import WalletReport from "./modules/Reports/WalletReport";
 import ExceptionReport from "./modules/Reports/ExceptionReport";
 import ActivityLogPage from "./modules/ActivityLog/ActivityLogPage";
+import CouponMasterListPage from "./modules/CouponMaster/CouponMasterListPage";
+
 
 const App = () => {
   useEffect(() => {
@@ -381,6 +383,8 @@ const App = () => {
             <Route path="/admin/depots" element={<DepotMasterListPage />} /> {/* Added for Depot Master Management */}
             <Route path="/admin/teams" element={<Teams />} /> {/* Added for Teams Management */}
             <Route path="/admin/banners" element={<BannerListPage />} /> {/* Added for Banner Master Management */}
+            <Route path="/admin/coupons" element={<CouponMasterListPage />} /> {/* Added for Coupon Master Management */}
+
             <Route path="/admin/depot-variants" element={<DepotProductVariantListPage />} /> {/* Added for Depot Product Variant Management */}
             <Route path="/admin/snf-orders" element={<SNFOrdersListPage />} />
             <Route path="/admin/snf-orders/:id" element={<SNFOrderDetailPage />} />

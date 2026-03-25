@@ -6,12 +6,17 @@ import { Header } from "./Header.tsx";
 import { Footer } from "./Footer.tsx";
 import { MobileBottomNav } from "./MobileBottomNav.tsx";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { Minus, Plus, Trash2, MapPin, AlertTriangle } from "lucide-react";
 import { snfOrderService } from "@/services/snfOrderService";
 import { get } from "@/services/apiService";
+import { validateCoupon, Coupon } from "@/services/couponMasterService";
+
+
 import { DeliveryLocationService, DeliveryLocation } from "@/services/deliveryLocationService";
 import { toast } from "sonner";
 import AddressSelector from "./AddressSelector";
@@ -51,6 +56,11 @@ const CheckoutPage: React.FC = () => {
   const [isFetchingWallet, setIsFetchingWallet] = useState<boolean>(false);
   const [walletError, setWalletError] = useState<string | null>(null);
   const [isValidating, setIsValidating] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  const [couponDiscountAmount, setCouponDiscountAmount] = useState(0);
+
   const lastValidatedDepotRef = useRef<number | null>(null);
   const hasItemsRef = useRef(false);
 
@@ -134,6 +144,35 @@ const CheckoutPage: React.FC = () => {
     fetchWallet();
   }, []);
 
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setIsApplyingCoupon(true);
+    try {
+      const res = await validateCoupon(couponCode, availableSubtotal);
+      if (res.success && res.coupon) {
+        setAppliedCoupon(res.coupon);
+        setCouponDiscountAmount(res.discountAmount || 0);
+        toast.success(`Coupon "${couponCode}" applied!`);
+      } else {
+        toast.error(res.message || "Invalid coupon code");
+        setAppliedCoupon(null);
+        setCouponDiscountAmount(0);
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to apply coupon");
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode("");
+    setCouponDiscountAmount(0);
+    toast.info("Coupon removed");
+  };
+
+
   const isFormValid = selectedAddress !== null;
 
   const handlePlaceOrder = async () => {
@@ -195,7 +234,10 @@ const CheckoutPage: React.FC = () => {
         paymentDate: null,
         depotId: depotId || null, // Include depot ID from delivery location
         deliveryAddressId: selectedAddress.id, // Include the selected address ID
+        couponCode: appliedCoupon?.code || null,
+        couponDiscount: couponDiscountAmount,
       };
+
       const res = await snfOrderService.createOrder(payload);
       toast.success(`Order created: ${res.data.orderNo}`);
       clear();
@@ -486,19 +528,55 @@ const CheckoutPage: React.FC = () => {
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Wallet deduction</span>
                       <span className="font-medium text-green-600">-
-                        {isFetchingWallet ? '...' : currency.format(Math.max(0, Math.min(walletBalance || 0, availableSubtotal)))}
+                        {isFetchingWallet ? '...' : currency.format(Math.max(0, Math.min(walletBalance || 0, Math.max(0, availableSubtotal - couponDiscountAmount))))}
                       </span>
                     </div>
+
+                    
+                    <div className="space-y-2 py-2">
+                      <div className="flex gap-2">
+                        <Input 
+                          placeholder="Coupon Code" 
+                          value={couponCode} 
+                          onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                          disabled={!!appliedCoupon || isApplyingCoupon}
+                          className="h-9 truncate"
+                        />
+                        {appliedCoupon ? (
+                          <Button variant="outline" size="sm" onClick={handleRemoveCoupon} className="h-9">Remove</Button>
+                        ) : (
+                          <Button variant="outline" size="sm" onClick={handleApplyCoupon} disabled={isApplyingCoupon} className="h-9">
+                            {isApplyingCoupon ? "..." : "Apply"}
+                          </Button>
+                        )}
+                      </div>
+                      {appliedCoupon && (
+                        <p className="text-[10px] text-green-600 font-medium">
+                          Coupon applied successfully!
+                        </p>
+                      )}
+                    </div>
+
+                    {appliedCoupon && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Coupon Discount ({appliedCoupon.code})</span>
+                        <span className="font-medium text-green-600">-{currency.format(couponDiscountAmount)}</span>
+                      </div>
+                    )}
+
                     <Separator />
+
                     <div className="flex items-center justify-between">
                       <span className="font-semibold">Amount payable</span>
                       <span className="font-semibold">
                         {(() => {
-                          const d = Math.max(0, Math.min(walletBalance || 0, availableSubtotal));
-                          return currency.format(Math.max(0, availableSubtotal - d));
+                          const subAfterCoupon = Math.max(0, availableSubtotal - couponDiscountAmount);
+                          const d = Math.max(0, Math.min(walletBalance || 0, subAfterCoupon));
+                          return currency.format(Math.max(0, subAfterCoupon - d));
                         })()}
                       </span>
                     </div>
+
 
                     {unavailableItems.length > 0 && (
                       <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded mt-2">
