@@ -73,6 +73,8 @@ export const MobileBottomNav: React.FC = () => {
               name: locationData.depotName,
               address: locationData.areaName || '',
               pincode: locationData.pincode,
+              city: '',
+              isOnline: false,
               isActive: true,
             };
 
@@ -256,7 +258,7 @@ export const MobileBottomNav: React.FC = () => {
                 <DropdownMenuLabel>Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <a href="/snf/address" className="w-full">Address</a>
+                  <a href="/snf/addresses" className="w-full">Address</a>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

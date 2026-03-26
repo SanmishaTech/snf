@@ -49,6 +49,8 @@ export const clearAuthData = (): void => {
   localStorage.removeItem("memberId");
   localStorage.removeItem("roles");
   localStorage.removeItem("agencyId");
+  localStorage.removeItem("adminToken");
+  localStorage.removeItem("adminUser");
 };
 
 /**

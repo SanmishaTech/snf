@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { appName } from "@/config";
 import { get } from "@/services/apiService"; // For fetching products
+import { clearAuthData } from "@/utils/auth";
 
 // Define Product type (ensure this matches your actual Product structure)
 
@@ -84,11 +85,7 @@ export default function MemberLayout({ children }: MemberLayoutProps) { // Destr
 
   const handleLogout = () => {
     // Clear all authentication data from localStorage
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("user");
-    localStorage.removeItem("roles");
-    localStorage.removeItem("memberId");
+    clearAuthData();
 
     toast.success("You have been logged out");
     window.location.href = "/";

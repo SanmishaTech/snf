@@ -6,9 +6,11 @@ import { MobileBottomNav } from "./MobileBottomNav.tsx";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Minus, Plus, MapPin, AlertTriangle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Minus, Plus, MapPin, AlertTriangle, Ticket, Loader2 } from "lucide-react";
 import { snfOrderService } from "@/services/snfOrderService";
 import { get } from "@/services/apiService";
+import { validateCoupon, Coupon } from "@/services/couponMasterService";
 import { DeliveryLocationService, DeliveryLocation } from "@/services/deliveryLocationService";
 import { toast } from "sonner";
 import AddressSelector from "./AddressSelector";
@@ -21,7 +23,7 @@ import ProductImage from "./ProductImage";
 const currency = new Intl.NumberFormat("en-IN", {
   style: "currency",
   currency: "INR",
-  maximumFractionDigits: 0,
+  maximumFractionDigits: 2,
 });
 
 interface BuyNowItem {
@@ -63,6 +65,10 @@ const BuyNowCheckoutPage: React.FC = () => {
   const [isFetchingWallet, setIsFetchingWallet] = useState<boolean>(false);
   const [walletError, setWalletError] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(initialQuantity);
+  const [couponCode, setCouponCode] = useState("");
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+  const [couponDiscountAmount, setCouponDiscountAmount] = useState(0);
 
   // Get the selected variant
   const selectedVariant = React.useMemo(() => {
@@ -134,6 +140,34 @@ const BuyNowCheckoutPage: React.FC = () => {
 
   const isFormValid = selectedAddress !== null && buyNowItem !== null;
 
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim() || isApplyingCoupon) return;
+    setIsApplyingCoupon(true);
+    try {
+      const res = await validateCoupon(couponCode, subtotal);
+      if (res.success && res.coupon) {
+        setAppliedCoupon(res.coupon);
+        setCouponDiscountAmount(res.discountAmount || 0);
+        toast.success(`Coupon "${couponCode}" applied!`);
+      } else {
+        toast.error(res.message || "Invalid coupon code");
+        setAppliedCoupon(null);
+        setCouponDiscountAmount(0);
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to apply coupon");
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode("");
+    setCouponDiscountAmount(0);
+    toast.info("Coupon removed");
+  };
+
   const handlePlaceOrder = async () => {
     if (!buyNowItem || !isFormValid || loading) return;
 
@@ -184,11 +218,13 @@ const BuyNowCheckoutPage: React.FC = () => {
         paymentDate: null,
         depotId: depotId || null,
         deliveryAddressId: selectedAddress.id,
+        couponCode: appliedCoupon?.code || null,
+        couponDiscount: couponDiscountAmount,
       };
 
       const res = await snfOrderService.createOrder(payload);
       toast.success(`Order created: ${res.data.orderNo}`);
-      navigate(`/admin/snf-orders/${res.data.id}`);
+      navigate("/snf");
     } catch (err: any) {
       const message = err?.message || "Failed to create order";
       toast.error(message);
@@ -363,6 +399,57 @@ const BuyNowCheckoutPage: React.FC = () => {
                 onAddressSelect={setSelectedAddress}
               />
 
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <Ticket className="size-4" />
+                    Apply Coupon
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {!appliedCoupon ? (
+                    <div className="flex flex-col gap-2">
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="CODE123"
+                          value={couponCode}
+                          onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                          className="h-9"
+                          onKeyDown={(e) => e.key === "Enter" && handleApplyCoupon()}
+                        />
+                        <Button
+                          size="sm"
+                          onClick={handleApplyCoupon}
+                          disabled={isApplyingCoupon || !couponCode.trim()}
+                        >
+                          {isApplyingCoupon ? <Loader2 className="size-4 animate-spin" /> : "Apply"}
+                        </Button>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">Enter a code to see your discount</p>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between p-2 bg-green-50 border border-green-100 rounded-md">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold text-green-700">{appliedCoupon.code}</span>
+                        <span className="text-[10px] text-green-600">
+                          {appliedCoupon.discountType === "PERCENTAGE"
+                            ? `${appliedCoupon.discountValue}% OFF`
+                            : `₹${appliedCoupon.discountValue} OFF`} applied
+                        </span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                        onClick={handleRemoveCoupon}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
               {selectedAddress && (
                 <Card className="border-green-200 bg-green-50/30">
                   <CardHeader className="pb-2">
@@ -408,10 +495,16 @@ const BuyNowCheckoutPage: React.FC = () => {
                     <span className="text-muted-foreground">Delivery</span>
                     <span className="font-medium">₹0</span>
                   </div>
+                  {couponDiscountAmount > 0 && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-green-600 font-medium">Coupon discount</span>
+                      <span className="font-medium text-green-600">-{currency.format(couponDiscountAmount)}</span>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Wallet deduction</span>
                     <span className="font-medium text-green-600">-
-                      {isFetchingWallet ? '...' : currency.format(Math.max(0, Math.min(walletBalance || 0, subtotal)))}
+                      {isFetchingWallet ? '...' : currency.format(Math.max(0, Math.min(walletBalance || 0, subtotal - couponDiscountAmount)))}
                     </span>
                   </div>
                   <Separator />
@@ -419,8 +512,9 @@ const BuyNowCheckoutPage: React.FC = () => {
                     <span className="font-semibold">Amount payable</span>
                     <span className="font-semibold">
                       {(() => {
-                        const d = Math.max(0, Math.min(walletBalance || 0, subtotal));
-                        return currency.format(Math.max(0, subtotal - d));
+                        const amountAfterCoupon = subtotal - couponDiscountAmount;
+                        const d = Math.max(0, Math.min(walletBalance || 0, amountAfterCoupon));
+                        return currency.format(Math.max(0, amountAfterCoupon - d));
                       })()}
                     </span>
                   </div>
@@ -430,12 +524,16 @@ const BuyNowCheckoutPage: React.FC = () => {
                   {!walletError && (
                     <p className="text-xs text-muted-foreground">
                       {(() => {
-                        const d = Math.max(0, Math.min(walletBalance || 0, subtotal));
-                        const remaining = Math.max(0, subtotal - d);
+                        const amountAfterCoupon = subtotal - couponDiscountAmount;
+                        const d = Math.max(0, Math.min(walletBalance || 0, amountAfterCoupon));
+                        const remaining = Math.max(0, amountAfterCoupon - d);
+
                         if (d > 0 && remaining > 0) {
-                          return `₹${d.toFixed(0)} will be deducted from your wallet. Remaining ₹${remaining.toFixed(0)} to be collected via Cash/UPI before delivery.`;
-                        } else if (d >= subtotal && subtotal > 0) {
-                          return `Full amount of ₹${subtotal.toFixed(0)} will be deducted from your wallet.`;
+                          return `₹${d.toFixed(2)} will be deducted from your wallet. Remaining ₹${remaining.toFixed(2)} to be collected via Cash/UPI.`;
+                        } else if (d >= amountAfterCoupon && amountAfterCoupon > 0) {
+                          return `Full amount of ₹${amountAfterCoupon.toFixed(2)} will be deducted from your wallet.`;
+                        } else if (couponDiscountAmount > 0 && d === 0) {
+                           return `₹${remaining.toFixed(2)} to be collected via Cash/UPI. Total savings: ₹${couponDiscountAmount.toFixed(2)}.`;
                         } else {
                           return `No wallet balance applied.`;
                         }

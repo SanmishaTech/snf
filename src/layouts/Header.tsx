@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Facebook, Instagram, Search, Menu, X, UserCircle, LogOut, ShoppingBag, KeyRound, Bell, LayoutDashboard } from 'lucide-react';
+import { Facebook, Instagram, Search, Menu, X, UserCircle, LogOut, ShoppingBag, KeyRound, Bell, LayoutDashboard, LogIn as LogInIcon } from 'lucide-react';
 import UserChangePasswordDialog from '@/components/common/UserChangePasswordDialog';
 import WalletButton from '@/modules/Wallet/Components/Walletmenu';
 import Sarkotlogo from "@/images/Sarkhot-Natural-Farms-Png.webp"
@@ -418,6 +418,26 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
                     </div>
                   )}
                 </div>
+              )}
+
+              {isLoggedIn && localStorage.getItem('adminToken') && (
+                <button
+                  onClick={() => {
+                    const adminToken = localStorage.getItem('adminToken');
+                    const adminUser = localStorage.getItem('adminUser');
+                    if (adminToken && adminUser) {
+                      localStorage.setItem('authToken', adminToken);
+                      localStorage.setItem('user', adminUser);
+                      localStorage.removeItem('adminToken');
+                      localStorage.removeItem('adminUser');
+                      window.location.href = "/users"; // Return to User Management
+                    }
+                  }}
+                  className="mr-4 flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm transition-all animate-pulse"
+                >
+                  <LogInIcon size={14} />
+                  Return to Admin
+                </button>
               )}
 
               {isLoggedIn ? (

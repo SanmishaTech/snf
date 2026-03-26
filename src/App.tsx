@@ -234,7 +234,7 @@ const App = () => {
           />
 
           <Route
-            path="/snf/address"
+            path="/snf/addresses"
             element={
               <React.Suspense
                 fallback={

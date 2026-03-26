@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/table";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { get, del, patch } from "@/services/apiService";
+import { get, del, patch, post } from "@/services/apiService";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 import CustomPagination from "@/components/common/custom-pagination";
@@ -40,6 +40,7 @@ import {
   MoreHorizontal,
   CheckCircle,
   XCircle,
+  LogIn,
 } from "lucide-react";
 import ConfirmDialog from "@/components/common/confirm-dialog";
 import { saveAs } from "file-saver";
@@ -276,6 +277,35 @@ const UserList = () => {
   const handleCloseEditDialog = () => {
     setShowEditDialog(false);
     setSelectedUserId(null);
+  };
+
+  const handleSudoLogin = async (userId: number, userName: string) => {
+    try {
+      const response = await post(`/auth/sudo-login/${userId}`, {});
+      if (response.token && response.user) {
+        // Store current admin data if not already impersonating
+        // (Though only admins can see this button anyway)
+        const currentToken = localStorage.getItem('authToken');
+        const currentUser = localStorage.getItem('user');
+
+        if (currentToken && currentUser) {
+          localStorage.setItem('adminToken', currentToken);
+          localStorage.setItem('adminUser', currentUser);
+        }
+
+        // Update with impersonated user data
+        localStorage.setItem("authToken", response.token);
+        localStorage.setItem("user", JSON.stringify(response.user));
+
+        toast.success(`Successfully impersonated ${userName}`);
+
+        // Redirect to dashboard or home
+        window.location.href = "/";
+      }
+    } catch (error: any) {
+      console.error("Sudo login error:", error);
+      toast.error(error.message || "Failed to impersonate user");
+    }
   };
 
   return (
@@ -569,6 +599,16 @@ const UserList = () => {
                                   <div className="flex items-center gap-2">
                                     <ShieldEllipsis className="h-4 w-4" />
                                     <span>Change Password</span>
+                                  </div>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    handleSudoLogin(user.id, user.name)
+                                  }
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <LogIn className="h-4 w-4" />
+                                    <span>Login As</span>
                                   </div>
                                 </DropdownMenuItem>
                               </DropdownMenuGroup>

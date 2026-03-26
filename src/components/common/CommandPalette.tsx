@@ -69,6 +69,7 @@ export default function CommandPalette() {
       { group: "Master", title: "Depots", href: "/admin/depots" },
       { group: "Master", title: "Farmers", href: "/admin/vendors", keywords: "vendor vendors farmers" },
       { group: "Master", title: "Banners", href: "/admin/banners" },
+      { group: "Master", title: "Coupons", href: "/admin/coupons", keywords: "coupon coupons discount off" },
       { group: "Master", title: "Purchase Payments", href: "/admin/purchase-payments" },
       { group: "Products", title: "Categories", href: "/admin/categories" },
       { group: "Master", title: "Cities", href: "/admin/cities" },

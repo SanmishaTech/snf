@@ -26,7 +26,7 @@ import ProductImage from "./ProductImage";
 const currency = new Intl.NumberFormat("en-IN", {
   style: "currency",
   currency: "INR",
-  maximumFractionDigits: 0,
+  maximumFractionDigits: 2,
 });
 
 const CheckoutPage: React.FC = () => {
@@ -241,7 +241,7 @@ const CheckoutPage: React.FC = () => {
       const res = await snfOrderService.createOrder(payload);
       toast.success(`Order created: ${res.data.orderNo}`);
       clear();
-      navigate(`/admin/snf-orders/${res.data.id}`);
+      navigate("/snf");
     } catch (err: any) {
       const message = err?.message || "Failed to create order";
       toast.error(message);
@@ -525,6 +525,14 @@ const CheckoutPage: React.FC = () => {
                       <span className="text-muted-foreground">Delivery</span>
                       <span className="font-medium">₹0</span>
                     </div>
+
+                    {appliedCoupon && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Coupon Discount ({appliedCoupon.code})</span>
+                        <span className="font-medium text-green-600">-{currency.format(couponDiscountAmount)}</span>
+                      </div>
+                    )}
+
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Wallet deduction</span>
                       <span className="font-medium text-green-600">-
@@ -556,14 +564,6 @@ const CheckoutPage: React.FC = () => {
                         </p>
                       )}
                     </div>
-
-                    {appliedCoupon && (
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Coupon Discount ({appliedCoupon.code})</span>
-                        <span className="font-medium text-green-600">-{currency.format(couponDiscountAmount)}</span>
-                      </div>
-                    )}
-
                     <Separator />
 
                     <div className="flex items-center justify-between">
@@ -597,9 +597,9 @@ const CheckoutPage: React.FC = () => {
                           const d = Math.max(0, Math.min(walletBalance || 0, availableSubtotal));
                           const remaining = Math.max(0, availableSubtotal - d);
                           if (d > 0 && remaining > 0) {
-                            return `₹${d.toFixed(0)} will be deducted from your wallet. Remaining ₹${remaining.toFixed(0)} to be collected via Cash/UPI before delivery.`;
+                            return `₹${d.toFixed(2)} will be deducted from your wallet. Remaining ₹${remaining.toFixed(2)} to be collected via Cash/UPI before delivery.`;
                           } else if (d >= availableSubtotal && availableSubtotal > 0) {
-                            return `Full amount of ₹${availableSubtotal.toFixed(0)} will be deducted from your wallet.`;
+                            return `Full amount of ₹${availableSubtotal.toFixed(2)} will be deducted from your wallet.`;
                           } else {
                             return `No wallet balance applied.`;
                           }

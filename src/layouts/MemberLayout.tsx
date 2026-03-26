@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { get } from "@/services/apiService"; // For fetching products
 import Header from "@/layouts/Header";
 import BottomNavBar from "@/components/BottomNavBar";
+import { clearAuthData } from "@/utils/auth";
 
 // Define Product type (ensure this matches your actual Product structure)
 
@@ -109,11 +110,7 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
 
   const handleLogout = () => {
     // Clear all authentication data from localStorage
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("user");
-    localStorage.removeItem("roles");
-    localStorage.removeItem("memberId");
+    clearAuthData();
 
     toast.success("You have been logged out");
     window.location.href = "/";

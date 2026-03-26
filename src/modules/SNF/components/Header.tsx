@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { User, MapPin, LocateFixed, Loader2, Check, LogOut } from "lucide-react";
+import { User, MapPin, LocateFixed, Loader2, Check, LogOut, LogIn as LogInIcon, Mail } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,7 @@ export const Header: React.FC<HeaderProps> = (_props) => {
   const [pincode, setPincode] = useState<string>(() => deliveryLocation?.pincode || "");
   const [loading, setLoading] = useState<"geo" | "pin" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [userData, setUserData] = useState<any>(null);
   const isValidPin = /^\d{6}$/.test(pincode);
 
   // Get pricing context to trigger product refetch when location changes
@@ -49,6 +50,15 @@ export const Header: React.FC<HeaderProps> = (_props) => {
       if (currentLocation) {
         setDeliveryLocation(currentLocation);
         setPincode(currentLocation.pincode);
+      }
+      
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        try {
+          setUserData(JSON.parse(userStr));
+        } catch (e) {
+          console.error("Failed to parse user data", e);
+        }
       }
     };
     initializeLocation();
@@ -252,6 +262,29 @@ export const Header: React.FC<HeaderProps> = (_props) => {
               <WalletButton isLoggedIn={true} />
             </div>
 
+            {/* Return to Admin Button */}
+            {localStorage.getItem('adminToken') && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  const adminToken = localStorage.getItem('adminToken');
+                  const adminUser = localStorage.getItem('adminUser');
+                  if (adminToken && adminUser) {
+                    localStorage.setItem('authToken', adminToken);
+                    localStorage.setItem('user', adminUser);
+                    localStorage.removeItem('adminToken');
+                    localStorage.removeItem('adminUser');
+                    window.location.href = "/admin/users"; // Return to User Management
+                  }
+                }}
+                className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm transition-all animate-pulse flex items-center gap-2"
+              >
+                <LogInIcon className="h-4 w-4" />
+                Return to Admin
+              </Button>
+            )}
+
             {/* Account dropdown opens on click */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -263,24 +296,44 @@ export const Header: React.FC<HeaderProps> = (_props) => {
                   <User className="size-5" aria-hidden={true} />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" sideOffset={8} className="w-44">
-                <DropdownMenuLabel>Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
+              <DropdownMenuContent align="end" sideOffset={8} className="w-56 p-1">
+                {isAuthenticated && userData ? (
+                  <div className="px-2 py-3 border-b flex flex-col gap-0.5">
+                    <p className="text-sm font-bold truncate">{userData.name || userData.username || "User"}</p>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground truncate">
+                      <Mail className="size-3 shrink-0" />
+                      <span className="truncate">{userData.email || "No email"}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <DropdownMenuLabel>Account</DropdownMenuLabel>
+                )}
+                
+                <DropdownMenuSeparator className="my-1" />
+                
                 <DropdownMenuItem asChild>
-                  <a href="/snf/address" className="w-full">Address</a>
+                  <a href="/snf/addresses" className="flex items-center gap-2 w-full cursor-pointer py-2 px-2 hover:bg-accent rounded-sm">
+                    <MapPin className="size-4 text-muted-foreground" />
+                    <span>Manage Addresses</span>
+                  </a>
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
+                
+                <DropdownMenuSeparator className="my-1" />
+                
                 {isAuthenticated ? (
                   <DropdownMenuItem
                     onClick={handleLogout}
-                    className="text-red-600 focus:text-red-600"
+                    className="flex items-center gap-2 text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer py-2 px-2 rounded-sm"
                   >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Logout
+                    <LogOut className="size-4" />
+                    <span>Logout</span>
                   </DropdownMenuItem>
                 ) : (
                   <DropdownMenuItem asChild>
-                    <a href="/login" className="w-full">Login</a>
+                    <a href="/login" className="flex items-center gap-2 w-full cursor-pointer py-2 px-2 hover:bg-accent rounded-sm">
+                      <LogInIcon className="size-4" />
+                      <span>Login</span>
+                    </a>
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>

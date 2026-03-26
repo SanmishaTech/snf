@@ -85,7 +85,7 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
               : ((error as any)?.message || "Failed to load addresses")}
           </p>
           <Button asChild variant="outline" size="sm">
-            <Link to="/snf/address">Manage Addresses</Link>
+            <Link to="/snf/addresses">Manage Addresses</Link>
           </Button>
         </CardContent>
       </Card>
@@ -125,7 +125,7 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
             Select Delivery Address
           </CardTitle>
           <Button asChild variant="outline" size="sm">
-            <Link to="/snf/address">
+            <Link to="/snf/addresses">
               <Edit className="size-4 mr-2" />
               Manage
             </Link>
@@ -198,7 +198,7 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
 
         <div className="mt-4 pt-3 border-t">
           <Button asChild variant="outline" size="sm" className="w-full">
-            <Link to="/snf/address">
+            <Link to="/snf/addresses">
               <Plus className="size-4 mr-2" />
               Add New Address
             </Link>
