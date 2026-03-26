@@ -430,7 +430,7 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
                       localStorage.setItem('user', adminUser);
                       localStorage.removeItem('adminToken');
                       localStorage.removeItem('adminUser');
-                      window.location.href = "/users"; // Return to User Management
+                      window.location.href = "/admin/users"; // Return to User Management
                     }
                   }}
                   className="mr-4 flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm transition-all animate-pulse"
