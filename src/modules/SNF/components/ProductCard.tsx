@@ -233,7 +233,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
   const producturl = rawAttachment ? `${import.meta.env.VITE_BACKEND_URL}${rawAttachment}` : "";
 
   return (
-    <article className="group rounded-md border border-border/60 bg-card text-card-foreground overflow-hidden shadow-sm hover:shadow-md hover:border-border transition-all duration-200 h-full flex flex-col">
+    <article className="group rounded-md border border-border/60 bg-card text-card-foreground overflow-hidden shadow-sm hover:shadow-md hover:border-border transition-all duration-200 h-full flex flex-col w-full">
       {/* Product Image with Link */}
       <Link
         to={`/snf/product/${product.product.id}`}
@@ -258,21 +258,21 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
         )}
       </Link>
 
-      <div className="p-2 md:p-2.5 space-y-2 md:space-y-2.5 flex-1 flex flex-col">
+      <div className="p-2 md:p-2.5 space-y-2 md:space-y-2.5 flex-1 flex flex-col min-w-0">
         {/* Product Name - standard height (3 lines) for better wrapping */}
-        <h3 className="font-semibold text-[11px] md:text-[13px] leading-tight h-[48px] mb-1 overflow-y-auto scrollbar-hide">
-          <Link to={`/snf/product/${product.product.id}`} className="hover:text-primary transition-colors">
+        <h3 className="font-semibold text-[11px] md:text-[13px] leading-tight min-h-[48px] mb-1">
+          <Link to={`/snf/product/${product.product.id}`} className="hover:text-primary transition-colors line-clamp-3">
             {product.product.name}
           </Link>
         </h3>
 
         {/* Variant UX - Standardized height container */}
-        <div className="h-[64px] flex flex-col justify-center">
+        <div className="min-h-[64px] h-auto flex flex-col justify-center min-w-0">
           {hasMultipleVariants ? (
             <>
               {showPills ? (
                 // Show variant pills directly (<= threshold)
-                <div className="flex flex-wrap gap-1 md:gap-1.5 overflow-y-auto scrollbar-hide">
+                <div className="flex flex-wrap gap-1 md:gap-1.5 overflow-hidden py-1">
                   {allVariants.map((variant: any) => {
                     const variantPrice = variant.buyOncePrice || variant.mrp || 0;
                     const isSelected = variant.id === selectedVariant?.id;
@@ -285,14 +285,14 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
                         onClick={() => handleVariantSelect(variant.id)}
                         disabled={!isAvailable}
                         className={[
-                          "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] md:text-[11px] transition-colors",
+                          "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] md:text-[11px] transition-colors max-w-full",
                           isSelected ? "bg-primary/10 border-primary text-primary" : "hover:bg-accent",
                           !isAvailable ? "opacity-50 cursor-not-allowed" : "",
                         ].join(" ")}
                         aria-pressed={isSelected}
                       >
-                        <span className="font-medium">{variant.name}</span>
-                        <span className="text-muted-foreground">₹{variantPrice.toFixed(0)}</span>
+                        <span className="font-medium truncate">{variant.name}</span>
+                        <span className="text-muted-foreground whitespace-nowrap">₹{variantPrice.toFixed(0)}</span>
                       </button>
                     );
                   })}
@@ -308,7 +308,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
                     <span className="flex items-center gap-2 truncate">
                       <span className="font-medium truncate">{selectedVariant ? selectedVariant.name : "Select variant"}</span>
                     </span>
-                    <ChevronDown className={`h-3 w-3 md:h-4 md:w-4 transition-transform ${isVariantDropdownOpen ? "rotate-180" : ""}`} />
+                    <ChevronDown className={`h-3 w-3 md:h-4 md:w-4 transition-transform flex-shrink-0 ${isVariantDropdownOpen ? "rotate-180" : ""}`} />
                   </button>
 
                   {isVariantDropdownOpen && (
@@ -338,7 +338,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
                               ].join(" ")}
                             >
                               <span className="truncate">{variant.name}</span>
-                              <span className="font-semibold ml-2">₹{variantPrice.toFixed(0)}</span>
+                              <span className="font-semibold ml-2 whitespace-nowrap">₹{variantPrice.toFixed(0)}</span>
                             </button>
                           );
                         })}
@@ -349,9 +349,12 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
               )}
             </>
           ) : (
-            /* Placeholder for single-variant products to maintain height alignment */
-            <div className="text-[11px] text-muted-foreground italic px-1">
-              {selectedVariant?.name || "Standard Pack"}
+            <div className="flex flex-wrap gap-1 md:gap-1.5 overflow-hidden">
+              <div
+                className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] md:text-[11px] bg-primary/5 border-primary/20 text-primary/80 max-w-full"
+              >
+                <span className="font-medium truncate">{selectedVariant?.name || "Standard Pack"}</span>
+              </div>
             </div>
           )}
         </div>
@@ -359,10 +362,10 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
 
 
         {/* Price Display */}
-        <div className="flex items-baseline gap-1">
-          <span className="text-sm md:text-base font-semibold">₹{displayPrice > 0 ? displayPrice.toFixed(2) : "N/A"}</span>
+        <div className="flex items-center gap-x-1.5 gap-y-0.5 flex-wrap min-w-0">
+          <span className="text-sm md:text-base font-semibold whitespace-nowrap">₹{displayPrice > 0 ? displayPrice.toFixed(2) : "N/A"}</span>
           {showVariants && discount > 0 && mrpPrice > 0 && (
-            <span className="text-xs md:text-sm text-muted-foreground line-through">₹{mrpPrice.toFixed(2)}</span>
+            <span className="text-[10px] md:text-xs text-muted-foreground line-through whitespace-nowrap">₹{mrpPrice.toFixed(2)}</span>
           )}
         </div>
 

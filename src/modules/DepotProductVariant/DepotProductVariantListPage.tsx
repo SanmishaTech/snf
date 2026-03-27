@@ -34,7 +34,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { format } from "date-fns";
 import {
   PlusCircle,
   Edit,
@@ -43,8 +42,6 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { formatCurrency } from "@/lib/formatter";
-
 const DepotProductVariantListPage: React.FC = () => {
   const [variants, setVariants] = useState<DepotProductVariant[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -66,17 +63,28 @@ const DepotProductVariantListPage: React.FC = () => {
       const data = await getDepotProductVariants({
         page: currentPage,
         limit: recordsPerPage,
+        search: searchTerm,
       });
       setVariants(data.data);
       setTotalPages(data.totalPages);
     } catch (err: any) {
       toast.error(err.message || "Failed to fetch variants");
     }
-  }, [currentPage]);
+  }, [currentPage, searchTerm]);
+
+  // Handle debounced search
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setCurrentPage(1); // Reset to first page on search
+      fetchVariants();
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
 
   useEffect(() => {
     fetchVariants();
-  }, [fetchVariants]);
+  }, [currentPage]);
 
   const handleAddNew = () => {
     setEditingVariant(null);
@@ -151,21 +159,21 @@ const DepotProductVariantListPage: React.FC = () => {
         }}
       >
         <div className="bg-white p-8 rounded-xl shadow-lg">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-semibold text-gray-800">
+          <div className="mb-8 flex flex-col gap-4">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
               Depot Product Variants
             </h1>
-            <div className="flex flex-col md:flex-row gap-2 items-center">
-              <div className="relative w-full max-md:w-2/5">
+            <div className="flex flex-col md:flex-row gap-4 items-center">
+              <div className="relative w-full flex-1">
                 <Input
-                  placeholder="Search..."
+                  placeholder="Search by variant or product..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 min-h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="pl-10 min-h-11 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all shadow-sm"
                 />
                 <Search
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                  size={20}
+                  size={18}
                 />
               </div>
               <DialogTrigger asChild>
@@ -173,7 +181,7 @@ const DepotProductVariantListPage: React.FC = () => {
                   variant="default"
                   size="lg"
                   onClick={handleAddNew}
-                  className="gap-2 shadow-md"
+                  className="gap-2 shadow-lg bg-red-600 hover:bg-red-700 text-white rounded-xl px-6 h-11 transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap"
                 >
                   <PlusCircle size={20} /> Add New Variant
                 </Button>

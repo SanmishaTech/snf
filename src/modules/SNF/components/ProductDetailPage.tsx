@@ -374,20 +374,31 @@ const ProductDetailPage: React.FC = () => {
               <section aria-label="Product summary" className="space-y-4">
                 <h2 className="text-2xl md:text-3xl font-semibold">{productData.product.name}</h2>
 
-                <div className="flex items-center gap-3">
-                  <div className="text-2xl font-bold">
-                    ₹{displayPrice.toFixed(2)}
-                  </div>
-                  {discount > 0 && (
-                    <>
-                      <div className="text-sm text-muted-foreground line-through">
-                        ₹{mrpPrice.toFixed(2)}
+                <div className="space-y-4">
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-4 flex-wrap">
+                      <div className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                        ₹{displayPrice.toFixed(2)}
                       </div>
-                      <span className="bg-destructive/10 text-destructive px-2 py-1 rounded text-sm font-medium">
-                        {Math.round(discount * 100)}% OFF
-                      </span>
-                    </>
-                  )}
+                      {discount > 0 && (
+                        <div className="flex items-center gap-3">
+                          <span className="text-lg text-muted-foreground/60 line-through">
+                            ₹{mrpPrice.toFixed(2)}
+                          </span>
+                          <span className="bg-red-50 text-red-600 px-3 py-1 rounded-lg text-sm font-bold border border-red-100 uppercase tracking-wide">
+                            {Math.round(discount * 100)}% OFF
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    {productData.variants.length === 1 && selectedVariant && (
+                      <div className="inline-flex items-center px-4 py-1.5 bg-gray-50 border border-gray-200 rounded-xl w-fit shadow-sm">
+                        <span className="text-sm font-semibold text-gray-700">
+                          {selectedVariant.name}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Variant Selector - compact selectable squares */}

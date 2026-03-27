@@ -15,6 +15,7 @@ export interface DepotProductVariant {
   price1Month?: number;
   closingQty: number;
   depot?: { id: number; name: string };
+  product?: { id: number; name: string };
   notInStock: boolean;
   isHidden: boolean;
   buyOncePrice?: number;
@@ -37,6 +38,7 @@ export const getDepotProductVariants = async (params: {
   page?: number;
   limit?: number;
   productId?: number;
+  search?: string;
 } = {}): Promise<PaginatedDepotVariantsResponse> => {
   return await get<PaginatedDepotVariantsResponse>(API_BASE_URL, params);
 };
