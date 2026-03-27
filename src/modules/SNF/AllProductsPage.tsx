@@ -114,7 +114,7 @@ const AllProductsContent: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-background">
       <Header cartCount={cartState.items.reduce((n, it) => n + it.quantity, 0)} onSearch={setQ} />
 
-      <main className="flex-1">
+      <main className="flex-1 pt-14 md:pt-16">
         <section id="products" className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6">
           <div className="flex items-end justify-between py-4">
             <div>

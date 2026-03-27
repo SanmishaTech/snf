@@ -425,7 +425,7 @@ export default function CategoryProductsPage() {
       <div>
         <Header cartCount={cart.state.items.reduce((n, it) => n + it.quantity, 0)} onSearch={(q) => setFilters(f => ({ ...f, searchQuery: q }))} />
       </div>
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 pt-14 md:pt-16">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Filters Sidebar - Desktop */}
           <div className="hidden lg:block lg:w-80 flex-shrink-0">

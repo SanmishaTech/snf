@@ -566,6 +566,15 @@ const UserList = () => {
                           >
                             <Trash2 size={16} />
                           </Button>
+
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleSudoLogin(user.id, user.name)}
+                            title="Login As"
+                          >
+                            <LogIn size={16} />
+                          </Button>
                           <DropdownMenu modal={false} >
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" className="h-8 w-8 p-0">
@@ -599,16 +608,6 @@ const UserList = () => {
                                   <div className="flex items-center gap-2">
                                     <ShieldEllipsis className="h-4 w-4" />
                                     <span>Change Password</span>
-                                  </div>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    handleSudoLogin(user.id, user.name)
-                                  }
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <LogIn className="h-4 w-4" />
-                                    <span>Login As</span>
                                   </div>
                                 </DropdownMenuItem>
                               </DropdownMenuGroup>

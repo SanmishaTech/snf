@@ -323,16 +323,13 @@ const ProductDetailPage: React.FC = () => {
       <a href="#snf-main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-background focus:text-foreground focus:ring-2 focus:ring-ring px-3 py-2 rounded">
         Skip to content
       </a>
-      <header role="banner" className="sticky top-0 z-40 bg-background/80 backdrop-blur border-b">
-        <Header
-          cartCount={0}
-          onSearch={() => {
-            /* noop for PDP; searching handled on landing page */
-          }}
-        />
-      </header>
-
-      <main id="snf-main" role="main" className="container mx-auto px-4 md:px-6 lg:px-8 py-4">
+      <Header
+        cartCount={0}
+        onSearch={() => {
+          /* noop for PDP; searching handled on landing page */
+        }}
+      />
+      <main id="snf-main" role="main" className="container mx-auto px-4 md:px-6 lg:px-8 py-4 pt-14 md:pt-16">
         {breadcrumb}
         <h1 ref={topRef} tabIndex={-1} className="sr-only">Product details</h1>
 

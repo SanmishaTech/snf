@@ -175,7 +175,7 @@ export const Header: React.FC<HeaderProps> = (_props) => {
 
   return (
     <header
-      className={`hidden md:block top-0 inset-x-0 z-40 bg-background/95 supports-[backdrop-filter]:bg-background/60 backdrop-blur border-b transition-all pt-[env(safe-area-inset-top)] ${sticky ? "sticky shadow-sm" : "relative"
+      className={`hidden md:block fixed top-0 inset-x-0 z-50 bg-background/95 supports-[backdrop-filter]:bg-background/60 backdrop-blur border-b transition-all pt-[env(safe-area-inset-top)] ${sticky ? "shadow-sm" : ""
         }`}
       aria-label="SNF store global header"
     >

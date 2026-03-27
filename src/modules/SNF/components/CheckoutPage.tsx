@@ -254,7 +254,7 @@ const CheckoutPage: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-background">
       <Header cartCount={totalQty} onSearch={() => { }} />
 
-      <main className="flex-1">
+      <main className="flex-1 pt-14 md:pt-16">
         <section className="container mx-auto px-4 md:px-6 lg:px-8 py-6">
           <h1 className="text-2xl md:text-3xl font-semibold mb-4">Checkout</h1>
           {state.items.length === 0 ? (
