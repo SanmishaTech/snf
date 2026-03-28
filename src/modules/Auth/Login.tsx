@@ -212,7 +212,7 @@ const Login: React.FC<LoginProps> = () => {
         errorMessage &&
         errorMessage.toLowerCase().includes("account is inactive")
       ) {
-        toast.error(errorMessage); // Specific message for inactive account
+        toast.error("Your profile is currently inactive. Please contact the administrator for assistance."); // Specific message for inactive account
       } else if (error.status === 401) {
         toast.error("Invalid email/mobile or password.");
       } else if (!didDisplayFieldErrors) {
