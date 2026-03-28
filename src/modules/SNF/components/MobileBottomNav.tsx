@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Home, Grid, User, MapPin, Loader2, Check, LocateFixed, ShoppingCart } from "lucide-react";
+import { Home, User, MapPin, Loader2, Check, LocateFixed, ShoppingCart } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel, DropdownMenuArrow } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
@@ -135,7 +135,6 @@ export const MobileBottomNav: React.FC = () => {
 
   const navItems = [
     { label: "Home", icon: Home, path: "/snf", id: "home" },
-    { label: "Categories", icon: Grid, path: "/snf#categories", id: "categories" },
   ];
 
   const isActive = (path: string) => {
