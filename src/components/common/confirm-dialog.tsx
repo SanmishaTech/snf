@@ -31,7 +31,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   onCancel,
   children,
 }) => {
-  console.log('[confirm-dialog.tsx] ConfirmDialog rendered. isOpen:', isOpen);
+
 
   const dialogCoreContent = (
     <DialogContent className="sm:max-w-[425px]">

@@ -25,7 +25,6 @@ import {
 } from "@/components/ui/popover";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarIcon, Plus, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,6 +41,16 @@ import { get, post, put } from "@/services/apiService";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { formatCurrency } from "@/lib/formatter";
+import { Check, ChevronsUpDown, CalendarIcon, Plus, Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 
 // --------------------------- Schema ----------------------------------------
 const purchaseSchema = z.object({
@@ -80,12 +89,7 @@ interface Product {
   unit?: string;
 }
 // Depot–specific variant (DepotProductVariant)
-interface DepotVariant {
-  id: number;           // depotProductVariant ID
-  name: string;
-  productId: number;
-  purchasePrice?: number;
-}
+
 interface Vendor {
   id: number;
   name: string;
@@ -124,19 +128,19 @@ function ControlledCalendar({
   const [open, setOpen] = useState(false);
   const [month, setMonth] = useState<Date | undefined>(value);
   const [inputValue, setInputValue] = useState(formatDate(value));
-  const [vendors, setvendors] = useState()
+
   useEffect(() => {
     setInputValue(formatDate(value));
     if (isValidDate(value)) setMonth(value);
   }, [value]);
 
-  useEffect(()=>{
-    const fetchVendor = async() =>{
+  useEffect(() => {
+    const fetchVendor = async () => {
       const response = await get("/vendors")
-       setvendors(response.data)
+      setvendors(response.data)
     }
-     fetchVendor()
-  },[])
+    fetchVendor()
+  }, [])
 
 
   return (
@@ -203,7 +207,7 @@ const PurchaseForm: React.FC<PurchaseFormProps> = ({
   const storedUser = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
   const loggedUser: { role?: string; depotId?: number } | null = storedUser ? JSON.parse(storedUser) : null;
 
-  console.log("PurchaseForm initial data", initialData);
+
 
   const {
     register,
@@ -230,31 +234,31 @@ const PurchaseForm: React.FC<PurchaseFormProps> = ({
         mode === "edit" && initialData?.depotId
           ? String(initialData.depotId)
           : loggedUser?.depotId
-          ? String(loggedUser.depotId)
-          : "",
+            ? String(loggedUser.depotId)
+            : "",
       notes: initialData?.notes || "",
       purchaseDetails:
         mode === "edit" && initialData?.purchaseDetails?.length
           ? initialData.purchaseDetails.map((d) => ({
-              productId: String(d.productId),
-              variantId: String(d.variantId),
-              quantity: d.quantity,
-              purchaseRate: d.purchaseRate,
-            }))
+            productId: String(d.productId),
+            variantId: String(d.variantId),
+            quantity: d.quantity,
+            purchaseRate: d.purchaseRate,
+          }))
           : [
-              {
-                productId: "",
-                variantId: "",
-                quantity: 1,
-                purchaseRate: 0,
-              },
-            ],
+            {
+              productId: "",
+              variantId: "",
+              quantity: 1,
+              purchaseRate: 0,
+            },
+          ],
     },
   });
 
   // Lookup data --------------------------------------------------------------
   const [products, setProducts] = useState<Product[]>([]);
-  const [variants, setVariants] = useState<DepotVariant[]>([]);
+  const [variants, setVariants] = useState<any[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [depots, setDepots] = useState<Depot[]>([]);
 
@@ -271,13 +275,13 @@ const PurchaseForm: React.FC<PurchaseFormProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [depots, loggedUser?.depotId]);
 
-  const [itemToDelete, setItemToDelete] = useState<number | null>(null);
 
-  
+
+
   useEffect(() => {
     (async () => {
       try {
-        const prodRes = await get("/products");
+        const prodRes = await get("/products?limit=1000");
         setProducts(prodRes?.data || prodRes || []);
         // Variants will be fetched separately based on selected depot
 
@@ -304,13 +308,17 @@ const PurchaseForm: React.FC<PurchaseFormProps> = ({
     }
     (async () => {
       try {
-        const res = await get(`/depot-product-variants?depotId=${variantsDepotId}&limit=1000`);
-        setVariants(res?.data || res || []);
+        const res = await get(`/depot-product-variants?depotId=${variantsDepotId}&limit=1000&include=product`);
+        // Handle both paginated and direct array formats
+        const raw = Array.isArray(res) ? res : (res?.data || []);
+        const variantsData = Array.isArray(raw) ? raw : (raw?.data || []);
+        setVariants(variantsData);
       } catch {
         toast.error("Failed to fetch depot variants");
       }
     })();
-  }, [variantsDepotId, loggedUser?.depotId]); // Added loggedUser?.depotId to the dependency array
+  }, [variantsDepotId, loggedUser?.depotId]);
+  // Added loggedUser?.depotId to the dependency array
 
   // Field array --------------------------------------------------------------
   const { fields, append, remove } = useFieldArray({
@@ -498,20 +506,75 @@ const PurchaseForm: React.FC<PurchaseFormProps> = ({
                     <Controller
                       control={control}
                       name={`purchaseDetails.${idx}.productId`}
-                      render={({ field: pField }) => (
-                        <Select value={pField.value} onValueChange={pField.onChange}>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select Product" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {products.map((p) => (
-                              <SelectItem key={p.id} value={String(p.id)}>
-                                {p.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
+                      render={({ field: pField }) => {
+                        return (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                className={cn(
+                                  "w-full justify-between font-normal",
+                                  !pField.value && "text-muted-foreground"
+                                )}
+                              >
+                                {pField.value
+                                  ? products.find(
+                                    (p) => String(p.id) === pField.value
+                                  )?.name
+                                  : "Select Product"}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-full p-0">
+                              <Command>
+                                <CommandInput placeholder="Search product..." />
+                                <CommandList>
+                                  <CommandEmpty>No product found.</CommandEmpty>
+                                  <CommandGroup>
+                                    {products.map((p) => (
+                                      <CommandItem
+                                        key={p.id}
+                                        value={p.name}
+                                        onSelect={() => {
+                                          const val = String(p.id);
+                                          setValue(`purchaseDetails.${idx}.productId`, val);
+
+                                          // Clear variant when product changes
+                                          setValue(`purchaseDetails.${idx}.variantId`, "");
+
+                                          // Auto-select if only one variant exists for this product
+                                          const productVariants = variants.filter(v => String(v.productId) === val);
+                                          if (productVariants.length === 1) {
+                                            const v = productVariants[0];
+                                            setValue(`purchaseDetails.${idx}.variantId`, String(v.id));
+                                            if (v.purchasePrice != null) {
+                                              setValue(
+                                                `purchaseDetails.${idx}.purchaseRate`,
+                                                Number(v.purchasePrice)
+                                              );
+                                            }
+                                          }
+                                        }}
+                                      >
+                                        <Check
+                                          className={cn(
+                                            "mr-2 h-4 w-4",
+                                            String(p.id) === pField.value
+                                              ? "opacity-100"
+                                              : "opacity-0"
+                                          )}
+                                        />
+                                        {p.name}
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
+                        );
+                      }}
                     />
                   </div>
 

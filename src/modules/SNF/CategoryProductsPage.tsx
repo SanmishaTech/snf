@@ -54,7 +54,7 @@ export default function CategoryProductsPage() {
   // Initialize filters from URL params
   useEffect(() => {
     const tagParam = searchParams.get('tag')
-    console.log('URL tag parameter:', tagParam)
+
     if (tagParam && products.length > 0) {
       // Find the correct case version of the tag from available products
       const allTags = new Set<string>()
@@ -71,14 +71,14 @@ export default function CategoryProductsPage() {
       )
 
       const tagToUse = matchingTag || tagParam
-      console.log('Setting brand filter to:', tagToUse, '(original:', tagParam, ')')
+
 
       setFilters(prev => {
         const newFilters = {
           ...prev,
           brands: [tagToUse] // Use the correctly cased version
         }
-        console.log('New filters after URL param:', newFilters)
+
         return newFilters
       })
     } else if (!tagParam) {
@@ -121,7 +121,7 @@ export default function CategoryProductsPage() {
           brands.add(tag)
           // Debug logging for fruits
           if (tag.toLowerCase().includes('fruit')) {
-            console.log(`Found fruit-related tag: "${tag}" in product: ${product.name}`)
+
           }
         })
       }
@@ -146,26 +146,18 @@ export default function CategoryProductsPage() {
     })
 
     const brandsArray = Array.from(brands).sort()
-    console.log('Available brands/tags:', brandsArray)
-    console.log('Fruits-related brands:', brandsArray.filter(b => b.toLowerCase().includes('fruit')))
+
 
     return brandsArray
   }, [products])
 
   // Filter products based on current filters
   const filteredProducts = useMemo(() => {
-    console.log('Filtering products with filters:', filters)
-    console.log('Total products to filter:', products.length)
+
 
     // Debug: show all products and their tags
     if (filters.brands.some(b => b.toLowerCase() === 'fruits')) {
-      console.log('=== DEBUG: Fruits filter active ===')
-      console.log('All products and their tags:')
-      products.forEach((p, index) => {
-        console.log(`${index + 1}. ${p.product.name}: tags="${p.product.tags}"`)
-      })
-      console.log('Current brand filters:', filters.brands)
-      console.log('About to start filtering...')
+
     }
 
     const filtered = products.filter((productWithPricing) => {
@@ -185,8 +177,7 @@ export default function CategoryProductsPage() {
           const brandLower = brand.toLowerCase()
 
           if (brandLower === 'fruits') {
-            console.log(`\n=== Checking product: ${product.name} ===`)
-            console.log(`Brand filter: "${brand}" (lowercase: "${brandLower}")`)
+
           }
 
           // Check product name
@@ -199,15 +190,14 @@ export default function CategoryProductsPage() {
               product.name.toLowerCase().includes(fruitName)
             )
 
-            console.log(`Name match: ${nameMatch}`)
-            console.log(`Is fruit product (by name): ${isFruitProduct}`)
+
 
             if (isFruitProduct) {
-              console.log(`✓ Matched as fruit product: ${product.name}`)
+
               return true
             }
           } else if (brandLower === 'fruits') {
-            console.log(`Name match: ${nameMatch}`)
+
           }
 
           // Check tags (comma-separated)
@@ -216,12 +206,7 @@ export default function CategoryProductsPage() {
             const productTags = product.tags.split(',').map(tag => tag.trim().toLowerCase())
 
             // Debug logging for fruits specifically
-            if (brandLower === 'fruits' || brand.toLowerCase() === 'fruits') {
-              console.log(`Product: ${product.name}`)
-              console.log(`Raw tags: "${product.tags}"`)
-              console.log(`Parsed tags:`, productTags)
-              console.log(`Looking for brand: "${brand}" (lowercase: "${brandLower}")`)
-            }
+
 
             tagMatch = productTags.some(tag => {
               // tag is already lowercase, brandLower is lowercase
@@ -231,10 +216,7 @@ export default function CategoryProductsPage() {
               const matches = exactMatch || containsMatch
 
               if (brandLower === 'fruits' || brand.toLowerCase() === 'fruits') {
-                console.log(`  Checking tag: "${tag}" against "${brandLower}"`)
-                console.log(`    Exact match (${tag} === ${brandLower}): ${exactMatch}`)
-                console.log(`    Contains match: ${containsMatch}`)
-                console.log(`    Final result: ${matches}`)
+
               }
 
               return matches
@@ -252,9 +234,7 @@ export default function CategoryProductsPage() {
           const finalMatch = nameMatch || tagMatch
 
           if (brandLower === 'fruits') {
-            console.log(`Tag match: ${tagMatch}`)
-            console.log(`Final match for ${product.name}: nameMatch=${nameMatch}, tagMatch=${tagMatch}, finalMatch=${finalMatch}`)
-            console.log(`=== End ${product.name} ===\n`)
+
           }
 
           return finalMatch
@@ -309,13 +289,7 @@ export default function CategoryProductsPage() {
       return true
     })
 
-    console.log(`Filtered ${filtered.length} products out of ${products.length}`)
-    if (filters.brands.includes('Fruits') || filters.brands.includes('fruits')) {
-      console.log('Products with Fruits filter:', filtered.map(p => ({
-        name: p.product.name,
-        tags: p.product.tags
-      })))
-    }
+
 
     return filtered
   }, [products, filters])

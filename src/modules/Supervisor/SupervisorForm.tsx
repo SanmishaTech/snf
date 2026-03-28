@@ -144,7 +144,7 @@ const SupervisorForm: React.FC<SupervisorFormProps> = ({
       const fetchSupervisor = async () => {
         try {
           const supervisor = await get(`/supervisors/${supervisorId}`);
-          console.log("Fetched supervisor data:", supervisor); // Debug log
+
           setValue("name", supervisor.name);
           setValue("contactPersonName", supervisor.contactPersonName || "");
           setValue("mobile", supervisor.mobile);
@@ -158,30 +158,23 @@ const SupervisorForm: React.FC<SupervisorFormProps> = ({
           // Fix: Ensure agencyId is properly set, handle both agencyId and agency.id
           const agencyIdValue =
             supervisor.agencyId || supervisor.agency?.id || null;
-          console.log("Setting agencyId to:", agencyIdValue); // Debug log
-          console.log(
-            "Agencies loaded?",
-            agencies.length > 0,
-            "Agencies:",
-            agencies,
-            "isLoadingAgencies:",
-            isLoadingAgencies
-          ); // Debug log
+
+
 
           if (agencyIdValue !== null) {
             if (agencies.length > 0) {
               // Agencies are already loaded, set the value directly
-              console.log("Agencies already loaded, setting agencyId directly");
+
               setValue("agencyId", agencyIdValue);
             } else {
               // Agencies not loaded yet, store for later
-              console.log("Agencies not loaded yet, storing agencyId for later");
+
               setPendingAgencyId(agencyIdValue);
             }
           }
           setValue("status", supervisor.user?.active ? "ACTIVE" : "INACTIVE");
         } catch (error: any) {
-          console.error("Error fetching supervisor:", error); // Debug log
+
           toast.error("Failed to fetch supervisor details");
         } finally {
           setIsLoadingData(false);
@@ -204,10 +197,7 @@ const SupervisorForm: React.FC<SupervisorFormProps> = ({
   // Effect to handle setting agencyId once agencies are loaded
   useEffect(() => {
     if (!isLoadingAgencies && agencies.length > 0 && pendingAgencyId !== null) {
-      console.log(
-        "Agencies loaded, setting pending agencyId:",
-        pendingAgencyId
-      );
+
       setValue("agencyId", pendingAgencyId);
       setPendingAgencyId(null);
     }
@@ -455,18 +445,13 @@ const SupervisorForm: React.FC<SupervisorFormProps> = ({
             control={control}
             render={({ field }) => {
               const currentValue = field.value ? String(field.value) : "none";
-              console.log(
-                "Depot field render - current value:",
-                currentValue,
-                "field.value:",
-                field.value
-              ); // Debug log
+
               return (
                 <Select
                   key={`depot-${currentValue}`} // Force re-render when value changes
                   onValueChange={(value) => {
                     const newValue = value === "none" ? null : Number(value);
-                    console.log("Depot value changing to:", newValue); // Debug log
+
                     field.onChange(newValue);
                   }}
                   value={currentValue}
@@ -500,18 +485,13 @@ const SupervisorForm: React.FC<SupervisorFormProps> = ({
             control={control}
             render={({ field }) => {
               const currentValue = field.value ? String(field.value) : "none";
-              console.log(
-                "Agency field render - current value:",
-                currentValue,
-                "field.value:",
-                field.value
-              ); // Debug log
+
               return (
                 <Select
                   key={`agency-${currentValue}`} // Force re-render when value changes
                   onValueChange={(value) => {
                     const newValue = value === "none" ? null : Number(value);
-                    console.log("Agency value changing to:", newValue); // Debug log
+
                     field.onChange(newValue);
                   }}
                   value={currentValue}

@@ -25,7 +25,6 @@ import {
 } from "@/components/ui/popover";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarIcon, Plus, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,6 +40,16 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { get, post, put } from "@/services/apiService";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { Check, ChevronsUpDown, CalendarIcon, Plus, Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 
 // --------------------------- Schema ----------------------------------------
 const wastageSchema = z.object({
@@ -217,29 +226,29 @@ const WastageForm: React.FC<WastageFormProps> = ({
         mode === "edit" && initialData?.depotId
           ? String(initialData.depotId)
           : loggedUser?.depotId
-          ? String(loggedUser.depotId)
-          : "",
+            ? String(loggedUser.depotId)
+            : "",
       notes: initialData?.notes || "",
       details:
         mode === "edit" && initialData?.details?.length
           ? initialData.details.map((d) => ({
-              productId: String(d.productId),
-              variantId: String(d.variantId),
-              quantity: d.quantity,
-            }))
+            productId: String(d.productId),
+            variantId: String(d.variantId),
+            quantity: d.quantity,
+          }))
           : [
-              {
-                productId: "",
-                variantId: "",
-                quantity: 1,
-              },
-            ],
+            {
+              productId: "",
+              variantId: "",
+              quantity: 1,
+            },
+          ],
     },
   });
 
   // Lookup data --------------------------------------------------------------
   const [products, setProducts] = useState<Product[]>([]);
-  const [variants, setVariants] = useState<DepotVariant[]>([]);
+  const [variants, setVariants] = useState<any[]>([]);
 
   const [depots, setDepots] = useState<Depot[]>([]);
 
@@ -260,9 +269,8 @@ const WastageForm: React.FC<WastageFormProps> = ({
   useEffect(() => {
     (async () => {
       try {
-        const prodRes = await get("/products");
+        const prodRes = await get("/products?limit=1000");
         setProducts(prodRes?.data || prodRes || []);
-        // Variants will be fetched separately based on selected depot
 
         const depRes = await get("/depots");
         setDepots(depRes?.data || depRes || []);
@@ -284,8 +292,11 @@ const WastageForm: React.FC<WastageFormProps> = ({
     }
     (async () => {
       try {
-        const res = await get(`/depot-product-variants?depotId=${variantsDepotId}&limit=1000`);
-        setVariants(res?.data || res || []);
+        const res = await get(`/depot-product-variants?depotId=${variantsDepotId}&limit=1000&include=product`);
+        // Handle both paginated and direct array formats
+        const raw = Array.isArray(res) ? res : (res?.data || []);
+        const variantsData = Array.isArray(raw) ? raw : (raw?.data || []);
+        setVariants(variantsData);
       } catch {
         toast.error("Failed to fetch depot variants");
       }
@@ -444,20 +455,68 @@ const WastageForm: React.FC<WastageFormProps> = ({
                     <Controller
                       control={control}
                       name={`details.${idx}.productId`}
-                      render={({ field: pField }) => (
-                        <Select value={pField.value} onValueChange={pField.onChange}>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select Product" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {products.map((p) => (
-                              <SelectItem key={p.id} value={String(p.id)}>
-                                {p.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
+                      render={({ field: pField }) => {
+                        return (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                className={cn(
+                                  "w-full justify-between font-normal",
+                                  !pField.value && "text-muted-foreground"
+                                )}
+                              >
+                                {pField.value
+                                  ? products.find(
+                                    (p) => String(p.id) === pField.value
+                                  )?.name
+                                  : "Select Product"}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-full p-0">
+                              <Command>
+                                <CommandInput placeholder="Search product..." />
+                                <CommandList>
+                                  <CommandEmpty>No product found.</CommandEmpty>
+                                  <CommandGroup>
+                                    {products.map((p) => (
+                                      <CommandItem
+                                        key={p.id}
+                                        value={p.name}
+                                        onSelect={() => {
+                                          const val = String(p.id);
+                                          setValue(`details.${idx}.productId`, val);
+
+                                          // Clear variant when product changes
+                                          setValue(`details.${idx}.variantId`, "");
+
+                                          // Auto-select if only one variant exists for this product
+                                          const productVariants = variants.filter(v => String(v.productId) === val);
+                                          if (productVariants.length === 1) {
+                                            setValue(`details.${idx}.variantId`, String(productVariants[0].id));
+                                          }
+                                        }}
+                                      >
+                                        <Check
+                                          className={cn(
+                                            "mr-2 h-4 w-4",
+                                            String(p.id) === pField.value
+                                              ? "opacity-100"
+                                              : "opacity-0"
+                                          )}
+                                        />
+                                        {p.name}
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
+                        );
+                      }}
                     />
                   </div>
 
