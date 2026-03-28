@@ -346,7 +346,7 @@ const BuyNowCheckoutPage: React.FC = () => {
                   </Link>
                 </Button>
                 <Button asChild variant="outline">
-                  <Link to="/snf">Continue shopping</Link>
+                  <Link to="/snf#all-types">Continue shopping</Link>
                 </Button>
               </div>
             </div>

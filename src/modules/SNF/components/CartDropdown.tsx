@@ -26,6 +26,7 @@ export const CartDropdown: React.FC<{ children?: React.ReactNode }> = ({ childre
   } = useCart();
   const { currentDepotId } = useDeliveryLocation();
   const [bump, setBump] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const lastValidatedDepotRef = useRef<number | null>(null);
   const hasItemsRef = useRef(false);
@@ -70,7 +71,7 @@ export const CartDropdown: React.FC<{ children?: React.ReactNode }> = ({ childre
   }, [currentDepotId, isValidating]);
 
   return (
-    <Popover>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         {children || (
           <button
@@ -250,8 +251,8 @@ export const CartDropdown: React.FC<{ children?: React.ReactNode }> = ({ childre
           )}
 
           <div className="grid grid-cols-2 gap-2">
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/snf">Continue shopping</Link>
+            <Button variant="outline" size="sm" asChild onClick={() => setIsOpen(false)}>
+              <Link to="/snf#all-types">Continue shopping</Link>
             </Button>
             <Button
               size="sm"

@@ -95,9 +95,10 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         items: state.items
           .map((it) =>
             it.variantId === action.payload.variantId
-              ? { ...it, quantity: Math.max(1, it.quantity - 1) }
+              ? { ...it, quantity: it.quantity - 1 }
               : it
-          ),
+          )
+          .filter((it) => it.quantity > 0),
       };
     }
     case "UPDATE_AVAILABILITY": {

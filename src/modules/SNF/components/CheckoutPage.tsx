@@ -265,7 +265,7 @@ const CheckoutPage: React.FC = () => {
               </CardHeader>
               <CardFooter>
                 <Button asChild>
-                  <a href="/snf">Continue shopping</a>
+                  <a href="/snf#all-types">Continue shopping</a>
                 </Button>
               </CardFooter>
             </Card>
@@ -401,7 +401,7 @@ const CheckoutPage: React.FC = () => {
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={clear}>Clear cart</Button>
                   <Button asChild variant="outline">
-                    <Link to="/snf">Continue shopping</Link>
+                    <Link to="/snf#all-types">Continue shopping</Link>
                   </Button>
                 </div>
               </div>

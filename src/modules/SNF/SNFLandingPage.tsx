@@ -314,7 +314,7 @@ const SNFContent: React.FC = () => {
         <Hero />
 
         {/* Categories Grid - horizontal scrollable tab row */}
-        <section className={`container mx-auto px-4 md:px-6 lg:px-8 py-6 transition-opacity duration-200 ${isPending ? 'opacity-70' : 'opacity-100'}`}>
+        <section id="all-types" className={`container mx-auto px-4 md:px-6 lg:px-8 py-6 transition-opacity duration-200 ${isPending ? 'opacity-70' : 'opacity-100'}`}>
           <CategoryBar
             categories={categories}
             selectedCats={selectedCats}

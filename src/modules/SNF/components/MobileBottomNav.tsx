@@ -275,18 +275,16 @@ export const MobileBottomNav: React.FC = () => {
                   >
                     <div
                       id="snf-cart-button"
-                      className={`relative p-1 transition-all duration-300 ${
-                        bump ? "scale-125 -translate-y-1" : "scale-100"
-                      } ${cartActive ? "text-[#f59e0b]" : "text-gray-400"}`}
+                      className={`relative p-1 transition-all duration-300 ${bump ? "scale-125 -translate-y-1" : "scale-100"
+                        } ${cartActive ? "text-[#f59e0b]" : "text-gray-400"}`}
                     >
                       {cartActive && (
                         <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-black rounded-full" />
                       )}
                       <ShoppingCart size={22} strokeWidth={cartActive ? 2.5 : 2} />
                       <span
-                        className={`absolute -top-1.5 -right-2 min-w-4 h-4 px-1 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center transition-all ${
-                          bump ? "scale-110 shadow-md" : "scale-100"
-                        }`}
+                        className={`absolute -top-1.5 -right-2 min-w-4 h-4 px-1 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center transition-all ${bump ? "scale-110 shadow-md" : "scale-100"
+                          }`}
                         aria-live="polite"
                         aria-atomic="true"
                       >
