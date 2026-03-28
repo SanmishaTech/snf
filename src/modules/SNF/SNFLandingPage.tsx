@@ -310,7 +310,7 @@ const SNFContent: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-background">
       <Header cartCount={cartState.items.reduce((n, it) => n + it.quantity, 0)} onSearch={setQ} />
 
-      <main className="flex-1 pt-14 md:pt-16">
+      <main className="flex-1 pt-[env(safe-area-inset-top)] md:pt-16">
         <Hero />
 
         {/* Categories Grid - horizontal scrollable tab row */}

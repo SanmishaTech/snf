@@ -80,7 +80,7 @@ export const CartDropdown: React.FC<{ children?: React.ReactNode }> = ({ childre
           >
             <ShoppingCart className="size-5" aria-hidden={true} />
             <span
-              className={`absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-primary text-[10px] text-primary-foreground grid place-items-center transition-transform duration-300 ${bump ? "scale-110" : ""}`}
+              className={`absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-primary text-[10px] font-bold text-primary-foreground grid place-items-center transition-all duration-300 shadow-sm ${bump ? "scale-125 shadow-md -translate-y-0.5" : "scale-100"}`}
               aria-live="polite"
               aria-atomic="true"
             >

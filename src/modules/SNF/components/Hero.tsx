@@ -95,7 +95,7 @@ export const Hero: React.FC = () => {
     <section className="relative bg-gradient-to-br from-green-600 via-green-500 to-emerald-500 text-white">
       <div className="w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] p-0">
         <div
-          className="relative overflow-hidden h-[22rem] sm:h-[26rem] md:h-[30rem] lg:h-[36rem] group"
+          className="relative overflow-hidden h-[36rem] sm:h-[30rem] md:h-[32rem] lg:h-[36rem] group"
           onMouseEnter={stop}
           onMouseLeave={start}
           role="region"
@@ -138,9 +138,9 @@ export const Hero: React.FC = () => {
                       </button>
                     </div>
                   </div>
-                  <div className="relative h-full">
+                  <div className="relative h-62 sm:h-72 md:h-full mt-4 md:mt-0">
                     <img
-                      className="w-full h-full max-w-2xl max-h-2xl object-cover rounded-lg shadow-lg"
+                      className="w-full h-full max-w-2xl max-h-2xl object-cover rounded-2xl shadow-2xl"
                       src={s.image}
                       alt={s.alt}
                       loading={idx === current ? 'eager' : 'lazy'}

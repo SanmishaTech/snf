@@ -200,7 +200,12 @@ const ProductDetailPage: React.FC = () => {
 
     // Animate from button to cart icon
     try {
-      const cartEl = document.getElementById("snf-cart-button");
+      const cartButtons = document.querySelectorAll("#snf-cart-button");
+      const cartEl = Array.from(cartButtons).find(el => {
+        const rect = el.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+      }) as HTMLElement;
+
       if (!startEl || !cartEl) return;
 
       // Button press micro-interaction on the clicked button/wrapper
@@ -237,8 +242,10 @@ const ProductDetailPage: React.FC = () => {
       const targetY = cartRect.top + cartRect.height / 2 - (startRect.top + startRect.height / 2);
 
       // Phase 1: slight lift and start movement
+      const isTargetBelow = targetY > 0;
       const p1X = targetX * 0.2;
-      const p1Y = targetY * 0.2 - 20;
+      const p1Y = isTargetBelow ? targetY * 0.12 : targetY * 0.2 - 20;
+
       flying.style.transition = "transform 180ms ease-out, opacity 180ms ease-out";
       flying.style.transform = "translate(0px, 0px) scale(0.9)";
       flying.style.opacity = "0.9";

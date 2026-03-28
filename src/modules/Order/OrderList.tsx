@@ -31,6 +31,7 @@ import {
   Trash2,
   ClipboardCheck,
   AlertCircle,
+  AlertTriangle,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -457,7 +458,26 @@ const OrderList = () => {
                     className="hover:bg-gray-50 dark:hover:bg-gray-750 cursor-pointer"
                     onClick={() => { setSelectedOrder(order); setDetailsOpen(true); }}
                   >
-                    <TableCell className="px-0.5 py-1 whitespace-nowrap text-xs font-medium text-gray-900 dark:text-gray-100">{order.poNumber}</TableCell>
+                    <TableCell className="px-0.5 py-1 whitespace-nowrap text-xs font-medium text-gray-900 dark:text-gray-100 uppercase">
+                      <div className="flex items-center gap-1">
+                        {order.poNumber}
+                        {order.status !== "PENDING" && quantities.delivered < quantities.ordered && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <AlertTriangle className="h-3.5 w-3.5 text-red-500 fill-red-50" />
+                              </TooltipTrigger>
+                              <TooltipContent className="bg-destructive text-destructive-foreground p-2 rounded shadow-lg border-none animate-in fade-in zoom-in duration-200">
+                                <p className="font-semibold">Incomplete Delivery</p>
+                                <p className="text-[10px] opacity-90">
+                                  Ordered: {quantities.ordered} | Delivered: {quantities.delivered}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="px-0.5 py-1 whitespace-nowrap text-xs text-gray-500 dark:text-gray-300 truncate">{order.vendor.name}</TableCell>
                     <TableCell className="px-0.5 py-1 text-xs text-gray-500 dark:text-gray-300">
                       {(() => {

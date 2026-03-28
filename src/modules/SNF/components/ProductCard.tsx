@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ProductWithPricing, DepotVariant } from "../types";
-import { Check, ChevronDown, Search, X, Minus, Plus } from "lucide-react";
+import { ChevronDown, Search, Minus, Plus } from "lucide-react";
 import ProductImage from "./ProductImage";
 
 const DEFAULT_DEPOT_ID = 1;
@@ -118,9 +118,14 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
 
     // Enhanced fly-to-cart animation starting from the Add to Cart button
     try {
-      const imgEl = imgRef.current; // for src only
+      const imgEl = imgRef.current;
       const startEl = addBtnRef.current;
-      const cartEl = document.getElementById("snf-cart-button");
+      const cartButtons = document.querySelectorAll("#snf-cart-button");
+      const cartEl = Array.from(cartButtons).find(el => {
+        const rect = el.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+      }) as HTMLElement;
+      
       if (!startEl || !cartEl) return;
 
       // Button press micro-interaction
@@ -136,18 +141,49 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
       const startRect = startEl.getBoundingClientRect();
       const cartRect = cartEl.getBoundingClientRect();
 
-      const flying = document.createElement("img");
-      flying.src = imgEl?.src || "";
-      flying.setAttribute("aria-hidden", "true");
+      // Create either an IMG or a DIV fallback for the animation
+      let flying: HTMLElement;
       const initialSize = 56; // px
+
+      if (imgEl && imgEl.src && !imgEl.src.includes('undefined')) {
+        const img = document.createElement("img");
+        img.src = imgEl.src;
+        img.style.objectFit = "cover";
+        img.style.borderRadius = "8px";
+        flying = img;
+      } else {
+        // Fallback DIV mimicking ProductImage fallback
+        const div = document.createElement("div");
+        div.style.backgroundColor = "rgb(243 244 246)"; // bg-muted/30 equivalent
+        div.style.display = "flex";
+        div.style.alignItems = "center";
+        div.style.justifyContent = "center";
+        div.style.borderRadius = "8px";
+        
+        const inner = document.createElement("div");
+        inner.style.width = "32px";
+        inner.style.height = "32px";
+        inner.style.borderRadius = "9999px";
+        inner.style.backgroundColor = "rgb(229 231 235)"; // bg-muted/50
+        inner.style.display = "flex";
+        inner.style.alignItems = "center";
+        inner.style.justifyContent = "center";
+        inner.style.color = "rgb(107 114 128)"; // text-muted-foreground
+        inner.style.fontWeight = "bold";
+        inner.style.fontSize = "10px";
+        inner.innerText = (product.product.name || "P").substring(0, 2).toUpperCase();
+        
+        div.appendChild(inner);
+        flying = div;
+      }
+
+      flying.setAttribute("aria-hidden", "true");
       flying.style.position = "fixed";
       flying.style.left = `${startRect.left + startRect.width / 2 - initialSize / 2}px`;
       flying.style.top = `${startRect.top + startRect.height / 2 - initialSize / 2}px`;
       flying.style.width = `${initialSize}px`;
       flying.style.height = `${initialSize}px`;
-      flying.style.objectFit = "cover";
       flying.style.zIndex = "9999";
-      flying.style.borderRadius = "8px";
       flying.style.pointerEvents = "none";
       flying.style.boxShadow = "0 4px 12px rgba(0,0,0,0.2)";
 
@@ -157,8 +193,10 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
       const targetY = cartRect.top + cartRect.height / 2 - (startRect.top + startRect.height / 2);
 
       // Phase 1: slight lift and start movement
+      const isTargetBelow = targetY > 0;
       const p1X = targetX * 0.2;
-      const p1Y = targetY * 0.2 - 20;
+      const p1Y = isTargetBelow ? targetY * 0.12 : targetY * 0.2 - 20; // Reduced lift if target is below
+      
       flying.style.transition = "transform 180ms ease-out, opacity 180ms ease-out";
       flying.style.transform = "translate(0px, 0px) scale(0.9)";
       flying.style.opacity = "0.9";
@@ -240,6 +278,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
         className="block relative aspect-square min-h-[88px] sm:min-h-[96px] bg-muted/20 overflow-hidden"
       >
         <ProductImage
+          ref={imgRef}
           src={producturl}
           alt={product.product.name}
           name={product.product.name}
