@@ -3,6 +3,7 @@ import { PricingContextType, PricingState, Depot, LocationData, Product, DepotVa
 import { geolocationService } from '../services/geolocation';
 import { depotMappingService } from '../services/depotMapping';
 import { productService } from '../services/api';
+import { compareVariantsByQuantity } from '../utils/variantUtils';
 
 // Initial state
 const initialState: PricingState = {
@@ -57,7 +58,7 @@ function pricingReducer(state: PricingState, action: PricingAction): PricingStat
     case 'SET_DEPOT_VARIANTS':
       return {
         ...state,
-        depotVariants: action.payload,
+        depotVariants: [...action.payload].sort(compareVariantsByQuantity),
         isLoading: false,
       };
     case 'SET_LOADING':

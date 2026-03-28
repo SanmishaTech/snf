@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Product, DepotVariant, ProductWithPricing, PricingError } from '../types';
 import { productService } from '../services/api';
+import { compareVariantsByQuantity } from '../utils/variantUtils';
 
 /**
  * Custom hook for managing products with pricing
@@ -22,7 +23,8 @@ export const useProducts = (depotId?: number) => {
   const transformProducts = useCallback((productsData: Product[], variantsData: DepotVariant[]): ProductWithPricing[] => {
     return productsData
       .map(product => {
-        const productVariants = variantsData.filter(variant => variant.productId === product.id);
+        const productVariants = (variantsData.filter(variant => variant.productId === product.id))
+          .sort(compareVariantsByQuantity);
 
         // Find the variant with the lowest buyOncePrice or use MRP if buyOncePrice is not available
         const bestVariant = productVariants.reduce((best, current) => {
@@ -175,7 +177,7 @@ export const useProduct = (productId?: number, depotId?: number) => {
         productService.getProductVariants(productId, depotId),
       ]);
 
-      let variantsData = fetchedVariantsData;
+      let variantsData = [...fetchedVariantsData].sort(compareVariantsByQuantity);
 
       if (!productData) {
         throw {
@@ -216,6 +218,7 @@ export const useProduct = (productId?: number, depotId?: number) => {
             id: depotId,
             name: 'Depot',
             address: '',
+            city: '',
             isOnline: true,
           },
           product: productData,
@@ -304,7 +307,8 @@ export const useProductSearch = (query: string, depotId?: number) => {
       // Get variants for each product
       const productsWithVariants = await Promise.all(
         searchResults.map(async (product) => {
-          const variants = await productService.getProductVariants(product.id, depotId);
+          const rawVariants = await productService.getProductVariants(product.id, depotId);
+          const variants = [...rawVariants].sort(compareVariantsByQuantity);
           // Find the variant with the lowest buyOncePrice or use MRP if buyOncePrice is not available
           const bestVariant = variants.reduce((best, current) => {
             if (!best) return current;
@@ -399,7 +403,8 @@ export const useProductsByCategory = (categoryId?: number, depotId?: number) => 
       // Get variants for each product
       const productsWithVariants = await Promise.all(
         categoryProducts.map(async (product) => {
-          const variants = await productService.getProductVariants(product.id, depotId);
+          const rawVariants = await productService.getProductVariants(product.id, depotId);
+          const variants = [...rawVariants].sort(compareVariantsByQuantity);
           // Find the variant with the lowest buyOncePrice or use MRP if buyOncePrice is not available
           const bestVariant = variants.reduce((best, current) => {
             if (!best) return current;

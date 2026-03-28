@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { ProductWithPricing, DepotVariant } from "../types";
 import { ChevronDown, Search, Minus, Plus } from "lucide-react";
 import ProductImage from "./ProductImage";
+import { compareVariantsByQuantity } from "../utils/variantUtils";
 
 const DEFAULT_DEPOT_ID = 1;
 
@@ -44,7 +45,12 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
   }, []);
 
   // Available variants (not hidden, in stock if quantity > 0 or notInStock false)
-  const allVariants = product.variants ?? [];
+  // Sorted by quantity ascending (smallest first)
+  const allVariants = useMemo(() => {
+    const variants = [...(product.variants ?? [])];
+    return variants.sort(compareVariantsByQuantity);
+  }, [product.variants]);
+
   const availableVariants = useMemo(() => {
     // Allow products without variants to still render; filter only if variants exist
     return allVariants.length > 0
