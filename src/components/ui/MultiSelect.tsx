@@ -43,6 +43,7 @@ interface MultiSelectProps extends React.ButtonHTMLAttributes<HTMLButtonElement>
   maxCount?: number;
   asChild?: boolean;
   className?: string;
+  hideTagsInTrigger?: boolean;
 }
 
 export const MultiSelect = React.forwardRef<HTMLButtonElement, MultiSelectProps>((
@@ -56,6 +57,7 @@ export const MultiSelect = React.forwardRef<HTMLButtonElement, MultiSelectProps>
     maxCount = 3,
     asChild = false,
     className,
+    hideTagsInTrigger = false,
     ...props
   },
   ref
@@ -93,7 +95,7 @@ export const MultiSelect = React.forwardRef<HTMLButtonElement, MultiSelectProps>
           onClick={() => setIsPopoverOpen(!isPopoverOpen)}
           className="flex w-full p-1 rounded-md border min-h-10 h-auto items-center justify-between bg-inherit hover:bg-card"
         >
-          {selectedValues.size > 0 ? (
+          {selectedValues.size > 0 && !hideTagsInTrigger ? (
             <div className="flex justify-between items-center w-full">
               <div className="flex flex-wrap items-center">
                 {options
@@ -124,7 +126,11 @@ export const MultiSelect = React.forwardRef<HTMLButtonElement, MultiSelectProps>
             </div>
           ) : (
             <div className="flex items-center justify-between w-full mx-auto">
-              <span className="text-sm text-muted-foreground mx-3">{placeholder}</span>
+              <span className="text-sm text-muted-foreground mx-3">
+                {selectedValues.size > 0 && hideTagsInTrigger 
+                  ? `Tags Selected (${selectedValues.size})` 
+                  : placeholder}
+              </span>
               <ChevronDown className="h-4 cursor-pointer text-muted-foreground mx-2" />
             </div>
           )}
@@ -136,7 +142,7 @@ export const MultiSelect = React.forwardRef<HTMLButtonElement, MultiSelectProps>
           <CommandList>
             <CommandEmpty>No results found.</CommandEmpty>
             <CommandGroup>
-              {options.map((option, index) => {
+              {options.map((option) => {
                 const isSelected = selectedValues.has(option.value);
                 return (
                   <CommandItem

@@ -54,14 +54,22 @@ export default function MainLayout() {
         {/* Sticky Header */}
         <header className="bg-blue-900 dark:bg-gray-900 sticky top-0 z-20 flex h-16 shrink-0 items-center border-b border-blue-800 dark:border-gray-700 shadow-sm transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-13 -ml-[1px] -mt-0">
           <div className="flex items-center justify-between w-full px-4">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               {/* Sidebar Trigger */}
-              <SidebarTrigger className="text-white -ml-1" />
-              <Button onClick={() => navigate(-1)}>Back</Button>
-              {/* Welcome Message */}
-              <h1 className="text-white">Welcome, {userData?.name} <span className="text-blue-200 dark:text-gray-400 text-sm">({userData?.role})</span></h1>
+              <SidebarTrigger className="text-white -ml-1 h-8 w-8" />
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => navigate(-1)} 
+                className="text-white hover:bg-white/10 hidden sm:flex"
+              >
+                Back
+              </Button>
+              {/* Welcome Message - Hidden on mobile */}
+              <h1 className="text-white text-sm sm:text-base font-medium truncate hidden md:block">
+                Welcome, {userData?.name} <span className="text-blue-200 dark:text-gray-400 text-xs sm:text-sm">({userData?.role})</span>
+              </h1>
             </div>
-
           </div>
         </header>
 
@@ -75,4 +83,3 @@ export default function MainLayout() {
     </SidebarProvider>
   );
 }
-

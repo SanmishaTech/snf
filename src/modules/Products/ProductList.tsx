@@ -5,7 +5,6 @@ import { get, del } from "@/services/apiService";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { formatCurrency } from "@/lib/formatter";
 import {
   Select,
   SelectTrigger,
@@ -14,13 +13,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   Table,
   TableBody,
@@ -53,12 +45,11 @@ import {
   PlusCircle,
   MoreHorizontal,
   Eye,
-  Filter,
   X,
 } from "lucide-react";
 import CustomPagination from "@/components/common/custom-pagination";
 import ConfirmDialog from "@/components/common/confirm-dialog";
-import { format } from "date-fns";
+import { MultiSelect } from "@/components/ui/MultiSelect";
 
 interface Product {
   id: number;
@@ -77,6 +68,11 @@ interface ApiResponse {
   totalRecords: number;
   currentPage: number;
 }
+
+const fetchAllTags = async (): Promise<string[]> => {
+  const response = await get("/products/tags/all");
+  return Array.isArray(response) ? response : [];
+};
 
 const fetchProducts = async (
   page: number,
@@ -108,16 +104,11 @@ const ProductList: React.FC = () => {
   const [search, setSearch] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
-  const [isAdmin, setIsAdmin] = useState(false);
-
   useEffect(() => {
     try {
       const userString = localStorage.getItem("user");
       if (userString) {
-        const user = JSON.parse(userString);
-        if (user && user.role === "ADMIN") {
-          setIsAdmin(true);
-        }
+        JSON.parse(userString);
       }
     } catch (error) {
       console.error("Failed to parse user data from localStorage", error);
@@ -159,17 +150,13 @@ const ProductList: React.FC = () => {
     ? apiResponse.length
     : (apiResponse as ApiResponse)?.totalRecords || 0;
 
-  // Extract available tags from products
-  const availableTags = React.useMemo(() => {
-    const tagSet = new Set<string>();
-    products.forEach(product => {
-      if (product.tags) {
-        const productTags = product.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
-        productTags.forEach(tag => tagSet.add(tag));
-      }
-    });
-    return Array.from(tagSet).sort();
-  }, [products]);
+  const { data: availableTagsData } = useQuery<string[]>({
+    queryKey: ["product-tags"],
+    queryFn: fetchAllTags,
+    initialData: [],
+  });
+
+  const availableTags = availableTagsData || [];
 
   const deleteMutation = useMutation<void, Error, number>({
     mutationFn: (productId: number) => del(`/products/${productId}`),
@@ -232,23 +219,8 @@ const ProductList: React.FC = () => {
     setCurrentPage(1);
   };
 
-  const handleTagToggle = (tag: string) => {
-    setSelectedTags(prev => {
-      const newTags = prev.includes(tag)
-        ? prev.filter(t => t !== tag)
-        : [...prev, tag];
-      setCurrentPage(1); // Reset to first page when filtering
-      return newTags;
-    });
-  };
-
   const handleRemoveTag = (tag: string) => {
     setSelectedTags(prev => prev.filter(t => t !== tag));
-    setCurrentPage(1);
-  };
-
-  const handleClearAllTags = () => {
-    setSelectedTags([]);
     setCurrentPage(1);
   };
 
@@ -282,52 +254,19 @@ const ProductList: React.FC = () => {
 
             {/* Tag Filter */}
             {availableTags.length > 0 && (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="gap-2">
-                    <Filter size={16} />
-                    Tags
-                    {selectedTags.length > 0 && (
-                      <Badge variant="secondary" className="ml-1">
-                        {selectedTags.length}
-                      </Badge>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80" align="start">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium">Filter by Tags</h4>
-                      {selectedTags.length > 0 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleClearAllTags}
-                        >
-                          Clear All
-                        </Button>
-                      )}
-                    </div>
-                    <div className="max-h-48 overflow-y-auto space-y-2">
-                      {availableTags.map((tag) => (
-                        <div key={tag} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`tag-${tag}`}
-                            checked={selectedTags.includes(tag)}
-                            onCheckedChange={() => handleTagToggle(tag)}
-                          />
-                          <Label
-                            htmlFor={`tag-${tag}`}
-                            className="text-sm font-normal cursor-pointer"
-                          >
-                            {tag}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
+              <div className="w-[250px]">
+                <MultiSelect
+                  options={availableTags.map(tag => ({ label: tag, value: tag }))}
+                  onValueChange={(selected) => {
+                    setSelectedTags(selected);
+                    setCurrentPage(1);
+                  }}
+                  defaultValue={selectedTags}
+                  placeholder="Filter by tags"
+                  maxCount={3}
+                  hideTagsInTrigger={true}
+                />
+              </div>
             )}
 
             <Button

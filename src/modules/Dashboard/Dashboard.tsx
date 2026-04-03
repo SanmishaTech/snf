@@ -6,14 +6,13 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
+  Bell,
   Package,
   Users,
-  AlertTriangle,
+  CreditCard,
   TrendingUp,
   Calendar,
-  Bell,
-  ShoppingCart,
-  CreditCard,
+  AlertTriangle,
   Loader2,
 } from "lucide-react"
 import { get } from "@/services/apiService"
@@ -275,84 +274,80 @@ export function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <ShoppingCart className="h-5 w-5" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-balance">GroceryAdmin</h1>
-                <p className="text-sm text-muted-foreground">Dashboard & Management</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Bell className="h-4 w-4 mr-2" />
-                    Notifications
-                    <Badge variant="destructive" className="ml-2">
-                      {stockAlerts.length + expiringSubscriptions.length}
-                    </Badge>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-80">
-                  {stockAlerts.map((alert) => (
-                    <DropdownMenuItem key={alert.id} className="flex flex-col items-start p-4 space-y-1">
-                      <div className="flex items-center gap-2 w-full">
-                        <AlertTriangle
-                          className={`h-4 w-4 ${
-                            alert.priority === "high"
-                              ? "text-destructive"
-                              : alert.priority === "medium"
-                                ? "text-yellow-500"
-                                : "text-muted-foreground"
-                          }`}
-                        />
-                        <span className="font-medium capitalize text-sm">Stock Alert</span>
-                        <Badge
-                          variant={alert.priority === "high" ? "destructive" : "secondary"}
-                          className="ml-auto text-xs"
-                        >
-                          {alert.priority}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {alert.productName} - {alert.variantName} at {alert.depotName}: {alert.current}/{alert.minimum} units
-                      </p>
-                    </DropdownMenuItem>
-                  ))}
-                  {expiringSubscriptions.slice(0, 3).map((sub) => (
-                    <DropdownMenuItem key={sub.id} className="flex flex-col items-start p-4 space-y-1">
-                      <div className="flex items-center gap-2 w-full">
-                        <Calendar className="h-4 w-4 text-yellow-500" />
-                        <span className="font-medium capitalize text-sm">Subscription</span>
-                        <Badge variant="secondary" className="ml-auto text-xs">
-                          {sub.daysLeft === 0 ? 'expires today' : `${sub.daysLeft} days`}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {sub.memberName} - {sub.productName}
-                      </p>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-              {/* <Button size="sm">
-                <Activity className="h-4 w-4 mr-2" />
-                Live View
-              </Button> */}
-            </div>
+      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-8 space-y-6">
+        {/* Compact Page Header for Dashboard */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+            {dashboardStats.lastUpdated && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Last updated: {new Date(dashboardStats.lastUpdated).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="w-full sm:w-auto h-10 px-4">
+                  <Bell className="h-4 w-4 mr-2" />
+                  Notifications
+                  <Badge variant="destructive" className="ml-2 px-2 py-0.5 rounded-full">
+                    {stockAlerts.length + expiringSubscriptions.length}
+                  </Badge>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80">
+                {stockAlerts.length === 0 && expiringSubscriptions.length === 0 && (
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    No new notifications
+                  </div>
+                )}
+                {stockAlerts.map((alert) => (
+                  <DropdownMenuItem key={alert.id} className="flex flex-col items-start p-4 space-y-1 cursor-pointer">
+                    <div className="flex items-center gap-2 w-full">
+                      <AlertTriangle
+                        className={`h-4 w-4 ${
+                          alert.priority === "high"
+                            ? "text-destructive"
+                            : alert.priority === "medium"
+                              ? "text-yellow-500"
+                              : "text-muted-foreground"
+                        }`}
+                      />
+                      <span className="font-medium capitalize text-sm">Stock Alert</span>
+                      <Badge
+                        variant={alert.priority === "high" ? "destructive" : "secondary"}
+                        className="ml-auto text-xs"
+                      >
+                        {alert.priority}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {alert.productName} - {alert.variantName} at {alert.depotName}: {alert.current}/{alert.minimum} units
+                    </p>
+                  </DropdownMenuItem>
+                ))}
+                {expiringSubscriptions.slice(0, 3).map((sub) => (
+                  <DropdownMenuItem key={sub.id} className="flex flex-col items-start p-4 space-y-1 cursor-pointer">
+                    <div className="flex items-center gap-2 w-full">
+                      <Calendar className="h-4 w-4 text-yellow-500" />
+                      <span className="font-medium capitalize text-sm">Subscription</span>
+                      <Badge variant="secondary" className="ml-auto text-xs">
+                        {sub.daysLeft === 0 ? 'expires today' : `${sub.daysLeft} days`}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {sub.memberName} - {sub.productName}
+                    </p>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
-      </header>
 
-      <div className="container mx-auto px-6 py-8 space-y-6">
-            {/* Key Metrics */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
+        {/* Key Metrics */}
+        <div className="grid gap-4 sm:gap-6 grid-cols-2 lg:grid-cols-5">
               <Card className="border-l-4 border-l-primary">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
@@ -418,7 +413,7 @@ export function AdminDashboard() {
             {/* Stock Alerts and Expiring Subscriptions Side by Side */}
             <div className="grid gap-6 lg:grid-cols-2">
               {/* Stock Alerts Table */}
-              <Card>
+              <Card className="overflow-hidden flex flex-col">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <AlertTriangle className="h-5 w-5 text-destructive" />
@@ -434,7 +429,7 @@ export function AdminDashboard() {
                     Items where current stock is below minimum threshold
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="px-2 sm:px-6">
                   {stockAlerts.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -442,14 +437,14 @@ export function AdminDashboard() {
                       <p className="text-sm">All items are above minimum stock levels</p>
                     </div>
                   ) : (
-                    <div className="rounded-md border">
+                    <div className="rounded-md border overflow-x-auto table-container">
                       <Table>
                         <TableHeader>
                           <TableRow>
                             <TableHead className="w-[50px]">Priority</TableHead>
-                            <TableHead>Product</TableHead>
-                            <TableHead>Variant</TableHead>
-                            <TableHead>Depot</TableHead>
+                            <TableHead className="min-w-[150px]">Product</TableHead>
+                            <TableHead className="min-w-[100px]">Variant</TableHead>
+                            <TableHead className="min-w-[100px]">Depot</TableHead>
                             <TableHead className="text-right">Current</TableHead>
                             <TableHead className="text-right">Min</TableHead>
                           </TableRow>
@@ -463,20 +458,20 @@ export function AdminDashboard() {
                                     alert.priority === "high" ? "destructive" : 
                                     alert.priority === "medium" ? "default" : "secondary"
                                   }
-                                  className="text-xs"
+                                  className="text-[10px] sm:text-xs px-1 sm:px-2"
                                 >
                                   {alert.priority}
                                 </Badge>
                               </TableCell>
-                              <TableCell className="font-medium">{alert.productName}</TableCell>
-                              <TableCell>{alert.variantName}</TableCell>
-                              <TableCell>{alert.depotName}</TableCell>
-                              <TableCell className="text-right">
+                              <TableCell className="font-medium text-sm">{alert.productName}</TableCell>
+                              <TableCell className="text-sm">{alert.variantName}</TableCell>
+                              <TableCell className="text-sm">{alert.depotName}</TableCell>
+                              <TableCell className="text-right text-sm">
                                 <span className={alert.current === 0 ? "text-destructive font-semibold" : ""}>
                                   {alert.current}
                                 </span>
                               </TableCell>
-                              <TableCell className="text-right">{alert.minimum}</TableCell>
+                              <TableCell className="text-right text-sm">{alert.minimum}</TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -487,7 +482,7 @@ export function AdminDashboard() {
               </Card>
 
               {/* Expiring Subscriptions Table */}
-              <Card>
+              <Card className="overflow-hidden flex flex-col">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <CreditCard className="h-5 w-5" />
@@ -495,7 +490,7 @@ export function AdminDashboard() {
                   </CardTitle>
                   <CardDescription>Monitor subscriptions that are about to end</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="px-2 sm:px-6">
                   {expiringSubscriptions.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -503,54 +498,43 @@ export function AdminDashboard() {
                       <p className="text-sm">All active subscriptions are healthy</p>
                     </div>
                   ) : (
-                    <div className="rounded-md border">
+                    <div className="rounded-md border overflow-x-auto table-container">
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Customer</TableHead>
-                            <TableHead>Product</TableHead>
-                            <TableHead>Expiry Date</TableHead>
-                            <TableHead className="text-center">Status</TableHead>
-                            <TableHead className="text-center">Days Left</TableHead>
-                            {/* <TableHead className="text-right">Actions</TableHead> */}
+                            <TableHead className="min-w-[120px]">Customer</TableHead>
+                            <TableHead className="min-w-[150px]">Product</TableHead>
+                            <TableHead className="min-w-[100px]">Expiry Date</TableHead>
+                            <TableHead className="text-center min-w-[120px]">Status</TableHead>
+                            <TableHead className="text-center">Days</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {expiringSubscriptions.map((sub: ExpiringSubscription) => (
                             <TableRow key={sub.id} className={sub.daysLeft === 0 ? "bg-destructive/5" : sub.daysLeft <= 2 ? "bg-yellow-50" : ""}>
-                              <TableCell className="font-medium">{sub.memberName}</TableCell>
-                              <TableCell>{sub.productName}</TableCell>
-                              <TableCell>{new Date(sub.expiryDate).toLocaleDateString('en-IN')}</TableCell>
+                              <TableCell className="font-medium text-sm">{sub.memberName}</TableCell>
+                              <TableCell className="text-sm">{sub.productName}</TableCell>
+                              <TableCell className="text-sm">{new Date(sub.expiryDate).toLocaleDateString('en-IN')}</TableCell>
                               <TableCell className="text-center">
                                 <div className="flex items-center justify-center gap-2">
-                                  {sub.daysLeft === 0 ? (
-                                    <AlertTriangle className="h-4 w-4 text-destructive" />
-                                  ) : (
-                                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                                  )}
                                   <Badge 
                                     variant={
                                       sub.daysLeft === 0 ? "destructive" : 
                                       sub.daysLeft === 1 ? "default" : "secondary"
                                     }
-                                    className="text-xs"
+                                    className="text-[10px] sm:text-xs"
                                   >
                                     {sub.daysLeft === 0 ? 'Expires Today' : 
                                      sub.daysLeft === 1 ? 'Tomorrow' :
-                                     `${sub.daysLeft} days`}
+                                     `${sub.daysLeft} d`}
                                   </Badge>
                                 </div>
                               </TableCell>
-                              <TableCell className="text-center">
-                                <span className={sub.daysLeft === 0 ? "text-destructive font-semibold" : sub.daysLeft <= 2 ? "text-yellow-600 font-medium" : ""}>
+                              <TableCell className="text-center text-sm font-medium">
+                                <span className={sub.daysLeft === 0 ? "text-destructive" : sub.daysLeft <= 2 ? "text-yellow-600" : ""}>
                                   {sub.daysLeft}
                                 </span>
                               </TableCell>
-                              {/* <TableCell className="text-right">
-                                <Button variant="outline" size="sm">
-                                  View
-                                </Button>
-                              </TableCell> */}
                             </TableRow>
                           ))}
                         </TableBody>
