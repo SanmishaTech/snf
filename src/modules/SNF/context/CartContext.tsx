@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useEffect, useMemo, useReducer, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useReducer, useCallback, useState } from "react";
 import type { ProductWithPricing, DepotVariant } from "../types";
 import { CartValidationService } from "../services/cartValidation";
+import { cartApiService } from '../services/cartApi';
 
 // Types
 export interface CartItem {
@@ -146,6 +147,44 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   );
 
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!localStorage.getItem('authToken'));
+
+  useEffect(() => {
+    const handleAuthChange = () => {
+      setIsAuthenticated(!!localStorage.getItem('authToken'));
+    };
+    window.addEventListener('auth_changed', handleAuthChange);
+    // Listen to storage events from other tabs
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'authToken') handleAuthChange();
+    });
+    return () => {
+      window.removeEventListener('auth_changed', handleAuthChange);
+    };
+  }, []);
+
+  // Sync cart when authentication status changes
+  useEffect(() => {
+    if (isAuthenticated) {
+      // User logged in, sync local cart to backend
+      cartApiService.syncCart(state.items)
+        .then((res: any) => {
+          if (res.success && res.cart && res.cart.items) {
+            // we map db items to match CartItem format if needed
+            const dbItems = res.cart.items.map((i: any) => ({
+              ...i,
+              isAvailable: true // Requires validation later
+            }));
+            dispatch({ type: "SET_CART", payload: { items: dbItems } } as any);
+          }
+        })
+        .catch((err: any) => console.error("Error syncing cart:", err));
+    } else {
+      // User logged out, optionally clear or keep local cart.
+      // Usually keep it, or clear if desired. We will just leave it.
+    }
+  }, [isAuthenticated]);
+
   // Persist to storage
   useEffect(() => {
     try {
@@ -192,12 +231,46 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isAvailable: true, // Assume available when adding
     };
     dispatch({ type: "ADD_ITEM", payload: item });
+    if (isAuthenticated) {
+      cartApiService.addOrUpdateItem(item).catch(console.error);
+    }
   };
 
-  const removeItem = (variantId: number) => dispatch({ type: "REMOVE_ITEM", payload: { variantId } });
-  const increment = (variantId: number) => dispatch({ type: "INCREMENT", payload: { variantId } });
-  const decrement = (variantId: number) => dispatch({ type: "DECREMENT", payload: { variantId } });
-  const clear = () => dispatch({ type: "CLEAR" });
+  const removeItem = (variantId: number) => {
+    dispatch({ type: "REMOVE_ITEM", payload: { variantId } });
+    if (isAuthenticated) {
+      cartApiService.removeItem(variantId).catch(console.error);
+    }
+  };
+
+  const increment = (variantId: number) => {
+    dispatch({ type: "INCREMENT", payload: { variantId } });
+    if (isAuthenticated) {
+      const item = state.items.find(i => i.variantId === variantId);
+      if (item) {
+        cartApiService.addOrUpdateItem({ ...item, quantity: item.quantity + 1 }).catch(console.error);
+      }
+    }
+  };
+
+  const decrement = (variantId: number) => {
+    dispatch({ type: "DECREMENT", payload: { variantId } });
+    if (isAuthenticated) {
+      const item = state.items.find(i => i.variantId === variantId);
+      if (item && item.quantity > 1) {
+        cartApiService.addOrUpdateItem({ ...item, quantity: item.quantity - 1 }).catch(console.error);
+      } else if (item && item.quantity === 1) {
+        cartApiService.removeItem(variantId).catch(console.error);
+      }
+    }
+  };
+
+  const clear = () => {
+    dispatch({ type: "CLEAR" });
+    if (isAuthenticated) {
+      cartApiService.clearCart().catch(console.error);
+    }
+  };
 
   const validateCart = useCallback(async (currentDepotId: number) => {
     // Get current items from state at the time of validation

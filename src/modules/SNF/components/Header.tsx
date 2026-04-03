@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { User, MapPin, LocateFixed, Loader2, Check, LogOut, LogIn as LogInIcon, Mail, LayoutDashboard } from "lucide-react";
+import { User, MapPin, LocateFixed, Loader2, Check, LogOut, LogIn as LogInIcon, Mail } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -262,18 +262,6 @@ export const Header: React.FC<HeaderProps> = (_props) => {
               <WalletButton isLoggedIn={true} />
             </div>
 
-            {/* IndraAI Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                window.location.href = "/"; // Navigate to IndraAI Landing Page
-              }}
-              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm transition-all flex items-center gap-2"
-            >
-              <LayoutDashboard className="h-4 w-4" />
-              IndraAI
-            </Button>
 
             {/* Return to Admin Button */}
             {localStorage.getItem('adminToken') && (

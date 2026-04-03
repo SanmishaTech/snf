@@ -420,16 +420,6 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
                 </div>
               )}
 
-              {/* SNF Market Button */}
-              <button
-                onClick={() => {
-                  window.location.href = "/snf"; // Navigate to SNF Market
-                }}
-                className="mr-4 flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm transition-all"
-              >
-                <ShoppingBag size={14} />
-                SNF Market
-              </button>
 
               {isLoggedIn && localStorage.getItem('adminToken') && (
                 <button

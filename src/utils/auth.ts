@@ -45,6 +45,7 @@ export const requireAuth = (): boolean => {
 export const clearAuthData = (): void => {
   localStorage.removeItem("authToken");
   localStorage.removeItem("user");
+  window.dispatchEvent(new Event('auth_changed'));
   localStorage.removeItem("refreshToken");
   localStorage.removeItem("memberId");
   localStorage.removeItem("roles");

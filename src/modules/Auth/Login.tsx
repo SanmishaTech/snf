@@ -148,6 +148,9 @@ const Login: React.FC<LoginProps> = () => {
         "roles",
         JSON.stringify(data.user.accessibleChapters || [])
       ); // Handle if accessibleChapters is undefined
+      
+      // Notify other components (like CartContext) that auth state changed
+      window.dispatchEvent(new Event('auth_changed'));
 
       // Store memberId from the nested structure if it exists
       if (data.user.member && data.user.member.id) {
