@@ -74,8 +74,7 @@ export default function MainLayout() {
         </header>
 
         {/* Content Area */}
-        <main className="pt-2 overflow-hidden">
-          {/* Add padding to prevent content from being hidden */}
+        <main className="flex-1 min-h-0 overflow-hidden">
           <Outlet />
         </main>
       </SidebarInset>

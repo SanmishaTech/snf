@@ -105,6 +105,7 @@ import WalletReport from "./modules/Reports/WalletReport";
 import ExceptionReport from "./modules/Reports/ExceptionReport";
 import ActivityLogPage from "./modules/ActivityLog/ActivityLogPage";
 import CouponMasterListPage from "./modules/CouponMaster/CouponMasterListPage";
+import POSPage from "./modules/POS/POSPage";
 
 
 const App = () => {
@@ -397,6 +398,7 @@ const App = () => {
             <Route path="/admin/reports/subscriptions" element={<SubscriptionReports />} /> {/* Subscription Reports */}
             <Route path="/admin/reports/exceptions" element={<ExceptionReport />} /> {/* Exception Report */}
             <Route path="/admin/activity-log" element={<ActivityLogPage />} />
+            <Route path="/admin/pos" element={<POSPage />} />
           </Route>
 
           {/* Other routes using MainLayout (e.g., Vendor routes) - not protected by AdminProtectedRoute */}

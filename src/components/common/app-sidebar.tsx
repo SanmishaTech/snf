@@ -12,6 +12,7 @@ import {
   ChevronDown,
   BarChart3,
   ClipboardList,
+  ShoppingCart,
   type LucideIcon,
 } from "lucide-react";
 
@@ -388,6 +389,12 @@ const initialData = {
     DepotAdmin: {
       projects: [
         {
+          title: "POS",
+          url: "/admin/pos",
+          icon: ShoppingCart,
+          groupLabel: "Sales",
+        },
+        {
           title: "Purchases",
           url: "/admin/purchases",
           icon: FileText,
@@ -482,7 +489,10 @@ const initialData = {
 
 type AppSidebarProps = React.ComponentProps<typeof Sidebar>;
 
-export function AppSidebar(props: AppSidebarProps) {
+export const AppSidebar = React.forwardRef<
+  React.ElementRef<typeof Sidebar>,
+  AppSidebarProps
+>((props, ref) => {
   const { pathname } = useLocation();
   const { state, isMobile, setOpenMobile } = useSidebar();
   const showCollapsedTooltips = state === "collapsed" && !isMobile;
@@ -604,6 +614,7 @@ export function AppSidebar(props: AppSidebarProps) {
 
   return (
     <Sidebar
+      ref={ref}
       collapsible="icon"
       {...props}
       className="bg-[#1d398d] border-r border-[#1d398d]/80"
@@ -779,4 +790,6 @@ export function AppSidebar(props: AppSidebarProps) {
       <SidebarRail />
     </Sidebar>
   );
-}
+});
+
+AppSidebar.displayName = "AppSidebar";
