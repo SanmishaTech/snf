@@ -52,9 +52,15 @@ export interface CreatePosOrderPayload {
   subtotal: number;
   totalAmount: number;
   walletamt: number;
-  paymentMode: "CASH" | "WALLET" | "ONLINE" | "UPI";
+  paymentMode: "CASH" | "WALLET" | "UPI" | "CHEQUE" | "CARD";
   paymentRefNo?: string | null;
   depotId: number;
+  payerName?: string | null;
+  utrNo?: string | null;
+  chequeNo?: string | null;
+  bankName?: string | null;
+  transactionId?: string | null;
+  paymentDetails?: string | null;
 }
 
 export interface PosOrderResponse {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ interface POSCustomer {
 }
 
 export default function POSPage() {
+  const queryClient = useQueryClient();
   // Get current user to determine depot
   const currentUser = getCurrentUser();
   const depotId = currentUser?.depotId || 1;
@@ -56,9 +57,14 @@ export default function POSPage() {
   const [productSearch, setProductSearch] = useState("");
 
   // Checkout state
-  const [paymentMode, setPaymentMode] = useState<"CASH" | "WALLET" | "UPI">("CASH");
+  const [paymentMode, setPaymentMode] = useState<"CASH" | "WALLET" | "UPI" | "CHEQUE" | "CARD">("CASH");
   const [cashReceived, setCashReceived] = useState<number>(0);
   const [paymentRefNo, setPaymentRefNo] = useState("");
+  const [payerName, setPayerName] = useState("");
+  const [chequeNo, setChequeNo] = useState("");
+  const [bankName, setBankName] = useState("");
+  const [transactionId, setTransactionId] = useState("");
+  const [paymentDetails, setPaymentDetails] = useState("");
   const [showReceipt, setShowReceipt] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<any>(null);
 
@@ -229,6 +235,7 @@ export default function POSPage() {
     mutationFn: posService.createOrder,
     onSuccess: (res) => {
       toast.success(`Order created: ${res.data.orderNo}`);
+      queryClient.invalidateQueries({ queryKey: ["pos-products"] });
       setCompletedOrder(res.data);
       setShowReceipt(true);
       setIsCheckoutOpen(false); // Close mobile sheet
@@ -276,7 +283,7 @@ export default function POSPage() {
         return;
     }
 
-    const payload = {
+    orderMutation.mutate({
       memberId: selectedCustomer.id,
       customer: {
         name: selectedCustomer.name,
@@ -294,11 +301,14 @@ export default function POSPage() {
       totalAmount,
       walletamt: walletAmount,
       paymentMode,
-      paymentRefNo: paymentRefNo || null,
+      paymentRefNo,
+      payerName,
+      chequeNo,
+      bankName,
+      transactionId,
+      paymentDetails,
       depotId,
-    };
-
-    orderMutation.mutate(payload);
+    });
   };
 
   // Close receipt and reset
@@ -383,11 +393,14 @@ export default function POSPage() {
                 <CheckoutSidebar 
                     totalAmount={totalAmount}
                     paymentMode={paymentMode}
-                    setPaymentMode={setPaymentMode}
-                    cashReceived={cashReceived}
-                    setCashReceived={setCashReceived}
-                    paymentRefNo={paymentRefNo}
-                    setPaymentRefNo={setPaymentRefNo}
+                    setPaymentMode={setPaymentMode as any}
+                    cashReceived={cashReceived} setCashReceived={setCashReceived}
+                    paymentRefNo={paymentRefNo} setPaymentRefNo={setPaymentRefNo}
+                    payerName={payerName} setPayerName={setPayerName}
+                    chequeNo={chequeNo} setChequeNo={setChequeNo}
+                    bankName={bankName} setBankName={setBankName}
+                    transactionId={transactionId} setTransactionId={setTransactionId}
+                    paymentDetails={paymentDetails} setPaymentDetails={setPaymentDetails}
                     handleCreateOrder={handleCreateOrder}
                     isProcessing={orderMutation.isPending}
                     canCheckout={cart.length > 0 && !!selectedCustomer}
@@ -430,19 +443,22 @@ export default function POSPage() {
         />
 
         {/* 3rd Column - Checkout Summary */}
-        <CheckoutSidebar 
-          totalAmount={totalAmount}
-          paymentMode={paymentMode}
-          setPaymentMode={setPaymentMode}
-          cashReceived={cashReceived}
-          setCashReceived={setCashReceived}
-          paymentRefNo={paymentRefNo}
-          setPaymentRefNo={setPaymentRefNo}
-          handleCreateOrder={handleCreateOrder}
-          isProcessing={orderMutation.isPending}
-          canCheckout={cart.length > 0 && !!selectedCustomer}
-          selectedCustomer={selectedCustomer}
-        />
+                 <CheckoutSidebar 
+                    totalAmount={totalAmount}
+                    paymentMode={paymentMode}
+                    setPaymentMode={setPaymentMode}
+                    cashReceived={cashReceived} setCashReceived={setCashReceived}
+                    paymentRefNo={paymentRefNo} setPaymentRefNo={setPaymentRefNo}
+                    payerName={payerName} setPayerName={setPayerName}
+                    chequeNo={chequeNo} setChequeNo={setChequeNo}
+                    bankName={bankName} setBankName={setBankName}
+                    transactionId={transactionId} setTransactionId={setTransactionId}
+                    paymentDetails={paymentDetails} setPaymentDetails={setPaymentDetails}
+                    handleCreateOrder={handleCreateOrder}
+                    isProcessing={orderMutation.isPending}
+                    canCheckout={cart.length > 0 && !!selectedCustomer}
+                    selectedCustomer={selectedCustomer}
+                />
       </div>
 
       {/* New Customer Dialog */}
