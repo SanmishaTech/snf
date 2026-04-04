@@ -86,7 +86,7 @@ export function CheckoutSidebar({
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="absolute inset-0 p-6 space-y-6 overflow-y-auto"
+              className="absolute inset-0 p-6 space-y-6 overflow-hidden"
             >
               <h2 className="text-[11px] font-bold tracking-wider text-slate-500 uppercase leading-none">CHECKOUT SUMMARY</h2>
               <div className="bg-white rounded-2xl p-6 shadow-xl border border-white/50">

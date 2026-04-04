@@ -226,9 +226,7 @@ export default function POSPage() {
 
   // Calculate totals
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const taxRate = 0.08; // 8% as per screenshot
-  const tax = subtotal * taxRate;
-  const totalAmount = subtotal + tax;
+  const totalAmount = subtotal;
 
   // Create order
   const orderMutation = useMutation({
@@ -358,8 +356,6 @@ export default function POSPage() {
                 cart={cart}
                 handleUpdateQuantity={handleUpdateQuantity}
                 handleRemoveItem={handleRemoveItem}
-                subtotal={subtotal}
-                tax={tax}
                 totalAmount={totalAmount}
                 memberDropdownRef={memberDropdownRef}
               />
@@ -427,8 +423,6 @@ export default function POSPage() {
           cart={cart}
           handleUpdateQuantity={handleUpdateQuantity}
           handleRemoveItem={handleRemoveItem}
-          subtotal={subtotal}
-          tax={tax}
           totalAmount={totalAmount}
           memberDropdownRef={memberDropdownRef}
         />

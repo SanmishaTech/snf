@@ -18,8 +18,6 @@ interface CustomerSidebarProps {
   cart: CartItem[];
   handleUpdateQuantity: (itemId: string, quantity: number) => void;
   handleRemoveItem: (itemId: string) => void;
-  subtotal: number;
-  tax: number;
   totalAmount: number;
   memberDropdownRef: React.RefObject<HTMLDivElement | null>;
 }
@@ -37,8 +35,6 @@ export function CustomerSidebar({
   cart,
   handleUpdateQuantity,
   handleRemoveItem,
-  subtotal,
-  tax,
   totalAmount,
   memberDropdownRef,
 }: CustomerSidebarProps) {
@@ -202,16 +198,8 @@ export function CustomerSidebar({
       </div>
 
       {/* Cart Summary Footer */}
-      <div className="mt-auto border-t bg-white p-6 space-y-3">
+      <div className="mt-auto border-t bg-white p-6">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-slate-400">Subtotal</span>
-          <span className="text-xs font-bold text-slate-700">₹{subtotal.toFixed(2)}</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-slate-400">Tax (8%)</span>
-          <span className="text-xs font-bold text-slate-700">₹{tax.toFixed(2)}</span>
-        </div>
-        <div className="flex items-center justify-between pt-2">
           <span className="text-sm font-bold text-slate-800 uppercase tracking-tight">Cart Total</span>
           <span className="text-lg font-black text-blue-600">₹{totalAmount.toFixed(2)}</span>
         </div>
