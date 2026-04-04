@@ -566,13 +566,13 @@ export default function DeliveryDateOrdersReport() {
                                       <TableRow>
                                         <TableHead>Depot Variant</TableHead>
                                         <TableHead>Depot</TableHead>
-                                        <TableHead className="text-right">MRP</TableHead>
-                                        <TableHead className="text-right">Purchase Price</TableHead>
-                                        <TableHead className="text-right">Ordered</TableHead>
-                                        <TableHead className="text-right">Delivered</TableHead>
-                                        <TableHead className="text-right">Received</TableHead>
-                                        <TableHead className="text-right">Supervisor</TableHead>
-                                        <TableHead className="text-right">Total Amount</TableHead>
+                                        <TableHead className="text-center">MRP</TableHead>
+                                        <TableHead className="text-center">Purchase Price</TableHead>
+                                        <TableHead className="text-center">Ordered</TableHead>
+                                        <TableHead className="text-center">Delivered</TableHead>
+                                        <TableHead className="text-center">Received</TableHead>
+                                        <TableHead className="text-center">Supervisor</TableHead>
+                                        <TableHead className="text-center">Total Amount</TableHead>
                                         <TableHead className="text-center">Orders</TableHead>
                                       </TableRow>
                                     </TableHeader>
@@ -583,25 +583,25 @@ export default function DeliveryDateOrdersReport() {
                                             {variant.depotVariantName}
                                           </TableCell>
                                           <TableCell>{variant.depotName}</TableCell>
-                                          <TableCell className="text-right">
+                                          <TableCell className="text-center">
                                             ₹{variant.mrp.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                           </TableCell>
-                                          <TableCell className="text-right">
+                                          <TableCell className="text-center">
                                             ₹{variant.priceAtPurchase.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                           </TableCell>
-                                          <TableCell className="text-right font-medium">
+                                          <TableCell className="text-center font-medium">
                                             {variant.totalQuantity}
                                           </TableCell>
-                                          <TableCell className="text-right">
+                                          <TableCell className="text-center">
                                             {variant.totalDeliveredQuantity}
                                           </TableCell>
-                                          <TableCell className="text-right">
+                                          <TableCell className="text-center">
                                             {variant.totalReceivedQuantity}
                                           </TableCell>
-                                          <TableCell className="text-right">
+                                          <TableCell className="text-center">
                                             {variant.totalSupervisorQuantity}
                                           </TableCell>
-                                          <TableCell className="text-right font-medium">
+                                          <TableCell className="text-center font-medium">
                                             ₹{variant.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                           </TableCell>
                                           <TableCell className="text-center">

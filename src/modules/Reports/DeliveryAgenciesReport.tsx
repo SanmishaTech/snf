@@ -178,7 +178,7 @@ export default function DeliveryAgenciesReport() {
             {format(new Date(item.deliveryDate), 'dd MMM yyyy')}
           </TableCell>
           <TableCell className="text-sm">{item.productName} - {item.variantName}</TableCell>
-          <TableCell className="text-right">{item.quantity}</TableCell>
+          <TableCell className="text-center">{item.quantity}</TableCell>
           <TableCell>{item.customerUniqueId || '-'}</TableCell>
           <TableCell>{item.customerName}</TableCell>
           <TableCell className="text-sm max-w-xs truncate" title={item.deliveryAddress}>
@@ -190,7 +190,7 @@ export default function DeliveryAgenciesReport() {
               {item.status}
             </Badge>
           </TableCell>
-          <TableCell className="text-right font-medium">
+          <TableCell className="text-center font-medium">
             ₹{(item.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
           </TableCell>
         </TableRow>
@@ -372,13 +372,13 @@ export default function DeliveryAgenciesReport() {
                   <TableHead>Order ID</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Product</TableHead>
-                  <TableHead className="text-right">Qty</TableHead>
+                  <TableHead className="text-center">Qty</TableHead>
                   <TableHead>Member Unique Id</TableHead>
                   <TableHead>Customer</TableHead>
                   <TableHead>Address</TableHead>
                   <TableHead>Area</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead className="text-center">Amount</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

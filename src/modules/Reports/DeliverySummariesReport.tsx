@@ -327,11 +327,11 @@ export default function DeliverySummariesReport() {
                     <TableHead>Varient</TableHead>
                     <TableHead>City</TableHead>
                     {(reportData.data.statusList || []).map((status: string) => (
-                      <TableHead key={status} className="text-right">
+                      <TableHead key={status} className="text-center">
                         {status}
                       </TableHead>
                     ))}
-                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead className="text-center">Total</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -343,11 +343,11 @@ export default function DeliverySummariesReport() {
                       <TableCell>{agency.variantName || ''}</TableCell>
                       <TableCell>{agency.city || ''}</TableCell>
                       {(reportData.data.statusList || []).map((status: string) => (
-                        <TableCell key={status} className="text-right">
+                        <TableCell key={status} className="text-center">
                           {agency.statusCounts?.[status] ?? 0}
                         </TableCell>
                       ))}
-                      <TableCell className="text-right font-medium">{agency.totalCount ?? 0}</TableCell>
+                      <TableCell className="text-center font-medium">{agency.totalCount ?? 0}</TableCell>
                     </TableRow>
                   ))}
 
@@ -358,11 +358,11 @@ export default function DeliverySummariesReport() {
                     <TableCell />
                     <TableCell />
                     {(reportData.data.statusList || []).map((status: string) => (
-                      <TableCell key={status} className="text-right font-bold">
+                      <TableCell key={status} className="text-center font-bold">
                         {reportData.data.totals?.statusTotals?.[status] ?? 0}
                       </TableCell>
                     ))}
-                    <TableCell className="text-right font-bold">{reportData.data.totals?.totalDeliveries ?? 0}</TableCell>
+                    <TableCell className="text-center font-bold">{reportData.data.totals?.totalDeliveries ?? 0}</TableCell>
                   </TableRow>
                 </TableBody>
               </Table>

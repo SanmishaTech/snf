@@ -204,7 +204,7 @@ export default function WalletReport() {
                   <TableHead>Address</TableHead>
                   <TableHead>Pincode</TableHead>
                   <TableHead>Depot</TableHead>
-                  <TableHead className="text-right">Closing Balance</TableHead>
+                  <TableHead className="text-center">Closing Balance</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -236,7 +236,7 @@ export default function WalletReport() {
                         </TableCell>
                         <TableCell>{r.pincode || "-"}</TableCell>
                         <TableCell>{r.depotName || "-"}</TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-center">
                           ₹{Number(r.closingBalance || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                         </TableCell>
                       </TableRow>
@@ -252,7 +252,7 @@ export default function WalletReport() {
                       <TableCell />
                       <TableCell />
                       <TableCell />
-                      <TableCell className="text-right font-bold">
+                      <TableCell className="text-center font-bold">
                         ₹{Number(totalClosingBalance || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                       </TableCell>
                     </TableRow>

@@ -354,9 +354,9 @@ export default function SaleRegisterReport() {
                   <TableHead>Name</TableHead>
                   <TableHead>Customer Unique Id</TableHead>
                   <TableHead>Customer ID</TableHead>
-                  <TableHead className="text-right">Sale Amount</TableHead>
-                  <TableHead className="text-right">Refund</TableHead>
-                  <TableHead className="text-right">Net Amount</TableHead>
+                  <TableHead className="text-center">Sale Amount</TableHead>
+                  <TableHead className="text-center">Refund</TableHead>
+                  <TableHead className="text-center">Net Amount</TableHead>
                   <TableHead>Address</TableHead>
                   <TableHead>Pincode</TableHead>
                   <TableHead>Mobile</TableHead>
@@ -384,13 +384,13 @@ export default function SaleRegisterReport() {
                       <TableCell>{r.name || "-"}</TableCell>
                       <TableCell>{r.memberUniqueId || "-"}</TableCell>
                       <TableCell>{r.customerId || "-"}</TableCell>
-                      <TableCell className="text-right font-medium">
+                      <TableCell className="text-center font-medium">
                         ₹{(Number(r.saleAmount) || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                       </TableCell>
-                      <TableCell className="text-right font-medium">
+                      <TableCell className="text-center font-medium">
                         ₹{(Number(r.refundAmount) || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                       </TableCell>
-                      <TableCell className="text-right font-medium">
+                      <TableCell className="text-center font-medium">
                         ₹{(Number(r.netAmount) || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                       </TableCell>
                       <TableCell className="max-w-[360px] whitespace-normal break-words" title={r.address}>
@@ -408,13 +408,13 @@ export default function SaleRegisterReport() {
                 {!isFetching && resolvedRows.length > 0 ? (
                   <TableRow className="bg-gray-50 font-semibold">
                     <TableCell colSpan={2}>Total</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-center">
                       ₹{totalSaleAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-center">
                       ₹{totalRefundAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-center">
                       ₹{totalNetAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                     </TableCell>
                     <TableCell colSpan={7} />

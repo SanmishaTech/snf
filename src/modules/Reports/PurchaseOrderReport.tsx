@@ -169,11 +169,11 @@ export default function PurchaseOrderReport() {
           </TableCell>
           <TableCell>{item.farmerName}</TableCell>
           <TableCell>{item.productName} - {item.variantName}</TableCell>
-          <TableCell className="text-right">{item.quantity}</TableCell>
-          <TableCell className="text-right">{item.deliveredQuantity ?? '-'}</TableCell>
-          <TableCell className="text-right">{item.receivedQuantity ?? '-'}</TableCell>
-          <TableCell className="text-right">{item.supervisorQuantity ?? '-'}</TableCell>
-          <TableCell className="text-right text-xs">
+          <TableCell className="text-center">{item.quantity}</TableCell>
+          <TableCell className="text-center">{item.deliveredQuantity ?? '-'}</TableCell>
+          <TableCell className="text-center">{item.receivedQuantity ?? '-'}</TableCell>
+          <TableCell className="text-center">{item.supervisorQuantity ?? '-'}</TableCell>
+          <TableCell className="text-center text-xs">
             {(() => {
               const deliveredQty = item.deliveredQuantity ?? 0;
               const receivedQty = item.receivedQuantity ?? 0;
@@ -212,7 +212,7 @@ export default function PurchaseOrderReport() {
               );
             })()}
           </TableCell>
-          <TableCell className="text-right font-medium">
+          <TableCell className="text-center font-medium">
             ₹{item.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
           </TableCell>
           <TableCell>
@@ -446,12 +446,12 @@ export default function PurchaseOrderReport() {
                   <TableHead>Delivery Date</TableHead>
                   <TableHead>Farmer</TableHead>
                   <TableHead>Product</TableHead>
-                  <TableHead className="text-right">Ordered Qty</TableHead>
-                  <TableHead className="text-right">Delivered Qty</TableHead>
-                  <TableHead className="text-right">Received Qty</TableHead>
-                  <TableHead className="text-right">Supervisor Qty</TableHead>
-                  <TableHead className="text-right">Wastage (F/A)</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead className="text-center">Ordered Qty</TableHead>
+                  <TableHead className="text-center">Delivered Qty</TableHead>
+                  <TableHead className="text-center">Received Qty</TableHead>
+                  <TableHead className="text-center">Supervisor Qty</TableHead>
+                  <TableHead className="text-center">Wastage (F/A)</TableHead>
+                  <TableHead className="text-center">Amount</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>

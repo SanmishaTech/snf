@@ -346,9 +346,9 @@ export default function SubscriptionReports() {
                         <TableHead>Product</TableHead>
                         <TableHead>Variant</TableHead>
                         <TableHead>Schedule</TableHead>
-                        <TableHead className="text-right">Daily Qty</TableHead>
-                        <TableHead className="text-right">Total Qty</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
+                        <TableHead className="text-center">Daily Qty</TableHead>
+                        <TableHead className="text-center">Total Qty</TableHead>
+                        <TableHead className="text-center">Amount</TableHead>
                         <TableHead>Payment</TableHead>
                         <TableHead>Agency</TableHead>
                         <TableHead>From Date</TableHead>
@@ -375,9 +375,9 @@ export default function SubscriptionReports() {
                           <TableCell>{subscription.productName}</TableCell>
                           <TableCell>{subscription.variantName}</TableCell>
                           <TableCell>{subscription.deliverySchedule}</TableCell>
-                          <TableCell className="text-right">{subscription.dailyQty}</TableCell>
-                          <TableCell className="text-right">{subscription.totalQty}</TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-center">{subscription.dailyQty}</TableCell>
+                          <TableCell className="text-center">{subscription.totalQty}</TableCell>
+                          <TableCell className="text-center">
                             ₹{(subscription.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                           </TableCell>
                           <TableCell>{subscription.paymentStatus}</TableCell>

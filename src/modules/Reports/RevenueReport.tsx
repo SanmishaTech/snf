@@ -217,9 +217,9 @@ export default function RevenueReport() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Member Unique Id</TableHead>
-                  <TableHead className="text-right">Sale Amount</TableHead>
-                  <TableHead className="text-right">Refund</TableHead>
-                  <TableHead className="text-right">Net Amount</TableHead>
+                  <TableHead className="text-center">Sale Amount</TableHead>
+                  <TableHead className="text-center">Refund</TableHead>
+                  <TableHead className="text-center">Net Amount</TableHead>
                   <TableHead>Mobile</TableHead>
                   <TableHead>Current Varient</TableHead>
                   <TableHead>Milk Subscription Start Date</TableHead>
@@ -247,13 +247,13 @@ export default function RevenueReport() {
                       <TableRow key={`${r.memberId}-${idx}`} className="hover:bg-gray-50">
                         <TableCell>{r.name || "-"}</TableCell>
                         <TableCell>{r.memberUniqueId || "-"}</TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-center">
                           ₹{Number(r.saleAmount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-center">
                           ₹{Number(r.refundAmount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-center">
                           ₹{Number(r.netAmount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                         </TableCell>
                         <TableCell>{r.mobile || "-"}</TableCell>
@@ -269,13 +269,13 @@ export default function RevenueReport() {
                     <TableRow>
                       <TableCell className="font-bold">TOTAL</TableCell>
                       <TableCell />
-                      <TableCell className="text-right font-bold">
+                      <TableCell className="text-center font-bold">
                         ₹{Number(totalSaleAmount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                       </TableCell>
-                      <TableCell className="text-right font-bold">
+                      <TableCell className="text-center font-bold">
                         ₹{Number(totalRefundAmount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                       </TableCell>
-                      <TableCell className="text-right font-bold">
+                      <TableCell className="text-center font-bold">
                         ₹{Number(totalNetAmount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                       </TableCell>
                       <TableCell />
