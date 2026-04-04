@@ -10,6 +10,20 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Package, ShoppingCart } from "lucide-react";
 import { formatCurrency } from "@/lib/formatter";
 
+function parseUnitToLiters(unit: string | undefined): number {
+  if (!unit) return 0;
+  const normalized = unit.toLowerCase().replace(/\s+/g, "").trim();
+  const match = normalized.match(/(\d+(?:\.\d+)?)/);
+  if (!match) return 0;
+  const value = Number(match[1]);
+  if (!Number.isFinite(value)) return 0;
+  if (normalized.includes("ml")) return value / 1000;
+  if (normalized.includes("liter") || normalized.includes("litre") || normalized.includes("ltr") || normalized.includes("lt") || normalized.endsWith("l") || normalized.includes("l")) {
+    return value;
+  }
+  return 0;
+}
+
 function useMediaQuery(query: string) {
   const getMatches = (q: string) => {
     if (typeof window !== "undefined") {
@@ -96,7 +110,7 @@ function OrderDetailsContent({ order }: { order: OrderDetailsPanelProps["order"]
   // Debug: let's see the actual structure
   console.log("[DEBUG] Full order object:", JSON.stringify(order, null, 2));
   console.log("[DEBUG] First item:", JSON.stringify(order.items[0], null, 2));
-  
+
   const groupedByVariant = useMemo(() => {
     const map = new Map<string, { name: string; qty: number; amount: number }>();
     for (const it of order.items) {
@@ -126,6 +140,14 @@ function OrderDetailsContent({ order }: { order: OrderDetailsPanelProps["order"]
   }, [order.items]);
 
   const totalQty = order.items.reduce((s, it) => s + (it.quantity ?? 0), 0);
+  
+  const totalLiters = useMemo(() => {
+    return order.items.reduce((sum, it) => {
+      const qty = it.quantity ?? 0;
+      const unitSource = it.depotVariantName || it.depotVariant?.name || it.unit || (it as any).variantName || (it as any).variant || "";
+      return sum + (qty * parseUnitToLiters(unitSource));
+    }, 0);
+  }, [order.items]);
 
   return (
     <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
@@ -140,7 +162,7 @@ function OrderDetailsContent({ order }: { order: OrderDetailsPanelProps["order"]
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2"><ShoppingCart className="h-4 w-4 text-secondary"/> Order</CardTitle>
+            <CardTitle className="text-sm flex items-center gap-2"><ShoppingCart className="h-4 w-4 text-secondary" /> Order</CardTitle>
           </CardHeader>
           <CardContent className="text-sm space-y-2">
             <div><span className="text-muted-foreground">Vendor:</span> {order.vendor?.name}</div>
@@ -188,6 +210,13 @@ function OrderDetailsContent({ order }: { order: OrderDetailsPanelProps["order"]
                 <div className="font-medium">{formatCurrency(b.amount)}</div>
               </div>
             ))}
+            {vendorsBreakdown.length > 0 && (
+              <div className="pt-2 border-t border-dashed flex items-center justify-between text-sm font-bold">
+                <div className="truncate max-w-[60%]">Total</div>
+                <div className="text-muted-foreground font-semibold">x{totalQty}</div>
+                <div className="font-bold text-primary">{formatCurrency(order.totalAmount)}</div>
+              </div>
+            )}
             {vendorsBreakdown.length === 0 && (
               <div className="text-sm text-muted-foreground">No items</div>
             )}
@@ -197,7 +226,7 @@ function OrderDetailsContent({ order }: { order: OrderDetailsPanelProps["order"]
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2"><Package className="h-4 w-4"/> Items</CardTitle>
+          <CardTitle className="text-sm flex items-center gap-2"><Package className="h-4 w-4" /> Items</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -213,6 +242,24 @@ function OrderDetailsContent({ order }: { order: OrderDetailsPanelProps["order"]
                 </div>
               </div>
             ))}
+            {order.items.length > 0 && (
+              <div className="pt-3 border-t border-dashed mt-2 space-y-2">
+                <div className="flex items-center justify-between text-sm font-bold">
+                  <div className="truncate max-w-[60%]">Total</div>
+                  <div className="text-right">
+                    <div className="text-muted-foreground font-semibold">x{totalQty}</div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between text-sm font-medium">
+                  <div className="text-muted-foreground">Total Rupees</div>
+                  <div className="font-bold text-primary text-right">{formatCurrency(order.totalAmount)}</div>
+                </div>
+                <div className="flex items-center justify-between text-sm font-medium">
+                  <div className="text-muted-foreground">Total Liters</div>
+                  <div className="font-bold text-primary text-right">{totalLiters.toFixed(2)} Ltrs</div>
+                </div>
+              </div>
+            )}
             {order.items.length === 0 && (
               <div className="text-sm text-muted-foreground">No items</div>
             )}

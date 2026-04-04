@@ -184,7 +184,7 @@ const initialData = {
         },
         //indraai
         {
-          title: "Delivery Agencies",
+          title: "Delivery Partners",
           url: "/admin/agencies",
           icon: Briefcase,
           groupLabel: "Indraai",
@@ -234,7 +234,7 @@ const initialData = {
           groupLabel: "Reports",
         },
         {
-          title: "Delivery Agency Report",
+          title: "Delivery Partners Report",
           url: "/admin/reports/delivery-agencies",
           icon: BarChart3,
           groupLabel: "Reports",
@@ -420,16 +420,16 @@ const initialData = {
           title: "Orders",
           url: "/admin/orders",
           icon: FileText,
-          groupLabel: "Agency Portal",
+          groupLabel: "Delivery Partners Portal",
         },
         {
           title: "Delivery",
           url: "/admin/delivery",
           icon: FileText,
-          groupLabel: "Agency Portal",
+          groupLabel: "Delivery Partners Portal",
         },
         {
-          title: "Delivery Agency Report",
+          title: "Delivery Partners Report",
           url: "/admin/reports/delivery-agencies",
           icon: BarChart3,
           groupLabel: "Reports",

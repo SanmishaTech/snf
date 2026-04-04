@@ -1010,7 +1010,7 @@ const AdminSubscriptionList: React.FC = () => {
       const errorMessage =
         err.response?.data?.message ||
         err.message ||
-        "Failed to load delivery agents.";
+        "Failed to load delivery partners.";
       toast.error(errorMessage); // Use Sonner toast for errors
       setAgencies([]); // Ensure agencies is an array on error
     } finally {

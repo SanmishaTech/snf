@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { useNavigate } from "react-router-dom";
 import Mobilesrcimage from "./images/indraai 640 x 960.png"
 interface HeroImage {
   id: string | number;
@@ -27,7 +26,6 @@ const HeroSection: React.FC<HeroSectionProps> = ({
   const [isLoaded, setIsLoaded] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoaded(true), 100);
@@ -197,12 +195,12 @@ const HeroSection: React.FC<HeroSectionProps> = ({
         >
           <button
             onClick={handleJoinMilkClub}
-            className="px-8 py-3 bg-primary text-white font-semibold rounded-full hover:bg-red-400/90 transition-colors duration-300 
+            className="px-8 py-3 bg-[#c8202f] text-white font-semibold rounded-full hover:bg-[#a51a26] transition-colors duration-300 
                        min-w-[240px] 
                        lg:min-w-[240px] lg:px-8 lg:py-3 lg:text-base
                        md:min-w-[200px] md:px-6 md:py-2.5 md:text-sm
                        sm:min-w-[180px] sm:px-5 sm:py-2 sm:text-sm
-                       max-sm:min-w-[150px] max-sm:px-4 max-sm:py-2 max-sm:text-xs"
+                       max-sm:min-w-[180px] max-sm:px-6 max-sm:py-3 max-sm:text-sm"
           >
             Join Our Milk Club
           </button>

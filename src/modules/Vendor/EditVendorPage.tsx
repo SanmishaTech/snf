@@ -59,7 +59,7 @@ const EditVendorPage: React.FC = () => {
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
-          <AlertDescription>No Vendor ID provided. Please go back and select a vendor to edit.</AlertDescription>
+          <AlertDescription>No Farmer ID provided. Please go back and select a farmer to edit.</AlertDescription>
         </Alert>
       </div>
     );

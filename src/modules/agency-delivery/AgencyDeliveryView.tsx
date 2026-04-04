@@ -302,6 +302,8 @@ const AgencyDeliveryView: React.FC = () => {
         )}
       </header>
 
+
+
       <div className="mb-6 p-4 bg-white rounded-lg shadow flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
           <label htmlFor="deliveryDate" className="font-semibold text-gray-700 whitespace-nowrap">Select Date:</label>

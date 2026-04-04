@@ -15,6 +15,21 @@ import {
   PackageCheck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/formatter";
+
+function parseUnitToLiters(unit: string | undefined): number {
+  if (!unit) return 0;
+  const normalized = unit.toLowerCase().replace(/\s+/g, "").trim();
+  const match = normalized.match(/(\d+(?:\.\d+)?)/);
+  if (!match) return 0;
+  const value = Number(match[1]);
+  if (!Number.isFinite(value)) return 0;
+  if (normalized.includes("ml")) return value / 1000;
+  if (normalized.includes("liter") || normalized.includes("litre") || normalized.includes("ltr") || normalized.includes("lt") || normalized.endsWith("l") || normalized.includes("l")) {
+    return value;
+  }
+  return 0;
+}
 
 interface UserProfile {
   id: string;
@@ -143,6 +158,20 @@ const OrderDetailsPage = () => {
     }
     return groups;
   }, [itemsToDisplay]);
+
+  const { totalAmount, totalLiters } = useMemo(() => {
+    return itemsToDisplay.reduce((acc, it) => {
+      const qty = it.quantity ?? 0;
+      const price = it.priceAtPurchase ?? 0;
+      const unitSource = it.depotVariantName || it.unit || "";
+      return {
+        totalAmount: acc.totalAmount + (qty * price),
+        totalLiters: acc.totalLiters + (qty * parseUnitToLiters(unitSource))
+      };
+    }, { totalAmount: 0, totalLiters: 0 });
+  }, [itemsToDisplay]);
+
+  const totalQty = useMemo(() => itemsToDisplay.reduce((s, it) => s + (it.quantity ?? 0), 0), [itemsToDisplay]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -413,6 +442,31 @@ const OrderDetailsPage = () => {
                       </div>
                     );
                   })}
+
+                  {itemsGroupedByCity.length > 0 && (
+                    <div className="mt-6 pt-4 border-t border-dashed space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-dashed pb-3">
+                        <span className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider">Order Summary</span>
+                        <div className="flex items-center gap-4">
+                           <div className="flex flex-col items-end">
+                            <span className="text-[10px] text-gray-500 uppercase font-bold tracking-tight">Total Quantity</span>
+                            <span className="text-sm font-bold text-gray-900 dark:text-white">x{totalQty}</span>
+                           </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-500 font-medium">Total Rupees</span>
+                          <span className="font-bold text-blue-600 dark:text-blue-400">{formatCurrency(totalAmount)}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-500 font-medium">Total Liters</span>
+                          <span className="font-bold text-blue-600 dark:text-blue-400">{totalLiters.toFixed(2)} Ltrs</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {itemsGroupedByCity.length === 0 && (
                     <div className="text-sm text-gray-500 dark:text-gray-400">No items to display.</div>

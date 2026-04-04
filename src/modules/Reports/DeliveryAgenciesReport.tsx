@@ -235,7 +235,7 @@ export default function DeliveryAgenciesReport() {
                   {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                   {getGroupIcon()}
                   <span className="font-semibold">
-                    {group.level === 'agency' && `Delivery Agent: ${group.name}`}
+                    {group.level === 'agency' && `Delivery Partners: ${group.name}`}
                     {group.level === 'area' && `Area: ${group.name} ${group.city ? `(${group.city})` : ''}`}
                     {group.level === 'variant' && `Product: ${group.name}`}
                     {group.level === 'status' && `Status: ${group.name}`}

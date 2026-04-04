@@ -137,7 +137,7 @@ const VendorList: React.FC = () => {
       setVendorToDeleteId(null);
     },
     onError: (error: Error) => {
-      toast.error(`Failed to delete vendor: ${error.message}`);
+      toast.error(`Failed to delete farmer: ${error.message}`);
       setShowConfirmDeleteDialog(false);
     },
   });
@@ -205,7 +205,7 @@ const VendorList: React.FC = () => {
     if (vendor.user && vendor.user.id) {
       statusMutation.mutate({ vendorUserId: vendor.user.id, active: !vendor.user.active });
     } else {
-      toast.error("User information not available for this vendor.");
+      toast.error("User information not available for this farmer.");
     }
   };
 

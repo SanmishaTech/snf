@@ -136,7 +136,7 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
 
       {/* Footer */}
       <AppFooter />
-      {role === "MEMBER" && <BottomNavBar />}
+      <BottomNavBar />
     </div>
   );
 }

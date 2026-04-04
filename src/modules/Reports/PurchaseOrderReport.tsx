@@ -444,7 +444,7 @@ export default function PurchaseOrderReport() {
                   <TableHead>Order No</TableHead>
                   <TableHead>Order Date</TableHead>
                   <TableHead>Delivery Date</TableHead>
-                  <TableHead>Vendor</TableHead>
+                  <TableHead>Farmer</TableHead>
                   <TableHead>Product</TableHead>
                   <TableHead className="text-right">Ordered Qty</TableHead>
                   <TableHead className="text-right">Delivered Qty</TableHead>

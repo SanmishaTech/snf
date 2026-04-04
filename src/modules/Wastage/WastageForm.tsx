@@ -265,6 +265,7 @@ const WastageForm: React.FC<WastageFormProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [depots, loggedUser?.depotId]);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
+  const [openProducts, setOpenProducts] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     (async () => {
@@ -331,6 +332,22 @@ const WastageForm: React.FC<WastageFormProps> = ({
   });
 
   const onSubmit: SubmitHandler<WastageFormData> = (data) => mutation.mutate(data);
+
+  // Filter products that have at least one variant available for the selected depot
+  // Derive from the variants directly since they include product objects from the backend
+  const availableProductsMap = new Map();
+  variants.forEach(v => {
+    if (v.product) {
+      availableProductsMap.set(String(v.productId), v.product);
+    }
+  });
+  
+  let availableProducts = Array.from(availableProductsMap.values());
+  // Fallback to intersecting with the fetched `products` array if v.product is somehow missing
+  if (availableProducts.length === 0 && variants.length > 0) {
+    const availableProductIds = new Set(variants.map(v => String(v.productId)));
+    availableProducts = products.filter(p => availableProductIds.has(String(p.id)));
+  }
 
   // --------------------------- UI ------------------------------------------
   return (
@@ -425,7 +442,12 @@ const WastageForm: React.FC<WastageFormProps> = ({
       {/* Line items */}
       <Card>
         <CardHeader className="flex-row items-center justify-between">
-          <CardTitle>Items</CardTitle>
+          <div>
+            <CardTitle>Items</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Showing products available in the selected Depot.
+            </p>
+          </div>
           <Button
             type="button"
             size="sm"
@@ -457,7 +479,10 @@ const WastageForm: React.FC<WastageFormProps> = ({
                       name={`details.${idx}.productId`}
                       render={({ field: pField }) => {
                         return (
-                          <Popover>
+                          <Popover
+                            open={openProducts[field.id]}
+                            onOpenChange={(val) => setOpenProducts(prev => ({...prev, [field.id]: val}))}
+                          >
                             <PopoverTrigger asChild>
                               <Button
                                 variant="outline"
@@ -467,11 +492,12 @@ const WastageForm: React.FC<WastageFormProps> = ({
                                   !pField.value && "text-muted-foreground"
                                 )}
                               >
-                                {pField.value
-                                  ? products.find(
-                                    (p) => String(p.id) === pField.value
-                                  )?.name
-                                  : "Select Product"}
+                                <span className="truncate text-left flex-1" title={pField.value ? (availableProducts.find(p => String(p.id) === pField.value)?.name || products.find(p => String(p.id) === pField.value)?.name) : "Select Product"}>
+                                  {pField.value
+                                    ? (availableProducts.find(p => String(p.id) === pField.value)?.name ||
+                                       products.find(p => String(p.id) === pField.value)?.name)
+                                    : "Select Product"}
+                                </span>
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                               </Button>
                             </PopoverTrigger>
@@ -481,7 +507,7 @@ const WastageForm: React.FC<WastageFormProps> = ({
                                 <CommandList>
                                   <CommandEmpty>No product found.</CommandEmpty>
                                   <CommandGroup>
-                                    {products.map((p) => (
+                                    {availableProducts.map((p) => (
                                       <CommandItem
                                         key={p.id}
                                         value={p.name}
@@ -497,6 +523,9 @@ const WastageForm: React.FC<WastageFormProps> = ({
                                           if (productVariants.length === 1) {
                                             setValue(`details.${idx}.variantId`, String(productVariants[0].id));
                                           }
+
+                                          // Close the dropdown
+                                          setOpenProducts(prev => ({...prev, [field.id]: false}));
                                         }}
                                       >
                                         <Check
