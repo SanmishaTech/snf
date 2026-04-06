@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Facebook, Instagram, UserCircle, ShoppingBag, LogOut } from 'lucide-react';
+import { Facebook, Instagram, UserCircle, ShoppingBag, LogOut, MapPin, Wallet } from 'lucide-react';
+import { get } from '@/services/apiService';
+import { formatCurrency } from '@/lib/formatter';
 import UserChangePasswordDialog from '@/components/common/UserChangePasswordDialog';
 import Sarkotlogo from "@/images/Sarkhot-Natural-Farms-Png.webp"
 import Indraipng from "@/images/WhatsApp Image 2025-06-24 at 18.32.39 (1) (1).png"
@@ -12,8 +14,9 @@ interface HeaderProps {
   showWallet?: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout }) => {
+const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWallet }) => {
   const navigate = useNavigate();
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const headerRef = useRef<HTMLElement>(null);
   const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
   const [isMobileProfileOpen, setIsMobileProfileOpen] = useState(false);
@@ -61,10 +64,26 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout }) => {
       } catch (e) {
         console.error("Failed to parse user email", e);
       }
+
+      // Fetch wallet balance if showWallet is true
+      if (showWallet) {
+        const fetchBalance = async () => {
+          try {
+            const response = await get<{ success: boolean, data: { balance: number } }>('/wallet/balance');
+            if (response?.success && response?.data) {
+              setWalletBalance(response.data.balance);
+            }
+          } catch (error) {
+            console.error("Failed to fetch wallet balance in header", error);
+          }
+        };
+        fetchBalance();
+      }
     } else {
       setUserEmail(null);
+      setWalletBalance(null);
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, showWallet]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -112,6 +131,20 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout }) => {
                           <p className="text-sm font-medium text-gray-800 truncate">{userName}</p>
                         </div>
                         <Link to="/member/subscriptions" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50"><ShoppingBag size={16} className="mr-2" />My Subscriptions</Link>
+                        {showWallet && (
+                          <Link to="/member/wallet" className="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-green-50">
+                            <div className="flex items-center">
+                              <Wallet size={16} className="mr-2" />
+                              <span>My Wallet</span>
+                            </div>
+                            {walletBalance !== null && (
+                              <span className="text-xs font-semibold text-green-600 ml-2">
+                                {formatCurrency(walletBalance)}
+                              </span>
+                            )}
+                          </Link>
+                        )}
+                        <Link to="/member/addresses" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50"><MapPin size={16} className="mr-2" />My Address</Link>
                         <button onClick={() => onLogout()} className="w-full flex items-center text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"><LogOut size={16} className="mr-2" />Sign out</button>
                       </div>
                     )}
@@ -176,6 +209,31 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout }) => {
                   >
                     <ShoppingBag size={18} className="mr-3 text-green-600" />
                     My Subscriptions
+                  </Link>
+                  {showWallet && (
+                    <Link
+                      to="/member/wallet"
+                      className="flex items-center justify-between w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-green-50 transition-colors"
+                      onClick={() => setIsMobileProfileOpen(false)}
+                    >
+                      <div className="flex items-center">
+                        <Wallet size={18} className="mr-3 text-green-600" />
+                        <span>My Wallet</span>
+                      </div>
+                      {walletBalance !== null && (
+                        <span className="text-xs font-bold text-green-600 ml-2">
+                          {formatCurrency(walletBalance)}
+                        </span>
+                      )}
+                    </Link>
+                  )}
+                  <Link
+                    to="/member/addresses"
+                    className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-green-50 transition-colors"
+                    onClick={() => setIsMobileProfileOpen(false)}
+                  >
+                    <MapPin size={18} className="mr-3 text-green-600" />
+                    My Address
                   </Link>
                   <button
                     onClick={() => {
