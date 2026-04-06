@@ -8,6 +8,7 @@ import {
   updateDepotProductVariant,
 } from '../../services/depotProductVariantService';
 import { getProductOptions } from '../../services/productService';
+import { getAllDepotsList } from '../../services/depotService';
 
 import {
   Select, SelectTrigger, SelectContent, SelectItem, SelectValue
@@ -20,6 +21,7 @@ import { Switch } from '@/components/ui/switch';
 import { Loader2, PlusCircle, Save } from 'lucide-react';
 
 const formSchema = z.object({
+  depotId: z.coerce.number().int().optional(),
   productId: z.coerce.number().int().positive({ message: 'Product ID is required' }),
   name: z.string().min(1, 'Variant name is required'),
   hsnCode: z.string().optional(),
@@ -46,6 +48,7 @@ interface Props {
 
 const DepotProductVariantForm: React.FC<Props> = ({ initialData, onClose, onSuccess }) => {
   const [productOptions, setProductOptions] = useState<{ id: number; name: string; isSubscription: boolean }[]>([]);
+  const [depotOptions, setDepotOptions] = useState<{ id: number; name: string }[]>([]);
   const {
     register,
     handleSubmit,
@@ -56,6 +59,7 @@ const DepotProductVariantForm: React.FC<Props> = ({ initialData, onClose, onSucc
   } = useForm<DepotVariantFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      depotId: initialData?.depotId || 0,
       productId: initialData?.productId || 0,
       name: initialData?.name || '',
       hsnCode: initialData?.hsnCode || '',
@@ -77,14 +81,18 @@ const DepotProductVariantForm: React.FC<Props> = ({ initialData, onClose, onSucc
   const selectedProduct = productOptions.find((p) => p.id === Number(selectedProductId));
   const isSubscriptionProduct = selectedProduct?.isSubscription || false;
 
-  // fetch products once
+  // fetch products and depots once
   useEffect(() => {
     (async () => {
       try {
-        const opts = await getProductOptions();
-        setProductOptions(opts);
+        const [pOpts, dOpts] = await Promise.all([
+          getProductOptions(),
+          getAllDepotsList()
+        ]);
+        setProductOptions(pOpts);
+        setDepotOptions(dOpts);
       } catch (e) {
-        console.error('Failed to load products', e);
+        console.error('Failed to load options', e);
       }
     })();
   }, []);
@@ -92,6 +100,7 @@ const DepotProductVariantForm: React.FC<Props> = ({ initialData, onClose, onSucc
   useEffect(() => {
     if (initialData) {
       reset({
+        depotId: initialData.depotId || 0,
         productId: initialData.productId,
         name: initialData.name,
         hsnCode: initialData.hsnCode ?? '',
@@ -112,11 +121,20 @@ const DepotProductVariantForm: React.FC<Props> = ({ initialData, onClose, onSucc
 
   const onSubmit = async (data: DepotVariantFormData) => {
     try {
+      if (!isSubscriptionProduct) {
+        data.buyOncePrice = data.salesPrice;
+      } else {
+        data.salesPrice = data.buyOncePrice;
+      }
+      
+      const payload = { ...data };
+      if (!payload.depotId) delete payload.depotId;
+
       if (initialData) {
-        await updateDepotProductVariant(initialData.id, data);
+        await updateDepotProductVariant(initialData.id, payload);
         toast.success('Variant updated');
       } else {
-        await createDepotProductVariant(data);
+        await createDepotProductVariant(payload);
         toast.success('Variant created');
       }
       onSuccess();
@@ -127,6 +145,26 @@ const DepotProductVariantForm: React.FC<Props> = ({ initialData, onClose, onSucc
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <div className="grid gap-2">
+        <Label htmlFor="depotId">Depot</Label>
+        <Select
+          value={watch('depotId') ? String(watch('depotId')) : undefined}
+          onValueChange={(val) => setValue('depotId', Number(val), { shouldValidate: true })}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select depot (Optional for Admin)" />
+          </SelectTrigger>
+          <SelectContent>
+            {depotOptions.map((d) => (
+              <SelectItem key={d.id} value={String(d.id)}>
+                {d.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {errors.depotId && <p className="text-sm text-red-600">{errors.depotId.message}</p>}
+      </div>
+
       <div className="grid gap-2">
         <Label htmlFor="productId">Product *</Label>
         <Select
@@ -173,6 +211,12 @@ const DepotProductVariantForm: React.FC<Props> = ({ initialData, onClose, onSucc
       )}
 
       <div className="grid gap-2">
+        <Label htmlFor="purchasePrice">Purchase Price</Label>
+        <Input type="number" step="0.01" id="purchasePrice" {...register('purchasePrice')} />
+        {errors.purchasePrice && <p className="text-sm text-red-600">{errors.purchasePrice.message}</p>}
+      </div>
+
+      <div className="grid gap-2">
         <Label htmlFor="minimumQty">Minimum Qty *</Label>
         <Input type="number" id="minimumQty" {...register('minimumQty')} />
         {errors.minimumQty && <p className="text-sm text-red-600">{errors.minimumQty.message}</p>}
@@ -200,32 +244,17 @@ const DepotProductVariantForm: React.FC<Props> = ({ initialData, onClose, onSucc
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="buyOncePrice">Buy Once Price</Label>
-              <Input
-                id="buyOncePrice"
-                type="number"
-                step="0.01"
-                {...register('buyOncePrice')}
-              />
-              {errors.buyOncePrice && (
-                <p className="text-sm text-red-500">{errors.buyOncePrice.message}</p>
-              )}
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="purchasePrice">Purchase Price</Label>
-              <Input
-                id="purchasePrice"
-                type="number"
-                step="0.01"
-                {...register('purchasePrice')}
-              />
-              {errors.purchasePrice && (
-                <p className="text-sm text-red-500">{errors.purchasePrice.message}</p>
-              )}
-            </div>
+          <div className="grid gap-2">
+            <Label htmlFor="buyOncePrice">Buy Once Price</Label>
+            <Input
+              id="buyOncePrice"
+              type="number"
+              step="0.01"
+              {...register('buyOncePrice')}
+            />
+            {errors.buyOncePrice && (
+              <p className="text-sm text-red-500">{errors.buyOncePrice.message}</p>
+            )}
           </div>
         </>
       )}
