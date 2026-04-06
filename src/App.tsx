@@ -126,6 +126,8 @@ const App = () => {
   const SNFCheckoutWrapper = React.lazy(() => import("./modules/SNF/SNFCheckoutWrapper"));
   // Lazy-load the Buy Now page wrapper for SNF
   const SNFBuyNowWrapper = React.lazy(() => import("./modules/SNF/SNFBuyNowWrapper"));
+  // Lazy-load Payment Callback page wrapper
+  const SNFPaymentCallbackWrapper = React.lazy(() => import("./modules/SNF/SNFPaymentCallbackWrapper"));
 
   // Lazy-load the Cart Debug page wrapper for SNF
   const SNFCartDebugWrapper = React.lazy(() => import("./modules/SNF/SNFCartDebugWrapper"));
@@ -230,6 +232,15 @@ const App = () => {
                 }
               >
                 <SNFBuyNowWrapper />
+              </React.Suspense>
+            }
+          />
+
+          <Route
+            path="/snf/payment/callback"
+            element={
+              <React.Suspense fallback={<div className="p-6 text-center">Verifying payment…</div>}>
+                <SNFPaymentCallbackWrapper />
               </React.Suspense>
             }
           />

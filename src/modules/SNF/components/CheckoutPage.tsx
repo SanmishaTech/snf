@@ -11,10 +11,11 @@ import { Separator } from "@/components/ui/separator";
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
-import { Minus, Plus, Trash2, MapPin, AlertTriangle } from "lucide-react";
+import { Minus, Plus, Trash2, MapPin, AlertTriangle, Wallet, CreditCard } from "lucide-react";
 import { snfOrderService } from "@/services/snfOrderService";
 import { get } from "@/services/apiService";
 import { validateCoupon, Coupon } from "@/services/couponMasterService";
+import { initiatePhonePePayment } from "@/services/phonePeService";
 
 
 import { DeliveryLocationService, DeliveryLocation } from "@/services/deliveryLocationService";
@@ -60,6 +61,8 @@ const CheckoutPage: React.FC = () => {
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
   const [couponDiscountAmount, setCouponDiscountAmount] = useState(0);
+  // Payment mode: 'WALLET' (wallet + cash) or 'ONLINE' (PhonePe)
+  const [paymentMode, setPaymentMode] = useState<'WALLET' | 'ONLINE'>('WALLET');
 
   const lastValidatedDepotRef = useRef<number | null>(null);
   const hasItemsRef = useRef(false);
@@ -192,7 +195,6 @@ const CheckoutPage: React.FC = () => {
       // Get depot ID from selected delivery location
       const depotIdString = DeliveryLocationService.getCurrentDepotId();
       const depotId = depotIdString ? parseInt(depotIdString.toString()) : null;
-      console.log('[Checkout] Using depot ID:', depotId);
 
       // Only include available items in the order
       const itemsPayload = availableItems.map((it) => ({
@@ -204,9 +206,16 @@ const CheckoutPage: React.FC = () => {
         productId: it.productId,
         depotProductVariantId: it.variantId,
       }));
+
       const deliveryFee = 0;
-      const orderSubtotal = availableSubtotal; // Use available items subtotal
-      const walletDeduction = Math.max(0, Math.min(walletBalance || 0, orderSubtotal + deliveryFee));
+      const orderSubtotal = availableSubtotal;
+      const subAfterCoupon = Math.max(0, orderSubtotal - couponDiscountAmount);
+
+      // Wallet deduction applies regardless of payment mode
+      const walletDeduction = Math.max(0, Math.min(walletBalance || 0, subAfterCoupon));
+      // What is left after wallet deduction
+      const payableOnline = Math.max(0, subAfterCoupon - walletDeduction);
+
       if (!selectedAddress) {
         toast.error("Please select a delivery address");
         return;
@@ -215,7 +224,7 @@ const CheckoutPage: React.FC = () => {
       const payload = {
         customer: {
           name: selectedAddress.recipientName,
-          email: null, // Email not stored in address
+          email: null,
           mobile: selectedAddress.mobile,
           addressLine1: selectedAddress.plotBuilding,
           addressLine2: selectedAddress.streetArea,
@@ -228,20 +237,48 @@ const CheckoutPage: React.FC = () => {
         deliveryFee,
         totalAmount: orderSubtotal + deliveryFee,
         walletamt: walletDeduction,
-        paymentMode: null,
+        paymentMode: paymentMode === 'ONLINE' && payableOnline > 0 ? 'ONLINE' : null,
         paymentRefNo: null,
-        paymentStatus: "PENDING",
+        paymentStatus: 'PENDING',
         paymentDate: null,
-        depotId: depotId || null, // Include depot ID from delivery location
-        deliveryAddressId: selectedAddress.id, // Include the selected address ID
+        depotId: depotId || null,
+        deliveryAddressId: selectedAddress.id,
         couponCode: appliedCoupon?.code || null,
         couponDiscount: couponDiscountAmount,
       };
 
-      const res = await snfOrderService.createOrder(payload);
-      toast.success(`Order created: ${res.data.orderNo}`);
-      clear();
-      navigate("/snf");
+      // 1. Check if online payment is needed
+      if (paymentMode === 'ONLINE' && payableOnline > 0) {
+        // PAYMENT FIRST FLOW: Save payload to localStorage
+        localStorage.setItem('snf_pending_order_payload', JSON.stringify(payload));
+
+        const frontendOrigin = window.location.origin;
+
+        // Initiate payment WITHOUT creating an order in DB yet
+        const { checkoutUrl, merchantOrderId } = await initiatePhonePePayment({
+          amount: payableOnline,
+          redirectUrl: `${frontendOrigin}/snf/payment/callback`,
+        });
+
+        // Save merchantOrderId in case we need to verify things securely later
+        localStorage.setItem('snf_pending_merchant_order_id', merchantOrderId);
+
+        toast.success(`Redirecting to PhonePe...`);
+        // Small delay so toast is visible, then navigate to PhonePe
+        // We DO NOT clear the cart here, so if they fail/cancel, their cart is intact!
+        setTimeout(() => {
+          window.location.href = checkoutUrl;
+        }, 800);
+      } else {
+        // WALLET-ONLY or CASH ON DELIVERY: Order complete immediately
+        const res = await snfOrderService.createOrder(payload);
+        const createdOrder = res.data;
+        const orderNo = createdOrder.orderNo;
+
+        toast.success(`Order created: ${orderNo}`);
+        clear();
+        navigate("/snf");
+      }
     } catch (err: any) {
       const message = err?.message || "Failed to create order";
       toast.error(message);
@@ -577,6 +614,44 @@ const CheckoutPage: React.FC = () => {
                       </span>
                     </div>
 
+                    {/* Payment Mode Selector */}
+                    {(() => {
+                      const subAfterCoupon = Math.max(0, availableSubtotal - couponDiscountAmount);
+                      const walletDeduction = Math.max(0, Math.min(walletBalance || 0, subAfterCoupon));
+                      const payableOnline = Math.max(0, subAfterCoupon - walletDeduction);
+                      return payableOnline > 0 ? (
+                        <div className="pt-2 space-y-2">
+                          <p className="text-xs font-medium text-muted-foreground">How would you like to pay the remaining {currency.format(payableOnline)}?</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setPaymentMode('WALLET')}
+                              className={`flex items-center gap-2 rounded-lg border p-3 text-sm transition-all ${
+                                paymentMode === 'WALLET'
+                                  ? 'border-primary bg-primary/5 text-primary font-medium'
+                                  : 'border-border text-muted-foreground hover:border-primary/40'
+                              }`}
+                            >
+                              <Wallet className="size-4 shrink-0" />
+                              <span>Cash / UPI<br /><span className="text-xs font-normal">On delivery</span></span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPaymentMode('ONLINE')}
+                              className={`flex items-center gap-2 rounded-lg border p-3 text-sm transition-all ${
+                                paymentMode === 'ONLINE'
+                                  ? 'border-primary bg-primary/5 text-primary font-medium'
+                                  : 'border-border text-muted-foreground hover:border-primary/40'
+                              }`}
+                            >
+                              <CreditCard className="size-4 shrink-0" />
+                              <span>Pay Online<br /><span className="text-xs font-normal">PhonePe / UPI / Card</span></span>
+                            </button>
+                          </div>
+                        </div>
+                      ) : null;
+                    })()}
+
 
                     {unavailableItems.length > 0 && (
                       <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded mt-2">
@@ -597,7 +672,9 @@ const CheckoutPage: React.FC = () => {
                           const d = Math.max(0, Math.min(walletBalance || 0, availableSubtotal));
                           const remaining = Math.max(0, availableSubtotal - d);
                           if (d > 0 && remaining > 0) {
-                            return `₹${d.toFixed(2)} will be deducted from your wallet. Remaining ₹${remaining.toFixed(2)} to be collected via Cash/UPI before delivery.`;
+                            return `₹${d.toFixed(2)} will be deducted from your wallet. Remaining ₹${remaining.toFixed(2)} ${
+                              paymentMode === 'ONLINE' ? 'to be paid via PhonePe.' : 'to be collected via Cash/UPI before delivery.'
+                            }`;
                           } else if (d >= availableSubtotal && availableSubtotal > 0) {
                             return `Full amount of ₹${availableSubtotal.toFixed(2)} will be deducted from your wallet.`;
                           } else {
@@ -613,10 +690,10 @@ const CheckoutPage: React.FC = () => {
                       onClick={handlePlaceOrder}
                       disabled={availableItems.length === 0 || !isFormValid || loading}
                     >
-                      {loading ? "Placing order..." : (
+                      {loading ? (paymentMode === 'ONLINE' ? 'Redirecting to PhonePe...' : 'Placing order...') : (
                         unavailableItems.length > 0
                           ? `Proceed with ${availableItems.length} item${availableItems.length > 1 ? 's' : ''}`
-                          : "Proceed to payment"
+                          : paymentMode === 'ONLINE' ? 'Pay with PhonePe →' : 'Place Order'
                       )}
                     </Button>
                     {availableItems.length === 0 && state.items.length > 0 && (
