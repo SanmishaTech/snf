@@ -22,9 +22,9 @@ const containerVariants = {
 
 const itemVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.95 },
-  visible: { 
-    opacity: 1, 
-    y: 0, 
+  visible: {
+    opacity: 1,
+    y: 0,
     scale: 1,
     transition: {
       type: "spring",
@@ -32,8 +32,8 @@ const itemVariants = {
       damping: 20,
     }
   },
-  exit: { 
-    opacity: 0, 
+  exit: {
+    opacity: 0,
     scale: 0.95,
     transition: { duration: 0.2 }
   }
@@ -43,22 +43,26 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToCart,
   if (isLoading) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-6 sm:gap-x-5 sm:gap-y-8">
-        {Array.from({ length: 12 }).map((_, index) => (
-          <div key={index} className="rounded-lg border bg-card text-card-foreground overflow-hidden">
-            <div className="aspect-[4/3] bg-muted/30 animate-pulse" />
-            <div className="p-3 space-y-2">
-              <div className="h-4 bg-muted rounded animate-pulse" />
-              <div className="h-3 bg-muted rounded animate-pulse w-3/4" />
-              <div className="flex items-center justify-between pt-1">
-                <div className="h-5 bg-muted rounded animate-pulse w-16" />
-                <div className="h-4 bg-muted rounded animate-pulse w-20" />
-              </div>
-              <div className="flex gap-2">
-                <div className="h-8 bg-muted rounded animate-pulse flex-1" />
-                <div className="h-8 bg-muted rounded animate-pulse flex-1" />
+        {Array.from({ length: 12 }).map((_, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.03, duration: 0.3 }}
+            className="border border-border/50 rounded-xl overflow-hidden shadow-sm bg-card"
+          >
+            <div className="aspect-[4/3] w-full bg-muted/40 animate-pulse relative">
+              <div className="absolute inset-0 bg-gradient-to-t from-background/10 to-transparent" />
+            </div>
+            <div className="p-3 sm:p-4 space-y-3">
+              <div className="h-4 w-3/4 bg-muted/50 rounded animate-pulse" />
+              <div className="h-3 w-1/2 bg-muted/40 rounded animate-pulse" />
+              <div className="flex justify-between items-center pt-2">
+                <div className="h-5 w-12 bg-muted/50 rounded animate-pulse" />
+                <div className="h-8 w-16 bg-primary/10 rounded-full animate-pulse" />
               </div>
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
     );
@@ -91,7 +95,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToCart,
         ))}
       </AnimatePresence>
       {products.length === 0 && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="col-span-full text-center text-muted-foreground py-10"

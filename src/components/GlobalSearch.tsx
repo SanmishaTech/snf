@@ -3,6 +3,9 @@ import { Search, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { usePricing } from "@/modules/SNF/context/PricingContext.tsx";
 import type { Product, DepotVariant } from "@/modules/SNF/types";
+import { useSNFProducts } from "@/modules/SNF/hooks/useSNFProducts";
+import { useDeliveryLocation } from "@/modules/SNF/hooks/useDeliveryLocation";
+import { productService } from "@/modules/SNF/services/api";
 
 type SortKey = "relevance" | "price_asc" | "price_desc";
 
@@ -50,7 +53,6 @@ const useRecentSearches = (limit = 5) => {
 const GlobalSearch: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
-  const [loading, setLoading] = useState(false);
   const [active, setActive] = useState<number>(-1);
   const [sort, setSort] = useState<SortKey>("relevance");
   const [categoryFilter, setCategoryFilter] = useState<string | "all">("all");
@@ -61,28 +63,38 @@ const GlobalSearch: React.FC = () => {
   const navigate = useNavigate();
 
   const { state: pricingState } = usePricing();
+  const { currentDepotId } = useDeliveryLocation();
 
-  // Compute categories from live products
-  const categories = useMemo(() => {
-    const s = new Set<string>();
-    pricingState.products.forEach((p: Product) => {
-      const catName = (p as any)?.category?.name;
-      if (catName) s.add(catName);
-    });
-    return ["all", ...Array.from(s)];
-  }, [pricingState.products]);
-
-  // Debounced search (client-side on mock data)
+  // Debounced search
   const [debouncedQ, setDebouncedQ] = useState("");
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQ(q), 300);
     return () => clearTimeout(t);
   }, [q]);
 
-  const results = useMemo<ResultItem[]>(() => {
-    const term = debouncedQ.trim().toLowerCase();
+  // Fetch products for search from backend
+  const { 
+    data: searchData, 
+    isLoading: isSearchLoading 
+  } = useSNFProducts({
+    depotId: currentDepotId,
+    search: debouncedQ || undefined,
+    enabled: open && debouncedQ.length > 2
+  });
 
-    // Build product -> variants index once
+  const [allCategories, setAllCategories] = useState<string[]>(["all"]);
+  useEffect(() => {
+    productService.getCategories().then(cats => {
+      setAllCategories(["all", ...cats.map(c => c.name)]);
+    }).catch(() => {});
+  }, []);
+
+  const categories = allCategories;
+
+  const results = useMemo<ResultItem[]>(() => {
+    const fetchedProducts = searchData?.pages[0]?.products || [];
+
+    // Build product -> variants index
     const byProductId = new Map<number, DepotVariant[]>();
     for (const v of pricingState.depotVariants) {
       const arr = byProductId.get(v.productId) || [];
@@ -90,11 +102,10 @@ const GlobalSearch: React.FC = () => {
       byProductId.set(v.productId, arr);
     }
 
-    const items: ResultItem[] = pricingState.products.map((p: Product) => {
+    const items: ResultItem[] = fetchedProducts.map((p: Product) => {
       const variants = byProductId.get(p.id) || [];
       const available = variants.filter(v => !v.isHidden && !v.notInStock);
 
-      // Choose a single variant to represent price + MRP consistently (cheapest display price)
       let chosenPrice = 0;
       let chosenMrp: number | undefined = undefined;
       let minDisplay = Number.POSITIVE_INFINITY;
@@ -106,11 +117,6 @@ const GlobalSearch: React.FC = () => {
           chosenPrice = display;
           chosenMrp = typeof v.mrp === 'number' && isFinite(v.mrp) && v.mrp > 0 ? v.mrp : undefined;
         }
-      }
-
-      if (!isFinite(chosenPrice) || chosenPrice === 0) {
-        chosenPrice = 0;
-        chosenMrp = undefined;
       }
 
       const imageUrl = p.attachmentUrl ? `${import.meta.env.VITE_BACKEND_URL}${p.attachmentUrl}` : undefined;
@@ -127,14 +133,8 @@ const GlobalSearch: React.FC = () => {
     });
 
     let filtered = items.filter((p) => {
-      const matchesTerm =
-        !term ||
-        p.name.toLowerCase().includes(term) ||
-        (p.description || "").toLowerCase().includes(term) ||
-        (p.category || "").toLowerCase().includes(term);
-      const matchesCategory =
-        categoryFilter === "all" || p.category === categoryFilter;
-      return matchesTerm && matchesCategory;
+      const matchesCategory = categoryFilter === "all" || p.category === categoryFilter;
+      return matchesCategory;
     });
 
     switch (sort) {
@@ -144,32 +144,15 @@ const GlobalSearch: React.FC = () => {
       case "price_desc":
         filtered = filtered.sort((a, b) => (b.price || 0) - (a.price || 0));
         break;
-      case "relevance":
-      default: {
-        filtered = filtered.sort((a, b) => {
-          const ta = a.name.toLowerCase();
-          const tb = b.name.toLowerCase();
-          const pa = ta.startsWith(term) ? 2 : ta.includes(term) ? 1 : 0;
-          const pb = tb.startsWith(term) ? 2 : tb.includes(term) ? 1 : 0;
-          return pb - pa;
-        });
+      default:
+        // Already search-relevance sorted by backend
         break;
-      }
     }
 
     return filtered.slice(0, 10);
-  }, [debouncedQ, categoryFilter, sort, pricingState.products, pricingState.depotVariants]);
-
-  // Simulate loading state during debounce
-  useEffect(() => {
-    if (!q) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    const t = setTimeout(() => setLoading(false), 320);
-    return () => clearTimeout(t);
-  }, [debouncedQ]);
+  }, [searchData, pricingState.depotVariants, categoryFilter, sort]);
+  
+  const loading = isSearchLoading;
 
   // Click outside to close
   useEffect(() => {

@@ -1,5 +1,58 @@
 import { ProductService, Product, DepotVariant, ApiResponse, PaginatedResponse } from '../types';
 
+const API_ORIGIN = import.meta.env.VITE_BACKEND_URL || window.location.origin;
+const PAGE_LIMIT = 12;
+
+export interface ProductPageParams {
+  depotId: number;
+  page: number;
+  categoryId?: number;
+  tags?: string;
+  search?: string;
+}
+
+export interface ProductPage {
+  products: Product[];
+  /** TanStack nextPage: undefined means no more pages */
+  nextPage: number | undefined;
+  page: number;
+}
+
+/**
+ * Standalone fetcher for TanStack useInfiniteQuery.
+ * Returns a ProductPage object with nextPage for cursor-based pagination.
+ */
+export async function fetchProductPage(params: ProductPageParams): Promise<ProductPage> {
+  const { depotId, page, categoryId, tags, search } = params;
+  const url = new URL(`/api/products/public`, API_ORIGIN);
+  url.searchParams.set('depotId', depotId.toString());
+  url.searchParams.set('page', page.toString());
+  url.searchParams.set('limit', PAGE_LIMIT.toString());
+  if (categoryId) url.searchParams.set('categoryId', categoryId.toString());
+  if (tags) url.searchParams.set('tags', tags);
+  if (search) url.searchParams.set('search', search);
+
+  const response = await fetch(url.toString(), { signal: AbortSignal.timeout(10000) });
+  if (!response.ok) throw new Error(`API request failed: ${response.status}`);
+
+  const result: ApiResponse<any> = await response.json();
+  if (!result.success || !result.data) return { products: [], nextPage: undefined, page };
+
+  const raw: Product[] = Array.isArray(result.data)
+    ? result.data
+    : result.data.products && Array.isArray(result.data.products)
+      ? result.data.products
+      : [];
+
+  return {
+    products: raw,
+    // If we got a full page, there might be more — signal TanStack to allow fetchNextPage
+    nextPage: raw.length === PAGE_LIMIT ? page + 1 : undefined,
+    page,
+  };
+}
+
+
 /**
  * API service layer for fetching products and depot variants
  * Uses only MRP pricing from depot variants as specified

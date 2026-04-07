@@ -197,11 +197,8 @@ export interface PricingError {
 export interface PricingState {
   currentDepot: Depot | null;
   userLocation: LocationData | null;
-  products: Product[];
   depotVariants: DepotVariant[];
   isLoading: boolean;
-  page: number;
-  hasMore: boolean;
   error: PricingError | GeolocationError | null;
   isLocationPermissionGranted: boolean;
   serviceAvailability: ServiceAvailability | null;
@@ -219,7 +216,6 @@ export interface PricingActions {
   setLoading: (loading: boolean) => void;
   setLocationPermission: (granted: boolean) => void;
   setServiceAvailability: (availability: ServiceAvailability) => void;
-  loadMoreProducts: () => Promise<void>;
 }
 
 /**
@@ -379,7 +375,6 @@ export interface UserPreferences {
 export type PricingActionTypes =
   | 'SET_DEPOT'
   | 'SET_LOCATION'
-  | 'SET_PRODUCTS'
   | 'SET_DEPOT_VARIANTS'
   | 'SET_LOADING'
   | 'SET_ERROR'

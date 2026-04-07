@@ -9,8 +9,8 @@ import { useCart } from "./context/CartContext";
 import { Header } from "./components/Header.tsx";
 import { Footer } from "./components/Footer.tsx";
 import { MobileBottomNav } from "./components/MobileBottomNav.tsx";
-import { productService } from "./services/api";
-import type { Category as FilterCategory } from "./components/CategoryFilters.tsx";
+import { useSNFProducts } from "./hooks/useSNFProducts";
+import { useDeliveryLocation } from "./hooks/useDeliveryLocation";
 
 export type SortKey = "relevance" | "price_asc" | "price_desc" | "popularity_desc";
 
@@ -19,37 +19,46 @@ const AllProductsContent: React.FC = () => {
   const [selectedCats, setSelectedCats] = useState<number[]>([]);
   const [sort] = useState<SortKey>("relevance");
   const location = useLocation();
-  const navigate = useNavigate();
 
   const { state: pricingState } = usePricing();
   const { addItem, state: cartState } = useCart();
+  const { currentDepotId } = useDeliveryLocation();
 
-  const products = pricingState.products.map(product => {
-    const productVariants = pricingState.depotVariants.filter(v => v.productId === product.id);
-    const availableVariants = productVariants.filter(v => !v.notInStock && !v.isHidden);
-    const buyOncePrices = availableVariants.map(v => {
-      const price = v.buyOncePrice || v.mrp || 0;
-      return typeof price === 'number' && isFinite(price) && price > 0 ? price : 0;
-    }).filter(price => price > 0);
-
-    const buyOncePrice = buyOncePrices.length > 0 ? Math.min(...buyOncePrices) : 0;
-    const inStock = availableVariants.length > 0;
-    const mrpPrices = availableVariants.map(v => {
-      const price = v.mrp || 0;
-      return typeof price === 'number' && isFinite(price) && price > 0 ? price : 0;
-    }).filter(price => price > 0);
-    const mrp = mrpPrices.length > 0 ? Math.max(...mrpPrices) : 0;
-
-    return {
-      product,
-      variants: productVariants,
-      buyOncePrice,
-      mrp,
-      inStock,
-      deliveryTime: 'Same day delivery'
-    };
+  const {
+    data: infiniteData,
+    fetchNextPage,
+    hasNextPage,
+    isLoading: isProductsLoading,
+    isFetchingNextPage
+  } = useSNFProducts({
+    depotId: currentDepotId,
+    categoryId: selectedCats[0],
+    search: q || undefined
   });
-  const isLoading = pricingState.isLoading;
+
+  const products = useMemo(() => {
+    const allFetchedProducts = infiniteData?.pages.flatMap(page => page.products) || [];
+    
+    return allFetchedProducts.map(product => {
+      const productVariants = pricingState.depotVariants.filter(v => v.productId === product.id);
+      const availableVariants = productVariants.filter(v => !v.notInStock && !v.isHidden);
+      const buyOncePrices = availableVariants.map(v => v.buyOncePrice || v.mrp || 0).filter(p => p > 0);
+      const buyOncePrice = buyOncePrices.length > 0 ? Math.min(...buyOncePrices) : 0;
+      const inStock = availableVariants.length > 0;
+      const mrpPrices = availableVariants.map(v => v.mrp || 0).filter(p => p > 0);
+      const mrp = mrpPrices.length > 0 ? Math.max(...mrpPrices) : 0;
+
+      return {
+        product,
+        variants: productVariants,
+        buyOncePrice,
+        mrp,
+        inStock,
+        deliveryTime: 'Same day delivery'
+      };
+    });
+  }, [infiniteData, pricingState.depotVariants]);
+  const isLoading = isProductsLoading;
 
   // Handle category filter from query param `?category=<id>`
   useEffect(() => {
@@ -66,23 +75,7 @@ const AllProductsContent: React.FC = () => {
   }, [location.search]);
 
   const filtered = useMemo(() => {
-    let filteredProducts = products;
-
-    if (q.trim()) {
-      const term = q.trim().toLowerCase();
-      filteredProducts = filteredProducts.filter(p =>
-        p.product.name.toLowerCase().includes(term) ||
-        (p.product.description ? p.product.description.toLowerCase().includes(term) : false)
-      );
-    }
-
-    if (selectedCats.length > 0) {
-      filteredProducts = filteredProducts.filter(p =>
-        selectedCats.includes(p.product.categoryId || 0)
-      );
-    }
-
-    const sorted = [...filteredProducts];
+    const sorted = [...products];
     switch (sort) {
       case "price_asc":
         sorted.sort((a, b) => a.buyOncePrice - b.buyOncePrice);
@@ -103,7 +96,7 @@ const AllProductsContent: React.FC = () => {
     }
 
     return sorted;
-  }, [products, q, selectedCats, sort]);
+  }, [products, sort]);
 
   const onAddToCart = (product: ProductWithPricing, variant?: DepotVariant, qty?: number) => {
     if (!variant) return;
@@ -152,6 +145,18 @@ const AllProductsContent: React.FC = () => {
                 onAddToCart={onAddToCart}
                 isLoading={isLoading}
               />
+              {hasNextPage && (
+                <div className="mt-8 flex justify-center pb-10">
+                  <Button
+                    onClick={() => fetchNextPage()}
+                    disabled={isFetchingNextPage}
+                    variant="outline"
+                    className="min-w-[200px]"
+                  >
+                    {isFetchingNextPage ? "Loading..." : "Load More Products"}
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </section>
