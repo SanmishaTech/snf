@@ -150,6 +150,7 @@ export default function SaleRegisterReport() {
         params.append("startDate", filters.startDate);
         params.append("endDate", filters.endDate);
         params.append("paymentStatus", "PAID");
+        params.append("type", "SUBSCRIPTION"); // Filter for Subscription (Milk) items only
         params.append("page", "1");
         params.append("limit", "1000");
 

@@ -46,6 +46,8 @@ export default function ExceptionReport() {
         params.set("name", String(filters.name).trim());
       }
 
+      params.set("type", "SUBSCRIPTION"); // Filter for Subscription (Milk) items only
+
       const response = await axios.get(`${API_URL}/api/reports/exceptions?${params.toString()}`, {
         headers: {
           Authorization: `Bearer ${token}`,

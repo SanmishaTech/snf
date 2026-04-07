@@ -76,6 +76,7 @@ export default function DeliverySummariesReport() {
       Object.entries(appliedFilters).forEach(([key, value]) => {
         if (value) params.append(key, value.toString());
       });
+      params.append("type", "SUBSCRIPTION"); // Filter for Subscription (Milk) items only
 
       const token = localStorage.getItem('authToken') || localStorage.getItem('token');
       const response = await axios.get(`${API_URL}/api/reports/delivery-summaries?${params.toString()}`, {

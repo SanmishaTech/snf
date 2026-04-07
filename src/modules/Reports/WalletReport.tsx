@@ -65,6 +65,7 @@ export default function WalletReport() {
       if (endDate) params.append("endDate", endDate);
       const term = String(nameSearch || "").trim();
       if (term) params.append("name", term);
+      params.append("type", "SUBSCRIPTION"); // Filter for Subscription (Milk) items only
       const response = await axios.get(`${API_URL}/api/reports/wallet?${params.toString()}`, {
         headers: {
           Authorization: `Bearer ${token}`,

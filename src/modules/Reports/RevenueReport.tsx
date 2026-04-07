@@ -63,6 +63,7 @@ export default function RevenueReport() {
       const params = new URLSearchParams();
       if (startDate) params.set('startDate', startDate);
       if (endDate) params.set('endDate', endDate);
+      params.set('type', 'SUBSCRIPTION');
 
       const term = String(nameSearch || "").trim();
       if (term) params.set('name', term);
