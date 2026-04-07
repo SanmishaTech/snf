@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Facebook, Instagram, UserCircle, ShoppingBag, LogOut, MapPin, Wallet } from 'lucide-react';
+import { Facebook, Instagram, UserCircle, ShoppingBag, LogOut, MapPin, Wallet, ShieldCheck, LogIn as LogInIcon } from 'lucide-react';
 import { get } from '@/services/apiService';
 import { formatCurrency } from '@/lib/formatter';
 import UserChangePasswordDialog from '@/components/common/UserChangePasswordDialog';
@@ -19,10 +19,12 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const headerRef = useRef<HTMLElement>(null);
   const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
-  const [isMobileProfileOpen, setIsMobileProfileOpen] = useState(false);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const [isChangePasswordDialogOpen, setIsChangePasswordDialogOpen] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isImpersonating, setIsImpersonating] = useState(false);
+  const [isMobileProfileOpen, setIsMobileProfileOpen] = useState(false);
   const accountDropdownTimeoutId = useRef<NodeJS.Timeout | null>(null);
   const mobileProfileRef = useRef<HTMLDivElement>(null);
 
@@ -60,9 +62,11 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
         if (userDetailsString) {
           const userDetails = JSON.parse(userDetailsString);
           setUserEmail(userDetails.email || null);
+          setUserRole(userDetails.role || null);
         }
+        setIsImpersonating(!!localStorage.getItem("adminToken"));
       } catch (e) {
-        console.error("Failed to parse user email", e);
+        console.error("Failed to parse user details", e);
       }
 
       // Fetch wallet balance if showWallet is true
@@ -81,7 +85,9 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
       }
     } else {
       setUserEmail(null);
+      setUserRole(null);
       setWalletBalance(null);
+      setIsImpersonating(false);
     }
   }, [isLoggedIn, showWallet]);
 
@@ -130,6 +136,43 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
                           <p className="text-xs text-gray-500">Signed in as</p>
                           <p className="text-sm font-medium text-gray-800 truncate">{userName}</p>
                         </div>
+
+                        {/* Return to Admin Button (Sudo Login) */}
+                        {isImpersonating && (
+                          <button
+                            onClick={() => {
+                              const adminToken = localStorage.getItem('adminToken');
+                              const adminUser = localStorage.getItem('adminUser');
+                              if (adminToken && adminUser) {
+                                localStorage.setItem('authToken', adminToken);
+                                localStorage.setItem('user', adminUser);
+                                localStorage.removeItem('adminToken');
+                                localStorage.removeItem('adminUser');
+                                window.location.href = "/admin/users";
+                              }
+                            }}
+                            className="w-full flex items-center px-4 py-2 text-sm text-white bg-amber-500 hover:bg-amber-600 font-bold"
+                          >
+                            <LogInIcon size={16} className="mr-2" />
+                            Return to Admin
+                          </button>
+                        )}
+
+                        {/* Go to Admin Dashboard Link */}
+                        {!isImpersonating && userRole && userRole !== 'MEMBER' && (
+                          <Link
+                            to={
+                              userRole === 'ADMIN' ? "/admin/dashboard" :
+                              userRole === 'DepotAdmin' ? "/admin/purchases" :
+                              "/admin/orders"
+                            }
+                            className="flex items-center px-4 py-2 text-sm text-green-700 hover:bg-green-50 font-semibold border-b border-gray-100"
+                          >
+                            <ShieldCheck size={16} className="mr-2" />
+                            Admin Panel
+                          </Link>
+                        )}
+
                         <Link to="/member/subscriptions" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50"><ShoppingBag size={16} className="mr-2" />My Subscriptions</Link>
                         {showWallet && (
                           <Link to="/member/wallet" className="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-green-50">
@@ -202,6 +245,43 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
                   <p className="text-xs text-gray-500 truncate">{userEmail}</p>
                 </div>
                 <div className="space-y-1">
+                  {/* Return to Admin Button (Sudo Login) - Mobile */}
+                  {isImpersonating && (
+                    <button
+                      onClick={() => {
+                        const adminToken = localStorage.getItem('adminToken');
+                        const adminUser = localStorage.getItem('adminUser');
+                        if (adminToken && adminUser) {
+                          localStorage.setItem('authToken', adminToken);
+                          localStorage.setItem('user', adminUser);
+                          localStorage.removeItem('adminToken');
+                          localStorage.removeItem('adminUser');
+                          window.location.href = "/admin/users";
+                        }
+                      }}
+                      className="flex items-center w-full px-3 py-2 text-sm text-white bg-amber-500 rounded-lg hover:bg-amber-600 font-bold mb-2 transition-colors shadow-sm"
+                    >
+                      <LogInIcon size={18} className="mr-3" />
+                      Return to Admin
+                    </button>
+                  )}
+
+                  {/* Go to Admin Dashboard Link - Mobile */}
+                  {!isImpersonating && userRole && userRole !== 'MEMBER' && (
+                    <Link
+                      to={
+                        userRole === 'ADMIN' ? "/admin/dashboard" :
+                        userRole === 'DepotAdmin' ? "/admin/purchases" :
+                        "/admin/orders"
+                      }
+                      className="flex items-center w-full px-3 py-2 text-sm text-green-700 rounded-lg hover:bg-green-50 font-bold mb-2 transition-colors border border-green-100"
+                      onClick={() => setIsMobileProfileOpen(false)}
+                    >
+                      <ShieldCheck size={18} className="mr-3 text-green-600" />
+                      Admin Panel
+                    </Link>
+                  )}
+
                   <Link 
                     to="/member/subscriptions" 
                     className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-green-50 transition-colors"
