@@ -619,6 +619,10 @@ const CheckoutPage: React.FC = () => {
                       const subAfterCoupon = Math.max(0, availableSubtotal - couponDiscountAmount);
                       const walletDeduction = Math.max(0, Math.min(walletBalance || 0, subAfterCoupon));
                       const payableOnline = Math.max(0, subAfterCoupon - walletDeduction);
+                      
+                      const betaNumbers = (import.meta.env.VITE_PHONEPE_BETA_NUMBERS || "").split(",").map((s: string) => s.trim());
+                      const isOnlineEnabled = selectedAddress && betaNumbers.includes(selectedAddress.mobile);
+                      
                       return payableOnline > 0 ? (
                         <div className="pt-2 space-y-2">
                           <p className="text-xs font-medium text-muted-foreground">How would you like to pay the remaining {currency.format(payableOnline)}?</p>
@@ -635,18 +639,30 @@ const CheckoutPage: React.FC = () => {
                               <Wallet className="size-4 shrink-0" />
                               <span>Cash / UPI<br /><span className="text-xs font-normal">On delivery</span></span>
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => setPaymentMode('ONLINE')}
-                              className={`flex items-center gap-2 rounded-lg border p-3 text-sm transition-all ${
-                                paymentMode === 'ONLINE'
-                                  ? 'border-primary bg-primary/5 text-primary font-medium'
-                                  : 'border-border text-muted-foreground hover:border-primary/40'
-                              }`}
-                            >
-                              <CreditCard className="size-4 shrink-0" />
-                              <span>Pay Online<br /><span className="text-xs font-normal">PhonePe / UPI / Card</span></span>
-                            </button>
+                            {isOnlineEnabled ? (
+                              <button
+                                type="button"
+                                onClick={() => setPaymentMode('ONLINE')}
+                                className={`flex items-center gap-2 rounded-lg border p-3 text-sm transition-all ${
+                                  paymentMode === 'ONLINE'
+                                    ? 'border-primary bg-primary/5 text-primary font-medium'
+                                    : 'border-border text-muted-foreground hover:border-primary/40'
+                                }`}
+                              >
+                                <CreditCard className="size-4 shrink-0" />
+                                <span>Pay Online<br /><span className="text-xs font-normal">PhonePe / UPI / Card</span></span>
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                disabled
+                                className="flex items-center gap-2 rounded-lg border p-3 text-sm transition-all opacity-50 cursor-not-allowed border-border text-muted-foreground"
+                                title="Online payment is currently in beta"
+                              >
+                                <CreditCard className="size-4 shrink-0" />
+                                <span>Pay Online<br /><span className="text-xs font-normal">Disabled for now</span></span>
+                              </button>
+                            )}
                           </div>
                         </div>
                       ) : null;
