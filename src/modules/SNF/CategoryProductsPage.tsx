@@ -47,9 +47,7 @@ export default function CategoryProductsPage() {
   const cart = useCart();
 
   // Fetch products using the real API
-  const { products, isLoading: isLoadingProducts, error: productsError, pricingState, pricingActions } = useProducts(currentDepotId)
-  const { hasMore } = pricingState;
-  const { loadMoreProducts } = pricingActions;
+  const { products, isLoading: isLoadingProducts, error: productsError, hasMore, loadMore } = useProducts(currentDepotId);
 
   // Initialize filters from URL params
   useEffect(() => {
