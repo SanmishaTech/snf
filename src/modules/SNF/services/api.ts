@@ -9,6 +9,7 @@ export interface ProductPageParams {
   categoryId?: number;
   tags?: string;
   search?: string;
+  limit?: number;
 }
 
 export interface ProductPage {
@@ -23,11 +24,12 @@ export interface ProductPage {
  * Returns a ProductPage object with nextPage for cursor-based pagination.
  */
 export async function fetchProductPage(params: ProductPageParams): Promise<ProductPage> {
-  const { depotId, page, categoryId, tags, search } = params;
+  const { depotId, page, categoryId, tags, search, limit } = params;
   const url = new URL(`/api/products/public`, API_ORIGIN);
+  const currentLimit = limit || PAGE_LIMIT;
   url.searchParams.set('depotId', depotId.toString());
   url.searchParams.set('page', page.toString());
-  url.searchParams.set('limit', PAGE_LIMIT.toString());
+  url.searchParams.set('limit', currentLimit.toString());
   if (categoryId) url.searchParams.set('categoryId', categoryId.toString());
   if (tags) url.searchParams.set('tags', tags);
   if (search) url.searchParams.set('search', search);
@@ -47,7 +49,7 @@ export async function fetchProductPage(params: ProductPageParams): Promise<Produ
   return {
     products: raw,
     // If we got a full page, there might be more — signal TanStack to allow fetchNextPage
-    nextPage: raw.length === PAGE_LIMIT ? page + 1 : undefined,
+    nextPage: raw.length === currentLimit ? page + 1 : undefined,
     page,
   };
 }

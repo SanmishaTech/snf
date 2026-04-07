@@ -6,6 +6,7 @@ interface UseSNFProductsParams {
   categoryId?: number;
   tags?: string;
   search?: string;
+  limit?: number;
   enabled?: boolean;
 }
 
@@ -18,16 +19,18 @@ export function useSNFProducts({
   categoryId, 
   tags, 
   search, 
+  limit,
   enabled = true 
 }: UseSNFProductsParams) {
   return useInfiniteQuery({
-    queryKey: ['snf-products', depotId, categoryId, tags, search],
+    queryKey: ['snf-products', depotId, categoryId, tags, search, limit],
     queryFn: ({ pageParam }) => fetchProductPage({
       depotId: depotId || 1,
       page: pageParam as number,
       categoryId,
       tags,
-      search
+      search,
+      limit
     }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage.nextPage,
