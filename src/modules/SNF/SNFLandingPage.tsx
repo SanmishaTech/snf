@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Header } from "./components/Header.tsx";
 import { Footer } from "./components/Footer.tsx";
@@ -38,6 +38,10 @@ const SNFContent: React.FC = () => {
   const { addItem, state: cartState } = useCart();
   const { currentDepotId } = useDeliveryLocation();
 
+  const [canScrollLeftTags, setCanScrollLeftTags] = useState(false);
+  const [canScrollRightTags, setCanScrollRightTags] = useState(false);
+  const tagsScrollRef = useRef<HTMLDivElement>(null);
+
   const selectedCatId = selectedCats.length > 0 ? selectedCats[0] : undefined;
 
   // Centralized TanStack Infinite Query for Product Fetching
@@ -73,7 +77,7 @@ const SNFContent: React.FC = () => {
 
   const products = useMemo(() => {
     const allFetchedProducts = infiniteData?.pages.flatMap(page => page.products) || [];
-    
+
     return allFetchedProducts.map(product => {
       const productVariants = pricingState.depotVariants.filter(v => v.productId === product.id);
       const availableVariants = productVariants.filter(v => !v.notInStock && !v.isHidden);
@@ -176,6 +180,37 @@ const SNFContent: React.FC = () => {
     return Array.from(tags).sort();
   }, [products]);
 
+  const checkTagsScroll = useCallback(() => {
+    const el = tagsScrollRef.current;
+    if (!el) return;
+
+    window.requestAnimationFrame(() => {
+      const isLeftVisible = el.scrollLeft > 2;
+      const isRightVisible = el.scrollLeft + el.clientWidth < el.scrollWidth - 5;
+
+      setCanScrollLeftTags(isLeftVisible);
+      setCanScrollRightTags(isRightVisible);
+    });
+  }, []);
+
+  const scrollTags = (direction: 'left' | 'right') => {
+    const el = tagsScrollRef.current;
+    if (!el) return;
+    const scrollAmount = direction === 'left' ? -200 : 200;
+    el.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    if (allTags.length > 0) {
+      const timer = setTimeout(checkTagsScroll, 100);
+      window.addEventListener('resize', checkTagsScroll);
+      return () => {
+        clearTimeout(timer);
+        window.removeEventListener('resize', checkTagsScroll);
+      };
+    }
+  }, [allTags, checkTagsScroll]);
+
   const onToggleTag = (tag: string) => {
     startTransition(() => {
       const params = new URLSearchParams(location.search || "");
@@ -216,24 +251,63 @@ const SNFContent: React.FC = () => {
               setSelectedTag(null);
               navigate({ search: "" }, { replace: true });
             })}
-            onRetry={() => {}}
+            onRetry={() => { }}
           />
         </section>
 
         {selectedCats.length === 0 && allTags.length > 0 && !catLoading && (
-          <section className="container mx-auto px-4 md:px-6 lg:px-8 -mt-2 mb-4">
-            <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mr-1 shrink-0">Filters:</span>
-              {allTags.map((tag) => (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => onToggleTag(tag)}
-                  className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-200 border ${selectedTag === tag ? "bg-primary text-primary-foreground border-primary" : "bg-muted/30 text-muted-foreground border-transparent"}`}
+          <section className="container mx-auto px-4 md:px-6 lg:px-8 -mt-2 mb-4 relative group">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mr-1 shrink-0">Tags:</span>
+
+              <div className="relative flex-1 overflow-hidden">
+                <AnimatePresence>
+                  {canScrollLeftTags && (
+                    <div className="absolute left-0 top-0 bottom-0 flex items-center z-20 pointer-events-none pr-6">
+                      <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-background via-background/90 to-transparent pointer-events-none" />
+                      <button
+                        type="button"
+                        onClick={() => scrollTags('left')}
+                        className="ml-1 h-7 w-7 flex items-center justify-center rounded-full bg-background border border-border shadow-sm text-foreground hover:text-primary hover:border-primary/30 hover:scale-110 transition-all duration-200 pointer-events-auto -translate-y-1.5"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+                </AnimatePresence>
+
+                <AnimatePresence>
+                  {canScrollRightTags && (
+                    <div className="absolute right-0 top-0 bottom-0 flex items-center z-20 pointer-events-none pl-6">
+                      <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-background via-background/90 to-transparent pointer-events-none" />
+                      <button
+                        type="button"
+                        onClick={() => scrollTags('right')}
+                        className="mr-1 h-7 w-7 flex items-center justify-center rounded-full bg-background border border-border shadow-sm text-foreground hover:text-primary hover:border-primary/30 hover:scale-110 transition-all duration-200 pointer-events-auto -translate-y-1.5"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+                </AnimatePresence>
+
+                <div
+                  ref={tagsScrollRef}
+                  onScroll={checkTagsScroll}
+                  className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 mask-linear"
                 >
-                  {tag.charAt(0).toUpperCase() + tag.slice(1)}
-                </button>
-              ))}
+                  {allTags.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => onToggleTag(tag)}
+                      className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-200 border ${selectedTag === tag ? "bg-primary text-primary-foreground border-primary" : "bg-muted/30 text-muted-foreground border-transparent"}`}
+                    >
+                      {tag.charAt(0).toUpperCase() + tag.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </section>
         )}
