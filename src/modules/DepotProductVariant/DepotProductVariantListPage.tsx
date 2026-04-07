@@ -41,12 +41,34 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  Filter,
 } from "lucide-react";
+import { getProductOptions, ProductOption } from "../../services/productService";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 const DepotProductVariantListPage: React.FC = () => {
   const [variants, setVariants] = useState<DepotProductVariant[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [products, setProducts] = useState<ProductOption[]>([]);
+  const [selectedProductId, setSelectedProductId] = useState<string>("all");
+  const [productSearchQuery, setProductSearchQuery] = useState("");
+  const [isComboboxOpen, setIsComboboxOpen] = useState(false);
   const recordsPerPage = 10;
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -63,28 +85,53 @@ const DepotProductVariantListPage: React.FC = () => {
       const data = await getDepotProductVariants({
         page: currentPage,
         limit: recordsPerPage,
-        search: searchTerm,
+        search: debouncedSearchTerm,
+        productId: selectedProductId !== "all" ? Number(selectedProductId) : undefined,
       });
       setVariants(data.data);
       setTotalPages(data.totalPages);
     } catch (err: any) {
       toast.error(err.message || "Failed to fetch variants");
     }
-  }, [currentPage, searchTerm]);
+  }, [currentPage, debouncedSearchTerm, selectedProductId]);
 
-  // Handle debounced search
+  // Fetch products for the filter
+  const fetchProducts = useCallback(async (query?: string) => {
+    try {
+      const options = await getProductOptions(query);
+      setProducts(options);
+    } catch (err) {
+      console.error("Failed to fetch product options:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  // Debounced search for products in the dropdown
+  useEffect(() => {
+    if (isComboboxOpen) {
+      const handler = setTimeout(() => {
+        fetchProducts(productSearchQuery);
+      }, 300);
+      return () => clearTimeout(handler);
+    }
+  }, [productSearchQuery, isComboboxOpen, fetchProducts]);
+
+  // Handle debouncing search term
   useEffect(() => {
     const handler = setTimeout(() => {
-      setCurrentPage(1); // Reset to first page on search
-      fetchVariants();
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1);
     }, 500);
-
     return () => clearTimeout(handler);
   }, [searchTerm]);
 
+  // Main effect to fetch variants when filters change
   useEffect(() => {
     fetchVariants();
-  }, [currentPage]);
+  }, [fetchVariants]);
 
   const handleAddNew = () => {
     setEditingVariant(null);
@@ -176,12 +223,86 @@ const DepotProductVariantListPage: React.FC = () => {
                   size={18}
                 />
               </div>
+
+              {/* Product Filter - Searchable Combobox */}
+              <div className="w-full md:w-auto min-w-[280px]">
+                <Popover open={isComboboxOpen} onOpenChange={setIsComboboxOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={isComboboxOpen}
+                      className="w-full min-h-11 justify-between border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all shadow-sm bg-white px-4"
+                    >
+                      <div className="flex items-center gap-2 overflow-hidden mr-2">
+                        <Filter size={16} className="text-gray-400 shrink-0" />
+                        <span className="truncate">
+                          {selectedProductId === "all"
+                            ? "All Products"
+                            : products.find((p) => p.id.toString() === selectedProductId)?.name || "Product Selected"}
+                        </span>
+                      </div>
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[300px] p-0 rounded-xl shadow-xl border-gray-200">
+                    <Command shouldFilter={false}>
+                      <CommandInput
+                        placeholder="Search product..."
+                        value={productSearchQuery}
+                        onValueChange={setProductSearchQuery}
+                      />
+                      <CommandList>
+                        <CommandEmpty>No product found.</CommandEmpty>
+                        <CommandGroup>
+                          <CommandItem
+                            value="all"
+                            onSelect={() => {
+                              setSelectedProductId("all");
+                              setIsComboboxOpen(false);
+                              setCurrentPage(1);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedProductId === "all" ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            All Products
+                          </CommandItem>
+                          {products.map((product) => (
+                            <CommandItem
+                              key={product.id}
+                              value={product.id.toString()}
+                              onSelect={() => {
+                                setSelectedProductId(product.id.toString());
+                                setIsComboboxOpen(false);
+                                setCurrentPage(1);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  selectedProductId === product.id.toString() ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {product.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+
               <DialogTrigger asChild>
                 <Button
                   variant="default"
                   size="lg"
                   onClick={handleAddNew}
-                  className="gap-2 shadow-lg bg-red-600 hover:bg-red-700 text-white rounded-xl px-6 h-11 transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap"
+                  className="gap-2 shadow-lg bg-red-600 hover:bg-red-700 text-white rounded-xl px-6 h-11 transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap w-full md:w-auto"
                 >
                   <PlusCircle size={20} /> Add New Variant
                 </Button>

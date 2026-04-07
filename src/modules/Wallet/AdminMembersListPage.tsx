@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { get, patch } from '@/services/apiService'; // Corrected API service import, added patch
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -12,9 +12,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Loader2, AlertCircle, Edit, CheckCircle2, XCircle, UserCog, Wallet } from 'lucide-react'; // Icons
+import { Loader2, AlertCircle, Edit, CheckCircle2, XCircle, Wallet, Search, Filter } from 'lucide-react'; // Icons
 import { Input } from "@/components/ui/input"; // Assuming Input component exists
-import { useDebounce } from '@/hooks/useDebounce'; // Assuming a debounce hook
 import {
   Select,
   SelectContent,
@@ -22,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"; // For items per page
+import { Separator } from "@/components/ui/separator";
 
 interface MemberWalletInfo {
   _id: string; // or number, depending on your ID type
@@ -53,8 +53,11 @@ const AdminMembersListPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("name"); // Default sort column
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>("asc"); // Default sort order
+  const [showFilters, setShowFilters] = useState(false);
+  const [activeFilter, setActiveFilter] = useState("all");
 
-  const debouncedSearchTerm = useDebounce(searchTerm, 500); // Debounce search term by 500ms
+  // Instant search matches UserList.tsx behavior
+  const searchTermForFetch = searchTerm;
 
   const handleToggleMemberStatus = async (memberId: string, currentStatus: boolean) => {
     try {
@@ -72,7 +75,7 @@ const AdminMembersListPage: React.FC = () => {
     }
   };
 
-  const fetchMembers = async (page = currentPage, currentLimit = limit, search = debouncedSearchTerm, currentSortBy = sortBy, currentSortOrder = sortOrder) => {
+  const fetchMembers = async (page = currentPage, currentLimit = limit, search = searchTermForFetch, currentSortBy = sortBy, currentSortOrder = sortOrder, status = activeFilter) => {
     setLoading(true);
     setError(null);
     try {
@@ -80,6 +83,7 @@ const AdminMembersListPage: React.FC = () => {
       params.append('page', page.toString());
       params.append('limit', currentLimit.toString());
       if (search) params.append('search', search);
+      if (status !== "all") params.append('active', status);
       params.append('sortBy', currentSortBy);
       params.append('sortOrder', currentSortOrder);
 
@@ -98,10 +102,10 @@ const AdminMembersListPage: React.FC = () => {
   };
 
   useEffect(() => {
-    // Fetch members when debouncedSearchTerm changes, or other params like currentPage, limit, sortBy, sortOrder
-    fetchMembers(currentPage, limit, debouncedSearchTerm, sortBy, sortOrder);
+    // Fetch members when any relevant param changes
+    fetchMembers(currentPage, limit, searchTermForFetch, sortBy, sortOrder, activeFilter);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, limit, debouncedSearchTerm, sortBy, sortOrder]); // Add debouncedSearchTerm to dependencies
+  }, [currentPage, limit, searchTermForFetch, sortBy, sortOrder, activeFilter]);
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
@@ -131,60 +135,101 @@ const AdminMembersListPage: React.FC = () => {
     setCurrentPage(1); // Reset to first page when limit changes
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-40">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="ml-2">Loading members...</p>
-      </div>
-    );
-  }
 
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center h-40 text-red-600">
-        <AlertCircle className="h-8 w-8 mb-2" />
-        <p>Error: {error}</p>
-      </div>
-    );
-  }
 
   return (
-    <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8">
-      <Card>
-        <CardHeader>
-         </CardHeader>
-        <CardContent>
-          <div className="flex justify-between items-center mb-4">
-            <h1 className="text-2xl font-bold mb-4">Admin - Customer Wallets</h1>
-          <div className="flex  justify-end items-center gap-4 mb-4">
-            <Input
-              type="text"
-              placeholder="Search customer by name or email..."
-              value={searchTerm}
-              onChange={handleSearchChange}
-              className="max-w-sm flex-grow"
-            />
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-700 dark:text-gray-300">Show:</span>
-              <Select value={limit.toString()} onValueChange={handleLimitChange}>
-                <SelectTrigger className="w-[80px]">
-                  <SelectValue placeholder={limit.toString()} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="10">10</SelectItem>
-                  <SelectItem value="25">25</SelectItem>
-                  <SelectItem value="50">50</SelectItem>
-                  <SelectItem value="100">100</SelectItem>
-                </SelectContent>
-              </Select>
+    <div className="mt-2 p-4 sm:p-6">
+      <div className="flex justify-between items-center mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold">Admin - Customer Wallets</h1>
+      </div>
+
+      <Card className="mx-auto mt-6">
+        <CardContent className="pt-6">
+          {/* Toolbar - Matches UserList.tsx structure */}
+          <div className="flex flex-wrap gap-4 mb-6">
+            {/* Search Input */}
+            <div className="flex-grow">
+              <Input
+                type="text"
+                placeholder="Search customer by name or email..."
+                value={searchTerm}
+                onChange={handleSearchChange}
+                icon={<Search className="h-4 w-4" />}
+                className="w-full"
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className={`shadow-sm transition-all duration-200 ${
+                  activeFilter !== "all" || searchTerm
+                    ? "bg-green-600 hover:bg-green-700 text-white border-green-600"
+                    : "bg-background hover:bg-muted text-foreground border border-input"
+                }`}
+              >
+                <Filter className="mr-2 h-4 w-4" />
+                Filter
+              </Button>
+              {(searchTerm || activeFilter !== "all") && (
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setSearchTerm("");
+                    setActiveFilter("all");
+                    setCurrentPage(1);
+                  }}
+                  className="h-10 text-gray-500 hover:text-red-600 hover:bg-red-50 px-3"
+                >
+                  Clear
+                </Button>
+              )}
             </div>
           </div>
-          </div>
-          
 
-          {members.length === 0 && !loading ? (
-            <p className="text-center text-gray-500 py-4">No Customer found.</p>
+          {/* Collapsible Filters */}
+          {showFilters && (
+            <Card className="p-4 mb-6 bg-gray-50/50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800 animate-in slide-in-from-top-2 duration-200">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block text-gray-700 dark:text-gray-300">
+                    Member Status
+                  </label>
+                  <Select value={activeFilter} onValueChange={(val) => { setActiveFilter(val); setCurrentPage(1); }}>
+                    <SelectTrigger className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                      <SelectValue placeholder="All Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Members</SelectItem>
+                      <SelectItem value="true">Active Only</SelectItem>
+                      <SelectItem value="false">Inactive Only</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          <Separator className="mb-4" />
+          
+          <div className="space-y-4">
+          {loading ? (
+            <div className="flex items-center justify-center h-40">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="ml-2 text-muted-foreground">Syncing members...</p>
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center h-40 text-red-600">
+              <AlertCircle className="h-8 w-8 mb-2" />
+              <p>Error: {error}</p>
+              <Button variant="outline" size="sm" onClick={() => fetchMembers()} className="mt-2 text-red-600 border-red-200">
+                Try Again
+              </Button>
+            </div>
+          ) : members.length === 0 ? (
+            <p className="text-center text-gray-500 py-10 bg-gray-50/50 rounded-lg border border-dashed">No Customer found matching your search.</p>
           ) : (
             <Table>
               <TableHeader>
@@ -262,26 +307,51 @@ const AdminMembersListPage: React.FC = () => {
           )}
 
           {totalPages > 0 && (
-            <div className="flex items-center justify-between mt-6">
-              <Button 
-                onClick={handlePreviousPage} 
-                disabled={currentPage <= 1 || loading}
-                variant="outline"
-              >
-                Previous
-              </Button>
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                Page {currentPage} of {totalPages}
-              </span>
-              <Button 
-                onClick={handleNextPage} 
-                disabled={currentPage >= totalPages || loading}
-                variant="outline"
-              >
-                Next
-              </Button>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 pt-4 border-t">
+              <div className="flex items-center space-x-3 bg-secondary/5 p-1 px-3 rounded-md border border-dashed">
+                <span className="text-xs font-medium text-muted-foreground whitespace-nowrap uppercase tracking-wider">Entries/Page:</span>
+                <Select value={limit.toString()} onValueChange={handleLimitChange}>
+                  <SelectTrigger className="w-[85px] h-8 border-none bg-transparent focus:ring-0 text-sm font-bold">
+                    <SelectValue placeholder={limit.toString()} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center space-x-4">
+                <Button 
+                  onClick={handlePreviousPage} 
+                  disabled={currentPage <= 1 || loading}
+                  variant="outline"
+                  size="sm"
+                  className="h-9 px-4"
+                >
+                  Previous
+                </Button>
+                <div className="flex items-center px-3 h-9 bg-gray-50 dark:bg-gray-800 rounded-md border text-sm font-medium">
+                  <span className="text-muted-foreground mr-1">Page</span>
+                  <span className="text-primary">{currentPage}</span>
+                  <span className="mx-1 text-muted-foreground">of</span>
+                  <span>{totalPages}</span>
+                </div>
+                <Button 
+                  onClick={handleNextPage} 
+                  disabled={currentPage >= totalPages || loading}
+                  variant="outline"
+                  size="sm"
+                  className="h-9 px-4"
+                >
+                  Next
+                </Button>
+              </div>
             </div>
           )}
+          </div>
         </CardContent>
       </Card>
     </div>
