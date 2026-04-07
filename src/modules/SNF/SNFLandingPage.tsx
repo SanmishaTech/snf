@@ -14,9 +14,9 @@ import { productService } from "./services/api";
 import { Button } from "@/components/ui/button";
 import { useCart } from "./context/CartContext";
 import { useDeliveryLocation } from "./hooks/useDeliveryLocation";
-import type { Category as FilterCategory } from "./components/CategoryFilters.tsx";
 import { CategoryBar } from "./components/CategoryBar.tsx";
-import { useTransition } from "react";
+import { useTransition, useRef } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export type SortKey = "relevance" | "price_asc" | "price_desc" | "popularity_desc";
 
@@ -227,6 +227,18 @@ const SNFContent: React.FC = () => {
   //   }
   // };
 
+  // Manage refs for each category carousel to allow manual scrolling
+  const categoryRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  const scrollCategory = (catId: string, direction: 'left' | 'right') => {
+    const el = categoryRefs.current[catId];
+    if (el) {
+      // Use slightly less than the container width for a smooth, overlapping scroll
+      const scrollAmount = direction === 'left' ? -320 : 320;
+      el.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
   // Filter and sort products
   const filtered = useMemo(() => {
     let filteredProducts = products;
@@ -406,21 +418,46 @@ const SNFContent: React.FC = () => {
                 const catProducts = filtered.filter(p => p.product.categoryId === parseInt(cat.id));
                 if (catProducts.length === 0) return null;
                 return (
-                  <div key={cat.id} className="pt-2">
+                  <div key={cat.id} className="pt-2 group/cat">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg md:text-xl font-bold">{cat.name}</h3>
+                      <div className="flex items-center gap-3">
+                        <h3 className="text-lg md:text-xl font-bold">{cat.name}</h3>
+                        {/* Desktop Only Arrow Navigation */}
+                        <div className="hidden md:flex items-center gap-2 ml-4 opacity-0 group-hover/cat:opacity-100 transition-opacity">
+                          <button
+                            type="button"
+                            onClick={() => scrollCategory(cat.id, 'left')}
+                            className="h-8 w-8 flex items-center justify-center rounded-full bg-background border border-border shadow-sm text-foreground hover:text-primary hover:border-primary/30 hover:scale-110 transition-all duration-200"
+                            aria-label="Scroll Left"
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => scrollCategory(cat.id, 'right')}
+                            className="h-8 w-8 flex items-center justify-center rounded-full bg-background border border-border shadow-sm text-foreground hover:text-primary hover:border-primary/30 hover:scale-110 transition-all duration-200"
+                            aria-label="Scroll Right"
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
                       <button
                         type="button"
                         onClick={() => {
                           setSelectedCats([parseInt(cat.id)]);
                           document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
                         }}
-                        className="text-sm font-medium text-primary hover:underline cursor-pointer"
+                        className="text-sm font-medium text-primary hover:underline cursor-pointer flex items-center gap-1"
                       >
                         See all
+                        <ChevronRight className="h-3 w-3" />
                       </button>
                     </div>
-                    <div className="flex overflow-x-auto gap-3 sm:gap-4 scrollbar-hide snap-x pb-4 px-1">
+                    <div
+                      ref={el => categoryRefs.current[cat.id] = el}
+                      className="flex overflow-x-auto gap-3 sm:gap-4 scrollbar-hide snap-x pb-4 px-1"
+                    >
                       {catProducts.map(p => (
                         <div key={p.product.id} className="flex-shrink-0 w-[140px] sm:w-[160px] md:w-[180px] snap-start h-auto flex">
                           <ProductCard product={p} onAddToCart={onAddToCart} showVariants={true} />
@@ -436,9 +473,34 @@ const SNFContent: React.FC = () => {
                 const uncategorized = filtered.filter(p => !categories.find((c: any) => parseInt(c.id) === p.product.categoryId));
                 if (uncategorized.length === 0) return null;
                 return (
-                  <div className="pt-2">
-                    <h3 className="text-lg md:text-xl font-bold mb-4">Other Products</h3>
-                    <div className="flex overflow-x-auto gap-3 sm:gap-4 scrollbar-hide snap-x pb-4 px-1">
+                  <div className="pt-2 group/cat">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <h3 className="text-lg md:text-xl font-bold mb-0">Other Products</h3>
+                        <div className="hidden md:flex items-center gap-2 ml-4 opacity-0 group-hover/cat:opacity-100 transition-opacity">
+                          <button
+                            type="button"
+                            onClick={() => scrollCategory('other', 'left')}
+                            className="h-8 w-8 flex items-center justify-center rounded-full bg-background border border-border shadow-sm text-foreground hover:text-primary hover:border-primary/30 hover:scale-110 transition-all duration-200"
+                            aria-label="Scroll Left"
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => scrollCategory('other', 'right')}
+                            className="h-8 w-8 flex items-center justify-center rounded-full bg-background border border-border shadow-sm text-foreground hover:text-primary hover:border-primary/30 hover:scale-110 transition-all duration-200"
+                            aria-label="Scroll Right"
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      ref={el => categoryRefs.current['other'] = el}
+                      className="flex overflow-x-auto gap-3 sm:gap-4 scrollbar-hide snap-x pb-4 px-1"
+                    >
                       {uncategorized.map(p => (
                         <div key={p.product.id} className="flex-shrink-0 w-[140px] sm:w-[160px] md:w-[180px] snap-start h-auto flex">
                           <ProductCard product={p} onAddToCart={onAddToCart} showVariants={true} />

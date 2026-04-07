@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export interface Category {
   id: string;
@@ -75,6 +76,13 @@ const CategoryBarComponent: React.FC<CategoryBarProps> = ({
   const handleMouseUp = () => setIsDragging(false);
   const handleMouseLeave = () => setIsDragging(false);
 
+  const scroll = (direction: 'left' | 'right') => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const scrollAmount = direction === 'left' ? -200 : 200;
+    el.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+  };
+
   if (isLoading) {
     return (
       <div className="border-b border-border">
@@ -103,24 +111,32 @@ const CategoryBarComponent: React.FC<CategoryBarProps> = ({
       <div className="relative group">
         <AnimatePresence>
           {canScrollLeft && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none"
-            />
+            <div className="absolute left-0 top-0 bottom-0 flex items-center z-20 pointer-events-none pr-10">
+              <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-background via-background/90 to-transparent pointer-events-none" />
+              <button
+                type="button"
+                onClick={() => scroll('left')}
+                className="ml-2 h-9 w-9 flex items-center justify-center rounded-full bg-background border border-border shadow-md text-foreground hover:text-primary hover:border-primary/30 hover:scale-110 transition-all duration-200 pointer-events-auto"
+                aria-label="Scroll Left"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+            </div>
           )}
         </AnimatePresence>
         <AnimatePresence>
           {canScrollRight && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none"
-            />
+            <div className="absolute right-0 top-0 bottom-0 flex items-center z-20 pointer-events-none pl-10">
+              <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-background via-background/90 to-transparent pointer-events-none" />
+              <button
+                type="button"
+                onClick={() => scroll('right')}
+                className="mr-2 h-9 w-9 flex items-center justify-center rounded-full bg-background border border-border shadow-md text-foreground hover:text-primary hover:border-primary/30 hover:scale-110 transition-all duration-200 pointer-events-auto"
+                aria-label="Scroll Right"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </div>
           )}
         </AnimatePresence>
 
