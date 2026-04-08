@@ -150,6 +150,7 @@ export interface ExcelExportConfig {
     levels: string[];
     showTotals: boolean;
   };
+  mergeColumns?: string[];
 }
 
 export interface ExcelHeader {
@@ -417,4 +418,68 @@ export interface SubscriptionReportResponse {
   data: SubscriptionReportItem[];
   summary: SubscriptionReportSummary;
   filters: SubscriptionReportFilters;
+}
+
+// SNF Delivery List Report Types
+export interface SNFDeliveryListItem {
+  id: number;
+  orderNo: string;
+  customerName: string;
+  mobile: string;
+  address: string;
+  pincode: string;
+  paymentStatus: string;
+  paymentMode: string | null;
+  totalAmount: number;
+  items: Array<{
+    name: string;
+    variant: string;
+    quantity: number;
+  }>;
+}
+
+export interface SNFDeliveryListResponse {
+  success: boolean;
+  data: Record<string, SNFDeliveryListItem[]>;
+  filters: {
+    depotId: string;
+    date: string;
+  };
+}
+
+// SNF Packing List Report Types
+export interface SNFPackingListItem {
+  id: number;
+  customerName: string;
+  address: string;
+  pincode: string;
+  items: Array<{
+    name: string;
+    variant: string;
+    quantity: number;
+  }>;
+}
+
+export interface SNFPackingListResponse {
+  success: boolean;
+  data: SNFPackingListItem[];
+  filters: {
+    depotId: string;
+    date: string;
+  };
+}
+
+export interface SNFStockRequirementItem {
+  name: string;
+  variant: string;
+  totalQuantity: number;
+}
+
+export interface SNFStockRequirementResponse {
+  success: boolean;
+  data: SNFStockRequirementItem[];
+  filters: {
+    depotId: string;
+    date: string;
+  };
 }

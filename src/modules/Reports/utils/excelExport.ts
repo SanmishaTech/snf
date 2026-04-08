@@ -41,11 +41,15 @@ export class ExcelExporter {
     this.applyColumnWidths(config.headers);
     
     // Process data based on grouping
+    const dataStartRow = this.currentRow;
     if (config.grouping?.enabled && this.isGroupedData(data)) {
       this.processGroupedData(data as GroupedData[] | DeliveryGroupedData[], config);
     } else {
       this.processFlatData(data as PurchaseOrderItem[] | DeliveryItem[], config);
     }
+
+    // Apply merges if configured
+    this.applyMerges(config, dataStartRow);
     
     // Add grand totals if provided
     if (totals && config.grouping?.showTotals) {
@@ -393,7 +397,10 @@ export class ExcelExporter {
               ? { t: 'b' as const }
               : value === null || value === undefined
                 ? {}
-                : { t: 's' as const })
+                : { t: 's' as const }),
+          s: {
+            alignment: { horizontal: header.align || 'left' }
+          }
         };
       });
 
@@ -557,5 +564,65 @@ export class ExcelExporter {
       month: 'short',
       day: 'numeric'
     });
+  }
+
+  /**
+   * Apply dynamic merges for identical consecutive values in specified columns
+   */
+  private applyMerges(config: ExcelExportConfig, dataStartRow: number): void {
+    if (!config.mergeColumns || config.mergeColumns.length === 0) return;
+
+    if (!this.worksheet['!merges']) {
+      this.worksheet['!merges'] = [];
+    }
+
+    const headerKeys: string[] = (this as any).headerKeys || [];
+
+    config.mergeColumns.forEach(mergeColKey => {
+      const colIndex = headerKeys.indexOf(mergeColKey);
+      if (colIndex === -1) return;
+
+      let startRow = dataStartRow - 1; // 0-indexed
+      const endRow = this.currentRow - 2; // Last inserted row, 0-indexed
+      
+      let currentValue = this.worksheet[XLSX.utils.encode_cell({ r: startRow, c: colIndex })]?.v;
+      
+      for (let r = startRow + 1; r <= endRow; r++) {
+        const cellVal = this.worksheet[XLSX.utils.encode_cell({ r, c: colIndex })]?.v;
+        
+        if (cellVal !== currentValue || cellVal === undefined) {
+          if (r - 1 > startRow && currentValue !== undefined && String(currentValue).trim() !== '') {
+            this.worksheet['!merges']!.push({
+              s: { r: startRow, c: colIndex },
+              e: { r: r - 1, c: colIndex }
+            });
+            this.centerMergedCell(startRow, colIndex);
+          }
+          startRow = r;
+          currentValue = cellVal;
+        } else if (r === endRow) {
+          // If we reached the end and it's still the same value, merge till the end
+          if (r > startRow && currentValue !== undefined && String(currentValue).trim() !== '') {
+            this.worksheet['!merges']!.push({
+              s: { r: startRow, c: colIndex },
+              e: { r: endRow, c: colIndex }
+            });
+            this.centerMergedCell(startRow, colIndex);
+          }
+        }
+      }
+    });
+  }
+
+  private centerMergedCell(r: number, c: number): void {
+    const startCell = XLSX.utils.encode_cell({ r, c });
+    if (this.worksheet[startCell]) {
+      this.worksheet[startCell].s = this.worksheet[startCell].s || {};
+      this.worksheet[startCell].s.alignment = {
+        ...this.worksheet[startCell].s.alignment,
+        vertical: 'center',
+        horizontal: 'center'
+      };
+    }
   }
 }

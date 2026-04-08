@@ -13,6 +13,7 @@ import {
   BarChart3,
   ClipboardList,
   ShoppingCart,
+  Boxes,
   type LucideIcon,
 } from "lucide-react";
 
@@ -277,6 +278,24 @@ const initialData = {
           groupLabel: "Indraai Reports",
         },
         {
+          title: "SNF Delivery List",
+          url: "/admin/reports/snf-delivery-list",
+          icon: BarChart3,
+          groupLabel: "SNF Reports",
+        },
+        {
+          title: "Packing List",
+          url: "/admin/reports/snf-packing-list",
+          icon: ClipboardList,
+          groupLabel: "SNF Reports",
+        },
+        {
+          title: "Stock Requirement",
+          url: "/admin/reports/snf-stock-requirement",
+          icon: Boxes,
+          groupLabel: "SNF Reports",
+        },
+        {
           title: "Users",
           url: "/admin/users",
           icon: Briefcase,
@@ -318,6 +337,18 @@ const initialData = {
             { title: "Revenue Report", url: "/admin/reports/revenue" },
             { title: "Wallet Report", url: "/admin/reports/wallet" },
             { title: "Exception Report", url: "/admin/reports/exceptions" },
+          ],
+        },
+        {
+          title: "SNF Reports",
+          url: "#",
+          icon: BarChart3,
+          groupLabel: "SNF Reports",
+          isActive: false,
+          items: [
+            { title: "Delivery List Report", url: "/admin/reports/snf-delivery-list" },
+            { title: "Packing List Report", url: "/admin/reports/snf-packing-list" },
+            { title: "Stock Requirement Report", url: "/admin/reports/snf-stock-requirement" },
           ],
         },
         {
