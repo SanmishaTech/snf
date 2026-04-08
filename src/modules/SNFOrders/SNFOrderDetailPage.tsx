@@ -113,6 +113,11 @@ const SNFOrderDetailPage: React.FC = () => {
                 <LabelRow label="Payment Ref" value={order.paymentRefNo || '-'} />
                 <LabelRow label="Payment Date" value={order.paymentDate ? new Date(order.paymentDate).toLocaleDateString() : '-'} />
                 <LabelRow label="Created At" value={new Date(order.createdAt).toLocaleDateString()} />
+                {(order as any).deliveryDate && (
+                  <div className="bg-green-50 px-2 rounded-sm">
+                    <LabelRow label="Delivery Date" value={new Date((order as any).deliveryDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} />
+                  </div>
+                )}
               </div>
             </div>
           </div>

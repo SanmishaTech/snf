@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { format, addDays } from "date-fns";
 import { useCart } from "../context/CartContext";
 import { useDeliveryLocation } from "../hooks/useDeliveryLocation";
 import { Header } from "./Header.tsx";
@@ -245,6 +246,7 @@ const CheckoutPage: React.FC = () => {
         deliveryAddressId: selectedAddress.id,
         couponCode: appliedCoupon?.code || null,
         couponDiscount: couponDiscountAmount,
+        deliveryDate: addDays(new Date(), 2).toISOString(),
       };
 
       // 1. Check if online payment is needed
@@ -577,7 +579,11 @@ const CheckoutPage: React.FC = () => {
                       </span>
                     </div>
 
-                    
+                    <div className="flex items-center justify-between text-sm py-1 px-2 bg-green-50 rounded-md border border-green-100">
+                      <span className="text-green-700 font-medium">Estimated Delivery</span>
+                      <span className="font-bold text-green-700">{format(addDays(new Date(), 2), "dd MMM yyyy")}</span>
+                    </div>
+
                     <div className="space-y-2 py-2">
                       <div className="flex gap-2">
                         <Input 

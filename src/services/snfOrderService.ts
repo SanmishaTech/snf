@@ -32,6 +32,7 @@ export interface CreateSNFOrderPayload {
   paymentRefNo?: string | null;
   paymentStatus?: string; // 'PENDING' | 'PAID' | 'FAILED' etc.
   paymentDate?: string | null; // ISO string
+  deliveryDate?: string | null; // ISO string
   depotId?: number | null; // Optional depot association
 }
 

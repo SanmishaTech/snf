@@ -62,6 +62,7 @@ export interface SNFOrderDetail {
   paymentStatus: string;
   paymentRefNo?: string | null;
   paymentDate?: string | null;
+  deliveryDate?: string | null;
   invoiceNo?: string | null;
   invoicePath?: string | null;
   createdAt: string;

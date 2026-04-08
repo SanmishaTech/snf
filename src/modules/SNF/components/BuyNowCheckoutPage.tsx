@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { format, addDays } from "date-fns";
 import { Header } from "./Header.tsx";
 import { Footer } from "./Footer.tsx";
 import { MobileBottomNav } from "./MobileBottomNav.tsx";
@@ -220,6 +221,7 @@ const BuyNowCheckoutPage: React.FC = () => {
         deliveryAddressId: selectedAddress.id,
         couponCode: appliedCoupon?.code || null,
         couponDiscount: couponDiscountAmount,
+        deliveryDate: addDays(new Date(), 2).toISOString(),
       };
 
       const res = await snfOrderService.createOrder(payload);
@@ -501,6 +503,11 @@ const BuyNowCheckoutPage: React.FC = () => {
                       <span className="font-medium text-green-600">-{currency.format(couponDiscountAmount)}</span>
                     </div>
                   )}
+                  <div className="flex items-center justify-between text-sm py-1 px-2 bg-green-50 rounded-md border border-green-100">
+                    <span className="text-green-700 font-medium">Estimated Delivery</span>
+                    <span className="font-bold text-green-700">{format(addDays(new Date(), 2), "dd MMM yyyy")}</span>
+                  </div>
+
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Wallet deduction</span>
                     <span className="font-medium text-green-600">-
