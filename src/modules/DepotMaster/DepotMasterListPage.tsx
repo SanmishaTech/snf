@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { get, del } from '../../services/apiService';
-import { PlusCircle, Edit, Trash2, Search, ChevronsUpDown, ArrowDown, ArrowUp } from 'lucide-react';
+import { get, del, post } from '../../services/apiService';
+import { PlusCircle, Edit, Trash2, Search, ChevronsUpDown, ArrowDown, ArrowUp, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -16,10 +16,18 @@ import { toast } from 'sonner';
 import DepotMasterForm, { DepotFormData } from './DepotMasterForm';
 import { Pagination } from '@/components/common/Pagination';
 
+interface AssociatedUser {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+}
+
 interface Depot extends DepotFormData {
   id: string;
   city: string;
   createdAt: string;
+  members?: AssociatedUser[];
 }
 
 const API_BASE_URL = '/admin/depots';
@@ -115,6 +123,47 @@ const DepotMasterListPage: React.FC = () => {
 
   const handleFormSubmitSuccess = () => {
     fetchDepots();
+  };
+
+  const handleSudoLogin = async (userId: number, userName: string) => {
+    try {
+      const response = await post(`/auth/sudo-login/${userId}`, {});
+      if (response.token && response.user) {
+        // Store current admin data for return functionality
+        const currentToken = localStorage.getItem('authToken');
+        const currentUser = localStorage.getItem('user');
+
+        if (currentToken && currentUser) {
+          localStorage.setItem('adminToken', currentToken);
+          localStorage.setItem('adminUser', currentUser);
+        }
+
+        // Update with impersonated user data
+        localStorage.setItem("authToken", response.token);
+        localStorage.setItem("user", JSON.stringify(response.user));
+
+        toast.success(`Successfully impersonated ${userName}`);
+
+        // Redirect based on the impersonated user's role
+        const role = response.user.role;
+        let redirectUrl = "/";
+        
+        if (role === 'ADMIN') {
+          redirectUrl = "/admin/dashboard";
+        } else if (role === 'DepotAdmin') {
+          redirectUrl = "/admin/purchases";
+        } else if (role === 'DELIVERY_PARTNER') {
+          redirectUrl = "/delivery-app/dashboard";
+        } else if (role !== 'MEMBER') {
+          redirectUrl = "/admin/orders";
+        }
+
+        window.location.href = redirectUrl;
+      }
+    } catch (error: any) {
+      console.error("Sudo login error:", error);
+      toast.error(error.message || "Failed to impersonate user");
+    }
   };
 
   const handleSort = (column: string) => {
@@ -235,6 +284,21 @@ const DepotMasterListPage: React.FC = () => {
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
+
+                          {depot.members && depot.members.length > 0 && (
+                            <Button 
+                              variant="outline" 
+                              size="icon" 
+                              onClick={() => {
+                                const admin = depot.members?.find(m => m.role === 'DepotAdmin') || depot.members?.[0];
+                                if (admin) handleSudoLogin(admin.id, admin.name);
+                              }}
+                              className="hover:bg-slate-100 dark:hover:bg-slate-700"
+                              title={`Login As ${depot.members.find(m => m.role === 'DepotAdmin')?.name || depot.members[0].name}`}
+                            >
+                              <LogIn className="h-4 w-4" />
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}

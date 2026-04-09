@@ -299,8 +299,21 @@ const UserList = () => {
 
         toast.success(`Successfully impersonated ${userName}`);
 
-        // Redirect to dashboard or home
-        window.location.href = "/";
+        // Redirect based on the impersonated user's role
+        const role = response.user.role;
+        let redirectUrl = "/";
+        
+        if (role === 'ADMIN') {
+          redirectUrl = "/admin/dashboard";
+        } else if (role === 'DepotAdmin') {
+          redirectUrl = "/admin/purchases";
+        } else if (role === 'DELIVERY_PARTNER') {
+          redirectUrl = "/delivery-app/dashboard";
+        } else if (role !== 'MEMBER') {
+          redirectUrl = "/admin/orders";
+        }
+
+        window.location.href = redirectUrl;
       }
     } catch (error: any) {
       console.error("Sudo login error:", error);

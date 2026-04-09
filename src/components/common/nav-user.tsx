@@ -93,6 +93,26 @@ export function NavUser({
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
+              {localStorage.getItem('adminToken') && (
+                <DropdownMenuItem
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    const adminToken = localStorage.getItem('adminToken');
+                    const adminUser = localStorage.getItem('adminUser');
+                    if (adminToken && adminUser) {
+                      localStorage.setItem('authToken', adminToken);
+                      localStorage.setItem('user', adminUser);
+                      localStorage.removeItem('adminToken');
+                      localStorage.removeItem('adminUser');
+                      window.location.href = "/admin/users";
+                    }
+                  }}
+                  className="cursor-pointer bg-amber-50 focus:bg-amber-100 text-amber-700 font-bold"
+                >
+                  <KeySquare className="mr-2 h-4 w-4" />
+                  <span>Return to Admin</span>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem
                 onSelect={(e) => {
                   e.preventDefault();

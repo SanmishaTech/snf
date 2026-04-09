@@ -66,9 +66,33 @@ export default function MainLayout() {
                 Back
               </Button>
               {/* Welcome Message - Hidden on mobile */}
-              <h1 className="text-white text-sm sm:text-base font-medium truncate hidden md:block">
-                Welcome, {userData?.name} <span className="text-blue-200 dark:text-gray-400 text-xs sm:text-sm">({userData?.role})</span>
-              </h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-white text-sm sm:text-base font-medium truncate hidden md:block">
+                  Welcome, {userData?.name} <span className="text-blue-200 dark:text-gray-400 text-xs sm:text-sm">({userData?.role})</span>
+                </h1>
+                
+                {/* Direct Return to Admin Button in Admin Header */}
+                {localStorage.getItem('adminToken') && (
+                  <Button
+                    onClick={() => {
+                      const adminToken = localStorage.getItem('adminToken');
+                      const adminUser = localStorage.getItem('adminUser');
+                      if (adminToken && adminUser) {
+                        localStorage.setItem('authToken', adminToken);
+                        localStorage.setItem('user', adminUser);
+                        localStorage.removeItem('adminToken');
+                        localStorage.removeItem('adminUser');
+                        window.location.href = "/admin/users";
+                      }
+                    }}
+                    variant="secondary"
+                    size="sm"
+                    className="bg-amber-500 hover:bg-amber-600 border-none text-white font-bold h-8 px-3 rounded-full shadow-lg animate-pulse whitespace-nowrap"
+                  >
+                    Return to Admin
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </header>
