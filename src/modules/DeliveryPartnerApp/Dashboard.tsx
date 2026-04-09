@@ -1,8 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { get, putupload } from '@/services/apiService';
 import { toast } from 'sonner';
 import { LoaderCircle, Camera, CheckCircle2, Package, MapPin, Phone, Info, RefreshCw, Navigation, History, PlayCircle } from 'lucide-react';
@@ -71,211 +69,211 @@ export default function DeliveryPartnerDashboard() {
     }
   };
 
-  const DeliveryCard = ({ a }: { a: any }) => {
+  const DeliveryRow = ({ a }: { a: any }) => {
     const items = a.snfOrder ? (a.snfOrder.items || []) : (a.deliveryScheduleEntry ? [a.deliveryScheduleEntry] : []);
-    const customerName = a.snfOrder?.name || a.deliveryScheduleEntry?.deliveryAddress?.recipientName;
+    const customerName = a.snfOrder?.name || a.deliveryScheduleEntry?.deliveryAddress?.recipientName || 'Member';
     const orderNo = a.snfOrder?.orderNo || `SUBS-${a.deliveryScheduleEntryId}`;
-    const address = a.snfOrder?.addressLine1 || a.deliveryScheduleEntry?.deliveryAddress?.plotBuilding || 'No address provided';
+    const address = a.snfOrder ? (a.snfOrder.addressLine1 || a.snfOrder.address) : a.deliveryScheduleEntry?.deliveryAddress?.plotBuilding;
     const city = a.snfOrder?.city || a.deliveryScheduleEntry?.deliveryAddress?.city;
     const mobile = a.snfOrder?.mobile || a.deliveryScheduleEntry?.deliveryAddress?.mobile;
 
     return (
-      <Card key={a.id} className="border-none shadow-xl shadow-gray-200/50 rounded-[2rem] overflow-hidden bg-white ring-1 ring-gray-100 mb-6 last:mb-0">
-        <CardHeader className="bg-white pt-6 px-6 pb-2">
-          <div className="flex justify-between items-start mb-1">
-            <Badge className={`
-              font-black text-[9px] tracking-[0.15em] uppercase px-2.5 py-0.5 border-none
-              ${a.status === 'DELIVERED' ? 'bg-green-500 text-white' : 'bg-primary text-white shadow-lg shadow-primary/20'}
-            `}>
-              {a.status}
-            </Badge>
-            <span className="text-[10px] font-black text-gray-300 tracking-widest uppercase italic">#{orderNo}</span>
-          </div>
-          <h2 className="text-xl font-black text-gray-900 tracking-tight leading-none uppercase">{customerName}</h2>
-        </CardHeader>
-
-        <CardContent className="px-6 pb-6 pt-2 space-y-5">
-          <div className="flex gap-2.5">
-            <div className="bg-primary/5 h-8 w-8 rounded-lg flex items-center justify-center shrink-0">
-              <MapPin size={14} className="text-primary" />
-            </div>
-            <div>
-              <p className="text-[11px] font-bold text-gray-600 leading-tight uppercase">
-                {address}, <span className="text-primary">{city}</span>
-              </p>
-              {mobile && (
-                <div className="flex items-center gap-1.5 mt-1 text-[10px] font-black text-gray-400">
-                  <Phone size={10} />
-                  <span>+91 {mobile}</span>
-                </div>
-              )}
-            </div>
+      <div key={a.id} className="group bg-white border border-slate-200/60 rounded-2xl p-4 mb-4 last:mb-0 shadow-sm hover:shadow-md transition-all">
+        <div className="grid grid-cols-1 lg:grid-cols-[110px_1.5fr_1.8fr_1.2fr_1.8fr] gap-4 lg:gap-6 items-center">
+          {/* Status & ID Column */}
+          <div className="flex flex-col gap-1 sm:items-start">
+             <Badge className={`
+                w-fit font-bold text-[9px] tracking-wider uppercase px-2 py-0.5 border-none
+                ${a.status === 'DELIVERED' ? 'bg-emerald-500 text-white' : 'bg-red-600 text-white'}
+             `}>
+                {a.status}
+             </Badge>
+             <span className="text-[10px] font-mono text-slate-400">#{orderNo}</span>
           </div>
 
-          <div className="bg-gray-50 border border-gray-100 rounded-2xl overflow-hidden ring-4 ring-gray-50/50">
-            <div className="grid grid-cols-[1fr_60px] bg-gray-100/50 px-3 py-1.5 text-[9px] font-black uppercase text-gray-400 tracking-widest border-b border-gray-100">
-              <div>Shipment Contents</div>
-              <div className="text-right">Units</div>
-            </div>
-            <div className="divide-y divide-gray-100">
-              {items.map((item: any, i: number) => (
-                <div key={i} className="grid grid-cols-[1fr_60px] px-3 py-2.5 items-center">
-                  <p className="text-[11px] font-bold text-gray-700 uppercase leading-none truncate">
-                    {item.name || item.productName || item.product?.name || 'Item'}
-                  </p>
-                  <div className="text-[11px] font-black text-primary text-right italic">
-                    {item.quantity} QTY
-                  </div>
-                </div>
-              ))}
-            </div>
+          {/* Customer Column */}
+          <div className="flex flex-col">
+             <p className="text-sm font-bold text-slate-900 truncate">{customerName}</p>
+             {mobile && (
+               <a href={`tel:${mobile}`} className="flex items-center gap-1.5 mt-0.5 text-xs text-slate-500 hover:text-red-600 font-medium">
+                 <Phone size={10} />
+                 <span>{mobile}</span>
+               </a>
+             )}
           </div>
 
-          {a.status !== 'DELIVERED' ? (
-            <div className="space-y-4 pt-2">
-               <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Payment</Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">₹</span>
-                      <Input 
-                        type="number" 
-                        placeholder="0.00" 
-                        className="pl-7 h-11 rounded-xl border-2 border-gray-100 font-black text-gray-900 focus-visible:ring-primary h-12"
-                        value={cashStates[a.id] || ''}
-                        onChange={(e) => setCashStates(prev => ({ ...prev, [a.id]: e.target.value }))}
-                      />
-                    </div>
-                  </div>
+          {/* Address Column */}
+          <div className="flex flex-col">
+             <div className="flex items-start gap-1.5">
+               <MapPin size={12} className="text-slate-400 mt-0.5 shrink-0" />
+               <p className="text-xs text-slate-600 leading-tight">
+                 {address || 'Direct Depot'}{city ? <span className="text-red-600 font-semibold">, {city}</span> : ''}
+               </p>
+             </div>
+          </div>
 
-                  <div className="space-y-1.5">
-                    <Label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Photo Proof</Label>
-                    <Button 
-                      variant="outline" 
-                      className={`
-                        w-full h-12 rounded-xl border-2 border-dashed transition-all
-                        ${photoStates[a.id] ? 'bg-green-50 border-green-200 text-green-600' : 'bg-gray-50 border-gray-100 text-gray-400'}
-                      `}
-                      onClick={() => document.getElementById(`file-${a.id}`)?.click()}
-                    >
-                      {photoStates[a.id] ? <CheckCircle2 size={18} /> : <Camera size={18} />}
-                      <span className="ml-2 text-[10px] font-black uppercase tracking-tight">
-                        {photoStates[a.id] ? 'Attached' : 'Capture'}
-                      </span>
-                    </Button>
-                    <input 
-                      id={`file-${a.id}`}
-                      type="file" 
-                      accept="image/*"
-                      capture="environment"
-                      className="hidden"
-                      onChange={(e) => setPhotoStates(prev => ({ ...prev, [a.id]: e.target.files?.[0] || null }))}
+          {/* Items Column */}
+          <div className="flex flex-col gap-1.5">
+             <div className="flex flex-wrap gap-1.5">
+                {items.slice(0, 2).map((item: any, i: number) => (
+                  <Badge key={i} variant="secondary" className="bg-slate-50 text-[10px] py-0 px-1.5 border-slate-100 text-slate-600">
+                    {item.quantity}× {item.name || item.productName || item.product?.name || 'Item'}
+                  </Badge>
+                ))}
+                {items.length > 2 && (
+                  <span className="text-[9px] text-slate-400 font-bold">+{items.length - 2} more</span>
+                )}
+             </div>
+          </div>
+
+          {/* Actions Column */}
+          <div className="lg:border-l lg:border-slate-100 lg:pl-6">
+             {a.status !== 'DELIVERED' ? (
+               <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
+                  <div className="relative group w-full sm:w-28">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">₹</span>
+                    <Input 
+                      type="number" 
+                      placeholder="0.0" 
+                      className="pl-5 h-9 text-xs rounded-lg border-slate-200 bg-slate-50/50 focus-visible:ring-red-600 transition-all"
+                      value={cashStates[a.id] || ''}
+                      onChange={(e) => setCashStates(prev => ({ ...prev, [a.id]: e.target.value }))}
                     />
                   </div>
-               </div>
 
-               <Button 
-                 className="w-full h-14 rounded-2xl font-black text-sm tracking-[0.2em] uppercase shadow-lg shadow-primary/25 active:scale-95 transition-all"
-                 onClick={() => markDelivered(a.id)}
-                 disabled={loading[a.id]}
-               >
-                 {loading[a.id] ? <LoaderCircle className="animate-spin mr-2" /> : "Verify & Complete"}
-               </Button>
-            </div>
-          ) : (
-            <div className="bg-green-500 rounded-2xl p-4 flex items-center justify-between border-b-4 border-green-600">
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 bg-white/20 rounded-full flex items-center justify-center">
-                  <CheckCircle2 size={16} className="text-white" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-white/70 uppercase tracking-widest leading-none mb-1">Delivered At</p>
-                  <p className="text-xs font-black text-white uppercase">{new Date(a.deliveredAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                </div>
-              </div>
-              <Badge variant="outline" className="text-white border-white/30 text-[9px] font-black tracking-widest px-2 py-0.5">
-                ₹{a.cashCollected || '0.00'}
-              </Badge>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className={`
+                      h-9 rounded-lg border-2 border-dashed transition-all shrink-0 text-[10px] font-bold uppercase
+                      ${photoStates[a.id] ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-slate-50/50 border-slate-200 text-slate-400 hover:bg-slate-50'}
+                    `}
+                    onClick={() => document.getElementById(`file-${a.id}`)?.click()}
+                  >
+                    {photoStates[a.id] ? <CheckCircle2 size={12} /> : <Camera size={12} />}
+                    <span className="ml-1.5">{photoStates[a.id] ? 'Attached' : 'Capture'}</span>
+                  </Button>
+                  <input 
+                    id={`file-${a.id}`}
+                    type="file" 
+                    className="hidden"
+                    onChange={(e) => setPhotoStates(prev => ({ ...prev, [a.id]: e.target.files?.[0] || null }))}
+                  />
+
+                  <Button 
+                    size="sm"
+                    className="h-9 w-full sm:w-auto px-4 rounded-lg bg-red-600 hover:bg-red-700 font-bold text-[10px] uppercase tracking-wider shadow-sm transition-all"
+                    onClick={() => markDelivered(a.id)}
+                    disabled={loading[a.id]}
+                  >
+                    {loading[a.id] ? <LoaderCircle className="animate-spin" size={12} /> : "Complete"}
+                  </Button>
+               </div>
+             ) : (
+               <div className="flex items-center justify-between bg-emerald-50 rounded-lg py-2 px-3 border border-emerald-100">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 size={14} className="text-emerald-600" />
+                    <span className="text-[10px] font-bold text-emerald-700 uppercase">{new Date(a.deliveredAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                  <span className="text-[10px] font-extrabold text-emerald-600">₹{a.cashCollected || '0.0'}</span>
+               </div>
+             )}
+          </div>
+        </div>
+      </div>
     );
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] pb-24 flex flex-col items-center">
-      {/* Header section (Sticky) */}
-      <div className="w-full bg-white border-b border-gray-100 pt-6 pb-2 px-4 mb-2">
-        <div className="max-w-md mx-auto flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-black text-gray-900 tracking-tighter uppercase italic">Dispatch Hub</h1>
-            <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Partner Network v1.0</p>
+    <div className="min-h-screen bg-[#FDFEFE] pb-24">
+      {/* Header section (Integrated) */}
+      <div className="w-full pt-12 pb-6 px-10">
+        <div className="w-full flex items-end justify-between border-b-2 border-slate-100 pb-6">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-3">
+              <div className="h-4 w-1 bg-red-600 rounded-full" />
+              <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-none uppercase italic">
+                Dispatch Hub
+              </h1>
+            </div>
+            <p className="text-[11px] font-bold text-slate-400 tracking-[0.2em] ml-4 uppercase">Real-time Logistics Command</p>
           </div>
-          <Button 
-             variant="outline" 
-             size="icon" 
-             className="h-10 w-10 border-2 rounded-xl bg-white shadow-sm" 
-             onClick={fetchAssignments}
-             disabled={fetching}
-          >
-            <RefreshCw size={18} className={`${fetching ? 'animate-spin' : ''} text-gray-400`} />
-          </Button>
+          
+          <div className="flex items-center gap-4">
+            <div className="flex flex-col items-end mr-2">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Network Status</span>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] font-extrabold text-emerald-600 uppercase">Connected</span>
+              </div>
+            </div>
+            <Button 
+               variant="outline" 
+               size="icon" 
+               className="h-12 w-12 rounded-2xl hover:bg-white hover:text-red-600 border-slate-200 bg-slate-50/50 shadow-sm active:scale-90 transition-all" 
+               onClick={fetchAssignments}
+               disabled={fetching}
+            >
+              <RefreshCw size={20} className={`${fetching ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
         </div>
       </div>
 
-      <div className="w-full max-w-md px-3 mt-4">
+      <div className="w-full px-6 mt-8">
         <Tabs defaultValue="active" className="w-full">
-           <TabsList className="grid grid-cols-2 bg-gray-100 h-12 rounded-2xl p-1 mb-6">
-              <TabsTrigger value="active" className="rounded-xl font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm">
+           <TabsList className="flex bg-slate-100/80 h-12 w-fit rounded-xl p-1 mb-8 border border-slate-200/50 backdrop-blur-lg">
+              <TabsTrigger value="active" className="px-6 rounded-lg font-bold text-[11px] uppercase tracking-wider data-[state=active]:bg-white data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all">
                  <PlayCircle size={14} className="mr-2" />
                  Active ({activeAssignments.length})
               </TabsTrigger>
-              <TabsTrigger value="completed" className="rounded-xl font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm">
+              <TabsTrigger value="completed" className="px-6 rounded-lg font-bold text-[11px] uppercase tracking-wider data-[state=active]:bg-white data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all">
                  <History size={14} className="mr-2" />
                  History ({completedAssignments.length})
               </TabsTrigger>
            </TabsList>
 
-           <TabsContent value="active" className="space-y-6 outline-none">
+           <div className="hidden lg:grid grid-cols-[110px_1.5fr_1.8fr_1.2fr_1.8fr] gap-6 px-4 mb-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+              <div>Reference</div>
+              <div>Customer</div>
+              <div>Address</div>
+              <div>Items</div>
+              <div className="pl-6">Actions</div>
+           </div>
+
+           <TabsContent value="active" className="outline-none animate-in fade-in duration-300">
               {activeAssignments.length === 0 ? (
-                <div className="bg-white border-2 border-dashed border-gray-100 rounded-[2.5rem] p-12 flex flex-col items-center justify-center text-center mt-4">
-                  <div className="bg-gray-50 h-20 w-20 rounded-full flex items-center justify-center mb-4">
-                    <Package size={32} className="text-gray-200" />
-                  </div>
-                  <p className="font-black text-gray-900 uppercase tracking-tight text-sm">All Clear</p>
-                  <p className="text-xs text-gray-400 font-bold mt-1 uppercase tracking-widest">No pending deliveries</p>
+                <div className="bg-white border border-slate-100 rounded-2xl p-20 flex flex-col items-center justify-center text-center mt-4">
+                  <Package size={40} className="text-slate-200 mb-4" />
+                  <p className="text-sm font-bold text-slate-900 uppercase tracking-tight">Assignment Queue Clear</p>
                 </div>
               ) : (
-                activeAssignments.map(a => <DeliveryCard key={a.id} a={a} />)
+                activeAssignments.map(a => <DeliveryRow key={a.id} a={a} />)
               )}
            </TabsContent>
 
-           <TabsContent value="completed" className="space-y-6 outline-none">
+           <TabsContent value="completed" className="outline-none animate-in fade-in duration-300">
               {completedAssignments.length === 0 ? (
-                <div className="bg-white border-2 border-dashed border-gray-100 rounded-[2.5rem] p-12 flex flex-col items-center justify-center text-center mt-4">
-                  <div className="bg-gray-50 h-20 w-20 rounded-full flex items-center justify-center mb-4">
-                    <History size={32} className="text-gray-200" />
-                  </div>
-                  <p className="font-black text-gray-900 uppercase tracking-tight text-sm">No History</p>
-                  <p className="text-xs text-gray-400 font-bold mt-1 uppercase tracking-widest">You haven't completed any deliveries yet</p>
+                <div className="bg-white border border-slate-100 rounded-2xl p-20 flex flex-col items-center justify-center text-center mt-4">
+                  <History size={40} className="text-slate-200 mb-4" />
+                  <p className="text-sm font-bold text-slate-900 uppercase tracking-tight">No Delivery History</p>
                 </div>
               ) : (
-                completedAssignments.map(a => <DeliveryCard key={a.id} a={a} />)
+                completedAssignments.map(a => <DeliveryRow key={a.id} a={a} />)
               )}
            </TabsContent>
         </Tabs>
       </div>
-      
+
       {/* Bottom Nav Simulation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 flex justify-around items-center z-10 sm:hidden">
-         <div className="flex flex-col items-center gap-1 text-primary">
-            <Navigation size={20} />
-            <span className="text-[10px] font-black uppercase tracking-widest">Route</span>
+      <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-slate-100 p-4 flex justify-around items-center z-50 sm:hidden">
+         <div className="flex flex-col items-center gap-1 text-red-600">
+            <Navigation size={18} />
+            <span className="text-[10px] font-bold uppercase tracking-widest">Route</span>
          </div>
-         <div className="flex flex-col items-center gap-1 text-gray-300">
-            <Info size={20} />
-            <span className="text-[10px] font-black uppercase tracking-widest">Help</span>
+         <div className="flex flex-col items-center gap-1 text-slate-300">
+            <Info size={18} />
+            <span className="text-[10px] font-bold uppercase tracking-widest">Help</span>
          </div>
       </div>
     </div>

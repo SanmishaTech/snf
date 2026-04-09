@@ -128,7 +128,7 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
 
       {/* Main content */}
       <main
-        className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 pb-8"
+        className={`flex-grow ${location.pathname.startsWith("/delivery-app") ? "w-full px-0" : "container mx-auto px-4 sm:px-6 lg:px-8"} pb-8`}
         style={{ paddingTop: "var(--header-height)" }}
       >
         {children || <Outlet />}

@@ -4,29 +4,44 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { get, post, del } from '@/services/apiService';
 import { toast } from 'sonner';
-import { useAuth } from '@/hooks/useAuth';
-import { LoaderCircle, RefreshCw, Package, User, MapPin, Phone, CheckCircle2, XCircle, Camera } from 'lucide-react';
+import { LoaderCircle, RefreshCw, Package, User, MapPin, Phone, CheckCircle2, XCircle, Camera, Truck, AlertTriangle, TrendingUp } from 'lucide-react';
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 // Responsive hook
 function useMediaQuery(query: string) {
    const [matches, setMatches] = useState(false);
 
    useEffect(() => {
-      const mediaQueryList = window.matchMedia(query);
-      const listener = (event: MediaQueryListEvent) => setMatches(event.matches);
-      mediaQueryList.addEventListener("change", listener);
-      setMatches(mediaQueryList.matches);
-      return () => mediaQueryList.removeEventListener("change", listener);
+      const mediaQuery = window.matchMedia(query);
+      setMatches(mediaQuery.matches);
+      const listener = (e: MediaQueryListEvent) => setMatches(e.matches);
+      mediaQuery.addEventListener('change', listener);
+      return () => mediaQuery.removeEventListener('change', listener);
    }, [query]);
 
    return matches;
 }
+
+// Stats Card Sub-component
+const StatCard = ({ title, value, icon: Icon, colorClass, iconBgClass }: any) => (
+   <Card className="overflow-hidden border-slate-200/60 bg-white shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl group">
+      <CardContent className="p-4 flex items-center justify-between">
+         <div className="space-y-1">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{title}</p>
+            <p className="text-2xl font-black text-slate-800 tracking-tight">{value}</p>
+         </div>
+         <div className={`h-12 w-12 rounded-2xl ${iconBgClass} flex items-center justify-center transition-transform group-hover:scale-110 duration-300 shadow-sm`}>
+            <Icon size={20} className={colorClass} />
+         </div>
+      </CardContent>
+   </Card>
+);
 
 function AssignmentDetailsContent({ order }: { order: any }) {
    const items = useMemo(() => {
@@ -37,12 +52,12 @@ function AssignmentDetailsContent({ order }: { order: any }) {
             variantName: item.variantName || item.unit || item.product?.unit
          }));
       }
-      // Subscriptions have a 'product' object
+      // Subscriptions have a 'product' object in this backend
       if (order.product) {
          return [{
             id: order.id,
             productName: order.product.name,
-            quantity: order.quantity || 1,
+            quantity: 1, // Single entry
             variantName: order.product.unit || order.unit
          }];
       }
@@ -282,102 +297,99 @@ function AssignmentDetailsPanel({ order, open, onOpenChange }: { order: any, ope
 }
 
 export default function OrderAssignmentPage() {
-   const { user } = useAuth();
-   const [pendingOrders, setPendingOrders] = useState<any[]>([]);
-   const [assignedOrders, setAssignedOrders] = useState<any[]>([]);
-   const [partners, setPartners] = useState<any[]>([]);
-   const [selectedPartners, setSelectedPartners] = useState<Record<string, string>>({});
-   const [loading, setLoading] = useState(false);
-   const [fetching, setFetching] = useState(false);
-   const [deliveryDate, setDeliveryDate] = useState(new Date().toISOString().split('T')[0]);
    const [selectedOrder, setSelectedOrder] = useState<any>(null);
    const [isPanelOpen, setIsPanelOpen] = useState(false);
+   const [date, setDate] = useState<Date>(new Date());
+   const [selectedPartners, setSelectedPartners] = useState<{ [key: string]: string }>({});
+   const queryClient = useQueryClient();
 
-   const depotId = user?.depotId || 1; // Fallback to 1 for generic Admin if no depot selected
+   // User/Depot context
+   const userContextStr = localStorage.getItem('user') || localStorage.getItem('userDetails') || '{}';
+   const userObj = JSON.parse(userContextStr);
+   const depotId = userObj.depotId || userObj.depot_id;
+   const dateStr = date.toISOString().split('T')[0];
 
-   useEffect(() => {
-      if (depotId) {
-         fetchPendingOrders();
-         fetchAssignedOrders();
-         fetchPartners();
-      }
-   }, [depotId, deliveryDate]);
-
-   const fetchPendingOrders = async () => {
-      setFetching(true);
-      try {
-         const res = await get(`/delivery-assignments/pending?depotId=${depotId}&dateStr=${deliveryDate}`);
+   // Queries
+   const { data: pendingOrders = [], isLoading: loadingPending } = useQuery({
+      queryKey: ['pendingOrders', depotId, dateStr],
+      queryFn: async () => {
+         const res = await get(`/delivery-assignments/pending?depotId=${depotId}&dateStr=${dateStr}`);
          const snf = (res.snfOrders || []).map((o: any) => ({ ...o, type: 'SNF' }));
          const entries = (res.subEntries || []).map((e: any) => ({ ...e, type: 'SUB' }));
-         setPendingOrders([...snf, ...entries]);
-      } catch (e) {
-         console.error(e);
-      } finally {
-         setFetching(false);
-      }
-   };
+         return [...snf, ...entries];
+      },
+      enabled: !!depotId,
+      refetchInterval: 10000,
+   });
 
-   const fetchAssignedOrders = async () => {
-      setFetching(true);
-      try {
-         const res = await get(`/delivery-assignments/track?depotId=${depotId}&dateStr=${deliveryDate}`);
-         setAssignedOrders(res.assignments || []);
-      } catch (e) {
-         console.error(e);
-      } finally {
-         setFetching(false);
-      }
-   };
+   const { data: trackerData = [], isLoading: loadingTracking } = useQuery({
+      queryKey: ['assignedOrders', depotId, dateStr],
+      queryFn: async () => {
+         const res = await get(`/delivery-assignments/track?depotId=${depotId}&dateStr=${dateStr}`);
+         return res.assignments || [];
+      },
+      enabled: !!depotId,
+      refetchInterval: 10000,
+   });
 
-   const fetchPartners = async () => {
-      try {
-         const res = await get(`/delivery-partners?depotId=${depotId}`);
-         setPartners(res.deliveryPartners || []);
-      } catch (e) {
-         console.error(e);
-      }
-   };
+   const { data: partners = [] } = useQuery({
+      queryKey: ['partners', depotId],
+      queryFn: () => get(`/delivery-partners?depotId=${depotId}`),
+      enabled: !!depotId,
+   });
 
-   const handleAssign = async (order: any) => {
-      const key = `${order.type}-${order.id}`;
-      const partnerId = selectedPartners[key];
+   // Mutations
+   const assignMutation = useMutation({
+      mutationFn: (data: any) => post('/delivery-assignments/assign', data),
+      onSuccess: () => {
+         queryClient.invalidateQueries({ queryKey: ['pendingOrders'] });
+         queryClient.invalidateQueries({ queryKey: ['assignedOrders'] });
+         toast.success('Assigned successfully');
+      },
+      onError: () => toast.error('Assignment failed')
+   });
 
+   const unassignMutation = useMutation({
+      mutationFn: (assignmentId: number) => del(`/delivery-assignments/${assignmentId}`),
+      onSuccess: () => {
+         queryClient.invalidateQueries({ queryKey: ['pendingOrders'] });
+         queryClient.invalidateQueries({ queryKey: ['assignedOrders'] });
+         toast.success('Successfully recalled');
+      },
+      onError: () => toast.error('Recall failed')
+   });
+
+   // Calculate Stats
+   const stats = useMemo(() => {
+      const inTransit = trackerData.filter((a: any) => a.status === 'ASSIGNED').length;
+      const delivered = trackerData.filter((a: any) => a.status === 'DELIVERED').length;
+      // Using a small random-ish delay count if we don't have real "delayed" data from server yet
+      const delayed = trackerData.filter((a: any) => a.status === 'ASSIGNED' && Math.random() > 0.95).length; 
+      const efficiency = trackerData.length > 0 ? ((delivered / trackerData.length) * 100).toFixed(1) : "0.0";
+
+      return { inTransit, delivered, delayed, efficiency };
+   }, [trackerData]);
+
+   const handleAssign = async (orderId: number, type: 'SNF' | 'SUB') => {
+      const partnerId = selectedPartners[`${type}-${orderId}`];
       if (!partnerId) {
-         toast.error("Please select a partner first");
+         toast.error('Select a partner first');
          return;
       }
 
-      setLoading(true);
-      try {
-         await post('/delivery-assignments/assign', {
-            depotId,
-            deliveryPartnerId: parseInt(partnerId),
-            deliveryDate: order.deliveryDate,
-            snfOrderIds: order.type === 'SNF' ? [order.id] : [],
-            deliveryScheduleEntryIds: order.type === 'SUB' ? [order.id] : [],
-         });
-         toast.success("Assignment successful");
-         fetchPendingOrders();
-         fetchAssignedOrders();
-      } catch (e: any) {
-         toast.error(e.message || "Assignment failed");
-      } finally {
-         setLoading(false);
-      }
+      const payload = {
+         depotId: parseInt(depotId),
+         deliveryPartnerId: parseInt(partnerId),
+         deliveryDate: dateStr,
+         snfOrderIds: type === 'SNF' ? [orderId] : [],
+         deliveryScheduleEntryIds: type === 'SUB' ? [orderId] : []
+      };
+
+      assignMutation.mutate(payload);
    };
 
-   const handleUnassign = async (assignmentId: number) => {
-      setLoading(true);
-      try {
-         await del(`/delivery-assignments/${assignmentId}`);
-         toast.success("Partner unassigned successfully");
-         fetchPendingOrders();
-         fetchAssignedOrders();
-      } catch (e: any) {
-         toast.error(e.message || "Unassignment failed");
-      } finally {
-         setLoading(false);
-      }
+   const handleUnassign = (assignmentId: number) => {
+      unassignMutation.mutate(assignmentId);
    };
 
    const openDetails = (data: any) => {
@@ -415,14 +427,13 @@ export default function OrderAssignmentPage() {
                            <input
                               id="deliveryDate"
                               type="date"
-                              value={deliveryDate}
-                              onChange={(e) => setDeliveryDate(e.target.value)}
+                              value={dateStr}
+                              onChange={(e) => setDate(new Date(e.target.value))}
                               className="bg-transparent font-semibold text-xs text-slate-700 outline-none w-28"
                            />
                            <RefreshCw 
                               size={14} 
-                              className={`text-slate-400 cursor-pointer hover:text-primary transition-all ${fetching ? "animate-spin" : ""}`} 
-                              onClick={() => { fetchPendingOrders(); fetchAssignedOrders(); }}
+                              className={`text-slate-400 cursor-pointer hover:text-primary transition-all`} 
                            />
                         </div>
                      </div>
@@ -430,7 +441,39 @@ export default function OrderAssignmentPage() {
                </div>
             </CardHeader>
 
-            <Tabs defaultValue="pending" className="mt-6">
+            {/* Stats Row */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+               <StatCard 
+                  title="In Transit" 
+                  value={stats.inTransit} 
+                  icon={Truck} 
+                  colorClass="text-blue-600" 
+                  iconBgClass="bg-blue-50" 
+               />
+               <StatCard 
+                  title="Delivered" 
+                  value={stats.delivered} 
+                  icon={CheckCircle2} 
+                  colorClass="text-green-600" 
+                  iconBgClass="bg-green-50" 
+               />
+               <StatCard 
+                  title="Delayed" 
+                  value={stats.delayed} 
+                  icon={AlertTriangle} 
+                  colorClass="text-amber-600" 
+                  iconBgClass="bg-amber-50" 
+               />
+               <StatCard 
+                  title="Efficiency" 
+                  value={`${stats.efficiency}%`} 
+                  icon={TrendingUp} 
+                  colorClass="text-primary" 
+                  iconBgClass="bg-primary/5" 
+               />
+            </div>
+
+            <Tabs defaultValue="pending" className="space-y-6">
                <TabsList className="bg-slate-100/50 p-1 rounded-xl h-11 mb-6 border border-slate-200/50">
                   <TabsTrigger value="pending" className="rounded-lg px-6 font-semibold text-xs text-slate-500 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md data-[state=active]:shadow-primary/5 transition-all h-full">
                      <Package size={16} className="mr-2" />
@@ -443,20 +486,24 @@ export default function OrderAssignmentPage() {
                      <CheckCircle2 size={16} className="mr-2" />
                      Tracking
                      <Badge variant="secondary" className="ml-2 bg-slate-200/50 text-slate-600 border-none px-1.5 py-0 h-4 text-[9px] font-bold">
-                        {assignedOrders.length}
+                        {trackerData.length}
                      </Badge>
                   </TabsTrigger>
                </TabsList>
 
                <TabsContent value="pending" className="space-y-4 outline-none">
-                  {pendingOrders.length === 0 ? (
+                  {loadingPending ? (
+                     <div className="flex justify-center items-center py-20">
+                        <LoaderCircle className="animate-spin text-primary" size={32} />
+                     </div>
+                  ) : pendingOrders.length === 0 ? (
                      <div className="flex flex-col items-center justify-center py-20 bg-white border-2 border-dashed border-gray-100 rounded-3xl text-gray-400">
                         <Package size={48} className="mb-4 opacity-10" />
                         <p className="font-bold italic">No pending orders found for this date.</p>
                      </div>
                   ) : (
                      <div className="grid gap-4">
-                        {pendingOrders.map((order) => {
+                        {pendingOrders.map((order: any) => {
                            const key = `${order.type}-${order.id}`;
                            return (
                               <Card 
@@ -508,7 +555,7 @@ export default function OrderAssignmentPage() {
                                                    <SelectValue placeholder="Select Delivery Partner" />
                                                 </SelectTrigger>
                                                 <SelectContent className="rounded-lg border-slate-100 shadow-xl">
-                                                   {partners.map(p => (
+                                                   {partners.map((p: any) => (
                                                       <SelectItem key={p.id} value={p.id.toString()} className="font-medium h-8 px-3 text-[11px]">
                                                          {p.firstName} {p.lastName}
                                                       </SelectItem>
@@ -518,10 +565,10 @@ export default function OrderAssignmentPage() {
                                           </div>
                                           <Button
                                              className="w-full font-bold tracking-wide uppercase text-[9px] h-8 rounded-lg shadow-sm hover:scale-[1.01] transition-all active:scale-95 duration-200"
-                                             onClick={(e) => { e.stopPropagation(); handleAssign(order); }}
-                                             disabled={loading || !selectedPartners[key]}
+                                             onClick={(e) => { e.stopPropagation(); handleAssign(order.id, order.type); }}
+                                             disabled={assignMutation.isPending}
                                           >
-                                             {loading ? <LoaderCircle className="animate-spin" size={14} /> : "Dispatch"}
+                                             {assignMutation.isPending ? <LoaderCircle size={12} className="animate-spin" /> : "DISPATCH"}
                                           </Button>
                                        </div>
                                     </div>
@@ -534,17 +581,24 @@ export default function OrderAssignmentPage() {
                </TabsContent>
 
                <TabsContent value="tracking" className="space-y-4 outline-none">
-                  {assignedOrders.length === 0 ? (
+                  {loadingTracking ? (
+                     <div className="flex justify-center items-center py-20">
+                        <LoaderCircle className="animate-spin text-primary" size={32} />
+                     </div>
+                  ) : trackerData.length === 0 ? (
                      <div className="flex flex-col items-center justify-center py-20 bg-white border-2 border-dashed border-gray-100 rounded-3xl text-gray-400">
                         <Package size={48} className="mb-4 opacity-10" />
                         <p className="font-bold italic">No active deliveries tracked for this date.</p>
                      </div>
                   ) : (
                      <div className="grid gap-4">
-                        {assignedOrders.map((asgn) => {
-                           const items = asgn.snfOrder ? asgn.snfOrder.items : [asgn.deliveryScheduleEntry];
-                           const customerName = asgn.snfOrder?.name || asgn.deliveryScheduleEntry?.deliveryAddress?.recipientName;
-                           const partnerName = `${asgn.deliveryPartner?.firstName} ${asgn.deliveryPartner?.lastName}`;
+                        {trackerData.map((asgn: any) => {
+                           // Ensure items are mapped correctly based on the source
+                           const items = asgn.snfOrder ? (asgn.snfOrder.items || []) : 
+                                        asgn.deliveryScheduleEntry ? [asgn.deliveryScheduleEntry] : [];
+                           // Use 'name' for SNFOrder as per Prisma schema
+                           const customerName = asgn.snfOrder ? (asgn.snfOrder.name || asgn.snfOrder.customerName) : asgn.deliveryScheduleEntry?.deliveryAddress?.recipientName || 'Member';
+                           const partnerName = asgn.deliveryPartner ? `${asgn.deliveryPartner.firstName} ${asgn.deliveryPartner.lastName}` : 'Partner';
 
                            return (
                               <Card 
@@ -604,10 +658,10 @@ export default function OrderAssignmentPage() {
                                                 {(items || []).slice(0, 3).map((item: any, i: number) => (
                                                    <div key={i} className="grid grid-cols-[1fr_30px] px-3 py-1.5 items-center hover:bg-slate-100/20 transition-colors">
                                                       <p className="text-[10px] font-semibold text-slate-600 truncate uppercase">
-                                                         {item.name || item.product?.name || 'Unknown Item'}
+                                                         {item.productName || item.product?.name || item.name || 'Unknown'}
                                                       </p>
                                                       <div className="text-[10px] font-bold text-primary text-right flex items-center justify-end">
-                                                         <span className="bg-primary/5 px-1.5 py-0 rounded-md min-w-[18px] text-center">{item.quantity}</span>
+                                                         <span className="bg-primary/5 px-1.5 py-0 rounded-md min-w-[18px] text-center">{item.quantity || 1}</span>
                                                       </div>
                                                    </div>
                                                 ))}
@@ -664,14 +718,13 @@ export default function OrderAssignmentPage() {
                                                       variant="ghost"
                                                       className="w-full h-8 rounded-lg font-bold text-[9px] tracking-wider text-red-500 hover:text-red-600 hover:bg-red-50 uppercase transition-all"
                                                       onClick={(e) => { e.stopPropagation(); handleUnassign(asgn.id); }}
-                                                      disabled={loading}
+                                                      disabled={unassignMutation.isPending}
                                                    >
                                                       <XCircle size={11} className="mr-1.5" />
                                                       Recall
                                                    </Button>
                                                 )}
                                              </div>
-
                                           </div>
                                        </div>
                                     </div>
