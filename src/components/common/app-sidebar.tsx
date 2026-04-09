@@ -184,7 +184,18 @@ const initialData = {
           icon: Briefcase,
           groupLabel: "Products",
         },
-        //indraai
+        {
+          title: "Setup Partners",
+          url: "/admin/delivery-partners",
+          icon: UsersRound,
+          groupLabel: "Indraai",
+        },
+        {
+          title: "Assign Orders",
+          url: "/admin/order-assignment",
+          icon: Briefcase,
+          groupLabel: "Indraai",
+        },
         {
           title: "Delivery Partners",
           url: "/admin/agencies",
@@ -442,6 +453,18 @@ const initialData = {
           url: "/admin/depot-variants",
           icon: FileText,
           groupLabel: "Depot",
+        },
+        {
+          title: "Setup Partners",
+          url: "/admin/delivery-partners",
+          icon: UsersRound,
+          groupLabel: "Delivery",
+        },
+        {
+          title: "Assign Orders",
+          url: "/admin/order-assignment",
+          icon: Briefcase,
+          groupLabel: "Delivery",
         },
         {
           title: "Transfers",

@@ -110,6 +110,12 @@ import PackingListReport from "./modules/Reports/PackingListReport";
 import SNFStockRequirementReport from "./modules/Reports/SNFStockRequirementReport";
 import POSPage from "./modules/POS/POSPage";
 
+import DeliveryPartnersListPage from "./modules/DeliveryPartners/DeliveryPartnersListPage";
+import OrderAssignmentPage from "./modules/DeliveryPartners/OrderAssignmentPage";
+import DeliveryPartnerDashboard from "./modules/DeliveryPartnerApp/Dashboard";
+
+
+import { AuthProvider } from "./hooks/useAuth";
 
 const App = () => {
   useEffect(() => {
@@ -142,7 +148,8 @@ const App = () => {
     <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light">
       <Toaster richColors position="top-center" />
       <Router>
-        <Routes>
+        <AuthProvider>
+          <Routes>
           {/* Landing page */}
           <Route path="/" element={<LandingPage />}>
             <Route path="products/:id" element={<ProductDetailWrapper />} />
@@ -416,6 +423,8 @@ const App = () => {
             <Route path="/admin/reports/exceptions" element={<ExceptionReport />} /> {/* Exception Report */}
             <Route path="/admin/activity-log" element={<ActivityLogPage />} />
             <Route path="/admin/pos" element={<POSPage />} />
+            <Route path="/admin/delivery-partners" element={<DeliveryPartnersListPage />} />
+            <Route path="/admin/order-assignment" element={<OrderAssignmentPage />} />
           </Route>
 
           {/* Other routes using MainLayout (e.g., Vendor routes) - not protected by AdminProtectedRoute */}
@@ -438,8 +447,11 @@ const App = () => {
             <Route path="/member/addresses/edit/:id" element={<EditAddressPage />} />
             <Route path="/member/subscriptions" element={<MySubscriptionsPage />} />
             <Route path="/manage-subscription/:id" element={<ManageSubscriptionPage />} />
+            {/* Delivery Partner App route using the MemberLayout minimally or its own layout */}
+            <Route path="/delivery-app/dashboard" element={<DeliveryPartnerDashboard />} />
           </Route>
-        </Routes>
+          </Routes>
+        </AuthProvider>
       </Router>
     </ThemeProvider>
   );

@@ -26,7 +26,7 @@ export default function CommandPalette() {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      const isK = e.key.toLowerCase() === "k";
+      const isK = e.key?.toLowerCase() === "k";
       const isCmdK = (e.ctrlKey || e.metaKey) && isK;
       if (!isCmdK) return;
 

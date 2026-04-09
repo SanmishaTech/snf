@@ -89,6 +89,9 @@ const Login: React.FC<LoginProps> = () => {
     if (user && user.role === "SUPERVISOR") {
       return "/admin/orders";
     }
+    if (user && user.role === "DELIVERY_PARTNER") {
+      return "/delivery-app/dashboard";
+    }
     // Add other role-based redirects here if needed in the future
     // e.g., if (user && user.role === 'ADMIN') return '/admin/overview';
     return "/"; // Default path for other roles or if user is undefined

@@ -134,15 +134,6 @@ function ControlledCalendar({
     if (isValidDate(value)) setMonth(value);
   }, [value]);
 
-  useEffect(() => {
-    const fetchVendor = async () => {
-      const response = await get("/vendors")
-      setvendors(response.data)
-    }
-    fetchVendor()
-  }, [])
-
-
   return (
     <div className="flex flex-col gap-3">
       <Label htmlFor={id}>{label}</Label>
@@ -518,11 +509,13 @@ const PurchaseForm: React.FC<PurchaseFormProps> = ({
                                   !pField.value && "text-muted-foreground"
                                 )}
                               >
-                                {pField.value
-                                  ? products.find(
-                                    (p) => String(p.id) === pField.value
-                                  )?.name
-                                  : "Select Product"}
+                                <span className="truncate text-left flex-1">
+                                  {pField.value
+                                    ? products.find(
+                                      (p) => String(p.id) === pField.value
+                                    )?.name
+                                    : "Select Product"}
+                                </span>
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                               </Button>
                             </PopoverTrigger>

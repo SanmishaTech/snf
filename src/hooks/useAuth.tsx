@@ -23,8 +23,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback((token: string, userData: any) => {
     localStorage.setItem('authToken', token);
     localStorage.setItem('user', JSON.stringify(userData));
-    navigate('/users');
-  }, [navigate]);
+  }, []);
 
   const logout = useCallback(() => {
     localStorage.removeItem('authToken');
