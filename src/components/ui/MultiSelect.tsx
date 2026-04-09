@@ -125,18 +125,18 @@ export const MultiSelect = React.forwardRef<HTMLButtonElement, MultiSelectProps>
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-between w-full mx-auto">
-              <span className="text-sm text-muted-foreground mx-3">
-                {selectedValues.size > 0 && hideTagsInTrigger 
-                  ? `Tags Selected (${selectedValues.size})` 
+            <div className="flex items-center justify-center w-full relative">
+              <span className="text-sm text-muted-foreground mx-auto md:mx-3 text-center md:text-left">
+                {selectedValues.size > 0 && hideTagsInTrigger
+                  ? `Tags Selected (${selectedValues.size})`
                   : placeholder}
               </span>
-              <ChevronDown className="h-4 cursor-pointer text-muted-foreground mx-2" />
+              <ChevronDown className="h-4 cursor-pointer text-muted-foreground absolute right-2 md:relative md:right-auto" />
             </div>
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0" align="start">
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 flex flex-col" align="start">
         <Command>
           <CommandInput placeholder="Search..." onKeyDown={handleInputKeyDown} />
           <CommandList>
@@ -163,25 +163,22 @@ export const MultiSelect = React.forwardRef<HTMLButtonElement, MultiSelectProps>
                 );
               })}
             </CommandGroup>
-            {selectedValues.size > 0 && (
-              <>
-                <CommandSeparator />
-                <CommandGroup>
-                  <CommandItem
-                    onSelect={() => {
-                      setSelectedValues(new Set());
-                      onValueChange([]);
-                    }}
-                    style={{ pointerEvents: 'auto', opacity: 1 }}
-                    className="cursor-pointer"
-                  >
-                    Clear selection
-                  </CommandItem>
-                </CommandGroup>
-              </>
-            )}
           </CommandList>
         </Command>
+        {selectedValues.size > 0 && (
+          <div className="border-t p-2 bg-background/95 backdrop-blur-sm sticky bottom-0">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setSelectedValues(new Set());
+                onValueChange([]);
+              }}
+              className="w-full justify-center text-destructive/80 font-semibold hover:bg-destructive/10 hover:text-destructive transition-all duration-200 h-10 text-sm group rounded-lg"
+            >
+              Clear Selection
+            </Button>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );

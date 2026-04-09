@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Filter } from "lucide-react";
+import { MultiSelect } from "@/components/ui/MultiSelect";
 
 export interface Category {
   id: string;
@@ -17,6 +18,9 @@ interface CategoryBarProps {
   isLoading: boolean;
   error: string | null;
   onRetry: () => void;
+  selectedTags: string[];
+  allTags: string[];
+  onTagsChange: (tags: string[]) => void;
 }
 
 const CategoryBarComponent: React.FC<CategoryBarProps> = ({
@@ -27,6 +31,9 @@ const CategoryBarComponent: React.FC<CategoryBarProps> = ({
   isLoading,
   error,
   onRetry,
+  selectedTags,
+  allTags,
+  onTagsChange,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -140,8 +147,9 @@ const CategoryBarComponent: React.FC<CategoryBarProps> = ({
           )}
         </AnimatePresence>
 
-        <div className="border-b border-border">
-          <motion.div
+        <div className="flex flex-col md:flex-row gap-4 items-start md:items-end">
+          <div className="flex-1 min-w-0 w-full border-b border-border">
+            <motion.div
             ref={scrollRef}
             onScroll={checkScroll}
             onMouseDown={handleMouseDown}
@@ -234,6 +242,22 @@ const CategoryBarComponent: React.FC<CategoryBarProps> = ({
             )}
           </motion.div>
         </div>
+
+        <div className="shrink-0 w-full md:w-64 pb-0.5">
+          <MultiSelect
+            options={(allTags.length > 0 ? allTags : ['A2', 'Organic', 'Natural', 'Fresh', 'Pure', 'Premium', 'Healthy']).map(t => ({
+              label: t.charAt(0).toUpperCase() + t.slice(1),
+              value: t.toLowerCase()
+            }))}
+            defaultValue={selectedTags}
+            onValueChange={onTagsChange}
+            placeholder="Filter by Tags"
+            variant="inverted"
+            hideTagsInTrigger={true}
+            className="border-none shadow-none hover:bg-muted/30 h-11"
+          />
+        </div>
+      </div>
       </div>
     </div>
   );

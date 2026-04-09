@@ -644,7 +644,22 @@ export class ProductServiceImpl implements ProductService {
       return result.data;
     } catch (error) {
       console.error('Error fetching categories:', error);
-      // Return empty array on error instead of throwing
+      return [];
+    }
+  }
+
+  /**
+   * Get all unique product tags
+   */
+  async getTags(): Promise<string[]> {
+    try {
+      const url = new URL(`/api/products/tags/all`, this.API_ORIGIN);
+      const response = await this.fetchWithRetry(url.toString());
+      if (!response.ok) throw new Error(`API request failed: ${response.status}`);
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.error('Error fetching tags:', error);
       return [];
     }
   }

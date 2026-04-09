@@ -3,7 +3,7 @@
 import * as React from "react"
 import { type DialogProps } from "@radix-ui/react-dialog"
 import { Command as CommandPrimitive } from "cmdk"
-import { Search } from "lucide-react"
+import { Search, XIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
@@ -40,19 +40,52 @@ const CommandDialog = ({ children, ...props }: CommandDialogProps) => {
 const CommandInput = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Input>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
->(({ className, ...props }, ref) => (
-  <div className="flex items-center border-b px-3" cmdk-input-wrapper="">
-    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-    <CommandPrimitive.Input
-      ref={ref}
-      className={cn(
-        "flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50",
-        className,
+>(({ className, ...props }, ref) => {
+  const [value, setValue] = React.useState("")
+  const internalRef = React.useRef<HTMLInputElement>(null)
+
+  const handleClear = () => {
+    setValue("")
+    if (internalRef.current) {
+      internalRef.current.value = ""
+      // Create and dispatch a native input event to ensure cmdk's internal state is updated
+      const event = new Event("input", { bubbles: true })
+      internalRef.current.dispatchEvent(event)
+      internalRef.current.focus()
+    }
+  }
+
+  return (
+    <div className="flex items-center border-b px-3" cmdk-input-wrapper="">
+      <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+      <CommandPrimitive.Input
+        ref={(node) => {
+          // Handle both function and object refs
+          if (typeof ref === "function") ref(node)
+          else if (ref) ref.current = node
+          // Also set our internal ref
+          ;(internalRef as any).current = node
+        }}
+        className={cn(
+          "flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50",
+          className
+        )}
+        value={props.value ?? value}
+        onValueChange={(v) => {
+          setValue(v)
+          props.onValueChange?.(v)
+        }}
+        {...props}
+      />
+      {(props.value || value) && (
+        <XIcon
+          className="ml-2 h-4 w-4 shrink-0 opacity-50 cursor-pointer hover:opacity-100 transition-opacity"
+          onClick={handleClear}
+        />
       )}
-      {...props}
-    />
-  </div>
-))
+    </div>
+  )
+})
 
 CommandInput.displayName = CommandPrimitive.Input.displayName
 

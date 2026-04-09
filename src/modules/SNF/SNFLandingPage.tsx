@@ -15,7 +15,6 @@ import { useCart } from "./context/CartContext";
 import { useDeliveryLocation } from "./hooks/useDeliveryLocation";
 import { CategoryBar } from "./components/CategoryBar.tsx";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import type { Category as FilterCategory } from "./components/CategoryFilters.tsx";
 import { useSNFProducts } from "./hooks/useSNFProducts";
 
 interface CategorySectionProps {
@@ -106,22 +105,19 @@ export type SortKey = "relevance" | "price_asc" | "price_desc" | "popularity_des
 const SNFContent: React.FC = () => {
   const [q, setQ] = useState("");
   const [selectedCats, setSelectedCats] = useState<number[]>([]);
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [categories, setCategories] = useState<FilterCategory[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [catLoading, setCatLoading] = useState<boolean>(false);
   const [catError, setCatError] = useState<string | null>(null);
+  const [allTags, setAllTags] = useState<string[]>([]);
 
   const { state: pricingState, actions: pricingActions } = usePricing();
   const { addItem, state: cartState } = useCart();
   const { currentDepotId } = useDeliveryLocation();
-
-  const [canScrollLeftTags, setCanScrollLeftTags] = useState(false);
-  const [canScrollRightTags, setCanScrollRightTags] = useState(false);
-  const tagsScrollRef = useRef<HTMLDivElement>(null);
 
   const selectedCatId = selectedCats.length > 0 ? selectedCats[0] : undefined;
 
@@ -135,9 +131,9 @@ const SNFContent: React.FC = () => {
   } = useSNFProducts({
     depotId: currentDepotId || 1,
     categoryId: selectedCatId,
-    tags: selectedTag || undefined,
+    tags: selectedTags.length > 0 ? selectedTags.join(',') : undefined,
     search: q || undefined,
-    limit: (!selectedCatId && !selectedTag && !q.trim()) ? 60 : undefined
+    limit: (!selectedCatId && selectedTags.length === 0 && !q.trim()) ? 60 : undefined
   });
 
   const products = useMemo(() => {
@@ -170,7 +166,7 @@ const SNFContent: React.FC = () => {
       setCatLoading(true);
       try {
         const data = await productService.getCategories();
-        const normalized: (FilterCategory & { imageUrl?: string })[] = (Array.isArray(data) ? data : []).map((c: any) => ({
+        const normalized: (any & { imageUrl?: string })[] = (Array.isArray(data) ? data : []).map((c: any) => ({
           id: String(c.id ?? ""),
           name: c.name || "Category",
           imageUrl: c.imageUrl
@@ -181,14 +177,23 @@ const SNFContent: React.FC = () => {
           if (aMilk !== bMilk) return bMilk - aMilk;
           return a.name.localeCompare(b.name);
         });
-        setCategories(sortedCats as FilterCategory[]);
+        setCategories(sortedCats as any[]);
       } catch (e: any) {
         setCatError(e?.message || "Failed to load categories");
       } finally {
         setCatLoading(false);
       }
     };
+    const fetchTags = async () => {
+      try {
+        const tags = await productService.getTags();
+        setAllTags(tags);
+      } catch (e) {
+        console.error("Failed to fetch tags", e);
+      }
+    };
     fetchCategories();
+    fetchTags();
   }, []);
 
   useEffect(() => {
@@ -202,7 +207,10 @@ const SNFContent: React.FC = () => {
     if (!hash) return;
     if (hash.startsWith('category-')) {
       const idNum = parseInt(hash.slice('category-'.length), 10);
-      if (Number.isFinite(idNum)) setSelectedCats([idNum]);
+      if (Number.isFinite(idNum)) {
+        setSelectedCats([idNum]);
+        setSelectedTags([]);
+      }
     }
   }, [location.hash]);
 
@@ -223,71 +231,36 @@ const SNFContent: React.FC = () => {
   useEffect(() => {
     const tagRaw = new URLSearchParams(location.search).get("tag");
     if (!tagRaw) {
-      setSelectedTag(null);
+      setSelectedTags([]);
       return;
     }
-    const tag = tagRaw.toLowerCase().trim();
-    if (tag.startsWith('category:')) {
-      const idNum = parseInt(tag.split(':')[1] || '', 10);
-      if (Number.isFinite(idNum)) setSelectedCats([idNum]);
-      setSelectedTag(null);
+    const tags = tagRaw.toLowerCase().trim().split(',').filter(Boolean);
+    if (tags.some(tag => tag.startsWith('category:'))) {
+      const catTag = tags.find(tag => tag.startsWith('category:'));
+      const idNum = parseInt(catTag!.split(':')[1] || '', 10);
+      if (Number.isFinite(idNum)) {
+        setSelectedCats([idNum]);
+        setSelectedTags([]);
+      }
     } else {
-      setSelectedTag(tag);
+      setSelectedTags(tags);
     }
-    setTimeout(() => {
-      document.getElementById('products')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 120);
   }, [location.search]);
 
-  const allTags = useMemo(() => {
-    const tags = new Set<string>();
-    products.forEach(p => {
-      const raw = (p.product as any).tags as string | undefined;
-      if (raw) raw.split(',').forEach(t => tags.add(t.trim().toLowerCase()));
-    });
-    return Array.from(tags).sort();
-  }, [products]);
 
-  const checkTagsScroll = useCallback(() => {
-    const el = tagsScrollRef.current;
-    if (!el) return;
 
-    window.requestAnimationFrame(() => {
-      const isLeftVisible = el.scrollLeft > 2;
-      const isRightVisible = el.scrollLeft + el.clientWidth < el.scrollWidth - 5;
 
-      setCanScrollLeftTags(isLeftVisible);
-      setCanScrollRightTags(isRightVisible);
-    });
-  }, []);
 
-  const scrollTags = (direction: 'left' | 'right') => {
-    const el = tagsScrollRef.current;
-    if (!el) return;
-    const scrollAmount = direction === 'left' ? -200 : 200;
-    el.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-  };
 
-  useEffect(() => {
-    if (allTags.length > 0) {
-      const timer = setTimeout(checkTagsScroll, 100);
-      window.addEventListener('resize', checkTagsScroll);
-      return () => {
-        clearTimeout(timer);
-        window.removeEventListener('resize', checkTagsScroll);
-      };
-    }
-  }, [allTags, checkTagsScroll]);
 
-  const onToggleTag = (tag: string) => {
+  const onUpdateTags = (newTags: string[]) => {
     startTransition(() => {
       const params = new URLSearchParams(location.search || "");
-      if (selectedTag === tag) {
-        setSelectedTag(null);
-        params.delete("tag");
+      setSelectedTags(newTags);
+      if (newTags.length > 0) {
+        params.set("tag", newTags.join(','));
       } else {
-        setSelectedTag(tag);
-        params.set("tag", tag);
+        params.delete("tag");
       }
       navigate({ search: params.toString() ? `?${params.toString()}` : "" }, { replace: true });
     });
@@ -316,117 +289,21 @@ const SNFContent: React.FC = () => {
             onSelectCategory={(id) => startTransition(() => setSelectedCats([id]))}
             onSelectAll={() => startTransition(() => {
               setSelectedCats([]);
-              setSelectedTag(null);
+              setSelectedTags([]);
               navigate({ search: "" }, { replace: true });
             })}
             onRetry={() => { }}
+            selectedTags={selectedTags}
+            allTags={allTags}
+            onTagsChange={onUpdateTags}
           />
         </section>
 
-        {selectedCats.length === 0 && !catError && (
-          <section className="container mx-auto px-4 md:px-6 lg:px-8 mb-6 relative group min-h-[48px]">
-            <div className="relative border-b border-border flex items-center">
-              <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-[0.2em] mr-4 shrink-0">
-                Filters
-              </span>
 
-              <div className="flex-1 relative overflow-hidden">
-                <AnimatePresence>
-                  {canScrollLeftTags && (
-                    <div className="absolute left-0 top-0 bottom-0 flex items-center z-20 pointer-events-none pr-10">
-                      <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-background via-background/90 to-transparent pointer-events-none" />
-                      <button
-                        type="button"
-                        onClick={() => scrollTags('left')}
-                        className="ml-0 h-8 w-8 flex items-center justify-center rounded-full bg-background border border-border shadow-md text-foreground hover:text-primary hover:border-primary/30 hover:scale-110 transition-all duration-200 pointer-events-auto"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </button>
-                    </div>
-                  )}
-                </AnimatePresence>
-
-                <AnimatePresence>
-                  {canScrollRightTags && (
-                    <div className="absolute right-0 top-0 bottom-0 flex items-center z-20 pointer-events-none pl-10">
-                      <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-background via-background/90 to-transparent pointer-events-none" />
-                      <button
-                        type="button"
-                        onClick={() => scrollTags('right')}
-                        className="mr-0 h-8 w-8 flex items-center justify-center rounded-full bg-background border border-border shadow-md text-foreground hover:text-primary hover:border-primary/30 hover:scale-110 transition-all duration-200 pointer-events-auto"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </button>
-                    </div>
-                  )}
-                </AnimatePresence>
-
-                <div
-                  ref={tagsScrollRef}
-                  onScroll={checkTagsScroll}
-                  className="flex items-center gap-1 overflow-x-auto scrollbar-hide select-none transition-all duration-200"
-                >
-                  <motion.button
-                    type="button"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setSelectedTag(null)}
-                    className={`shrink-0 transition-all duration-200 px-5 py-3 text-sm font-medium whitespace-nowrap relative ${!selectedTag
-                        ? "text-primary font-semibold"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
-                      }`}
-                  >
-                    All
-                    {!selectedTag && (
-                      <motion.div
-                        layoutId="tag-underline"
-                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
-                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                      />
-                    )}
-                  </motion.button>
-
-                  {isProductsLoading && allTags.length === 0 ? (
-                    <div className="flex gap-4 py-3 px-2 animate-pulse">
-                      {[1, 2, 3, 4, 5, 6].map(i => (
-                        <div key={i} className="h-4 w-20 bg-muted/20 rounded" />
-                      ))}
-                    </div>
-                  ) : (allTags.length > 0 ? allTags : ['A2', 'Organic', 'Natural', 'Fresh', 'Pure', 'Premium', 'Healthy']).map((tag) => {
-                    const tagValue = tag.toLowerCase();
-                    const isSelected = selectedTag === tagValue;
-                    return (
-                      <motion.button
-                        key={tag}
-                        type="button"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => onToggleTag(tagValue)}
-                        className={`shrink-0 transition-all duration-200 px-5 py-3 text-sm font-medium whitespace-nowrap relative ${isSelected
-                            ? "text-primary font-semibold"
-                            : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
-                          }`}
-                      >
-                        {tag.charAt(0).toUpperCase() + tag.slice(1)}
-                        {isSelected && (
-                          <motion.div
-                            layoutId="tag-underline"
-                            className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
-                            transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                          />
-                        )}
-                      </motion.button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
 
         <section id="products" className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 min-h-screen flex-grow">
           <AnimatePresence mode="wait" initial={false}>
-            {isLoading && !q && !selectedTag && selectedCats.length === 0 ? (
+            {isLoading && !q && selectedTags.length === 0 && selectedCats.length === 0 ? (
               <motion.div key="skeleton" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mt-6">
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                   {Array.from({ length: 10 }).map((_, i) => (
@@ -434,7 +311,7 @@ const SNFContent: React.FC = () => {
                   ))}
                 </div>
               </motion.div>
-            ) : (q.trim() || selectedTag || selectedCats.length > 0) ? (
+            ) : (q.trim() || selectedTags.length > 0 || selectedCats.length > 0) ? (
               <motion.div key="filtered" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 <ProductGrid products={filtered} onAddToCart={onAddToCart} isLoading={isLoading} />
                 {hasNextPage && (
@@ -460,7 +337,7 @@ const SNFContent: React.FC = () => {
               </motion.div>
             )}
           </AnimatePresence>
-          {hasNextPage && (q.trim() || selectedTag || selectedCats.length > 0) && <div ref={loadingRef} className="w-full flex justify-center py-6 mt-4"><div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}
+          {hasNextPage && (q.trim() || selectedTags.length > 0 || selectedCats.length > 0) && <div ref={loadingRef} className="w-full flex justify-center py-6 mt-4"><div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}
         </section>
       </main>
 
