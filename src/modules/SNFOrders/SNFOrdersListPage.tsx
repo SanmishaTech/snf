@@ -4,6 +4,9 @@ import { Loader2, AlertCircle, Search, Download } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { getAllSNFOrders, PaginatedSNFOrdersResponse, SNFOrderListItem, markSNFOrderAsPaid, MarkOrderPaidPayload, generateSNFOrderInvoice, downloadSNFOrderInvoice } from '@/services/snfOrderAdminService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
+import { backendUrl } from '@/config';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -49,6 +52,26 @@ const SNFOrdersListPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [sortBy, setSortBy] = useState<string>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [depotId, setDepotId] = useState<string>('all');
+
+  // Fetch report filters (Depots)
+  const { data: filterOptions } = useQuery({
+    queryKey: ['reportFilters'],
+    queryFn: async () => {
+      const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+      const response = await axios.get(`${backendUrl}/api/reports/filters`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      return response.data;
+    }
+  });
+
+  // Auto-select depot if only one is available
+  useEffect(() => {
+    if (filterOptions?.data?.depots && filterOptions.data.depots.length === 1 && depotId === 'all') {
+      setDepotId(filterOptions.data.depots[0].id.toString());
+    }
+  }, [filterOptions, depotId]);
 
   const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
@@ -56,13 +79,17 @@ const SNFOrdersListPage: React.FC = () => {
     page = currentPage,
     pageSize = limit,
     search = debouncedSearchTerm,
+    selectedDepotId = depotId,
     sortCol = sortBy,
     sortDir = sortOrder
   ) => {
     setLoading(true);
     setError(null);
     try {
-      const params = { page, limit: pageSize, search, sortBy: sortCol, sortOrder: sortDir };
+      const params: any = { page, limit: pageSize, search, sortBy: sortCol, sortOrder: sortDir };
+      if (selectedDepotId && selectedDepotId !== 'all') {
+        params.depotId = selectedDepotId;
+      }
       const response: PaginatedSNFOrdersResponse = await getAllSNFOrders(params);
       setOrders(response.orders);
       setCurrentPage(response.currentPage);
@@ -78,7 +105,7 @@ const SNFOrdersListPage: React.FC = () => {
   useEffect(() => {
     fetchOrders();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearchTerm, currentPage, limit, sortBy, sortOrder]);
+  }, [debouncedSearchTerm, currentPage, limit, sortBy, sortOrder, depotId]);
 
   const handleLimitChange = (value: string) => {
     setLimit(Number(value));
@@ -124,18 +151,37 @@ const SNFOrdersListPage: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
-            <div className="relative w-full md:max-w-sm">
-              <Input
-                placeholder="Search by order no, name, mobile, email, city..."
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="pl-9"
-              />
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <div className="flex flex-col md:flex-row gap-3 w-full md:max-w-3xl">
+              <div className="relative flex-1">
+                <Input
+                  placeholder="Search by order no, name, mobile..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="pl-9"
+                />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              </div>
+              
+              <div className="w-full md:w-[200px]">
+                <Select value={depotId} onValueChange={setDepotId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Depots" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Depots</SelectItem>
+                    {filterOptions?.data?.depots?.map((depot: any) => (
+                      <SelectItem key={depot.id} value={depot.id.toString()}>
+                        {depot.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Show:</span>
               <Select value={String(limit)} onValueChange={handleLimitChange}>

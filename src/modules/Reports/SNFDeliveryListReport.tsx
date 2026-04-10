@@ -38,6 +38,13 @@ export default function SNFDeliveryListReport() {
     }
   });
 
+  // Auto-select depot if only one is available
+  React.useEffect(() => {
+    if (filterOptions?.data?.depots && filterOptions.data.depots.length === 1 && !depotId) {
+      setDepotId(filterOptions.data.depots[0].id.toString());
+    }
+  }, [filterOptions, depotId]);
+
   // Fetch report data
   const { data: reportData, isLoading, error, refetch } = useQuery<SNFDeliveryListResponse>({
     queryKey: ['snfDeliveryList', depotId, date],
@@ -64,39 +71,61 @@ export default function SNFDeliveryListReport() {
 
     const exporter = new ExcelExporter();
     const excelData: any[] = [];
-
-    Object.entries(reportData.data).forEach(([area, orders]) => {
-      orders.forEach(order => {
-        excelData.push({
-          area,
-          orderNo: order.orderNo,
-          customer: order.customerName,
-          mobile: order.mobile,
-          address: order.address,
-          pincode: order.pincode,
-          items: order.items.map(i => `${i.name} (${i.variant}) x ${i.quantity}`).join(', '),
-          payment: `${order.paymentMode || 'COD'} (${order.paymentStatus})`,
-          amount: order.totalAmount
-        });
+    Object.keys(reportData.data).forEach(area => {
+      reportData.data[area].forEach(order => {
+        if (order.items.length === 0) {
+          excelData.push({
+            area: area,
+            orderNo: order.orderNo,
+            customer: order.customerName,
+            mobile: order.mobile,
+            address: order.address,
+            pincode: order.pincode,
+            itemName: '-',
+            itemVariant: '-',
+            itemQty: 0,
+            payment: `${order.paymentMode || 'COD'} (${order.paymentStatus})`,
+            amount: order.totalAmount
+          });
+        } else {
+          order.items.forEach(item => {
+            excelData.push({
+              area: area,
+              orderNo: order.orderNo,
+              customer: order.customerName,
+              mobile: order.mobile,
+              address: order.address,
+              pincode: order.pincode,
+              itemName: item.name,
+              itemVariant: item.variant || '-',
+              itemQty: item.quantity,
+              payment: `${order.paymentMode || 'COD'} (${order.paymentStatus})`,
+              amount: order.totalAmount
+            });
+          });
+        }
       });
     });
 
     const headers = [
-      { key: 'area', label: 'Area', width: 20 },
+      { key: 'area', label: 'Area', width: 25 },
       { key: 'orderNo', label: 'Order No', width: 15 },
       { key: 'customer', label: 'Customer', width: 25 },
       { key: 'mobile', label: 'Mobile', width: 15 },
-      { key: 'address', label: 'Address', width: 40 },
-      { key: 'pincode', label: 'Pincode', width: 10 },
-      { key: 'items', label: 'Items', width: 40 },
+      { key: 'itemName', label: 'Material/Items', width: 35 },
+      { key: 'itemVariant', label: 'Variant', width: 20 },
+      { key: 'itemQty', label: 'Qty', width: 10, align: 'center' as const },
+      { key: 'address', label: 'Address', width: 45 },
+      { key: 'pincode', label: 'Pincode', width: 12 },
       { key: 'payment', label: 'Payment', width: 20 },
-      { key: 'amount', label: 'Amount', width: 12, align: 'center' as const }
+      { key: 'amount', label: 'Amount', width: 12, align: 'right' as const }
     ];
 
     const exportConfig: ExcelExportConfig = {
-      fileName: `SNF_Delivery_List_${date}`,
-      sheetName: 'Delivery List',
+      fileName: `SNF_Order_List_${date}`,
+      sheetName: 'Order List',
       headers,
+      mergeColumns: ['area', 'orderNo', 'customer', 'mobile', 'address', 'pincode', 'payment', 'amount'],
       grouping: {
         enabled: true,
         levels: ['area'],
@@ -122,14 +151,22 @@ export default function SNFDeliveryListReport() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5" />
-                SNF Delivery List Report
+                Order List Report
               </CardTitle>
               <CardDescription>
-                Area-wise delivery list for SNF (one-time) orders
+                Area-wise order list for SNF (one-time) orders
               </CardDescription>
             </div>
             <div className="flex gap-2">
-              <Button onClick={() => refetch()} variant="outline" size="sm">
+              <Button 
+                onClick={() => {
+                  if (depotId) refetch();
+                  else toast.error('Please select a depot first');
+                }} 
+                variant="outline" 
+                size="sm"
+                disabled={!depotId || isLoading}
+              >
                 Refresh
               </Button>
               <Button onClick={handleExportToExcel} disabled={!reportData?.data}>
@@ -147,7 +184,7 @@ export default function SNFDeliveryListReport() {
               <Label htmlFor="depotId">Select Depot</Label>
               <Select value={depotId} onValueChange={setDepotId}>
                 <SelectTrigger id="depotId">
-                  <SelectValue placeholder="Chose a depot" />
+                  <SelectValue placeholder="Choose a depot" />
                 </SelectTrigger>
                 <SelectContent>
                   {filterOptions?.data?.depots?.map(depot => (
@@ -173,12 +210,12 @@ export default function SNFDeliveryListReport() {
           {!depotId ? (
             <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground bg-slate-50 rounded-lg border-2 border-dashed">
               <MapPin className="h-8 w-8 mb-2 opacity-20" />
-              <p>Please select a depot to view the delivery list</p>
+              <p>Please select a depot to view the order list</p>
             </div>
           ) : isLoading ? (
             <div className="flex-1 flex items-center justify-center text-sm text-gray-600">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-3"></div>
-              Loading delivery list...
+              Loading order list...
             </div>
           ) : error ? (
             <div className="flex-1 flex items-center justify-center text-sm text-red-600">
@@ -240,12 +277,12 @@ export default function SNFDeliveryListReport() {
                                 </a>
                               </div>
                             </TableCell>
-                            <TableCell>
-                              <div className="text-xs text-slate-600 line-clamp-2 max-w-[280px]">
-                                {order.address}
-                                <div className="font-medium text-[10px] text-slate-400 uppercase mt-0.5">PIN: {order.pincode}</div>
-                              </div>
-                            </TableCell>
+                             <TableCell>
+                               <div className="text-xs text-slate-600 whitespace-normal break-words max-w-[280px]">
+                                 {order.address}
+                                 <div className="font-medium text-[10px] text-slate-400 uppercase mt-0.5">PIN: {order.pincode}</div>
+                               </div>
+                             </TableCell>
                             <TableCell>
                               <div className="flex flex-wrap gap-1">
                                 {order.items.map((item, idx) => (

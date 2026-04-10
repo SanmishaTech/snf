@@ -105,6 +105,11 @@ interface Order {
   };
 }
 
+interface Depot {
+  id: number;
+  name: string;
+}
+
 interface StoredUserDetails {
   role: string | null;
   id: string | null;
@@ -137,8 +142,17 @@ const OrderList = () => {
   const [searchTerm, setSearchTerm] = useState(""); // Debounced value for the query
   const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState<string>("");
+  const [selectedDepotId, setSelectedDepotId] = useState<string>("");
   const searchDebounceTimeout = useRef<number | null>(null);
   const pageSize = 10;
+
+  const { data: depots = [] } = useQuery<Depot[]>({
+    queryKey: ['depots'],
+    queryFn: async () => {
+      const res = await get('/depots');
+      return res.data || [];
+    }
+  });
 
   const [currentUserDetails, setCurrentUserDetails] = useState<StoredUserDetails>(getStoredUserDetails());
   const [currentAgencyId, setCurrentAgencyId] = useState<string | null>(null);
@@ -234,7 +248,7 @@ const OrderList = () => {
 
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["orders", page, searchTerm, dateFilter, statusFilter, currentUserRole, currentAgencyId, currentSupervisorAgencyId],
+    queryKey: ["orders", page, searchTerm, dateFilter, statusFilter, selectedDepotId, currentUserRole, currentAgencyId, currentSupervisorAgencyId],
     queryFn: async () => {
       if (!currentUserRole) return { data: [], totalPages: 0 };
       if (currentUserRole === 'AGENCY' && !currentAgencyId) {
@@ -264,6 +278,10 @@ const OrderList = () => {
       
       if (statusFilter) {
         url += `&status=${statusFilter}`;
+      }
+
+      if (selectedDepotId) {
+        url += `&depotId=${selectedDepotId}`;
       }
       
       if (currentUserRole === 'AGENCY') {
@@ -322,6 +340,7 @@ const OrderList = () => {
     setSearchTerm(""); // Clear the search term
     setDateFilter(undefined);
     setStatusFilter("");
+    setSelectedDepotId("");
     updatePage(1); 
   };
 
@@ -409,6 +428,18 @@ const OrderList = () => {
               )}
               <option value="DELIVERED">Delivered</option>
               <option value="RECEIVED">Received</option>
+            </select>
+            <select
+              value={selectedDepotId}
+              onChange={(e) => setSelectedDepotId(e.target.value)}
+              className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
+            >
+              <option value="">All Depots</option>
+              {depots.map((depot) => (
+                <option key={depot.id} value={depot.id.toString()}>
+                  {depot.name}
+                </option>
+              ))}
             </select>
             <Button onClick={clearFilters} variant="outline" className="dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600">
               <Filter className="mr-2 h-4 w-4" /> Clear Filters

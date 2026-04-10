@@ -188,13 +188,13 @@ const initialData = {
           title: "Setup Partners",
           url: "/admin/delivery-partners",
           icon: UsersRound,
-          groupLabel: "Indraai",
+          groupLabel: "SNF",
         },
         {
           title: "Assign Orders",
           url: "/admin/order-assignment",
           icon: Briefcase,
-          groupLabel: "Indraai",
+          groupLabel: "SNF",
         },
         {
           title: "Delivery Partners",
@@ -289,8 +289,14 @@ const initialData = {
           groupLabel: "Indraai Reports",
         },
         {
-          title: "SNF Delivery List",
+          title: "Order List Report",
           url: "/admin/reports/snf-delivery-list",
+          icon: BarChart3,
+          groupLabel: "SNF Reports",
+        },
+        {
+          title: "Delivery Report",
+          url: "/admin/reports/snf-delivery",
           icon: BarChart3,
           groupLabel: "SNF Reports",
         },
@@ -357,7 +363,8 @@ const initialData = {
           groupLabel: "SNF Reports",
           isActive: false,
           items: [
-            { title: "Delivery List Report", url: "/admin/reports/snf-delivery-list" },
+            { title: "Order List Report", url: "/admin/reports/snf-delivery-list" },
+            { title: "Delivery Report", url: "/admin/reports/snf-delivery" },
             { title: "Packing List Report", url: "/admin/reports/snf-packing-list" },
             { title: "Stock Requirement Report", url: "/admin/reports/snf-stock-requirement" },
           ],

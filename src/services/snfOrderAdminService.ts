@@ -85,6 +85,7 @@ export const getAllSNFOrders = async (
     page?: number;
     limit?: number;
     search?: string;
+    depotId?: number | string;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
   } = {}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Download, MapPin, Package, Boxes } from 'lucide-react';
 import { format } from 'date-fns';
@@ -42,6 +42,13 @@ export default function SNFStockRequirementReport() {
       return response.data;
     }
   });
+
+  // Auto-select depot if only one is available
+  useEffect(() => {
+    if (filterOptions?.data?.depots && filterOptions.data.depots.length === 1 && !depotId) {
+      setDepotId(filterOptions.data.depots[0].id.toString());
+    }
+  }, [filterOptions, depotId]);
 
   // Fetch report data
   const { data: reportData, isLoading, error, refetch } = useQuery<SNFStockRequirementResponse>({
@@ -157,7 +164,15 @@ export default function SNFStockRequirementReport() {
               </CardDescription>
             </div>
             <div className="flex gap-2">
-              <Button onClick={() => refetch()} variant="outline" size="sm">
+              <Button 
+                onClick={() => {
+                  if (depotId) refetch();
+                  else toast.error('Please select a depot first');
+                }} 
+                variant="outline" 
+                size="sm"
+                disabled={!depotId || isLoading}
+              >
                 Refresh
               </Button>
               <Button onClick={handleExportToExcel} disabled={groupedRecords.length === 0}>

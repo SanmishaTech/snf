@@ -6,9 +6,19 @@ import { toast } from 'sonner';
 import { LoaderCircle, Camera, CheckCircle2, Package, MapPin, Phone, Info, RefreshCw, Navigation, History, PlayCircle } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function DeliveryPartnerDashboard() {
   const [assignments, setAssignments] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<string>('active');
+  const [historyDate, setHistoryDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [historyStatus, setHistoryStatus] = useState<string>('ALL');
   const [cashStates, setCashStates] = useState<Record<number, string>>({});
   const [photoStates, setPhotoStates] = useState<Record<number, File | null>>({});
   const [loading, setLoading] = useState<Record<number, boolean>>({});
@@ -16,12 +26,12 @@ export default function DeliveryPartnerDashboard() {
 
   useEffect(() => {
     fetchAssignments();
-  }, []);
+  }, [historyDate]);
 
   const fetchAssignments = async () => {
     setFetching(true);
     try {
-      const res = await get('/delivery-app/my-orders');
+      const res = await get(`/delivery-app/my-orders?date=${historyDate}`);
       setAssignments(res.assignments || []);
     } catch (e) {
       console.error(e);
@@ -32,14 +42,17 @@ export default function DeliveryPartnerDashboard() {
   };
 
   const activeAssignments = useMemo(() => 
-    assignments.filter(a => a.status !== 'DELIVERED'), 
+    assignments.filter(a => a.status !== 'DELIVERED' && a.status !== 'NOT_DELIVERED'), 
     [assignments]
   );
   
-  const completedAssignments = useMemo(() => 
-    assignments.filter(a => a.status === 'DELIVERED'), 
-    [assignments]
-  );
+  const completedAssignments = useMemo(() => {
+    let filtered = assignments.filter(a => a.status === 'DELIVERED' || a.status === 'NOT_DELIVERED');
+    if (historyStatus !== 'ALL') {
+      filtered = filtered.filter(a => a.status === historyStatus);
+    }
+    return filtered;
+  }, [assignments, historyStatus]);
 
   const markDelivered = async (id: number) => {
     const cash = cashStates[id] || '0';
@@ -69,6 +82,24 @@ export default function DeliveryPartnerDashboard() {
     }
   };
 
+  const markNotDelivered = async (id: number) => {
+    if (!confirm("Are you sure you want to mark this as NOT DELIVERED?")) return;
+    
+    setLoading(prev => ({ ...prev, [id]: true }));
+    try {
+      const formData = new FormData();
+      formData.append('status', 'NOT_DELIVERED');
+      
+      await putupload(`/delivery-app/assignment/${id}`, formData);
+      toast.success("Updated successfully");
+      fetchAssignments();
+    } catch (e: any) {
+      toast.error(e.message || "Could not update status");
+    } finally {
+      setLoading(prev => ({ ...prev, [id]: false }));
+    }
+  };
+
   const DeliveryRow = ({ a }: { a: any }) => {
     const items = a.snfOrder ? (a.snfOrder.items || []) : (a.deliveryScheduleEntry ? [a.deliveryScheduleEntry] : []);
     const customerName = a.snfOrder?.name || a.deliveryScheduleEntry?.deliveryAddress?.recipientName || 'Member';
@@ -84,9 +115,9 @@ export default function DeliveryPartnerDashboard() {
           <div className="flex flex-col gap-1 sm:items-start">
              <Badge className={`
                 w-fit font-bold text-[9px] tracking-wider uppercase px-2 py-0.5 border-none
-                ${a.status === 'DELIVERED' ? 'bg-emerald-500 text-white' : 'bg-red-600 text-white'}
+                ${a.status === 'DELIVERED' ? 'bg-emerald-500 text-white' : a.status === 'NOT_DELIVERED' ? 'bg-amber-500 text-white' : 'bg-red-600 text-white'}
              `}>
-                {a.status}
+                {a.status === 'NOT_DELIVERED' ? 'NOT DELIVERED' : a.status}
              </Badge>
              <span className="text-[10px] font-mono text-slate-400">#{orderNo}</span>
           </div>
@@ -128,7 +159,7 @@ export default function DeliveryPartnerDashboard() {
 
           {/* Actions Column */}
           <div className="lg:border-l lg:border-slate-100 lg:pl-6">
-             {a.status !== 'DELIVERED' ? (
+             {a.status !== 'DELIVERED' && a.status !== 'NOT_DELIVERED' ? (
                <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
                   <div className="relative group w-full sm:w-28">
                     <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">₹</span>
@@ -160,22 +191,45 @@ export default function DeliveryPartnerDashboard() {
                     onChange={(e) => setPhotoStates(prev => ({ ...prev, [a.id]: e.target.files?.[0] || null }))}
                   />
 
-                  <Button 
-                    size="sm"
-                    className="h-9 w-full sm:w-auto px-4 rounded-lg bg-red-600 hover:bg-red-700 font-bold text-[10px] uppercase tracking-wider shadow-sm transition-all"
-                    onClick={() => markDelivered(a.id)}
-                    disabled={loading[a.id]}
-                  >
-                    {loading[a.id] ? <LoaderCircle className="animate-spin" size={12} /> : "Complete"}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      size="sm"
+                      className="h-9 w-full sm:w-auto px-4 rounded-lg bg-red-600 hover:bg-red-700 font-bold text-[10px] uppercase tracking-wider shadow-sm transition-all"
+                      onClick={() => markDelivered(a.id)}
+                      disabled={loading[a.id]}
+                    >
+                      {loading[a.id] ? <LoaderCircle className="animate-spin" size={12} /> : "Complete"}
+                    </Button>
+
+                    <Button 
+                      variant="outline"
+                      size="sm"
+                      className="h-9 w-9 p-0 rounded-lg border-slate-200 text-slate-400 hover:text-red-600 transition-all"
+                      onClick={() => markNotDelivered(a.id)}
+                      disabled={loading[a.id]}
+                      title="Mark as Not Delivered"
+                    >
+                      <LoaderCircle className={loading[a.id] ? "animate-spin" : "hidden"} size={14} />
+                      <Info className={loading[a.id] ? "hidden" : "block"} size={14} />
+                    </Button>
+                  </div>
                </div>
              ) : (
-               <div className="flex items-center justify-between bg-emerald-50 rounded-lg py-2 px-3 border border-emerald-100">
+               <div className={`flex items-center justify-between rounded-lg py-2 px-3 border ${a.status === 'DELIVERED' ? 'bg-emerald-50 border-emerald-100' : 'bg-amber-50 border-amber-100'}`}>
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 size={14} className="text-emerald-600" />
-                    <span className="text-[10px] font-bold text-emerald-700 uppercase">{new Date(a.deliveredAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    {a.status === 'DELIVERED' ? (
+                      <>
+                        <CheckCircle2 size={14} className="text-emerald-600" />
+                        <span className="text-[10px] font-bold text-emerald-700 uppercase">{a.deliveredAt ? new Date(a.deliveredAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Delivered'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Info size={14} className="text-amber-600" />
+                        <span className="text-[10px] font-bold text-amber-700 uppercase">NOT DELIVERED</span>
+                      </>
+                    )}
                   </div>
-                  <span className="text-[10px] font-extrabold text-emerald-600">₹{a.cashCollected || '0.0'}</span>
+                  {a.status === 'DELIVERED' && <span className="text-[10px] font-extrabold text-emerald-600">₹{a.cashCollected || '0.0'}</span>}
                </div>
              )}
           </div>
@@ -221,17 +275,47 @@ export default function DeliveryPartnerDashboard() {
       </div>
 
       <div className="w-full px-6 mt-8">
-        <Tabs defaultValue="active" className="w-full">
-           <TabsList className="flex bg-slate-100/80 h-12 w-fit rounded-xl p-1 mb-8 border border-slate-200/50 backdrop-blur-lg">
-              <TabsTrigger value="active" className="px-6 rounded-lg font-bold text-[11px] uppercase tracking-wider data-[state=active]:bg-white data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all">
-                 <PlayCircle size={14} className="mr-2" />
-                 Active ({activeAssignments.length})
-              </TabsTrigger>
-              <TabsTrigger value="completed" className="px-6 rounded-lg font-bold text-[11px] uppercase tracking-wider data-[state=active]:bg-white data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all">
-                 <History size={14} className="mr-2" />
-                 History ({completedAssignments.length})
-              </TabsTrigger>
-           </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+           <div className="flex items-center justify-between mb-8">
+             <TabsList className="flex bg-slate-100/80 h-12 w-fit rounded-xl p-1 border border-slate-200/50 backdrop-blur-lg">
+                <TabsTrigger value="active" className="px-6 rounded-lg font-bold text-[11px] uppercase tracking-wider data-[state=active]:bg-white data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all">
+                   <PlayCircle size={14} className="mr-2" />
+                   Active ({activeAssignments.length})
+                </TabsTrigger>
+                <TabsTrigger value="completed" className="px-6 rounded-lg font-bold text-[11px] uppercase tracking-wider data-[state=active]:bg-white data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all">
+                   <History size={14} className="mr-2" />
+                   History ({completedAssignments.length})
+                </TabsTrigger>
+             </TabsList>
+
+             {activeTab === 'completed' && (
+               <div className="flex items-center gap-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                 <div className="flex items-center gap-3 bg-white border border-slate-200/60 rounded-xl px-3 py-1.5 shadow-sm">
+                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Filter by Date</span>
+                   <Input 
+                     type="date" 
+                     value={historyDate}
+                     onChange={(e) => setHistoryDate(e.target.value)}
+                     className="h-8 text-[11px] font-bold border-none bg-transparent focus-visible:ring-0 w-32 p-0"
+                   />
+                 </div>
+
+                 <div className="flex items-center gap-3 bg-white border border-slate-200/60 rounded-xl px-3 py-1.5 shadow-sm">
+                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</span>
+                   <Select value={historyStatus} onValueChange={setHistoryStatus}>
+                     <SelectTrigger className="h-8 w-36 border-none bg-transparent focus:ring-0 text-[11px] font-bold uppercase p-0">
+                       <SelectValue placeholder="All Status" />
+                     </SelectTrigger>
+                     <SelectContent className="rounded-xl border-slate-200 shadow-xl">
+                       <SelectItem value="ALL" className="text-[11px] font-bold uppercase">All Records</SelectItem>
+                       <SelectItem value="DELIVERED" className="text-[11px] font-bold uppercase">Delivered</SelectItem>
+                       <SelectItem value="NOT_DELIVERED" className="text-[11px] font-bold uppercase">Not Delivered</SelectItem>
+                     </SelectContent>
+                   </Select>
+                 </div>
+               </div>
+             )}
+           </div>
 
            <div className="hidden lg:grid grid-cols-[110px_1.5fr_1.8fr_1.2fr_1.8fr] gap-6 px-4 mb-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">
               <div>Reference</div>

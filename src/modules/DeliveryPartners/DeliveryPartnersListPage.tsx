@@ -7,7 +7,9 @@ import { useQuery } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import DeliveryPartnerForm from './DeliveryPartnerForm';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User } from 'lucide-react';
+import { User, Search, FilterX } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface DeliveryPartner {
   id: number;
@@ -22,15 +24,33 @@ interface DeliveryPartner {
   };
 }
 
+interface Depot {
+  id: number;
+  name: string;
+}
+
 export default function DeliveryPartnersListPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedPartnerId, setSelectedPartnerId] = useState<number | null>(null);
   const [isReadOnly, setIsReadOnly] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedDepotId, setSelectedDepotId] = useState<string>('all');
+
+  const { data: depots = [] } = useQuery<Depot[]>({
+    queryKey: ['depots'],
+    queryFn: async () => {
+      const res = await get('/depots');
+      return res.data || [];
+    }
+  });
 
   const { data: partners = [], isLoading, refetch } = useQuery<DeliveryPartner[]>({
-    queryKey: ['delivery-partners'],
+    queryKey: ['delivery-partners', searchTerm, selectedDepotId],
     queryFn: async () => {
-      const res = await get('/delivery-partners');
+      let url = '/delivery-partners?';
+      if (searchTerm) url += `search=${searchTerm}&`;
+      if (selectedDepotId !== 'all') url += `depotId=${selectedDepotId}&`;
+      const res = await get(url);
       return res.deliveryPartners || [];
     }
   });
@@ -96,6 +116,46 @@ export default function DeliveryPartnersListPage() {
           </Dialog>
         </CardHeader>
         <CardContent>
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name, email or mobile..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <div className="w-full md:w-[250px]">
+              <Select value={selectedDepotId} onValueChange={setSelectedDepotId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by Depot" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Depots</SelectItem>
+                  {depots.map((depot) => (
+                    <SelectItem key={depot.id} value={depot.id.toString()}>
+                      {depot.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {(searchTerm || selectedDepotId !== 'all') && (
+              <Button 
+                variant="ghost" 
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedDepotId('all');
+                }}
+                className="text-muted-foreground"
+              >
+                <FilterX className="mr-2 h-4 w-4" />
+                Clear
+              </Button>
+            )}
+          </div>
+
           {isLoading ? (
             <div className="text-center py-10">Loading partners...</div>
           ) : (

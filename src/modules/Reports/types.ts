@@ -420,7 +420,7 @@ export interface SubscriptionReportResponse {
   filters: SubscriptionReportFilters;
 }
 
-// SNF Delivery List Report Types
+// Order List Report Types
 export interface SNFDeliveryListItem {
   id: number;
   orderNo: string;
@@ -478,6 +478,38 @@ export interface SNFStockRequirementItem {
 export interface SNFStockRequirementResponse {
   success: boolean;
   data: SNFStockRequirementItem[];
+  filters: {
+    depotId: string;
+    date: string;
+  };
+}
+
+// SNF Delivery Report Types
+export interface SNFDeliveryItem {
+  id: number;
+  orderNo: string;
+  customerName: string;
+  mobile: string;
+  address: string;
+  pincode: string;
+  paymentStatus: string;
+  paymentMode: string;
+  totalAmount: number;
+  status: string; // Delivery Assignment Status
+  deliveryPartner: string;
+  deliveryPartnerMobile: string | null;
+  deliveredAt: string | null;
+  cashCollected: number | null;
+  items: Array<{
+    name: string;
+    variant: string | null;
+    quantity: number;
+  }>;
+}
+
+export interface SNFDeliveryResponse {
+  success: boolean;
+  data: Record<string, SNFDeliveryItem[]>;
   filters: {
     depotId: string;
     date: string;

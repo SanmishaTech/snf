@@ -35,6 +35,13 @@ export default function PackingListReport() {
     }
   });
 
+  // Auto-select depot if only one is available
+  React.useEffect(() => {
+    if (filterOptions?.data?.depots && filterOptions.data.depots.length === 1 && !depotId) {
+      setDepotId(filterOptions.data.depots[0].id.toString());
+    }
+  }, [filterOptions, depotId]);
+
   // Fetch report data
   const { data: reportData, isLoading, error, refetch } = useQuery<SNFPackingListResponse>({
     queryKey: ['snfPackingList', depotId, date],
@@ -136,7 +143,15 @@ export default function PackingListReport() {
               </CardDescription>
             </div>
             <div className="flex gap-2">
-              <Button onClick={() => refetch()} variant="outline" size="sm">
+              <Button 
+                onClick={() => {
+                  if (depotId) refetch();
+                  else toast.error('Please select a depot first');
+                }} 
+                variant="outline" 
+                size="sm"
+                disabled={!depotId || isLoading}
+              >
                 Refresh
               </Button>
               <Button onClick={handleExportToExcel} disabled={orders.length === 0}>

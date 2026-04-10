@@ -107,6 +107,7 @@ import ActivityLogPage from "./modules/ActivityLog/ActivityLogPage";
 import CouponMasterListPage from "./modules/CouponMaster/CouponMasterListPage";
 import SNFDeliveryListReport from "./modules/Reports/SNFDeliveryListReport";
 import PackingListReport from "./modules/Reports/PackingListReport";
+import SNFDeliveryReport from "./modules/Reports/SNFDeliveryReport";
 import SNFStockRequirementReport from "./modules/Reports/SNFStockRequirementReport";
 import POSPage from "./modules/POS/POSPage";
 
@@ -416,7 +417,8 @@ const App = () => {
             <Route path="/admin/reports/wallet" element={<WalletReport />} /> {/* Wallet Report */}
             <Route path="/admin/reports/delivery-agencies" element={<DeliveryReport />} /> {/* Delivery Agencies Report */}
             <Route path="/admin/reports/delivery-summaries" element={<DeliverySummariesReport />} /> {/* Delivery Summaries Report */}
-            <Route path="/admin/reports/snf-delivery-list" element={<SNFDeliveryListReport />} /> {/* SNF Delivery List Report */}
+            <Route path="/admin/reports/snf-delivery-list" element={<SNFDeliveryListReport />} /> {/* Order List Report */}
+            <Route path="/admin/reports/snf-delivery" element={<SNFDeliveryReport />} /> {/* Delivery Report */}
             <Route path="/admin/reports/snf-packing-list" element={<PackingListReport />} /> {/* SNF Packing List Report */}
             <Route path="/admin/reports/snf-stock-requirement" element={<SNFStockRequirementReport />} /> {/* SNF Stock Requirement Report */}
             <Route path="/admin/reports/subscriptions" element={<SubscriptionReports />} /> {/* Subscription Reports */}

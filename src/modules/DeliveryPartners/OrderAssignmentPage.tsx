@@ -52,12 +52,11 @@ function AssignmentDetailsContent({ order }: { order: any }) {
             variantName: item.variantName || item.unit || item.product?.unit
          }));
       }
-      // Subscriptions have a 'product' object in this backend
       if (order.product) {
          return [{
             id: order.id,
             productName: order.product.name,
-            quantity: 1, // Single entry
+            quantity: 1,
             variantName: order.product.unit || order.unit
          }];
       }
@@ -81,7 +80,6 @@ function AssignmentDetailsContent({ order }: { order: any }) {
 
    return (
       <div className="space-y-5 p-5 bg-gray-50/30">
-         {/* Member Section */}
          <section className="space-y-2">
             <div className="flex items-center justify-between mb-1">
                <h3 className="text-[11px] font-bold flex items-center gap-2 text-green-700 uppercase tracking-widest">
@@ -102,9 +100,7 @@ function AssignmentDetailsContent({ order }: { order: any }) {
                         </p>
                      </div>
                   </div>
-
                   <Separator className="bg-slate-50" />
-
                   <div className="grid grid-cols-2 gap-4">
                      <div className="space-y-1">
                         <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Contact</p>
@@ -125,7 +121,6 @@ function AssignmentDetailsContent({ order }: { order: any }) {
             </Card>
          </section>
 
-         {/* Info Row Section */}
          <div className="grid grid-cols-2 gap-3">
             <Card className="border-slate-200 shadow-sm rounded-2xl bg-white overflow-hidden">
                <CardContent className="px-4 py-2.5">
@@ -142,13 +137,13 @@ function AssignmentDetailsContent({ order }: { order: any }) {
                      <div className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border ${
                         order.status === 'DELIVERED' 
                            ? 'bg-green-50 border-green-100 text-green-700' 
-                           : order.status === 'ASSIGNED'
+                           : order.status === 'NOT_DELIVERED'
                               ? 'bg-amber-50 border-amber-100 text-amber-700'
-                              : 'bg-slate-50 border-slate-200 text-slate-600'
+                              : 'bg-blue-50 border-blue-100 text-blue-700'
                      }`}>
                         <div className={`h-1.5 w-1.5 rounded-full ${
                            order.status === 'DELIVERED' ? 'bg-green-500' : 
-                           order.status === 'ASSIGNED' ? 'bg-amber-500' : 'bg-slate-400'
+                           order.status === 'NOT_DELIVERED' ? 'bg-amber-500' : 'bg-blue-500'
                         }`} />
                         <span className="text-[10px] font-bold uppercase tracking-tight">
                            {order.status || 'Pending'}
@@ -159,7 +154,6 @@ function AssignmentDetailsContent({ order }: { order: any }) {
             </Card>
          </div>
 
-         {/* Payment & Proof Section (Delivered Only) */}
          {order.status === 'DELIVERED' && (
             <section className="space-y-2">
                <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-widest">Delivery Conclusion</h3>
@@ -191,7 +185,6 @@ function AssignmentDetailsContent({ order }: { order: any }) {
             </section>
          )}
 
-         {/* Items Section */}
          <section className="space-y-2">
             <div className="flex items-center justify-between mb-1">
                <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-widest">
@@ -202,12 +195,10 @@ function AssignmentDetailsContent({ order }: { order: any }) {
                </Badge>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
-               {/* Header */}
                <div className="grid grid-cols-[1fr_80px] px-5 py-2.5 text-[9px] font-bold uppercase tracking-widest text-slate-300 border-b border-slate-50">
                   <div>Description</div>
                   <div className="text-right">Quantity</div>
                </div>
-
                <div className="divide-y divide-slate-50">
                   {items.map((item: any, idx: number) => (
                      <div key={idx} className="grid grid-cols-[1fr_60px] items-center px-5 py-3.5 group">
@@ -233,7 +224,6 @@ function AssignmentDetailsContent({ order }: { order: any }) {
                      </div>
                   ))}
                </div>
-
                {items.length === 0 && (
                   <div className="p-10 text-center text-slate-300 py-12">
                      <Package size={24} className="mx-auto mb-2 opacity-20" />
@@ -242,16 +232,13 @@ function AssignmentDetailsContent({ order }: { order: any }) {
                )}
             </div>
          </section>
-
       </div>
    );
 }
 
 function AssignmentDetailsPanel({ order, open, onOpenChange }: { order: any, open: boolean, onOpenChange: (open: boolean) => void }) {
    const isDesktop = useMediaQuery("(min-width: 768px)");
-
    if (!order) return null;
-
    const id = order.orderNo || order.id;
 
    const PanelHeader = () => (
@@ -299,46 +286,56 @@ function AssignmentDetailsPanel({ order, open, onOpenChange }: { order: any, ope
 export default function OrderAssignmentPage() {
    const [selectedOrder, setSelectedOrder] = useState<any>(null);
    const [isPanelOpen, setIsPanelOpen] = useState(false);
-   const [date, setDate] = useState<Date>(new Date());
    const [selectedPartners, setSelectedPartners] = useState<{ [key: string]: string }>({});
    const queryClient = useQueryClient();
-
-   // User/Depot context
+ 
    const userContextStr = localStorage.getItem('user') || localStorage.getItem('userDetails') || '{}';
    const userObj = JSON.parse(userContextStr);
-   const depotId = userObj.depotId || userObj.depot_id;
-   const dateStr = date.toISOString().split('T')[0];
+   const initialDepotId = userObj.depotId || userObj.depot_id;
+   
+   const [selectedDepotId, setSelectedDepotId] = useState<string>(initialDepotId?.toString() || '');
+   const isAdmin = userObj.role === 'ADMIN';
 
-   // Queries
-   const { data: pendingOrders = [], isLoading: loadingPending } = useQuery({
-      queryKey: ['pendingOrders', depotId, dateStr],
+   const { data: depots = [] } = useQuery({
+      queryKey: ['depots'],
       queryFn: async () => {
-         const res = await get(`/delivery-assignments/pending?depotId=${depotId}&dateStr=${dateStr}`);
+         const res = await get('/depots');
+         return res.data || [];
+      },
+      enabled: isAdmin
+   });
+
+   const { data: pendingOrders = [], isLoading: loadingPending } = useQuery({
+      queryKey: ['pendingOrders', selectedDepotId],
+      queryFn: async () => {
+         const res = await get(`/delivery-assignments/pending?depotId=${selectedDepotId}`);
          const snf = (res.snfOrders || []).map((o: any) => ({ ...o, type: 'SNF' }));
          const entries = (res.subEntries || []).map((e: any) => ({ ...e, type: 'SUB' }));
          return [...snf, ...entries];
       },
-      enabled: !!depotId,
+      enabled: !!selectedDepotId,
       refetchInterval: 10000,
    });
 
    const { data: trackerData = [], isLoading: loadingTracking } = useQuery({
-      queryKey: ['assignedOrders', depotId, dateStr],
+      queryKey: ['assignedOrders', selectedDepotId],
       queryFn: async () => {
-         const res = await get(`/delivery-assignments/track?depotId=${depotId}&dateStr=${dateStr}`);
+         const res = await get(`/delivery-assignments/track?depotId=${selectedDepotId}`);
          return res.assignments || [];
       },
-      enabled: !!depotId,
+      enabled: !!selectedDepotId,
       refetchInterval: 10000,
    });
 
    const { data: partners = [] } = useQuery({
-      queryKey: ['partners', depotId],
-      queryFn: () => get(`/delivery-partners?depotId=${depotId}`),
-      enabled: !!depotId,
+      queryKey: ['partners', selectedDepotId],
+      queryFn: async () => {
+         const res = await get(`/delivery-partners?depotId=${selectedDepotId}`);
+         return res.deliveryPartners || [];
+      },
+      enabled: !!selectedDepotId,
    });
 
-   // Mutations
    const assignMutation = useMutation({
       mutationFn: (data: any) => post('/delivery-assignments/assign', data),
       onSuccess: () => {
@@ -359,16 +356,26 @@ export default function OrderAssignmentPage() {
       onError: () => toast.error('Recall failed')
    });
 
-   // Calculate Stats
-   const stats = useMemo(() => {
-      const inTransit = trackerData.filter((a: any) => a.status === 'ASSIGNED').length;
-      const delivered = trackerData.filter((a: any) => a.status === 'DELIVERED').length;
-      // Using a small random-ish delay count if we don't have real "delayed" data from server yet
-      const delayed = trackerData.filter((a: any) => a.status === 'ASSIGNED' && Math.random() > 0.95).length; 
-      const efficiency = trackerData.length > 0 ? ((delivered / trackerData.length) * 100).toFixed(1) : "0.0";
+   const assignedOrders = useMemo(() => 
+      trackerData.filter((a: any) => a.status === 'ASSIGNED' || a.status === 'OUT_FOR_DELIVERY'), 
+      [trackerData]
+   );
+   const deliveredOrders = useMemo(() => 
+      trackerData.filter((a: any) => a.status === 'DELIVERED'), 
+      [trackerData]
+   );
+   const failedOrders = useMemo(() => 
+      trackerData.filter((a: any) => a.status === 'NOT_DELIVERED'), 
+      [trackerData]
+   );
 
-      return { inTransit, delivered, delayed, efficiency };
-   }, [trackerData]);
+   const stats = useMemo(() => {
+      const inTransit = assignedOrders.length;
+      const delivered = deliveredOrders.length;
+      const notDelivered = failedOrders.length;
+      const efficiency = trackerData.length > 0 ? ((delivered / trackerData.length) * 100).toFixed(1) : "0.0";
+      return { inTransit, delivered, notDelivered, efficiency };
+   }, [assignedOrders, deliveredOrders, failedOrders, trackerData]);
 
    const handleAssign = async (orderId: number, type: 'SNF' | 'SUB') => {
       const partnerId = selectedPartners[`${type}-${orderId}`];
@@ -376,15 +383,13 @@ export default function OrderAssignmentPage() {
          toast.error('Select a partner first');
          return;
       }
-
       const payload = {
-         depotId: parseInt(depotId),
+         depotId: parseInt(selectedDepotId),
          deliveryPartnerId: parseInt(partnerId),
-         deliveryDate: dateStr,
+         deliveryDate: new Date().toISOString().split('T')[0],
          snfOrderIds: type === 'SNF' ? [orderId] : [],
          deliveryScheduleEntryIds: type === 'SUB' ? [orderId] : []
       };
-
       assignMutation.mutate(payload);
    };
 
@@ -394,7 +399,6 @@ export default function OrderAssignmentPage() {
 
    const openDetails = (data: any) => {
       let orderToDetail = data;
-      // If it's an assignment object from the tracking tab
       if (data.snfOrder || data.deliveryScheduleEntry) {
          orderToDetail = { 
             ...(data.snfOrder || data.deliveryScheduleEntry), 
@@ -408,6 +412,123 @@ export default function OrderAssignmentPage() {
       setIsPanelOpen(true);
    };
 
+   const TrackingRow = ({ asgn }: { asgn: any }) => {
+      const items = asgn.snfOrder ? (asgn.snfOrder.items || []) : 
+                   asgn.deliveryScheduleEntry ? [asgn.deliveryScheduleEntry] : [];
+      const customerName = asgn.snfOrder ? (asgn.snfOrder.name || asgn.snfOrder.customerName) : asgn.deliveryScheduleEntry?.deliveryAddress?.recipientName || 'Member';
+      const partnerName = asgn.deliveryPartner ? `${asgn.deliveryPartner.firstName} ${asgn.deliveryPartner.lastName}` : 'Partner';
+
+      return (
+         <Card 
+            key={asgn.id} 
+            className={`overflow-hidden transition-all duration-300 rounded-2xl cursor-pointer ${
+               asgn.status === 'DELIVERED' 
+                  ? 'border-l-[6px] border-l-green-500 border-slate-200 shadow-md ring-1 ring-green-100/50' 
+                  : asgn.status === 'NOT_DELIVERED'
+                     ? 'border-l-[6px] border-l-amber-500 border-slate-200 shadow-md ring-1 ring-amber-100/50'
+                     : 'border-l-[6px] border-l-blue-500 border-slate-200 shadow-sm'
+            }`}
+            onClick={() => openDetails(asgn)}
+         >
+            <CardContent className="p-0">
+               <div className="flex flex-col md:flex-row items-stretch">
+                  <div className="flex-1 p-3.5">
+                     <div className="flex flex-wrap items-start justify-between gap-2 mb-2.5">
+                        <div>
+                           <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-bold text-base text-slate-800 leading-none uppercase tracking-tight">
+                                 {customerName}
+                              </h4>
+                              <Badge className={`
+                                 font-bold text-[8px] tracking-wide px-1.5 py-0 border-none rounded-full
+                                 ${asgn.status === 'DELIVERED' ? 'bg-green-500 text-white' :
+                                               asgn.status === 'NOT_DELIVERED' ? 'bg-amber-500 text-white' :
+                                               'bg-blue-500 text-white'}
+                              `}>
+                                 {asgn.status}
+                              </Badge>
+                           </div>
+                           <p className="text-[9px] font-bold text-slate-400 tracking-wider uppercase">
+                              {asgn.snfOrder?.orderNo || `REF-${asgn.id}`}
+                           </p>
+                        </div>
+                        <div className="flex flex-col items-end gap-1.5">
+                           <div className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-500">
+                              <MapPin size={11} className="text-slate-300" />
+                              <span className="truncate max-w-[180px]">{asgn.snfOrder?.addressLine1 || asgn.deliveryAddress?.plotBuilding || asgn.deliveryScheduleEntry?.deliveryAddress?.city}</span>
+                           </div>
+                        </div>
+                     </div>
+                     <div className="rounded-lg border border-slate-100 bg-slate-50/30 overflow-hidden">
+                        <div className="grid grid-cols-[1fr_50px] bg-slate-100/40 px-3 py-1 text-[8px] font-bold uppercase text-slate-400 tracking-widest border-b border-slate-100/50">
+                           <div>Manifest</div>
+                           <div className="text-right">Qty</div>
+                        </div>
+                        <div className="divide-y divide-slate-100/50">
+                           {(items || []).slice(0, 3).map((item: any, i: number) => (
+                              <div key={i} className="grid grid-cols-[1fr_30px] px-3 py-1.5 items-center hover:bg-slate-100/20 transition-colors">
+                                 <p className="text-[10px] font-semibold text-slate-600 truncate uppercase">
+                                    {item.productName || item.product?.name || item.name || 'Unknown'}
+                                 </p>
+                                 <div className="text-[10px] font-bold text-primary text-right flex items-center justify-end">
+                                    <span className="bg-primary/5 px-1.5 py-0 rounded-md min-w-[18px] text-center">{item.quantity || 1}</span>
+                                 </div>
+                              </div>
+                           ))}
+                        </div>
+                     </div>
+                  </div>
+                  <div 
+                     className={`md:w-56 p-3.5 border-t md:border-t-0 md:border-l border-slate-100 flex flex-col justify-between items-center text-center ${
+                        asgn.status === 'DELIVERED' ? 'bg-green-50/20' : 'bg-slate-50'
+                     }`}
+                     onClick={(e) => e.stopPropagation()}
+                  >
+                     <div className="w-full space-y-2.5">
+                        <div className="flex flex-col items-center gap-1 px-3 py-1.5 bg-white rounded-lg border border-slate-200/50 shadow-sm">
+                           <div className={`h-7 w-7 rounded-full flex items-center justify-center ${
+                              asgn.status === 'DELIVERED' ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-400'
+                           }`}>
+                              <User size={14} />
+                           </div>
+                           <div>
+                              <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Partner</p>
+                              <p className={`text-[11px] font-bold ${asgn.status === 'DELIVERED' ? 'text-green-700' : 'text-slate-800'}`}>
+                                 {partnerName}
+                              </p>
+                           </div>
+                        </div>
+                        <div className="w-full">
+                           {asgn.status === 'DELIVERED' && asgn.deliveryPhotoUrl && (
+                              <Button
+                                 variant="outline"
+                                 className="w-full h-8 rounded-lg border-green-200 bg-white text-green-600 font-bold text-[9px] tracking-wider uppercase hover:bg-green-50 hover:text-green-700 transition-all shadow-sm"
+                                 onClick={(e) => { e.stopPropagation(); window.open(`http://localhost:3000${asgn.deliveryPhotoUrl}`, '_blank'); }}
+                              >
+                                 <Camera size={11} className="mr-1.5" />
+                                 Review Proof
+                              </Button>
+                           )}
+                           {(asgn.status === 'ASSIGNED' || asgn.status === 'OUT_FOR_DELIVERY') && (
+                              <Button
+                                 variant="ghost"
+                                 className="w-full h-8 rounded-lg font-bold text-[9px] tracking-wider text-red-500 hover:text-red-600 hover:bg-red-50 uppercase transition-all"
+                                 onClick={(e) => { e.stopPropagation(); handleUnassign(asgn.id); }}
+                                 disabled={unassignMutation.isPending}
+                              >
+                                 <XCircle size={11} className="mr-1.5" />
+                                 Recall
+                              </Button>
+                           )}
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </CardContent>
+         </Card>
+      );
+   };
+
    return (
       <div className="p-6">
          <Card className="border-none shadow-none bg-transparent">
@@ -419,157 +540,84 @@ export default function OrderAssignmentPage() {
                         Manage assignments and monitor delivery performance.
                      </CardDescription>
                   </div>
-
                   <div className="flex items-center gap-3">
-                     <div className="flex flex-col gap-1">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Operations Date</span>
-                        <div className="flex items-center gap-2 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg hover:border-slate-300 transition-all">
-                           <input
-                              id="deliveryDate"
-                              type="date"
-                              value={dateStr}
-                              onChange={(e) => setDate(new Date(e.target.value))}
-                              className="bg-transparent font-semibold text-xs text-slate-700 outline-none w-28"
-                           />
-                           <RefreshCw 
-                              size={14} 
-                              className={`text-slate-400 cursor-pointer hover:text-primary transition-all`} 
-                           />
+                     {isAdmin && depots.length > 0 && (
+                        <div className="flex flex-col gap-1 min-w-[200px]">
+                           <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Target Depot</span>
+                           <Select value={selectedDepotId} onValueChange={setSelectedDepotId}>
+                              <SelectTrigger className="h-9 border-slate-200 bg-slate-50 font-bold text-xs text-slate-700 rounded-lg shadow-sm hover:border-slate-300 transition-all">
+                                 <SelectValue placeholder="Select Depot" />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                                 {depots.map((d: any) => (
+                                    <SelectItem key={d.id} value={d.id.toString()} className="font-bold text-xs py-2.5">
+                                       {d.name}
+                                    </SelectItem>
+                                 ))}
+                              </SelectContent>
+                           </Select>
                         </div>
-                     </div>
+                     )}
                   </div>
                </div>
             </CardHeader>
 
-            {/* Stats Row */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-               <StatCard 
-                  title="In Transit" 
-                  value={stats.inTransit} 
-                  icon={Truck} 
-                  colorClass="text-blue-600" 
-                  iconBgClass="bg-blue-50" 
-               />
-               <StatCard 
-                  title="Delivered" 
-                  value={stats.delivered} 
-                  icon={CheckCircle2} 
-                  colorClass="text-green-600" 
-                  iconBgClass="bg-green-50" 
-               />
-               <StatCard 
-                  title="Delayed" 
-                  value={stats.delayed} 
-                  icon={AlertTriangle} 
-                  colorClass="text-amber-600" 
-                  iconBgClass="bg-amber-50" 
-               />
-               <StatCard 
-                  title="Efficiency" 
-                  value={`${stats.efficiency}%`} 
-                  icon={TrendingUp} 
-                  colorClass="text-primary" 
-                  iconBgClass="bg-primary/5" 
-               />
+               <StatCard title="In Transit" value={stats.inTransit} icon={Truck} colorClass="text-blue-600" iconBgClass="bg-blue-50" />
+               <StatCard title="Delivered" value={stats.delivered} icon={CheckCircle2} colorClass="text-green-600" iconBgClass="bg-green-50" />
+               <StatCard title="Not Delivered" value={stats.notDelivered} icon={XCircle} colorClass="text-amber-600" iconBgClass="bg-amber-50" />
+               <StatCard title="Efficiency" value={`${stats.efficiency}%`} icon={TrendingUp} colorClass="text-primary" iconBgClass="bg-primary/5" />
             </div>
 
             <Tabs defaultValue="pending" className="space-y-6">
                <TabsList className="bg-slate-100/50 p-1 rounded-xl h-11 mb-6 border border-slate-200/50">
-                  <TabsTrigger value="pending" className="rounded-lg px-6 font-semibold text-xs text-slate-500 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md data-[state=active]:shadow-primary/5 transition-all h-full">
-                     <Package size={16} className="mr-2" />
-                     To Assign
-                     <Badge variant="secondary" className="ml-2 bg-slate-200/50 text-slate-600 border-none px-1.5 py-0 h-4 text-[9px] font-bold">
-                        {pendingOrders.length}
-                     </Badge>
+                  <TabsTrigger value="pending" className="rounded-lg px-6 font-semibold text-xs text-slate-500 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md transition-all h-full">
+                     <Package size={16} className="mr-2" />To Assign
+                     <Badge variant="secondary" className="ml-2 bg-slate-200/50 text-slate-600 border-none px-1.5 py-0 h-4 text-[9px] font-bold">{pendingOrders.length}</Badge>
                   </TabsTrigger>
-                  <TabsTrigger value="tracking" className="rounded-lg px-6 font-semibold text-xs text-slate-500 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md data-[state=active]:shadow-primary/5 transition-all h-full">
-                     <CheckCircle2 size={16} className="mr-2" />
-                     Tracking
-                     <Badge variant="secondary" className="ml-2 bg-slate-200/50 text-slate-600 border-none px-1.5 py-0 h-4 text-[9px] font-bold">
-                        {trackerData.length}
-                     </Badge>
+                  <TabsTrigger value="assigned" className="rounded-lg px-6 font-semibold text-xs text-slate-500 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md transition-all h-full">
+                     <Truck size={16} className="mr-2" />Assigned
+                     <Badge variant="secondary" className="ml-2 bg-slate-200/50 text-slate-600 border-none px-1.5 py-0 h-4 text-[9px] font-bold">{assignedOrders.length}</Badge>
+                  </TabsTrigger>
+                  <TabsTrigger value="delivered" className="rounded-lg px-6 font-semibold text-xs text-slate-500 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md transition-all h-full">
+                     <CheckCircle2 size={16} className="mr-2" />Delivered
+                     <Badge variant="secondary" className="ml-2 bg-slate-200/50 text-slate-600 border-none px-1.5 py-0 h-4 text-[9px] font-bold">{deliveredOrders.length}</Badge>
+                  </TabsTrigger>
+                  <TabsTrigger value="failed" className="rounded-lg px-6 font-semibold text-xs text-slate-500 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md transition-all h-full">
+                     <XCircle size={16} className="mr-2" />Not Delivered
+                     <Badge variant="secondary" className="ml-2 bg-slate-200/50 text-slate-600 border-none px-1.5 py-0 h-4 text-[9px] font-bold">{failedOrders.length}</Badge>
                   </TabsTrigger>
                </TabsList>
 
                <TabsContent value="pending" className="space-y-4 outline-none">
                   {loadingPending ? (
-                     <div className="flex justify-center items-center py-20">
-                        <LoaderCircle className="animate-spin text-primary" size={32} />
-                     </div>
+                     <div className="flex justify-center items-center py-20"><LoaderCircle className="animate-spin text-primary" size={32} /></div>
                   ) : pendingOrders.length === 0 ? (
                      <div className="flex flex-col items-center justify-center py-20 bg-white border-2 border-dashed border-gray-100 rounded-3xl text-gray-400">
-                        <Package size={48} className="mb-4 opacity-10" />
-                        <p className="font-bold italic">No pending orders found for this date.</p>
+                        <Package size={48} className="mb-4 opacity-10" /><p className="font-bold italic">No pending orders found.</p>
                      </div>
                   ) : (
                      <div className="grid gap-4">
                         {pendingOrders.map((order: any) => {
                            const key = `${order.type}-${order.id}`;
                            return (
-                              <Card 
-                                 key={key} 
-                                 className="group overflow-hidden border-slate-200/60 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/[0.01] transition-all duration-300 rounded-2xl cursor-pointer"
-                                 onClick={() => openDetails(order)}
-                              >
+                              <Card key={key} className="group overflow-hidden border-slate-200/60 hover:border-primary/20 hover:shadow-lg transition-all duration-300 rounded-2xl cursor-pointer" onClick={() => openDetails(order)}>
                                  <CardContent className="p-0">
                                     <div className="flex flex-col lg:flex-row items-stretch">
-                                       {/* Info Column */}
                                        <div className="flex-1 p-3.5">
                                           <div className="flex items-center gap-2 mb-1.5">
-                                             <Badge className="bg-primary/5 text-primary border-none font-bold text-[8px] tracking-wide px-1.5 py-0 rounded-full uppercase">
-                                                {order.type}
-                                             </Badge>
-                                             <span className="text-[9px] font-bold text-slate-400 tracking-wide uppercase">
-                                                {order.orderNo ? `#${order.orderNo}` : `REF-${order.id}`}
-                                             </span>
+                                             <Badge className="bg-primary/5 text-primary border-none font-bold text-[8px] px-1.5 py-0 rounded-full uppercase">{order.type}</Badge>
+                                             <span className="text-[9px] font-bold text-slate-400 uppercase">{order.orderNo ? `#${order.orderNo}` : `REF-${order.id}`}</span>
                                           </div>
-                                          <h4 className="font-bold text-base text-slate-800 leading-tight mb-1.5 group-hover:text-primary transition-colors">
-                                             {order.name || order.deliveryAddress?.recipientName}
-                                          </h4>
-                                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                                             <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500">
-                                                <MapPin size={11} className="text-slate-300" />
-                                                <span className="truncate max-w-[220px]">{order.addressLine1 || order.deliveryAddress?.plotBuilding || 'No address'}</span>
-                                             </div>
-                                             {order.mobile && (
-                                                <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500">
-                                                   <Phone size={11} className="text-slate-300" />
-                                                   <span>{order.mobile}</span>
-                                                </div>
-                                             )}
-                                          </div>
+                                          <h4 className="font-bold text-base text-slate-800 leading-tight mb-1.5 group-hover:text-primary transition-colors">{order.name || order.deliveryAddress?.recipientName}</h4>
+                                          <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500"><MapPin size={11} className="text-slate-300" /><span className="truncate">{order.addressLine1 || order.deliveryAddress?.plotBuilding || 'No address'}</span></div>
                                        </div>
-
-                                       {/* Action Column */}
-                                       <div 
-                                          className="lg:w-64 bg-slate-50/40 border-t lg:border-t-0 lg:border-l border-slate-100 p-3.5 flex flex-col justify-center gap-2.5"
-                                          onClick={(e) => e.stopPropagation()}
-                                       >
-                                          <div className="space-y-1">
-                                             <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest px-0.5">Assign To</span>
-                                             <Select
-                                                onValueChange={(val) => setSelectedPartners(prev => ({ ...prev, [key]: val }))}
-                                                value={selectedPartners[key]}
-                                             >
-                                                <SelectTrigger className="bg-white border-slate-200 h-8 font-semibold text-[11px] text-slate-700 rounded-lg shadow-sm focus:ring-primary/10 transition-all">
-                                                   <SelectValue placeholder="Select Delivery Partner" />
-                                                </SelectTrigger>
-                                                <SelectContent className="rounded-lg border-slate-100 shadow-xl">
-                                                   {partners.map((p: any) => (
-                                                      <SelectItem key={p.id} value={p.id.toString()} className="font-medium h-8 px-3 text-[11px]">
-                                                         {p.firstName} {p.lastName}
-                                                      </SelectItem>
-                                                   ))}
-                                                </SelectContent>
-                                             </Select>
-                                          </div>
-                                          <Button
-                                             className="w-full font-bold tracking-wide uppercase text-[9px] h-8 rounded-lg shadow-sm hover:scale-[1.01] transition-all active:scale-95 duration-200"
-                                             onClick={(e) => { e.stopPropagation(); handleAssign(order.id, order.type); }}
-                                             disabled={assignMutation.isPending}
-                                          >
-                                             {assignMutation.isPending ? <LoaderCircle size={12} className="animate-spin" /> : "DISPATCH"}
-                                          </Button>
+                                       <div className="lg:w-64 bg-slate-50/40 border-t lg:border-t-0 lg:border-l border-slate-100 p-3.5 flex flex-col justify-center gap-2.5" onClick={(e) => e.stopPropagation()}>
+                                          <Select onValueChange={(val) => setSelectedPartners(prev => ({ ...prev, [key]: val }))} value={selectedPartners[key]}>
+                                             <SelectTrigger className="bg-white h-8 text-[11px]"><SelectValue placeholder="Assign Partner" /></SelectTrigger>
+                                             <SelectContent>{partners.map((p: any) => (<SelectItem key={p.id} value={p.id.toString()}>{p.firstName} {p.lastName}</SelectItem>))}</SelectContent>
+                                          </Select>
+                                          <Button className="w-full font-bold uppercase text-[9px] h-8" onClick={(e) => { e.stopPropagation(); handleAssign(order.id, order.type); }} disabled={assignMutation.isPending}>{assignMutation.isPending ? <LoaderCircle size={12} className="animate-spin" /> : "DISPATCH"}</Button>
                                        </div>
                                     </div>
                                  </CardContent>
@@ -580,169 +628,45 @@ export default function OrderAssignmentPage() {
                   )}
                </TabsContent>
 
-               <TabsContent value="tracking" className="space-y-4 outline-none">
+               <TabsContent value="assigned" className="space-y-4 outline-none">
                   {loadingTracking ? (
-                     <div className="flex justify-center items-center py-20">
-                        <LoaderCircle className="animate-spin text-primary" size={32} />
-                     </div>
-                  ) : trackerData.length === 0 ? (
+                     <div className="flex justify-center items-center py-20"><LoaderCircle className="animate-spin text-primary" size={32} /></div>
+                  ) : assignedOrders.length === 0 ? (
                      <div className="flex flex-col items-center justify-center py-20 bg-white border-2 border-dashed border-gray-100 rounded-3xl text-gray-400">
-                        <Package size={48} className="mb-4 opacity-10" />
-                        <p className="font-bold italic">No active deliveries tracked for this date.</p>
+                        <Truck size={48} className="mb-4 opacity-10" /><p className="font-bold italic">No assigned orders in progress.</p>
                      </div>
                   ) : (
-                     <div className="grid gap-4">
-                        {trackerData.map((asgn: any) => {
-                           // Ensure items are mapped correctly based on the source
-                           const items = asgn.snfOrder ? (asgn.snfOrder.items || []) : 
-                                        asgn.deliveryScheduleEntry ? [asgn.deliveryScheduleEntry] : [];
-                           // Use 'name' for SNFOrder as per Prisma schema
-                           const customerName = asgn.snfOrder ? (asgn.snfOrder.name || asgn.snfOrder.customerName) : asgn.deliveryScheduleEntry?.deliveryAddress?.recipientName || 'Member';
-                           const partnerName = asgn.deliveryPartner ? `${asgn.deliveryPartner.firstName} ${asgn.deliveryPartner.lastName}` : 'Partner';
+                     <div className="grid gap-4">{assignedOrders.map((asgn: any) => <TrackingRow key={asgn.id} asgn={asgn} />)}</div>
+                  )}
+               </TabsContent>
 
-                           return (
-                              <Card 
-                                 key={asgn.id} 
-                                 className={`overflow-hidden transition-all duration-300 rounded-2xl cursor-pointer ${
-                                    asgn.status === 'DELIVERED' 
-                                       ? 'border-l-[6px] border-l-green-500 border-slate-200 shadow-md ring-1 ring-green-100/50' 
-                                       : 'border-slate-200/60 bg-white shadow-sm shadow-slate-200/20 hover:shadow-md'
-                                 }`}
-                                 onClick={() => openDetails(asgn)}
-                              >
-                                 <CardContent className="p-0">
-                                    <div className="flex flex-col md:flex-row items-stretch">
-                                       {/* Status & Delivery Info side */}
-                                       <div className="flex-1 p-3.5">
-                                          <div className="flex flex-wrap items-start justify-between gap-2 mb-2.5">
-                                             <div>
-                                                <div className="flex items-center gap-2 mb-1">
-                                                   <h4 className="font-bold text-base text-slate-800 leading-none uppercase tracking-tight">
-                                                      {customerName}
-                                                   </h4>
-                                                   <Badge className={`
-                                                      font-bold text-[8px] tracking-wide px-1.5 py-0 border-none rounded-full
-                                                      ${asgn.status === 'DELIVERED' ? 'bg-green-500 text-white' :
-                                                                    asgn.status === 'ASSIGNED' ? 'bg-amber-100 text-amber-700' :
-                                                                       'bg-slate-100 text-slate-700'}
-                                                   `}>
-                                                      {asgn.status}
-                                                   </Badge>
-                                                </div>
-                                                <p className="text-[9px] font-bold text-slate-400 tracking-wider uppercase">
-                                                   {asgn.snfOrder?.orderNo || `REF-${asgn.id}`}
-                                                </p>
-                                             </div>
-                                             
-                                             <div className="flex flex-col items-end gap-1.5">
-                                                <div className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-500">
-                                                   <MapPin size={11} className="text-slate-300" />
-                                                   <span className="truncate max-w-[180px]">{asgn.snfOrder?.addressLine1 || asgn.deliveryAddress?.plotBuilding || asgn.deliveryScheduleEntry?.deliveryAddress?.city}</span>
-                                                </div>
-                                                {asgn.status === 'DELIVERED' && asgn.cashCollected !== undefined && (
-                                                   <div className="flex items-center gap-1 px-2 py-0.5 bg-green-50 text-green-700 rounded-md border border-green-100">
-                                                      <span className="text-[8px] font-bold uppercase tracking-tight opacity-60">Collected</span>
-                                                      <span className="text-[11px] font-bold">₹{asgn.cashCollected}</span>
-                                                   </div>
-                                                )}
-                                             </div>
-                                          </div>
-
-                                          {/* Mini Item List */}
-                                          <div className="rounded-lg border border-slate-100 bg-slate-50/30 overflow-hidden">
-                                             <div className="grid grid-cols-[1fr_50px] bg-slate-100/40 px-3 py-1 text-[8px] font-bold uppercase text-slate-400 tracking-widest border-b border-slate-100/50">
-                                                <div>Manifest</div>
-                                                <div className="text-right">Qty</div>
-                                             </div>
-                                             <div className="divide-y divide-slate-100/50">
-                                                {(items || []).slice(0, 3).map((item: any, i: number) => (
-                                                   <div key={i} className="grid grid-cols-[1fr_30px] px-3 py-1.5 items-center hover:bg-slate-100/20 transition-colors">
-                                                      <p className="text-[10px] font-semibold text-slate-600 truncate uppercase">
-                                                         {item.productName || item.product?.name || item.name || 'Unknown'}
-                                                      </p>
-                                                      <div className="text-[10px] font-bold text-primary text-right flex items-center justify-end">
-                                                         <span className="bg-primary/5 px-1.5 py-0 rounded-md min-w-[18px] text-center">{item.quantity || 1}</span>
-                                                      </div>
-                                                   </div>
-                                                ))}
-                                                {items.length > 3 && (
-                                                   <div 
-                                                      className="px-3 py-1.5 bg-white/50 text-center cursor-pointer hover:bg-slate-100 transition-colors"
-                                                      onClick={(e) => { e.stopPropagation(); openDetails(asgn); }}
-                                                   >
-                                                      <p className="text-[9px] font-bold text-primary uppercase tracking-widest">
-                                                         + {items.length - 3} More Items
-                                                      </p>
-                                                   </div>
-                                                )}
-                                             </div>
-                                          </div>
-                                       </div>
-
-                                       {/* Partner & Actions side */}
-                                       <div 
-                                          className={`md:w-56 p-3.5 border-t md:border-t-0 md:border-l border-slate-100 flex flex-col justify-between items-center text-center ${
-                                             asgn.status === 'DELIVERED' ? 'bg-green-50/20' : 'bg-slate-50'
-                                          }`}
-                                          onClick={(e) => e.stopPropagation()}
-                                       >
-                                          <div className="w-full space-y-2.5">
-                                             <div className="flex flex-col items-center gap-1 px-3 py-1.5 bg-white rounded-lg border border-slate-200/50 shadow-sm">
-                                                <div className={`h-7 w-7 rounded-full flex items-center justify-center ${
-                                                   asgn.status === 'DELIVERED' ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-400'
-                                                }`}>
-                                                   <User size={14} />
-                                                </div>
-                                                <div>
-                                                   <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Partner</p>
-                                                   <p className={`text-[11px] font-bold ${asgn.status === 'DELIVERED' ? 'text-green-700' : 'text-slate-800'}`}>
-                                                      {partnerName}
-                                                   </p>
-                                                </div>
-                                             </div>
-
-                                             <div className="w-full">
-                                                {asgn.status === 'DELIVERED' && asgn.deliveryPhotoUrl && (
-                                                   <Button
-                                                      variant="outline"
-                                                      className="w-full h-8 rounded-lg border-green-200 bg-white text-green-600 font-bold text-[9px] tracking-wider uppercase hover:bg-green-50 hover:text-green-700 transition-all shadow-sm"
-                                                      onClick={(e) => { e.stopPropagation(); window.open(`http://localhost:3000${asgn.deliveryPhotoUrl}`, '_blank'); }}
-                                                   >
-                                                      <Camera size={11} className="mr-1.5" />
-                                                      Review Proof
-                                                   </Button>
-                                                )}
-
-                                                {asgn.status === 'ASSIGNED' && (
-                                                   <Button
-                                                      variant="ghost"
-                                                      className="w-full h-8 rounded-lg font-bold text-[9px] tracking-wider text-red-500 hover:text-red-600 hover:bg-red-50 uppercase transition-all"
-                                                      onClick={(e) => { e.stopPropagation(); handleUnassign(asgn.id); }}
-                                                      disabled={unassignMutation.isPending}
-                                                   >
-                                                      <XCircle size={11} className="mr-1.5" />
-                                                      Recall
-                                                   </Button>
-                                                )}
-                                             </div>
-                                          </div>
-                                       </div>
-                                    </div>
-                                 </CardContent>
-                              </Card>
-                           );
-                        })}
+               <TabsContent value="delivered" className="space-y-4 outline-none">
+                  {loadingTracking ? (
+                     <div className="flex justify-center items-center py-20"><LoaderCircle className="animate-spin text-primary" size={32} /></div>
+                  ) : deliveredOrders.length === 0 ? (
+                     <div className="flex flex-col items-center justify-center py-20 bg-white border-2 border-dashed border-gray-100 rounded-3xl text-gray-400">
+                        <CheckCircle2 size={48} className="mb-4 opacity-10" /><p className="font-bold italic">No delivered orders found.</p>
                      </div>
+                  ) : (
+                     <div className="grid gap-4">{deliveredOrders.map((asgn: any) => <TrackingRow key={asgn.id} asgn={asgn} />)}</div>
+                  )}
+               </TabsContent>
+
+               <TabsContent value="failed" className="space-y-4 outline-none">
+                  {loadingTracking ? (
+                     <div className="flex justify-center items-center py-20"><LoaderCircle className="animate-spin text-primary" size={32} /></div>
+                  ) : failedOrders.length === 0 ? (
+                     <div className="flex flex-col items-center justify-center py-20 bg-white border-2 border-dashed border-gray-100 rounded-3xl text-gray-400">
+                        <XCircle size={48} className="mb-4 opacity-10" /><p className="font-bold italic">No failed deliveries recorded.</p>
+                     </div>
+                  ) : (
+                     <div className="grid gap-4">{failedOrders.map((asgn: any) => <TrackingRow key={asgn.id} asgn={asgn} />)}</div>
                   )}
                </TabsContent>
             </Tabs>
          </Card>
 
-         <AssignmentDetailsPanel
-            order={selectedOrder}
-            open={isPanelOpen}
-            onOpenChange={setIsPanelOpen}
-         />
+         <AssignmentDetailsPanel order={selectedOrder} open={isPanelOpen} onOpenChange={setIsPanelOpen} />
       </div>
    );
 }

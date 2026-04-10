@@ -75,6 +75,11 @@ interface Supervisor {
   };
 }
 
+interface Depot {
+  id: number;
+  name: string;
+}
+
 interface ApiResponse {
   data: Supervisor[];
   totalPages: number;
@@ -87,11 +92,14 @@ const fetchSupervisors = async (
   sortOrder: string,
   search: string,
   active: string, // "all", "true", "false" for user's active status
-  recordsPerPage: number
+  recordsPerPage: number,
+  depotId?: string
 ): Promise<ApiResponse | Supervisor[]> => {
-  const response = await get(
-    `/supervisors?page=${page}&sortBy=${sortBy}&sortOrder=${sortOrder}&search=${search}&active=${active}&limit=${recordsPerPage}`
-  );
+  let url = `/supervisors?page=${page}&sortBy=${sortBy}&sortOrder=${sortOrder}&search=${search}&active=${active}&limit=${recordsPerPage}`;
+  if (depotId && depotId !== 'all') {
+    url += `&depotId=${depotId}`;
+  }
+  const response = await get(url);
   // Handle direct array response
   if (Array.isArray(response)) {
     return response; // The API might return a direct array
@@ -108,7 +116,16 @@ const SupervisorList: React.FC = () => {
   const [sortOrder, setSortOrder] = useState("asc");
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("all"); // "all", "true", "false"
+  const [selectedDepotId, setSelectedDepotId] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
+
+  const { data: depots = [] } = useQuery<Depot[]>({
+    queryKey: ['depots'],
+    queryFn: async () => {
+      const res = await get('/depots');
+      return res.data || [];
+    }
+  });
 
   const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false);
   const [selectedSupervisorUserId, setSelectedSupervisorUserId] = useState<string | null>(null);
@@ -122,8 +139,8 @@ const SupervisorList: React.FC = () => {
     isError,
     error,
   } = useQuery({
-    queryKey: ["supervisors", currentPage, sortBy, sortOrder, search, activeFilter, recordsPerPage] as const,
-    queryFn: () => fetchSupervisors(currentPage, sortBy, sortOrder, search, activeFilter, recordsPerPage),
+    queryKey: ["supervisors", currentPage, sortBy, sortOrder, search, activeFilter, recordsPerPage, selectedDepotId] as const,
+    queryFn: () => fetchSupervisors(currentPage, sortBy, sortOrder, search, activeFilter, recordsPerPage, selectedDepotId),
     placeholderData: (previousData) => previousData,
   });
 
@@ -243,8 +260,8 @@ const SupervisorList: React.FC = () => {
     setCurrentPage(page);
   };
 
-  const handleRecordsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setRecordsPerPage(Number(e.target.value));
+  const handleRecordsPerPageChange = (value: number) => {
+    setRecordsPerPage(value);
     setCurrentPage(1);
   };
 
@@ -320,6 +337,30 @@ const SupervisorList: React.FC = () => {
                       <SelectItem value="all">All Users</SelectItem>
                       <SelectItem value="true">Active Users</SelectItem>
                       <SelectItem value="false">Inactive Users</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="w-full sm:w-48">
+                  <label className="text-sm font-medium mb-1 block">
+                    Depot
+                  </label>
+                  <Select
+                    value={selectedDepotId}
+                    onValueChange={(value) => {
+                      setSelectedDepotId(value);
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Depots" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Depots</SelectItem>
+                      {depots.map((depot) => (
+                        <SelectItem key={depot.id} value={depot.id.toString()}>
+                          {depot.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -506,8 +547,11 @@ const SupervisorList: React.FC = () => {
                 {totalPages > 1 && (
                   <CustomPagination
                     currentPage={currentPage}
-                    totalPages={totalPages}
+                    totalPages={(apiResponse as ApiResponse)?.totalPages || 0}
+                    totalRecords={(apiResponse as ApiResponse)?.totalRecords || 0}
+                    recordsPerPage={recordsPerPage}
                     onPageChange={handlePageChange}
+                    onRecordsPerPageChange={handleRecordsPerPageChange}
                   />
                 )}
               </div>
