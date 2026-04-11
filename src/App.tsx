@@ -357,7 +357,7 @@ const App = () => {
           </Route>
           {/* Protected Admin Routes with MainLayout */}
           <Route element={<AdminProtectedRoute><MainLayout /></AdminProtectedRoute>}>
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/dashboard/:type?" element={<AdminDashboard />} />
             <Route path="/admin/users" element={<UserList />} />
             <Route path="/admin/variantstock" element={<VarientstockListPage />} />
             <Route path="/admin/users/create" element={<UserForm mode='create' />} />

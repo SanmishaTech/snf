@@ -90,6 +90,18 @@ const initialData = {
   roles: {
     super_admin: {
       projects: [
+        {
+          title: "Indraai Dashboard",
+          url: "/admin/dashboard/indraai",
+          icon: BarChart3,
+          groupLabel: "Dashboards",
+        },
+        {
+          title: "SNF Dashboard",
+          url: "/admin/dashboard/snf",
+          icon: BarChart3,
+          groupLabel: "Dashboards",
+        },
         //master
         {
           title: "Transfers",
@@ -330,6 +342,18 @@ const initialData = {
     admin: {
       projects: [
         {
+          title: "Indraai Dashboard",
+          url: "/admin/dashboard/indraai",
+          icon: BarChart3,
+          groupLabel: "Dashboards",
+        },
+        {
+          title: "SNF Dashboard",
+          url: "/admin/dashboard/snf",
+          icon: BarChart3,
+          groupLabel: "Dashboards",
+        },
+        {
           title: "Master",
           url: "#",
           icon: SquareTerminal,
@@ -437,6 +461,18 @@ const initialData = {
     },
     DepotAdmin: {
       projects: [
+        {
+          title: "Indraai Dashboard",
+          url: "/admin/dashboard/indraai",
+          icon: BarChart3,
+          groupLabel: "Dashboards",
+        },
+        {
+          title: "SNF Dashboard",
+          url: "/admin/dashboard/snf",
+          icon: BarChart3,
+          groupLabel: "Dashboards",
+        },
         {
           title: "POS",
           url: "/admin/pos",
@@ -690,7 +726,7 @@ export const AppSidebar = React.forwardRef<
             >
               <div className="flex items-center gap-2 justify-between">
                 <Link
-                  to="/admin/dashboard"
+                  to="/admin/dashboard/indraai"
                   onClick={() => isMobile && setOpenMobile(false)}
                   className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0"
                 >
