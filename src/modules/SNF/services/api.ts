@@ -113,8 +113,8 @@ export class ProductServiceImpl implements ProductService {
    */
   async getProductVariants(productId: number, depotId: number): Promise<DepotVariant[]> {
     try {
-      // Use the public products endpoint with depotId to get products with variants
-      const url = new URL(`/api/products/public`, this.API_ORIGIN);
+      // Use the dedicated public depot-variants endpoint for a specific product
+      const url = new URL(`/api/public/depot-variants/${productId}`, this.API_ORIGIN);
       url.searchParams.append('depotId', depotId.toString());
 
       const response = await this.fetchWithRetry(url.toString());
@@ -128,34 +128,12 @@ export class ProductServiceImpl implements ProductService {
 
       const result: ApiResponse<any> = await response.json();
 
-      if (!result.success || !result.data) {
+      if (!result.success || !result.data || !Array.isArray(result.data)) {
         return [];
       }
 
-      // Find the specific product and extract its variants
-      let productVariants: any[] = [];
-      let parentProduct: any | null = null;
-
-      if (Array.isArray(result.data)) {
-        // Direct array of products with variants
-        const product = result.data.find((p: any) => p.id === productId);
-        if (product && product.variants && Array.isArray(product.variants)) {
-          parentProduct = product;
-          productVariants = product.variants;
-        }
-      } else if (result.data.products && Array.isArray(result.data.products)) {
-        // Object with products array
-        const product = result.data.products.find((p: any) => p.id === productId);
-        if (product && product.variants && Array.isArray(product.variants)) {
-          parentProduct = product;
-          productVariants = product.variants;
-        }
-      }
-
-      // If no product found, return empty array
-      if (!parentProduct) {
-        return [];
-      }
+      // The endpoint returns transformed variants directly
+      const productVariants = result.data;
 
       // Transform the API response to match our DepotVariant interface
       return productVariants.map((variant: any) => ({
@@ -163,9 +141,9 @@ export class ProductServiceImpl implements ProductService {
         depotId: depotId,
         productId: productId,
         name: variant.name,
-        hsnCode: variant.hsnCode,
+        hsnCode: variant.hsnCode || '',
         minimumQty: variant.minimumQty || 1,
-        closingQty: variant.closingQty || 0,
+        closingQty: variant.closingQty || 100, // Default to in stock if not provided
         notInStock: variant.notInStock || false,
         isHidden: variant.isHidden || false,
         buyOncePrice: variant.buyOncePrice ? parseFloat(variant.buyOncePrice) : undefined,
@@ -173,30 +151,17 @@ export class ProductServiceImpl implements ProductService {
         price1Month: variant.price1Month ? parseFloat(variant.price1Month) : undefined,
         price3Day: variant.price3Day ? parseFloat(variant.price3Day) : undefined,
         price7Day: variant.price7Day ? parseFloat(variant.price7Day) : undefined,
-        mrp: parseFloat(variant.mrp) || 0,
+        mrp: parseFloat(variant.mrp || variant.price) || 0,
         purchasePrice: variant.purchasePrice ? parseFloat(variant.purchasePrice) : undefined,
         createdAt: new Date(variant.createdAt || Date.now()),
         updatedAt: new Date(variant.updatedAt || Date.now()),
-        depot: {
+        depot: variant.depot || {
           id: depotId,
           name: 'Depot',
           address: '',
           isOnline: true,
         },
-        product: parentProduct ? {
-          id: parentProduct.id,
-          name: parentProduct.name,
-          description: parentProduct.description,
-          attachmentUrl: parentProduct.attachmentUrl,
-          url: parentProduct.url,
-          isDairyProduct: parentProduct.isDairyProduct,
-          maintainStock: parentProduct.maintainStock,
-          categoryId: parentProduct.categoryId,
-          category: parentProduct.category,
-          tags: parentProduct.tags,
-          createdAt: new Date(parentProduct.createdAt || Date.now()),
-          updatedAt: new Date(parentProduct.updatedAt || Date.now()),
-        } : {
+        product: variant.product || {
           id: productId,
           name: 'Product',
           description: '',

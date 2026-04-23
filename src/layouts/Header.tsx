@@ -1,11 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Facebook, Instagram, UserCircle, ShoppingBag, LogOut, MapPin, Wallet, ShieldCheck, LogIn as LogInIcon } from 'lucide-react';
+import { Facebook, Instagram, UserCircle, ShoppingBag, LogOut, MapPin, Wallet, ShieldCheck, LogIn as LogInIcon, LocateFixed, Loader2, Check } from 'lucide-react';
 import { get } from '@/services/apiService';
 import { formatCurrency } from '@/lib/formatter';
 import UserChangePasswordDialog from '@/components/common/UserChangePasswordDialog';
 import Sarkotlogo from "@/images/Sarkhot-Natural-Farms-Png.webp"
 import Indraipng from "@/images/WhatsApp Image 2025-06-24 at 18.32.39 (1) (1).png"
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
+import { DeliveryLocationService, DeliveryLocation } from "@/services/deliveryLocationService";
+import { geolocationService } from "@/modules/SNF/services/geolocation";
+import WalletButton from "@/modules/Wallet/Components/Walletmenu";
 
 interface HeaderProps {
   isLoggedIn?: boolean;
@@ -27,6 +33,16 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
   const [isMobileProfileOpen, setIsMobileProfileOpen] = useState(false);
   const accountDropdownTimeoutId = useRef<NodeJS.Timeout | null>(null);
   const mobileProfileRef = useRef<HTMLDivElement>(null);
+
+  // Location state
+  const [isLocationOpen, setIsLocationOpen] = useState(false);
+  const [deliveryLocation, setDeliveryLocation] = useState<DeliveryLocation | null>(() =>
+    DeliveryLocationService.getCurrentLocation()
+  );
+  const [pincode, setPincode] = useState<string>(() => deliveryLocation?.pincode || "");
+  const [locationLoading, setLocationLoading] = useState<"geo" | "pin" | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const isValidPin = /^\d{6}$/.test(pincode);
 
   const navLinks = [
     { name: 'Home', path: '/' },
@@ -91,6 +107,63 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
     }
   }, [isLoggedIn, showWallet]);
 
+  // Initialize delivery location on mount
+  useEffect(() => {
+    const initializeLocation = async () => {
+      await DeliveryLocationService.migrateFromOldPincodeStorage();
+      const currentLocation = DeliveryLocationService.getCurrentLocation();
+      if (currentLocation) {
+        setDeliveryLocation(currentLocation);
+        setPincode(currentLocation.pincode);
+      }
+    };
+    initializeLocation();
+  }, []);
+
+  const applyPincode = async () => {
+    setLocationError(null);
+    setLocationLoading("pin");
+
+    try {
+      const location = await DeliveryLocationService.updateLocationByPincode(pincode);
+      if (location) {
+        setDeliveryLocation(location);
+        setPincode(location.pincode);
+        setIsLocationOpen(false);
+        // Refresh page to apply new depot pricing/stock if needed
+        window.location.reload();
+      } else {
+        setLocationError("We don't deliver here yet!");
+      }
+    } catch (e: any) {
+      setLocationError(e?.message || "Failed to resolve pincode");
+    } finally {
+      setLocationLoading(null);
+    }
+  };
+
+  const useMyLocation = async () => {
+    setLocationError(null);
+    setLocationLoading("geo");
+    try {
+      const data = await geolocationService.requestLocationWithExplanation();
+      const location = await DeliveryLocationService.updateLocationByPincode(data.pincode);
+      if (location) {
+        setDeliveryLocation(location);
+        setPincode(location.pincode);
+        setIsLocationOpen(false);
+        window.location.reload();
+      } else {
+        setPincode(data.pincode);
+        setLocationError("Location not supported");
+      }
+    } catch (e: any) {
+      setLocationError(e?.message || "Unable to get location");
+    } finally {
+      setLocationLoading(null);
+    }
+  };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (mobileProfileRef.current && !mobileProfileRef.current.contains(event.target as Node)) {
@@ -123,6 +196,75 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
                 <a target="_blank" rel="noopener noreferrer" href="https://www.facebook.com/sarkhotnaturalfarms" className="text-gray-500 hover:text-green-600"><Facebook size={18} /></a>
                 <a target="_blank" rel="noopener noreferrer" href="https://www.instagram.com/sarkhotnaturalfarms/" className="text-gray-500 hover:text-amber-600"><Instagram size={18} /></a>
                 <span className="border-l h-6 mx-2"></span>
+
+                <div className="flex items-center space-x-4 mr-4">
+                  {/* Location selector */}
+                  <DropdownMenu open={isLocationOpen} onOpenChange={setIsLocationOpen}>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" aria-label="Select delivery location" className="whitespace-nowrap h-9 border-gray-300">
+                        <MapPin className="size-4 mr-1 text-red-600" />
+                        {deliveryLocation && (deliveryLocation.areaName || deliveryLocation.depotName) ? (
+                          <span className="max-w-[150px] truncate">{deliveryLocation.areaName || deliveryLocation.depotName} ({deliveryLocation.pincode})</span>
+                        ) : pincode ? (
+                          <span>{pincode}</span>
+                        ) : (
+                          <span>Set location</span>
+                        )}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-72 z-[60]">
+                      <DropdownMenuLabel className="flex items-center gap-2">
+                        <MapPin className="size-4" />
+                        Choose delivery location
+                      </DropdownMenuLabel>
+                      <div className="px-2 py-1.5">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            inputMode="numeric"
+                            pattern="\d{6}"
+                            maxLength={6}
+                            placeholder="6-digit pincode"
+                            value={pincode}
+                            onChange={(e) => {
+                              const v = e.target.value.replace(/\D/g, "").slice(0, 6);
+                              setPincode(v);
+                              setLocationError(null);
+                            }}
+                          />
+                          <Button
+                            size="sm"
+                            disabled={!isValidPin || locationLoading === "pin"}
+                            onClick={applyPincode}
+                          >
+                            {locationLoading === "pin" ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+                          </Button>
+                        </div>
+                        {locationError && <p className="text-xs text-destructive mt-1">{locationError}</p>}
+                        {!locationError && pincode && !isValidPin && (
+                          <p className="text-xs text-muted-foreground mt-1">Pincode must be 6 digits</p>
+                        )}
+                      </div>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={useMyLocation}
+                        className="cursor-pointer"
+                        disabled={locationLoading === "geo"}
+                      >
+                        {locationLoading === "geo" ? (
+                          <Loader2 className="size-4 animate-spin" />
+                        ) : (
+                          <LocateFixed className="size-4" />
+                        )}
+                        Use my current location
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  {/* Wallet Button */}
+                  {isLoggedIn && showWallet && (
+                    <WalletButton isLoggedIn={true} />
+                  )}
+                </div>
 
                 {isLoggedIn ? (
                   <div className="flex items-center space-x-4">
@@ -375,6 +517,62 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
                         <MapPin size={18} className="mr-3 text-green-600" />
                         My Address
                       </Link>
+
+                      {/* Mobile Location Selector in Dropdown */}
+                      <div className="mt-2 pt-2 border-t border-gray-100">
+                        <div className="flex items-center justify-between px-3 py-1">
+                          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Delivery Area</span>
+                          {deliveryLocation && (
+                            <span className="text-[10px] font-medium text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
+                              {deliveryLocation.areaName || deliveryLocation.pincode}
+                            </span>
+                          )}
+                        </div>
+                        <div className="px-3 py-2 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Input
+                              inputMode="numeric"
+                              pattern="\d{6}"
+                              maxLength={6}
+                              placeholder="Enter Pincode"
+                              value={pincode}
+                              onChange={(e) => setPincode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                              className="h-9 text-sm border-gray-200"
+                            />
+                            <Button 
+                              size="sm" 
+                              className="h-9 w-9 p-0 flex-shrink-0"
+                              disabled={!isValidPin || locationLoading === "pin"}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                applyPincode();
+                              }}
+                            >
+                              {locationLoading === "pin" ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+                            </Button>
+                          </div>
+                          
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              useMyLocation();
+                            }}
+                            disabled={locationLoading === "geo"}
+                            className="flex items-center justify-center w-full py-2 text-xs font-medium text-green-700 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
+                          >
+                            {locationLoading === "geo" ? (
+                              <Loader2 size={14} className="mr-2 animate-spin" />
+                            ) : (
+                              <LocateFixed size={14} className="mr-2" />
+                            )}
+                            Use Current Location
+                          </button>
+                          
+                          {locationError && (
+                            <p className="text-[10px] text-destructive text-center mt-1">{locationError}</p>
+                          )}
+                        </div>
+                      </div>
                     </>
                   )}
                   <button
