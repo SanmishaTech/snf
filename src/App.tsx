@@ -449,6 +449,7 @@ const App = () => {
             <Route path="/member/addresses/edit/:id" element={<EditAddressPage />} />
             <Route path="/member/subscriptions" element={<MySubscriptionsPage />} />
             <Route path="/manage-subscription/:id" element={<ManageSubscriptionPage />} />
+            <Route path="/member/profile" element={<MemberProfilePage />} />
             {/* Delivery Partner App route using the MemberLayout minimally or its own layout */}
             <Route path="/delivery-app/dashboard" element={<DeliveryPartnerDashboard />} />
           </Route>

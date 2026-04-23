@@ -208,7 +208,7 @@ const DepotProductVariantListPage: React.FC = () => {
         <div className="bg-white p-8 rounded-xl shadow-lg">
           <div className="mb-8 flex flex-col gap-4">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-              Depot Product Variants
+              Depot/Shop Product Variants
             </h1>
             <div className="flex flex-col md:flex-row gap-4 items-center">
               <div className="relative w-full flex-1">
@@ -315,7 +315,7 @@ const DepotProductVariantListPage: React.FC = () => {
               <TableHeader>
                 <TableRow className="bg-gray-100">
                   {[
-                    "Depot",
+                    "Depot/Shop",
                     "Product",
                     "Name",
                     "Closing Qty",

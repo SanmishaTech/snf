@@ -1,28 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { get, post, put } from '../../services/apiService';
+import { post, put } from '../../services/apiService';
 import { Button } from '@/components/ui/button';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Loader2, PlusCircle, Save } from 'lucide-react';
 
 // Define the Zod schema for validation
 const depotBaseSchema = z.object({
-  name: z.string().min(1, 'Depot name is required').max(100, 'Name must be 100 characters or less'),
+  name: z.string().min(1, 'Depot/Shop name is required').max(100, 'Name must be 100 characters or less'),
   address: z.string().min(1, 'Address is required').max(255, 'Address must be 255 characters or less'),
   city: z.string().min(1, 'City is required').max(255, 'City must be 255 characters or less'),
   contactPerson: z.string().max(100, 'Contact person must be 100 characters or less').optional().or(z.literal('')),
@@ -103,10 +96,10 @@ const DepotMasterForm: React.FC<DepotMasterFormProps> = ({ isOpen, onClose, onSu
         const { userFullName, userLoginEmail, userPassword, ...depotPayload } = data as any;
         console.log('Payload for PUT request:', depotPayload);
         await put(`/admin/depots/${initialData.id}`, depotPayload);
-        toast.success('Depot updated successfully.');
+        toast.success('Depot/Shop updated successfully.');
       } else {
         await post('/admin/depots', data);
-        toast.success('Depot created successfully.');
+        toast.success('Depot/Shop created successfully.');
       }
       onSubmitSuccess();
       onClose();
@@ -122,14 +115,14 @@ const DepotMasterForm: React.FC<DepotMasterFormProps> = ({ isOpen, onClose, onSu
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-lg h-[550px] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{initialData?.id ? 'Edit Depot' : 'Add New Depot'}</DialogTitle>
+          <DialogTitle>{initialData?.id ? 'Edit Depot/Shop' : 'Add New Depot/Shop'}</DialogTitle>
           <DialogDescription>
-            {initialData?.id ? 'Update the details of this depot.' : 'Fill in the form below to create a new depot.'}
+            {initialData?.id ? 'Update the details of this depot/shop.' : 'Fill in the form below to create a new depot/shop.'}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="grid gap-6 py-4">
           <div className="grid gap-2">
-            <Label htmlFor="name">Depot Name <span className="text-red-500">*</span></Label>
+            <Label htmlFor="name">Depot/Shop Name <span className="text-red-500">*</span></Label>
             <Input id="name" {...register('name')} placeholder="e.g. Central Warehouse" />
             {errors.name && <p className="text-sm text-red-600 mt-1">{errors.name.message}</p>}
           </div>
@@ -167,7 +160,7 @@ const DepotMasterForm: React.FC<DepotMasterFormProps> = ({ isOpen, onClose, onSu
               )}
             />
             <Label htmlFor="isOnline" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-              Depot is Online
+              Depot/Shop is Online
             </Label>
           </div>
 
@@ -205,7 +198,7 @@ const DepotMasterForm: React.FC<DepotMasterFormProps> = ({ isOpen, onClose, onSu
               ) : (
                 <PlusCircle className="h-4 w-4" />
               )}
-              {isSubmitting ? (initialData?.id ? 'Saving...' : 'Creating...') : (initialData?.id ? 'Save Changes' : 'Create Depot')}
+              {isSubmitting ? (initialData?.id ? 'Saving...' : 'Creating...') : (initialData?.id ? 'Save Changes' : 'Create Depot/Shop')}
             </Button>
           </DialogFooter>
         </form>

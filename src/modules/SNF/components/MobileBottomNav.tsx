@@ -257,6 +257,9 @@ export const MobileBottomNav: React.FC = () => {
                 <DropdownMenuLabel>Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
+                  <a href="/member/profile" className="w-full">Edit Profile</a>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <a href="/snf/addresses" className="w-full">Address</a>
                 </DropdownMenuItem>
               </DropdownMenuContent>

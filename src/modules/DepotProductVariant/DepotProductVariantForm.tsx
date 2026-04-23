@@ -146,13 +146,13 @@ const DepotProductVariantForm: React.FC<Props> = ({ initialData, onClose, onSucc
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="grid gap-2">
-        <Label htmlFor="depotId">Depot</Label>
+        <Label htmlFor="depotId">Depot/Shop</Label>
         <Select
           value={watch('depotId') ? String(watch('depotId')) : undefined}
           onValueChange={(val) => setValue('depotId', Number(val), { shouldValidate: true })}
         >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select depot (Optional for Admin)" />
+            <SelectValue placeholder="Select depot/shop (Optional for Admin)" />
           </SelectTrigger>
           <SelectContent>
             {depotOptions.map((d) => (

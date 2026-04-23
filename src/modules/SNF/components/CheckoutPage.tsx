@@ -493,36 +493,6 @@ const CheckoutPage: React.FC = () => {
                   onAddressSelect={setSelectedAddress}
                 />
 
-                {selectedAddress && (
-                  <Card className="border-green-200 bg-green-50/30">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium text-green-800">
-                        Selected Delivery Address
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-sm">
-                      <div className="space-y-1">
-                        <p className="font-medium">{selectedAddress.recipientName}</p>
-                        <p className="text-muted-foreground">
-                          {selectedAddress.plotBuilding}
-                          {selectedAddress.plotBuilding && selectedAddress.streetArea ? ", " : ""}
-                          {selectedAddress.streetArea}
-                        </p>
-                        {selectedAddress.landmark && (
-                          <p className="text-muted-foreground text-xs">
-                            Landmark: {selectedAddress.landmark}
-                          </p>
-                        )}
-                        <p className="text-muted-foreground">
-                          {selectedAddress.city}, {selectedAddress.state} - {selectedAddress.pincode}
-                        </p>
-                        <p className="text-muted-foreground text-xs">
-                          Mobile: {selectedAddress.mobile}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
 
                 <Card>
                   <CardHeader className="pb-2">
@@ -694,11 +664,11 @@ const CheckoutPage: React.FC = () => {
                           const d = Math.max(0, Math.min(walletBalance || 0, availableSubtotal));
                           const remaining = Math.max(0, availableSubtotal - d);
                           if (d > 0 && remaining > 0) {
-                            return `₹${d.toFixed(2)} will be deducted from your wallet. Remaining ₹${remaining.toFixed(2)} ${
+                            return `₹${d.toFixed(2)} will be utilized from your wallet. Remaining ₹${remaining.toFixed(2)} ${
                               paymentMode === 'ONLINE' ? 'to be paid via PhonePe.' : 'to be collected via Cash/UPI before delivery.'
                             }`;
                           } else if (d >= availableSubtotal && availableSubtotal > 0) {
-                            return `Full amount of ₹${availableSubtotal.toFixed(2)} will be deducted from your wallet.`;
+                            return `Full amount of ₹${availableSubtotal.toFixed(2)} will be utilized from your wallet.`;
                           } else {
                             return `No wallet balance applied.`;
                           }

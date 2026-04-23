@@ -11,6 +11,8 @@ import { CartDropdown } from "./CartDropdown";
 import WalletButton from "@/modules/Wallet/Components/Walletmenu";
 import { clearAuthData } from "@/utils/auth";
 
+import Sarkotlogo from "@/images/Sarkhot-Natural-Farms-Png.webp";
+
 interface HeaderProps {
   cartCount: number;
   onSearch: (q: string) => void;
@@ -51,7 +53,7 @@ export const Header: React.FC<HeaderProps> = (_props) => {
         setDeliveryLocation(currentLocation);
         setPincode(currentLocation.pincode);
       }
-      
+
       const userStr = localStorage.getItem("user");
       if (userStr) {
         try {
@@ -182,10 +184,11 @@ export const Header: React.FC<HeaderProps> = (_props) => {
       <div className="container mx-auto px-3 md:px-6 lg:px-8">
         <div className="h-14 md:h-16 flex items-center justify-between gap-2 md:gap-3 min-w-0">
           <a href="/snf" className="flex items-center gap-2 min-w-0" aria-label="SNF Home">
-            <div className="size-8 rounded-md bg-primary text-primary-foreground grid place-items-center font-bold shrink-0">
-              S
-            </div>
-            <span className="hidden sm:inline text-base md:text-lg font-semibold tracking-tight truncate">SNF Market</span>
+            <img
+              src={Sarkotlogo}
+              alt="Sarkhot Natural Farms Logo"
+              className="h-8 w-auto object-contain shrink-0"
+            />
           </a>
 
           <div className="flex items-center gap-1.5 md:gap-2 shrink-0 ml-auto">
@@ -309,18 +312,25 @@ export const Header: React.FC<HeaderProps> = (_props) => {
                 ) : (
                   <DropdownMenuLabel>Account</DropdownMenuLabel>
                 )}
-                
+
                 <DropdownMenuSeparator className="my-1" />
-                
+
+                <DropdownMenuItem asChild>
+                  <a href="/member/profile" className="flex items-center gap-2 w-full cursor-pointer py-2 px-2 hover:bg-accent rounded-sm">
+                    <User className="size-4 text-muted-foreground" />
+                    <span>Edit Profile</span>
+                  </a>
+                </DropdownMenuItem>
+
                 <DropdownMenuItem asChild>
                   <a href="/snf/addresses" className="flex items-center gap-2 w-full cursor-pointer py-2 px-2 hover:bg-accent rounded-sm">
                     <MapPin className="size-4 text-muted-foreground" />
                     <span>Manage Addresses</span>
                   </a>
                 </DropdownMenuItem>
-                
+
                 <DropdownMenuSeparator className="my-1" />
-                
+
                 {isAuthenticated ? (
                   <DropdownMenuItem
                     onClick={handleLogout}

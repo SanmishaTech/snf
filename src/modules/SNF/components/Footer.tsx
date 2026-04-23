@@ -1,4 +1,4 @@
-import React from "react";
+import Sarkotlogo from "@/images/Sarkhot-Natural-Farms-Png.webp";
 
 export const Footer: React.FC = () => {
   return (
@@ -7,10 +7,11 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-x-8 gap-y-10">
           <div className="md:col-span-12 lg:col-span-4">
             <div className="mb-6 flex items-center">
-              <span className="inline-grid place-items-center h-10 w-10 rounded bg-primary text-primary-foreground mr-3 font-bold">
-                S
-              </span>
-              <span className="text-xl font-bold">SNF Market</span>
+              <img
+                src={Sarkotlogo}
+                alt="Sarkhot Natural Farms Logo"
+                className="h-10 w-auto object-contain mr-3"
+              />
             </div>
 
             {/* Removed extra navigation icons that duplicated mobile nav */}

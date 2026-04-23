@@ -307,7 +307,7 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Update Payment for Order: {order.orderNo}</DialogTitle>
           <DialogDescription>
@@ -315,143 +315,157 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-6 py-4">
+        <div className="grid gap-4 sm:gap-6 py-2 sm:py-4">
           <fieldset
             disabled={isPaymentSectionDisabled}
-            className="grid gap-4 border p-4 rounded-md"
+            className="grid gap-4 border p-3 sm:p-5 rounded-md bg-gray-50/50"
           >
-            <legend className="text-sm font-medium px-1">
+            <legend className="text-xs sm:text-sm font-semibold px-2 bg-background border rounded-full">
               Payment Information{" "}
-              {isPaymentSectionDisabled
-                ? `(Status: ${order.paymentStatus} - Disabled)`
-                : ""}
+              {isPaymentSectionDisabled ? `(Status: ${order.paymentStatus})` : ""}
             </legend>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="paymentMode" className="text-right col-span-1">
-                Payment Mode <span className="text-red-500">*</span>
-              </Label>
-              <Select
-                value={paymentMode}
-                onValueChange={(value) => setPaymentMode(value)}
-                disabled={isPaymentSectionDisabled}
-              >
-                <SelectTrigger id="paymentMode" className="col-span-3 mt-1">
-                  <SelectValue placeholder="Select payment mode" />
-                </SelectTrigger>
-                <SelectContent>
-                  {paymentModeOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label
-                htmlFor="payment-reference"
-                className="text-right col-span-1"
-              >
-                Reference #
-              </Label>
-              <Input
-                id="payment-reference"
-                value={paymentReference}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setPaymentReference(e.target.value)
-                }
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="payment-date" className="text-right col-span-1">
-                Payment Date
-              </Label>
-              <Input
-                type="date"
-                id="payment-date"
-                value={paymentDate}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setPaymentDate(e.target.value)
-                }
-                className="col-span-3"
-              />
-            </div>
-            {/* Add this section after the "Payment Date" input */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="payable-amount" className="text-right col-span-1">
-                Payable Amount
-              </Label>
-              <div className="col-span-3 flex items-center gap-2">
-                <IndianRupeeIcon className="h-4 w-4 text-gray-500" />
-                <span id="payable-amount" className="font-semibold">
-                  {payableAmount}
-                </span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label
-                htmlFor="received-amount"
-                className="text-right col-span-1"
-              >
-                Received Amount <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="received-amount"
-                type="number"
-                value={receivedAmount}
-                onChange={(e) => setReceivedAmount(e.target.value)}
-                className="col-span-3"
-                placeholder="Enter amount received"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label
-                className="text-right col-span-1"
-                htmlFor="payment-status-modal"
-              >
-                Status <span className="text-red-500">*</span>
-              </Label>
-              <div className="col-span-3 flex flex-col gap-1">
+            
+            {/* Dynamic Grid for Fields */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 mt-2">
+              
+              {/* Payment Mode */}
+              <div className="space-y-1.5">
+                <Label htmlFor="paymentMode" className="text-sm font-medium">
+                  Payment Mode <span className="text-red-500">*</span>
+                </Label>
                 <Select
-                  value={paymentStatusState}
-                  onValueChange={(value) => {
-                    setPaymentStatusState(value);
-                    if (value) {
-                      const newErrors = { ...formErrors };
-                      delete newErrors.paymentStatus;
-                      setFormErrors(newErrors);
-                    }
-                  }}
+                  value={paymentMode}
+                  onValueChange={(value) => setPaymentMode(value)}
+                  disabled={isPaymentSectionDisabled}
                 >
-                  <SelectTrigger
-                    id="payment-status-modal"
-                    className={formErrors.paymentStatus ? "border-red-500" : ""}
-                  >
-                    <SelectValue placeholder="Select status" />
+                  <SelectTrigger id="paymentMode" className="w-full">
+                    <SelectValue placeholder="Select mode" />
                   </SelectTrigger>
                   <SelectContent>
-                    {/* <SelectItem value="PENDING">Pending</SelectItem> */}
-                    <SelectItem value="PAID">Paid</SelectItem>
-                    <SelectItem value="FAILED">Failed</SelectItem>
+                    {paymentModeOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-                {formErrors.paymentStatus && (
-                  <p className="text-xs text-red-500">
-                    {formErrors.paymentStatus}
-                  </p>
-                )}
               </div>
+
+              {/* Status */}
+              <div className="space-y-1.5">
+                <Label htmlFor="payment-status-modal" className="text-sm font-medium">
+                  Status <span className="text-red-500">*</span>
+                </Label>
+                <div className="flex flex-col gap-1.5">
+                  <Select
+                    value={paymentStatusState}
+                    onValueChange={(value) => {
+                      setPaymentStatusState(value);
+                      if (value) {
+                        const newErrors = { ...formErrors };
+                        delete newErrors.paymentStatus;
+                        setFormErrors(newErrors);
+                      }
+                    }}
+                  >
+                    <SelectTrigger
+                      id="payment-status-modal"
+                      className={formErrors.paymentStatus ? "border-red-500" : ""}
+                    >
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="PAID">Paid</SelectItem>
+                      <SelectItem value="FAILED">Failed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {formErrors.paymentStatus && (
+                    <p className="text-xs text-red-500 font-medium">
+                      {formErrors.paymentStatus}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Reference # - Full width on desktop */}
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="payment-reference" className="text-sm font-medium">
+                  Reference #
+                </Label>
+                <Input
+                  id="payment-reference"
+                  value={paymentReference}
+                  onChange={(e) => setPaymentReference(e.target.value)}
+                  className="w-full"
+                  placeholder="Transaction ID / Check #"
+                />
+              </div>
+
+              {/* Payment Date */}
+              <div className="space-y-1.5">
+                <Label htmlFor="payment-date" className="text-sm font-medium">
+                  Payment Date
+                </Label>
+                <Input
+                  type="date"
+                  id="payment-date"
+                  value={paymentDate}
+                  onChange={(e) => setPaymentDate(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+
+              {/* Empty space for alignment on desktop if needed, or we can leave it to stack */}
+              <div className="hidden sm:block"></div>
+
+              {/* Payable Amount */}
+              <div className="space-y-1.5">
+                <Label htmlFor="payable-amount" className="text-sm font-medium">
+                  Payable Amount
+                </Label>
+                <div className="flex items-center gap-2 px-3 py-2 bg-white border rounded-md h-10">
+                  <IndianRupeeIcon className="h-4 w-4 text-gray-500" />
+                  <span id="payable-amount" className="font-bold text-base">
+                    {payableAmount}
+                  </span>
+                </div>
+              </div>
+
+              {/* Received Amount */}
+              <div className="space-y-1.5">
+                <Label htmlFor="received-amount" className="text-sm font-medium">
+                  Received Amount <span className="text-red-500">*</span>
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="received-amount"
+                    type="number"
+                    value={receivedAmount}
+                    onChange={(e) => setReceivedAmount(e.target.value)}
+                    className="w-full pl-8 h-10"
+                    placeholder="0.00"
+                  />
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">₹</span>
+                </div>
+              </div>
+
             </div>
           </fieldset>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0 pt-4">
+          <Button 
+            variant="outline" 
+            onClick={() => onOpenChange(false)}
+            className="w-full sm:w-auto order-2 sm:order-1"
+          >
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isPaymentSectionDisabled}>
+          <Button 
+            onClick={handleSubmit} 
+            disabled={isPaymentSectionDisabled}
+            className="w-full sm:w-auto order-1 sm:order-2"
+          >
             Save Changes
           </Button>
         </DialogFooter>

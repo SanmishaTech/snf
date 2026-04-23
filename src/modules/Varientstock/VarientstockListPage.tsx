@@ -104,7 +104,7 @@ const VarientstockListPage: React.FC = () => {
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Variant Stock</h1>
             <p className="text-sm text-gray-500 mt-1">
-              {totalItems} variants across {depots.length} depots
+              {totalItems} variants across {depots.length} depots/shops
             </p>
           </div>
           
@@ -142,7 +142,7 @@ const VarientstockListPage: React.FC = () => {
                   {isDepotLoading ? (
                     <Skeleton className="h-5 w-full" />
                   ) : (
-                    <SelectValue placeholder="Select depot" />
+                    <SelectValue placeholder="Select depot/shop" />
                   )}
                 </SelectTrigger>
                 <SelectContent>
@@ -204,7 +204,7 @@ const VarientstockListPage: React.FC = () => {
                       <Search size={36} className="text-gray-400" />
                       <h3 className="font-medium text-gray-700">No stock records found</h3>
                       <p className="text-sm text-gray-500">
-                        Try changing your search or depot selection
+                        Try changing your search or depot/shop selection
                       </p>
                     </div>
                   </TableCell>
@@ -246,7 +246,7 @@ const VarientstockListPage: React.FC = () => {
                   return (
                     <Button
                       key={pageNum}
-                      variant={currentPage === pageNum ? "solid" : "ghost"}
+                      variant={currentPage === pageNum ? "default" : "ghost"}
                       size="sm"
                       onClick={() => setCurrentPage(pageNum)}
                       disabled={isLoading}

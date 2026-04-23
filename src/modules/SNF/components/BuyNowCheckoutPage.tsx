@@ -536,9 +536,9 @@ const BuyNowCheckoutPage: React.FC = () => {
                         const remaining = Math.max(0, amountAfterCoupon - d);
 
                         if (d > 0 && remaining > 0) {
-                          return `₹${d.toFixed(2)} will be deducted from your wallet. Remaining ₹${remaining.toFixed(2)} to be collected via Cash/UPI.`;
+                          return `₹${d.toFixed(2)} will be utilized from your wallet. Remaining ₹${remaining.toFixed(2)} to be collected via Cash/UPI.`;
                         } else if (d >= amountAfterCoupon && amountAfterCoupon > 0) {
-                          return `Full amount of ₹${amountAfterCoupon.toFixed(2)} will be deducted from your wallet.`;
+                          return `Full amount of ₹${amountAfterCoupon.toFixed(2)} will be utilized from your wallet.`;
                         } else if (couponDiscountAmount > 0 && d === 0) {
                            return `₹${remaining.toFixed(2)} to be collected via Cash/UPI. Total savings: ₹${couponDiscountAmount.toFixed(2)}.`;
                         } else {

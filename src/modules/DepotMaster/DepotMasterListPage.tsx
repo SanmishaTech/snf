@@ -186,12 +186,12 @@ const DepotMasterListPage: React.FC = () => {
       <Card className="border-0 shadow-sm">
         <CardHeader className="px-6 py-4 border-b">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <CardTitle className="text-2xl font-semibold">Depot Management</CardTitle>
+            <CardTitle className="text-2xl font-semibold">Depot/Shop Management</CardTitle>
             <div className="flex items-center space-x-2 w-full sm:w-auto">
               <div className="relative flex-grow sm:flex-grow-0">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search depots..."
+                  placeholder="Search depots/shops..."
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
@@ -201,7 +201,7 @@ const DepotMasterListPage: React.FC = () => {
                 />
               </div>
               <Button onClick={handleAdd} className="gap-2 whitespace-nowrap">
-                <PlusCircle className="h-4 w-4" /> Add Depot
+                <PlusCircle className="h-4 w-4" /> Add Depot/Shop
               </Button>
             </div>
           </div>
@@ -220,16 +220,16 @@ const DepotMasterListPage: React.FC = () => {
                 <Search className="h-10 w-10 text-slate-500 dark:text-slate-400" />
               </div>
               <h3 className="text-xl font-semibold mb-2">
-                {searchTerm ? 'No Matching Depots Found' : 'No Depots Yet'}
+                {searchTerm ? 'No Matching Depots/Shops Found' : 'No Depots/Shops Yet'}
               </h3>
               <p className="text-muted-foreground max-w-md mb-6">
                 {searchTerm
-                  ? 'Try adjusting your search criteria or add a new depot.'
-                  : 'Get started by adding your first depot. It’s quick and easy!'}
+                  ? 'Try adjusting your search criteria or add a new depot/shop.'
+                  : 'Get started by adding your first depot/shop. It’s quick and easy!'}
               </p>
               {!searchTerm && (
                 <Button onClick={handleAdd} className="gap-2">
-                  <PlusCircle className="h-4 w-4" /> Add New Depot
+                  <PlusCircle className="h-4 w-4" /> Add New Depot/Shop
                 </Button>
               )}
             </div>
@@ -341,7 +341,7 @@ const DepotMasterListPage: React.FC = () => {
                   onClick={handleDelete}
                   className="bg-red-600 hover:bg-red-700 text-white dark:bg-red-700 dark:hover:bg-red-800"
                 >
-                  Delete Depot
+                  Delete Depot/Shop
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

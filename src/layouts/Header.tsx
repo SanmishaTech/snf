@@ -197,6 +197,7 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
 
                         {userRole !== 'DELIVERY_PARTNER' && (
                           <>
+                            <Link to="/member/profile" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50"><UserCircle size={16} className="mr-2" />Edit Profile</Link>
                             <Link to="/member/subscriptions" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50"><ShoppingBag size={16} className="mr-2" />My Subscriptions</Link>
                             {showWallet && (
                               <Link to="/member/wallet" className="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-green-50">
@@ -333,6 +334,14 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, userName, onLogout, showWal
 
                   {userRole !== 'DELIVERY_PARTNER' && (
                     <>
+                      <Link 
+                        to="/member/profile" 
+                        className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-green-50 transition-colors"
+                        onClick={() => setIsMobileProfileOpen(false)}
+                      >
+                        <UserCircle size={18} className="mr-3 text-green-600" />
+                        Edit Profile
+                      </Link>
                       <Link 
                         to="/member/subscriptions" 
                         className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-green-50 transition-colors"

@@ -116,7 +116,7 @@ const initialData = {
           groupLabel: "Master",
         },
         {
-          title: "Depot Varients",
+          title: "Depot/Shop Variants",
           url: "/admin/depot-variants",
           icon: FileText,
           groupLabel: "Master",
@@ -141,7 +141,7 @@ const initialData = {
         },
 
         {
-          title: "Depots",
+          title: "Depot/Shop",
           url: "/admin/depots",
           icon: FileText,
           groupLabel: "Master",
@@ -483,19 +483,19 @@ const initialData = {
           title: "Purchases",
           url: "/admin/purchases",
           icon: FileText,
-          groupLabel: "Depot",
+          groupLabel: "Depot/Shop",
         },
         {
           title: "Wastage",
           url: "/admin/wastages",
           icon: FileText,
-          groupLabel: "Depot",
+          groupLabel: "Depot/Shop",
         },
         {
-          title: "Depot Variants",
+          title: "Depot/Shop Variants",
           url: "/admin/depot-variants",
           icon: FileText,
-          groupLabel: "Depot",
+          groupLabel: "Depot/Shop",
         },
         {
           title: "Setup Partners",
@@ -513,7 +513,7 @@ const initialData = {
           title: "Transfers",
           url: "/admin/transfers",
           icon: FileText,
-          groupLabel: "Depot",
+          groupLabel: "Depot/Shop",
         },
       ],
       navMain: [] as SidebarProject[],

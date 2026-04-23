@@ -429,8 +429,8 @@ export function AdminDashboard() {
             </div>
 
 
-            {/* Expiring Subscriptions and Stock Alerts Side by Side */}
-            <div className={`grid gap-6 ${type === 'snf' ? 'grid-cols-1' : 'lg:grid-cols-2'}`}>
+            {/* Expiring Subscriptions and Stock Alerts Stacked */}
+            <div className="grid grid-cols-1 gap-6">
               {/* Expiring Subscriptions Table */}
               {type !== 'snf' && (
                 <Card className="overflow-hidden flex flex-col">
