@@ -197,8 +197,8 @@ export const Header: React.FC<HeaderProps> = (_props) => {
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" aria-label="Select delivery location" className="whitespace-nowrap">
                   <MapPin className="size-4" />
-                  {deliveryLocation && deliveryLocation.depotName ? (
-                    <span className="hidden sm:inline">{deliveryLocation.pincode} • {deliveryLocation.depotName}</span>
+                  {deliveryLocation && (deliveryLocation.areaName || deliveryLocation.depotName) ? (
+                    <span className="hidden sm:inline">{deliveryLocation.pincode} • {deliveryLocation.areaName || deliveryLocation.depotName}</span>
                   ) : pincode ? (
                     <span className="hidden sm:inline">Pincode: {pincode}</span>
                   ) : (

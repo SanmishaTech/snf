@@ -20,6 +20,8 @@ export class GeolocationServiceImpl implements GeolocationService {
 
   private readonly GEOCODING_API_URL = 'https://api.opencagedata.com/geocode/v1/json';
   private readonly GEOCODING_API_KEY = import.meta.env.VITE_GEOCODING_API_KEY || '';
+  private readonly GOOGLE_MAPS_API_URL = 'https://maps.googleapis.com/maps/api/geocode/json';
+  private readonly GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 
   // Fallback pincode mappings for known areas when API is not available
   private readonly KNOWN_AREA_PINCODES: { [key: string]: string } = {
@@ -53,7 +55,7 @@ export class GeolocationServiceImpl implements GeolocationService {
     try {
       // Check if Permissions API is available
       if ('permissions' in navigator) {
-        const permission = await navigator.permissions.query({ name: 'geolocation' });
+        const permission = await navigator.permissions.query({ name: 'geolocation' } as any);
         return permission.state;
       }
 
@@ -80,7 +82,7 @@ export class GeolocationServiceImpl implements GeolocationService {
     try {
       // Check if Permissions API is available
       if ('permissions' in navigator) {
-        const permission = await navigator.permissions.query({ name: 'geolocation' });
+        const permission = await navigator.permissions.query({ name: 'geolocation' } as any);
         return permission.state;
       }
 
@@ -187,70 +189,92 @@ export class GeolocationServiceImpl implements GeolocationService {
    */
   private async reverseGeocode(latitude: number, longitude: number): Promise<LocationData> {
     try {
-      if (!this.GEOCODING_API_KEY) {
-        console.warn('GEOCODING_API_KEY not configured. Using fallback pincode mapping.');
-        // Better fallback for known areas
-        const pincode = this.generateMockPincode(latitude, longitude);
-        let city = 'Unknown';
-        let state = 'Maharashtra';
-        let address = 'Unknown Address';
+      // 1. Try Google Maps first if key is available
+      if (this.GOOGLE_MAPS_API_KEY) {
+        try {
+          const url = `${this.GOOGLE_MAPS_API_URL}?latlng=${latitude},${longitude}&key=${this.GOOGLE_MAPS_API_KEY}`;
+          const response = await fetch(url);
+          const data = await response.json();
 
-        // Set proper city/state for known pincodes
-        if (pincode === '421202' || pincode === '421201' || pincode === '421203') {
-          city = 'Dombivli';
-          address = 'Dombivli, Thane';
-        } else if (pincode === '421301') {
-          city = 'Kalyan';
-          address = 'Kalyan, Thane';
-        } else if (pincode.startsWith('400')) {
-          city = 'Mumbai';
-          address = 'Mumbai';
+          if (data.status === 'OK' && data.results.length > 0) {
+            const result = data.results[0];
+            const components = result.address_components;
+
+            const pincode = components.find((c: any) => c.types.includes('postal_code'))?.long_name;
+            const city = components.find((c: any) => c.types.includes('locality'))?.long_name || 
+                        components.find((c: any) => c.types.includes('administrative_area_level_2'))?.long_name || 'Unknown';
+            const state = components.find((c: any) => c.types.includes('administrative_area_level_1'))?.long_name || 'Unknown';
+            const country = components.find((c: any) => c.types.includes('country'))?.long_name || 'India';
+
+            return {
+              latitude,
+              longitude,
+              pincode: pincode || this.generateMockPincode(latitude, longitude),
+              city,
+              state,
+              country,
+              address: result.formatted_address || 'Unknown Address',
+            };
+          }
+        } catch (googleError) {
+          console.warn('Google Maps reverse geocoding failed, falling back to OpenCage:', googleError);
         }
-
-        return {
-          latitude,
-          longitude,
-          pincode,
-          city,
-          state,
-          country: 'India',
-          address,
-        };
       }
 
-      const url = new URL(this.GEOCODING_API_URL);
-      url.searchParams.append('q', `${latitude}+${longitude}`);
-      url.searchParams.append('key', this.GEOCODING_API_KEY);
-      url.searchParams.append('limit', '1');
+      // 2. Fallback to OpenCage if Google Maps fails or key is missing
+      if (this.GEOCODING_API_KEY) {
+        const url = new URL(this.GEOCODING_API_URL);
+        url.searchParams.append('q', `${latitude}+${longitude}`);
+        url.searchParams.append('key', this.GEOCODING_API_KEY);
+        url.searchParams.append('limit', '1');
 
-      const response = await fetch(url.toString());
-
-      if (!response.ok) {
-        throw new Error(`Geocoding API request failed: ${response.status}`);
+        const response = await fetch(url.toString());
+        if (response.ok) {
+          const data = await response.json();
+          if (data.results && data.results.length > 0) {
+            const result = data.results[0];
+            const components = result.components;
+            return {
+              latitude,
+              longitude,
+              pincode: components.postcode || this.generateMockPincode(latitude, longitude),
+              city: components.city || components.town || components.village || 'Unknown',
+              state: components.state || 'Unknown',
+              country: components.country || 'India',
+              address: result.formatted || 'Unknown Address',
+            };
+          }
+        }
       }
 
-      const data = await response.json();
+      // 3. Last resort fallback
+      console.warn('No Geocoding API available. Using fallback pincode mapping.');
+      const pincode = this.generateMockPincode(latitude, longitude);
+      let city = 'Unknown';
+      let address = 'Unknown Address';
 
-      if (data.results.length === 0) {
-        throw new Error('No results found for the given coordinates');
+      if (pincode === '421202' || pincode === '421201' || pincode === '421203') {
+        city = 'Dombivli';
+        address = 'Dombivli, Thane';
+      } else if (pincode === '421301') {
+        city = 'Kalyan';
+        address = 'Kalyan, Thane';
+      } else if (pincode.startsWith('400')) {
+        city = 'Mumbai';
+        address = 'Mumbai';
       }
-
-      const result = data.results[0];
-      const components = result.components;
 
       return {
         latitude,
         longitude,
-        pincode: components.postcode || this.generateMockPincode(latitude, longitude),
-        city: components.city || components.town || components.village || 'Unknown',
-        state: components.state || 'Unknown',
-        country: components.country || 'India',
-        address: result.formatted || 'Unknown Address',
+        pincode,
+        city,
+        state: 'Maharashtra',
+        country: 'India',
+        address,
       };
     } catch (error) {
-      console.warn('Reverse geocoding failed, using fallback:', error);
-
-      // Fallback to basic location data
+      console.warn('Reverse geocoding completely failed:', error);
       return {
         latitude,
         longitude,
@@ -298,9 +322,6 @@ export class GeolocationServiceImpl implements GeolocationService {
     return pincode;
   }
 
-  /**
-   * Get position from pincode (forward geocoding)
-   */
   async getPositionFromPincode(pincode: string): Promise<LocationData> {
     if (!pincode || !/^\d{6}$/.test(pincode)) {
       throw {
@@ -311,109 +332,123 @@ export class GeolocationServiceImpl implements GeolocationService {
     }
 
     try {
-      if (!this.GEOCODING_API_KEY) {
-        console.warn('GEOCODING_API_KEY not configured. Using fallback for known pincodes.');
+      // 1. Try Google Maps first if key is available
+      if (this.GOOGLE_MAPS_API_KEY) {
+        try {
+          const url = `${this.GOOGLE_MAPS_API_URL}?address=${pincode}&components=country:IN&key=${this.GOOGLE_MAPS_API_KEY}`;
+          const response = await fetch(url);
+          const data = await response.json();
 
-        // Known pincode mappings for accurate location data
-        const knownPincodes: { [key: string]: LocationData } = {
-          '421202': {
-            latitude: 19.217,
-            longitude: 73.025,
-            pincode: '421202',
-            city: 'Dombivli',
-            state: 'Maharashtra',
-            country: 'India',
-            address: 'Dombivli East, Thane',
-          },
-          '421201': {
-            latitude: 19.218,
-            longitude: 73.023,
-            pincode: '421201',
-            city: 'Dombivli',
-            state: 'Maharashtra',
-            country: 'India',
-            address: 'Dombivli West, Thane',
-          },
-          '421301': {
-            latitude: 19.243,
-            longitude: 73.129,
-            pincode: '421301',
-            city: 'Kalyan',
-            state: 'Maharashtra',
-            country: 'India',
-            address: 'Kalyan, Thane',
-          },
-          '400001': {
-            latitude: 18.9388,
-            longitude: 72.8354,
-            pincode: '400001',
-            city: 'Mumbai',
-            state: 'Maharashtra',
-            country: 'India',
-            address: 'Mumbai GPO',
-          },
-        };
+          if (data.status === 'OK' && data.results.length > 0) {
+            const result = data.results[0];
+            const geometry = result.geometry.location;
+            const components = result.address_components;
 
-        // Check if we have this pincode in our known mappings
-        if (knownPincodes[pincode]) {
-          return knownPincodes[pincode];
+            const city = components.find((c: any) => c.types.includes('locality'))?.long_name || 
+                        components.find((c: any) => c.types.includes('administrative_area_level_2'))?.long_name || 'Unknown';
+            const state = components.find((c: any) => c.types.includes('administrative_area_level_1'))?.long_name || 'Unknown';
+
+            return {
+              latitude: geometry.lat,
+              longitude: geometry.lng,
+              pincode,
+              city,
+              state,
+              country: 'India',
+              address: result.formatted_address || `Pincode ${pincode}`,
+            };
+          }
+        } catch (googleError) {
+          console.warn('Google Maps forward geocoding failed:', googleError);
         }
+      }
 
-        // Fallback to generated mock location data
-        return {
-          latitude: this.generateMockLatitude(pincode),
-          longitude: this.generateMockLongitude(pincode),
-          pincode,
-          city: 'Unknown',
+      // 2. Fallback to OpenCage if Google Maps fails or key is missing
+      if (this.GEOCODING_API_KEY) {
+        const url = new URL(this.GEOCODING_API_URL);
+        url.searchParams.append('q', pincode);
+        url.searchParams.append('countrycode', 'in');
+        url.searchParams.append('key', this.GEOCODING_API_KEY);
+        url.searchParams.append('limit', '1');
+
+        const response = await fetch(url.toString());
+        if (response.ok) {
+          const data = await response.json();
+          if (data.results && data.results.length > 0) {
+            const result = data.results[0];
+            const geometry = result.geometry;
+            const components = result.components;
+            return {
+              latitude: geometry.lat,
+              longitude: geometry.lng,
+              pincode,
+              city: components.city || components.town || components.village || 'Unknown',
+              state: components.state || 'Unknown',
+              country: components.country || 'India',
+              address: result.formatted || `Pincode ${pincode}`,
+            };
+          }
+        }
+      }
+
+      // 3. Last resort fallback to known pincodes or mock data
+      const knownPincodes: { [key: string]: LocationData } = {
+        '421202': {
+          latitude: 19.217,
+          longitude: 73.025,
+          pincode: '421202',
+          city: 'Dombivli',
           state: 'Maharashtra',
           country: 'India',
-          address: `Pincode ${pincode}`,
-        };
+          address: 'Dombivli East, Thane',
+        },
+        '421201': {
+          latitude: 19.218,
+          longitude: 73.023,
+          pincode: '421201',
+          city: 'Dombivli',
+          state: 'Maharashtra',
+          country: 'India',
+          address: 'Dombivli West, Thane',
+        },
+        '421301': {
+          latitude: 19.243,
+          longitude: 73.129,
+          pincode: '421301',
+          city: 'Kalyan',
+          state: 'Maharashtra',
+          country: 'India',
+          address: 'Kalyan, Thane',
+        },
+        '400001': {
+          latitude: 18.9388,
+          longitude: 72.8354,
+          pincode: '400001',
+          city: 'Mumbai',
+          state: 'Maharashtra',
+          country: 'India',
+          address: 'Mumbai GPO',
+        },
+      };
+
+      if (knownPincodes[pincode]) {
+        return knownPincodes[pincode];
       }
-
-      const url = new URL(this.GEOCODING_API_URL);
-      url.searchParams.append('q', pincode);
-      url.searchParams.append('countrycode', 'in');
-      url.searchParams.append('key', this.GEOCODING_API_KEY);
-      url.searchParams.append('limit', '1');
-
-      const response = await fetch(url.toString());
-
-      if (!response.ok) {
-        throw new Error(`Geocoding API request failed: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.results.length === 0) {
-        throw {
-          type: 'INVALID_PINCODE',
-          message: 'No location found for the given pincode. Please check and try again.',
-          code: 'PINCODE_NOT_FOUND',
-        } as GeolocationError;
-      }
-
-      const result = data.results[0];
-      const geometry = result.geometry;
-      const components = result.components;
 
       return {
-        latitude: geometry.lat,
-        longitude: geometry.lng,
+        latitude: this.generateMockLatitude(pincode),
+        longitude: this.generateMockLongitude(pincode),
         pincode,
-        city: components.city || components.town || components.village || 'Unknown',
-        state: components.state || 'Unknown',
-        country: components.country || 'India',
-        address: result.formatted || `Pincode ${pincode}`,
+        city: 'Unknown',
+        state: 'Maharashtra',
+        country: 'India',
+        address: `Pincode ${pincode}`,
       };
     } catch (error) {
       if ((error as GeolocationError).type === 'INVALID_PINCODE') {
         throw error;
       }
-
-      console.warn('Forward geocoding failed, using fallback:', error);
-
-      // Fallback to mock location data
+      console.warn('Forward geocoding completely failed:', error);
       return {
         latitude: this.generateMockLatitude(pincode),
         longitude: this.generateMockLongitude(pincode),
