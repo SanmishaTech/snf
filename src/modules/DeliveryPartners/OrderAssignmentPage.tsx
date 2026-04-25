@@ -296,6 +296,13 @@ export default function OrderAssignmentPage() {
    const [selectedDepotId, setSelectedDepotId] = useState<string>(initialDepotId?.toString() || '');
    const isAdmin = userObj.role === 'ADMIN';
 
+   const [activeTab, setActiveTab] = useState('pending');
+   const [page, setPage] = useState(1);
+
+   useEffect(() => {
+      setPage(1);
+   }, [activeTab]);
+
    const { data: depots = [] } = useQuery({
       queryKey: ['depots'],
       queryFn: async () => {
@@ -305,23 +312,34 @@ export default function OrderAssignmentPage() {
       enabled: isAdmin
    });
 
-   const { data: pendingOrders = [], isLoading: loadingPending } = useQuery({
-      queryKey: ['pendingOrders', selectedDepotId],
+   const { data: pendingData = { orders: [], total: 0 }, isLoading: loadingPending } = useQuery({
+      queryKey: ['pendingOrders', selectedDepotId, activeTab === 'pending' ? page : 1],
       queryFn: async () => {
-         const res = await get(`/delivery-assignments/pending?depotId=${selectedDepotId}`);
+         const limit = activeTab === 'pending' ? 50 : 1;
+         const p = activeTab === 'pending' ? page : 1;
+         const res = await get(`/delivery-assignments/pending?depotId=${selectedDepotId}&page=${p}&limit=${limit}`);
          const snf = (res.snfOrders || []).map((o: any) => ({ ...o, type: 'SNF' }));
          const entries = (res.subEntries || []).map((e: any) => ({ ...e, type: 'SUB' }));
-         return [...snf, ...entries];
+         return { orders: [...snf, ...entries], total: res.total || 0 };
       },
       enabled: !!selectedDepotId,
       refetchInterval: 10000,
    });
 
-   const { data: trackerData = [], isLoading: loadingTracking } = useQuery({
-      queryKey: ['assignedOrders', selectedDepotId],
+   const pendingOrders = pendingData.orders;
+
+   const { data: trackerData = { assignments: [], totals: { assigned: 0, delivered: 0, failed: 0 }, total: 0 }, isLoading: loadingTracking } = useQuery({
+      queryKey: ['assignedOrders', selectedDepotId, activeTab, activeTab !== 'pending' ? page : 1],
       queryFn: async () => {
-         const res = await get(`/delivery-assignments/track?depotId=${selectedDepotId}`);
-         return res.assignments || [];
+         let status = '';
+         if (activeTab === 'assigned') status = 'ASSIGNED,OUT_FOR_DELIVERY';
+         else if (activeTab === 'delivered') status = 'DELIVERED';
+         else if (activeTab === 'failed') status = 'NOT_DELIVERED';
+         
+         const limit = activeTab !== 'pending' ? 50 : 1;
+         const p = activeTab !== 'pending' ? page : 1;
+         const res = await get(`/delivery-assignments/track?depotId=${selectedDepotId}&status=${status}&page=${p}&limit=${limit}`);
+         return res;
       },
       enabled: !!selectedDepotId,
       refetchInterval: 10000,
@@ -357,25 +375,33 @@ export default function OrderAssignmentPage() {
    });
 
    const assignedOrders = useMemo(() => 
-      trackerData.filter((a: any) => a.status === 'ASSIGNED' || a.status === 'OUT_FOR_DELIVERY'), 
-      [trackerData]
+      activeTab === 'assigned' ? trackerData.assignments : [], 
+      [trackerData.assignments, activeTab]
    );
    const deliveredOrders = useMemo(() => 
-      trackerData.filter((a: any) => a.status === 'DELIVERED'), 
-      [trackerData]
+      activeTab === 'delivered' ? trackerData.assignments : [], 
+      [trackerData.assignments, activeTab]
    );
    const failedOrders = useMemo(() => 
-      trackerData.filter((a: any) => a.status === 'NOT_DELIVERED'), 
-      [trackerData]
+      activeTab === 'failed' ? trackerData.assignments : [], 
+      [trackerData.assignments, activeTab]
    );
 
    const stats = useMemo(() => {
-      const inTransit = assignedOrders.length;
-      const delivered = deliveredOrders.length;
-      const notDelivered = failedOrders.length;
-      const efficiency = trackerData.length > 0 ? ((delivered / trackerData.length) * 100).toFixed(1) : "0.0";
+      const inTransit = trackerData.totals?.assigned || 0;
+      const delivered = trackerData.totals?.delivered || 0;
+      const notDelivered = trackerData.totals?.failed || 0;
+      const total = inTransit + delivered + notDelivered;
+      const efficiency = total > 0 ? ((delivered / total) * 100).toFixed(1) : "0.0";
       return { inTransit, delivered, notDelivered, efficiency };
-   }, [assignedOrders, deliveredOrders, failedOrders, trackerData]);
+   }, [trackerData.totals]);
+
+   const activeTotal = useMemo(() => {
+      if (activeTab === 'pending') return pendingData.total;
+      return trackerData.total;
+   }, [activeTab, pendingData.total, trackerData.total]);
+
+   const totalPages = Math.ceil(activeTotal / 50);
 
    const handleAssign = async (orderId: number, type: 'SNF' | 'SUB') => {
       const partnerId = selectedPartners[`${type}-${orderId}`];
@@ -417,6 +443,7 @@ export default function OrderAssignmentPage() {
                    asgn.deliveryScheduleEntry ? [asgn.deliveryScheduleEntry] : [];
       const customerName = asgn.snfOrder ? (asgn.snfOrder.name || asgn.snfOrder.customerName) : asgn.deliveryScheduleEntry?.deliveryAddress?.recipientName || 'Member';
       const partnerName = asgn.deliveryPartner ? `${asgn.deliveryPartner.firstName} ${asgn.deliveryPartner.lastName}` : 'Partner';
+      const walletBalance = asgn.snfOrder?.member?.walletBalance ?? asgn.deliveryScheduleEntry?.member?.walletBalance;
 
       return (
          <Card 
@@ -439,6 +466,11 @@ export default function OrderAssignmentPage() {
                               <h4 className="font-bold text-base text-slate-800 leading-none uppercase tracking-tight">
                                  {customerName}
                               </h4>
+                              {walletBalance !== undefined && (
+                                 <Badge variant="outline" className="text-[11px] font-extrabold bg-green-50 text-green-700 border-green-200 px-2 py-0.5 h-auto">
+                                    Wallet: ₹{walletBalance}
+                                 </Badge>
+                              )}
                               <Badge className={`
                                  font-bold text-[8px] tracking-wide px-1.5 py-0 border-none rounded-full
                                  ${asgn.status === 'DELIVERED' ? 'bg-green-500 text-white' :
@@ -569,23 +601,23 @@ export default function OrderAssignmentPage() {
                <StatCard title="Efficiency" value={`${stats.efficiency}%`} icon={TrendingUp} colorClass="text-primary" iconBgClass="bg-primary/5" />
             </div>
 
-            <Tabs defaultValue="pending" className="space-y-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
                <TabsList className="bg-slate-100/50 p-1 rounded-xl h-11 mb-6 border border-slate-200/50">
                   <TabsTrigger value="pending" className="rounded-lg px-6 font-semibold text-xs text-slate-500 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md transition-all h-full">
                      <Package size={16} className="mr-2" />To Assign
-                     <Badge variant="secondary" className="ml-2 bg-slate-200/50 text-slate-600 border-none px-1.5 py-0 h-4 text-[9px] font-bold">{pendingOrders.length}</Badge>
+                     <Badge variant="secondary" className="ml-2 bg-slate-200/50 text-slate-600 border-none px-1.5 py-0 h-4 text-[9px] font-bold">{pendingData.total}</Badge>
                   </TabsTrigger>
                   <TabsTrigger value="assigned" className="rounded-lg px-6 font-semibold text-xs text-slate-500 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md transition-all h-full">
                      <Truck size={16} className="mr-2" />Assigned
-                     <Badge variant="secondary" className="ml-2 bg-slate-200/50 text-slate-600 border-none px-1.5 py-0 h-4 text-[9px] font-bold">{assignedOrders.length}</Badge>
+                     <Badge variant="secondary" className="ml-2 bg-slate-200/50 text-slate-600 border-none px-1.5 py-0 h-4 text-[9px] font-bold">{trackerData.totals?.assigned || 0}</Badge>
                   </TabsTrigger>
                   <TabsTrigger value="delivered" className="rounded-lg px-6 font-semibold text-xs text-slate-500 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md transition-all h-full">
                      <CheckCircle2 size={16} className="mr-2" />Delivered
-                     <Badge variant="secondary" className="ml-2 bg-slate-200/50 text-slate-600 border-none px-1.5 py-0 h-4 text-[9px] font-bold">{deliveredOrders.length}</Badge>
+                     <Badge variant="secondary" className="ml-2 bg-slate-200/50 text-slate-600 border-none px-1.5 py-0 h-4 text-[9px] font-bold">{trackerData.totals?.delivered || 0}</Badge>
                   </TabsTrigger>
                   <TabsTrigger value="failed" className="rounded-lg px-6 font-semibold text-xs text-slate-500 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md transition-all h-full">
                      <XCircle size={16} className="mr-2" />Not Delivered
-                     <Badge variant="secondary" className="ml-2 bg-slate-200/50 text-slate-600 border-none px-1.5 py-0 h-4 text-[9px] font-bold">{failedOrders.length}</Badge>
+                     <Badge variant="secondary" className="ml-2 bg-slate-200/50 text-slate-600 border-none px-1.5 py-0 h-4 text-[9px] font-bold">{trackerData.totals?.failed || 0}</Badge>
                   </TabsTrigger>
                </TabsList>
 
@@ -608,6 +640,11 @@ export default function OrderAssignmentPage() {
                                           <div className="flex items-center gap-2 mb-1.5">
                                              <Badge className="bg-primary/5 text-primary border-none font-bold text-[8px] px-1.5 py-0 rounded-full uppercase">{order.type}</Badge>
                                              <span className="text-[9px] font-bold text-slate-400 uppercase">{order.orderNo ? `#${order.orderNo}` : `REF-${order.id}`}</span>
+                                             {order.member?.walletBalance !== undefined && (
+                                                <Badge variant="outline" className="text-[11px] font-extrabold bg-green-50 text-green-700 border-green-200 px-2 py-0.5 h-auto">
+                                                   Wallet: ₹{order.member.walletBalance}
+                                                </Badge>
+                                             )}
                                           </div>
                                           <h4 className="font-bold text-base text-slate-800 leading-tight mb-1.5 group-hover:text-primary transition-colors">{order.name || order.deliveryAddress?.recipientName}</h4>
                                           <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500"><MapPin size={11} className="text-slate-300" /><span className="truncate">{order.addressLine1 || order.deliveryAddress?.plotBuilding || 'No address'}</span></div>
@@ -663,6 +700,34 @@ export default function OrderAssignmentPage() {
                      <div className="grid gap-4">{failedOrders.map((asgn: any) => <TrackingRow key={asgn.id} asgn={asgn} />)}</div>
                   )}
                </TabsContent>
+
+               {totalPages > 1 && (
+                  <div className="flex items-center justify-between mt-6 px-4 py-3 bg-white border border-slate-200 rounded-2xl shadow-sm">
+                     <p className="text-xs font-semibold text-slate-500">
+                        Page {page} of {totalPages} ({activeTotal} records)
+                     </p>
+                     <div className="flex items-center gap-2">
+                        <Button
+                           variant="outline"
+                           size="sm"
+                           onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                           disabled={page === 1}
+                           className="h-8 rounded-xl font-bold text-xs"
+                        >
+                           Previous
+                        </Button>
+                        <Button
+                           variant="outline"
+                           size="sm"
+                           onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
+                           disabled={page === totalPages}
+                           className="h-8 rounded-xl font-bold text-xs"
+                        >
+                           Next
+                        </Button>
+                     </div>
+                  </div>
+               )}
             </Tabs>
          </Card>
 

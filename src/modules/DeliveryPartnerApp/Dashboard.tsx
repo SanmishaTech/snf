@@ -120,6 +120,11 @@ export default function DeliveryPartnerDashboard() {
                 {a.status === 'NOT_DELIVERED' ? 'NOT DELIVERED' : a.status}
              </Badge>
              <span className="text-[10px] font-mono text-slate-400">#{orderNo}</span>
+             {a.snfOrder?.paymentMode && (
+               <Badge variant="outline" className={`w-fit font-bold text-[8px] px-1.5 py-0 border-none rounded uppercase mt-1 ${a.snfOrder.paymentMode === 'CASH' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}`}>
+                 {a.snfOrder.paymentMode}
+               </Badge>
+             )}
           </div>
 
           {/* Customer Column */}
@@ -161,16 +166,22 @@ export default function DeliveryPartnerDashboard() {
           <div className="lg:border-l lg:border-slate-100 lg:pl-6">
              {a.status !== 'DELIVERED' && a.status !== 'NOT_DELIVERED' ? (
                <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
-                  <div className="relative group w-full sm:w-28">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">₹</span>
-                    <Input 
-                      type="number" 
-                      placeholder="0.0" 
-                      className="pl-5 h-9 text-xs rounded-lg border-slate-200 bg-slate-50/50 focus-visible:ring-red-600 transition-all"
-                      value={cashStates[a.id] || ''}
-                      onChange={(e) => setCashStates(prev => ({ ...prev, [a.id]: e.target.value }))}
-                    />
-                  </div>
+                   <div className="flex flex-col gap-1.5 w-full sm:w-32 shrink-0">
+                      <div className={`text-[10px] font-extrabold tracking-wider uppercase px-2 py-1 rounded-lg border flex items-center justify-center gap-1 shadow-sm ${a.snfOrder?.paymentMode === 'CASH' ? 'bg-amber-50 border-amber-200 text-amber-700 animate-pulse' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
+                         <span>Collect:</span>
+                         <span className="text-xs font-black">₹{a.snfOrder?.paymentMode === 'CASH' ? (a.snfOrder.payableAmount || 0) : 0}</span>
+                      </div>
+                      <div className="relative group">
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">₹</span>
+                        <Input 
+                          type="number" 
+                          placeholder="0.0" 
+                          className="pl-5 h-9 text-xs rounded-lg border-slate-200 bg-slate-50/50 focus-visible:ring-red-600 transition-all"
+                          value={cashStates[a.id] || ''}
+                          onChange={(e) => setCashStates(prev => ({ ...prev, [a.id]: e.target.value }))}
+                        />
+                      </div>
+                   </div>
 
                   <Button 
                     variant="outline" 
