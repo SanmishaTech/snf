@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { get, putupload } from '@/services/apiService';
 import { toast } from 'sonner';
-import { LoaderCircle, Camera, CheckCircle2, Package, MapPin, Phone, Info, RefreshCw, Navigation, History, PlayCircle } from 'lucide-react';
+import { LoaderCircle, Camera, CheckCircle2, Package, MapPin, Phone, Info, RefreshCw, Navigation, History, PlayCircle, XCircle, Search } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -19,8 +19,10 @@ export default function DeliveryPartnerDashboard() {
   const [activeTab, setActiveTab] = useState<string>('active');
   const [historyDate, setHistoryDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [historyStatus, setHistoryStatus] = useState<string>('ALL');
+  const [searchTerm, setSearchTerm] = useState<string>('');
   const [cashStates, setCashStates] = useState<Record<number, string>>({});
   const [photoStates, setPhotoStates] = useState<Record<number, File | null>>({});
+  const [statusStates, setStatusStates] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState<Record<number, boolean>>({});
   const [fetching, setFetching] = useState(false);
 
@@ -41,18 +43,38 @@ export default function DeliveryPartnerDashboard() {
     }
   };
 
-  const activeAssignments = useMemo(() => 
-    assignments.filter(a => a.status !== 'DELIVERED' && a.status !== 'NOT_DELIVERED'), 
-    [assignments]
-  );
+  const activeAssignments = useMemo(() => {
+    let filtered = assignments.filter(a => a.status !== 'DELIVERED' && a.status !== 'NOT_DELIVERED' && a.status !== 'FAILED');
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(a => {
+        const customerName = (a.snfOrder?.name || a.deliveryScheduleEntry?.deliveryAddress?.recipientName || 'Member').toLowerCase();
+        const address = (a.snfOrder ? (a.snfOrder.addressLine1 || a.snfOrder.address) : (a.deliveryScheduleEntry?.deliveryAddress?.plotBuilding || '')).toLowerCase();
+        const mobile = (a.snfOrder?.mobile || a.deliveryScheduleEntry?.deliveryAddress?.mobile || '').toLowerCase();
+        const orderNo = (a.snfOrder?.orderNo || `SUBS-${a.deliveryScheduleEntryId}`).toLowerCase();
+        return customerName.includes(term) || address.includes(term) || mobile.includes(term) || orderNo.includes(term);
+      });
+    }
+    return filtered;
+  }, [assignments, searchTerm]);
   
   const completedAssignments = useMemo(() => {
-    let filtered = assignments.filter(a => a.status === 'DELIVERED' || a.status === 'NOT_DELIVERED');
+    let filtered = assignments.filter(a => a.status === 'DELIVERED' || a.status === 'NOT_DELIVERED' || a.status === 'FAILED');
     if (historyStatus !== 'ALL') {
       filtered = filtered.filter(a => a.status === historyStatus);
     }
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(a => {
+        const customerName = (a.snfOrder?.name || a.deliveryScheduleEntry?.deliveryAddress?.recipientName || 'Member').toLowerCase();
+        const address = (a.snfOrder ? (a.snfOrder.addressLine1 || a.snfOrder.address) : (a.deliveryScheduleEntry?.deliveryAddress?.plotBuilding || '')).toLowerCase();
+        const mobile = (a.snfOrder?.mobile || a.deliveryScheduleEntry?.deliveryAddress?.mobile || '').toLowerCase();
+        const orderNo = (a.snfOrder?.orderNo || `SUBS-${a.deliveryScheduleEntryId}`).toLowerCase();
+        return customerName.includes(term) || address.includes(term) || mobile.includes(term) || orderNo.includes(term);
+      });
+    }
     return filtered;
-  }, [assignments, historyStatus]);
+  }, [assignments, historyStatus, searchTerm]);
 
   const markDelivered = async (id: number) => {
     const cash = cashStates[id] || '0';
@@ -100,7 +122,36 @@ export default function DeliveryPartnerDashboard() {
     }
   };
 
-  const DeliveryRow = ({ a }: { a: any }) => {
+  const markRejected = async (id: number) => {
+    if (!confirm("Are you sure you want to mark this as REJECTED?")) return;
+    
+    setLoading(prev => ({ ...prev, [id]: true }));
+    try {
+      const formData = new FormData();
+      formData.append('status', 'FAILED');
+      
+      await putupload(`/delivery-app/assignment/${id}`, formData);
+      toast.success("Marked as Rejected");
+      fetchAssignments();
+    } catch (e: any) {
+      toast.error(e.message || "Could not update status");
+    } finally {
+      setLoading(prev => ({ ...prev, [id]: false }));
+    }
+  };
+
+  const handleSubmitStatus = async (id: number) => {
+    const status = statusStates[id] || 'DELIVERED';
+    if (status === 'DELIVERED') {
+      await markDelivered(id);
+    } else if (status === 'NOT_DELIVERED') {
+      await markNotDelivered(id);
+    } else if (status === 'FAILED') {
+      await markRejected(id);
+    }
+  };
+
+  const renderDeliveryRow = (a: any) => {
     const items = a.snfOrder ? (a.snfOrder.items || []) : (a.deliveryScheduleEntry ? [a.deliveryScheduleEntry] : []);
     const customerName = a.snfOrder?.name || a.deliveryScheduleEntry?.deliveryAddress?.recipientName || 'Member';
     const orderNo = a.snfOrder?.orderNo || `SUBS-${a.deliveryScheduleEntryId}`;
@@ -163,87 +214,114 @@ export default function DeliveryPartnerDashboard() {
           </div>
 
           {/* Actions Column */}
-          <div className="lg:border-l lg:border-slate-100 lg:pl-6">
-             {a.status !== 'DELIVERED' && a.status !== 'NOT_DELIVERED' ? (
-               <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
-                   <div className="flex flex-col gap-1.5 w-full sm:w-32 shrink-0">
-                      <div className={`text-[10px] font-extrabold tracking-wider uppercase px-2 py-1 rounded-lg border flex items-center justify-center gap-1 shadow-sm ${a.snfOrder?.paymentMode === 'CASH' ? 'bg-amber-50 border-amber-200 text-amber-700 animate-pulse' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
-                         <span>Collect:</span>
-                         <span className="text-xs font-black">₹{a.snfOrder?.paymentMode === 'CASH' ? (a.snfOrder.payableAmount || 0) : 0}</span>
-                      </div>
-                      <div className="relative group">
-                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">₹</span>
-                        <Input 
-                          type="number" 
-                          placeholder="0.0" 
-                          className="pl-5 h-9 text-xs rounded-lg border-slate-200 bg-slate-50/50 focus-visible:ring-red-600 transition-all"
-                          value={cashStates[a.id] || ''}
-                          onChange={(e) => setCashStates(prev => ({ ...prev, [a.id]: e.target.value }))}
-                        />
-                      </div>
+          <div className="lg:border-l lg:border-slate-100 lg:pl-6">              {a.status !== 'DELIVERED' && a.status !== 'NOT_DELIVERED' && a.status !== 'FAILED' ? (
+                <div className="flex flex-col gap-3.5 bg-slate-50/60 border border-slate-100 rounded-xl p-3.5 mt-2 lg:mt-0 shadow-sm w-full">
+                   <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2">
+                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Update Delivery</span>
+                      {(() => {
+                         const collectAmount = a.snfOrder?.paymentStatus === 'PENDING' ? (a.snfOrder.payableAmount || a.snfOrder.totalAmount || 0) : 0;
+                         if (collectAmount <= 0) return null;
+                         return (
+                            <Badge variant="outline" className="text-[9px] font-black bg-amber-500/10 text-amber-600 border-amber-200/50 px-2 py-0.5 animate-pulse">
+                               COLLECT: ₹{collectAmount}
+                            </Badge>
+                         );
+                      })()}
                    </div>
 
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className={`
-                      h-9 rounded-lg border-2 border-dashed transition-all shrink-0 text-[10px] font-bold uppercase
-                      ${photoStates[a.id] ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-slate-50/50 border-slate-200 text-slate-400 hover:bg-slate-50'}
-                    `}
-                    onClick={() => document.getElementById(`file-${a.id}`)?.click()}
-                  >
-                    {photoStates[a.id] ? <CheckCircle2 size={12} /> : <Camera size={12} />}
-                    <span className="ml-1.5">{photoStates[a.id] ? 'Attached' : 'Capture'}</span>
-                  </Button>
-                  <input 
-                    id={`file-${a.id}`}
-                    type="file" 
-                    className="hidden"
-                    onChange={(e) => setPhotoStates(prev => ({ ...prev, [a.id]: e.target.files?.[0] || null }))}
-                  />
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="flex flex-col gap-1 w-full">
+                         <span className="text-[9px] font-bold uppercase text-slate-400 tracking-wider">Status</span>
+                         <Select 
+                            value={statusStates[a.id] || 'DELIVERED'} 
+                            onValueChange={(val) => setStatusStates(prev => ({ ...prev, [a.id]: val }))}
+                         >
+                            <SelectTrigger className="h-10 border-slate-200/80 bg-white font-bold text-xs rounded-xl shadow-sm focus:ring-red-600">
+                               <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                               <SelectItem value="DELIVERED" className="font-bold text-xs text-emerald-600">Delivered</SelectItem>
+                               <SelectItem value="NOT_DELIVERED" className="font-bold text-xs text-amber-600">Not Delivered</SelectItem>
+                               <SelectItem value="FAILED" className="font-bold text-xs text-red-600">Rejected</SelectItem>
+                            </SelectContent>
+                         </Select>
+                      </div>
 
-                  <div className="flex items-center gap-2">
-                    <Button 
-                      size="sm"
-                      className="h-9 w-full sm:w-auto px-4 rounded-lg bg-red-600 hover:bg-red-700 font-bold text-[10px] uppercase tracking-wider shadow-sm transition-all"
-                      onClick={() => markDelivered(a.id)}
-                      disabled={loading[a.id]}
-                    >
-                      {loading[a.id] ? <LoaderCircle className="animate-spin" size={12} /> : "Complete"}
-                    </Button>
+                      {(statusStates[a.id] || 'DELIVERED') === 'DELIVERED' && (
+                         <div className="flex flex-col gap-1 w-full">
+                            <span className="text-[9px] font-bold uppercase text-slate-400 tracking-wider">Collected Cash</span>
+                            <div className="relative group">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">₹</span>
+                              <Input 
+                                type="number" 
+                                placeholder="0.0" 
+                                className="pl-6 h-10 text-xs font-bold rounded-xl border-slate-200 bg-white focus-visible:ring-red-600 shadow-sm transition-all"
+                                value={cashStates[a.id] || ''}
+                                onChange={(e) => setCashStates(prev => ({ ...prev, [a.id]: e.target.value }))}
+                              />
+                            </div>
+                         </div>
+                      )}
+                   </div>
 
-                    <Button 
-                      variant="outline"
-                      size="sm"
-                      className="h-9 w-9 p-0 rounded-lg border-slate-200 text-slate-400 hover:text-red-600 transition-all"
-                      onClick={() => markNotDelivered(a.id)}
-                      disabled={loading[a.id]}
-                      title="Mark as Not Delivered"
-                    >
-                      <LoaderCircle className={loading[a.id] ? "animate-spin" : "hidden"} size={14} />
-                      <Info className={loading[a.id] ? "hidden" : "block"} size={14} />
-                    </Button>
-                  </div>
-               </div>
-             ) : (
-               <div className={`flex items-center justify-between rounded-lg py-2 px-3 border ${a.status === 'DELIVERED' ? 'bg-emerald-50 border-emerald-100' : 'bg-amber-50 border-amber-100'}`}>
-                  <div className="flex items-center gap-2">
-                    {a.status === 'DELIVERED' ? (
-                      <>
-                        <CheckCircle2 size={14} className="text-emerald-600" />
-                        <span className="text-[10px] font-bold text-emerald-700 uppercase">{a.deliveredAt ? new Date(a.deliveredAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Delivered'}</span>
-                      </>
-                    ) : (
-                      <>
-                        <Info size={14} className="text-amber-600" />
-                        <span className="text-[10px] font-bold text-amber-700 uppercase">NOT DELIVERED</span>
-                      </>
-                    )}
-                  </div>
-                  {a.status === 'DELIVERED' && <span className="text-[10px] font-extrabold text-emerald-600">₹{a.cashCollected || '0.0'}</span>}
-               </div>
-             )}
-          </div>
+                   {(statusStates[a.id] || 'DELIVERED') === 'DELIVERED' && (
+                      <div className="w-full">
+                         <Button 
+                           variant="outline" 
+                           className={`
+                             w-full h-11 rounded-xl border-2 border-dashed font-bold text-xs transition-all uppercase tracking-wide
+                             ${photoStates[a.id] ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/20' : 'bg-white border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600 shadow-sm'}
+                           `}
+                           onClick={() => document.getElementById(`file-${a.id}`)?.click()}
+                         >
+                           {photoStates[a.id] ? <CheckCircle2 size={15} className="mr-2 shrink-0 animate-bounce" /> : <Camera size={15} className="mr-2 shrink-0" />}
+                           <span>{photoStates[a.id] ? 'Proof Attached' : 'Capture Delivery Proof'}</span>
+                         </Button>
+                         <input 
+                           id={`file-${a.id}`}
+                           type="file" 
+                           className="hidden"
+                           accept="image/*"
+                           onChange={(e) => setPhotoStates(prev => ({ ...prev, [a.id]: e.target.files?.[0] || null }))}
+                         />
+                      </div>
+                   )}
+
+                   <Button 
+                     className="w-full h-11 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-widest shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
+                     onClick={() => handleSubmitStatus(a.id)}
+                     disabled={loading[a.id]}
+                   >
+                     {loading[a.id] ? <LoaderCircle className="animate-spin" size={14} /> : "Update Status"}
+                   </Button>
+                </div>
+              ) : (
+                <div className={`flex items-center justify-between rounded-xl py-3 px-4 border shadow-sm ${a.status === 'DELIVERED' ? 'bg-emerald-50 border-emerald-100' : a.status === 'FAILED' ? 'bg-red-50 border-red-100' : 'bg-amber-50 border-amber-100'}`}>
+                   <div className="flex items-center gap-2.5">
+                     {a.status === 'DELIVERED' ? (
+                       <>
+                         <div className="h-6 w-6 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-600"><CheckCircle2 size={14} /></div>
+                         <div className="flex flex-col">
+                            <span className="text-xs font-bold text-emerald-700 uppercase leading-none mb-0.5">Delivered</span>
+                            <span className="text-[9px] font-medium text-emerald-600/80">{a.deliveredAt ? new Date(a.deliveredAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+                         </div>
+                       </>
+                     ) : a.status === 'FAILED' ? (
+                       <>
+                         <div className="h-6 w-6 rounded-full bg-red-500/10 flex items-center justify-center text-red-600"><XCircle size={14} /></div>
+                         <span className="text-xs font-bold text-red-700 uppercase">REJECTED</span>
+                       </>
+                     ) : (
+                       <>
+                         <div className="h-6 w-6 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-600"><Info size={14} /></div>
+                         <span className="text-xs font-bold text-amber-700 uppercase">NOT DELIVERED</span>
+                       </>
+                     )}
+                   </div>
+                   {a.status === 'DELIVERED' && <span className="text-xs font-black text-emerald-600 bg-emerald-500/10 px-2 py-1 rounded-lg">₹{a.cashCollected || '0.0'}</span>}
+                </div>
+              )}
+           </div>
         </div>
       </div>
     );
@@ -287,6 +365,15 @@ export default function DeliveryPartnerDashboard() {
 
       <div className="w-full px-6 mt-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+           <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm w-full mb-6 max-w-md focus-within:border-red-600 transition-all">
+             <Search size={16} className="text-slate-400 shrink-0" />
+             <Input 
+                placeholder="Search customer, address, mobile, order no..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="h-6 text-xs font-bold border-none bg-transparent focus-visible:ring-0 p-0 placeholder:text-slate-400 focus-visible:ring-offset-0 shadow-none focus:ring-0"
+             />
+           </div>
            <div className="flex items-center justify-between mb-8">
              <TabsList className="flex bg-slate-100/80 h-12 w-fit rounded-xl p-1 border border-slate-200/50 backdrop-blur-lg">
                 <TabsTrigger value="active" className="px-6 rounded-lg font-bold text-[11px] uppercase tracking-wider data-[state=active]:bg-white data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all">
@@ -343,7 +430,7 @@ export default function DeliveryPartnerDashboard() {
                   <p className="text-sm font-bold text-slate-900 uppercase tracking-tight">Assignment Queue Clear</p>
                 </div>
               ) : (
-                activeAssignments.map(a => <DeliveryRow key={a.id} a={a} />)
+                activeAssignments.map(a => renderDeliveryRow(a))
               )}
            </TabsContent>
 
@@ -354,7 +441,7 @@ export default function DeliveryPartnerDashboard() {
                   <p className="text-sm font-bold text-slate-900 uppercase tracking-tight">No Delivery History</p>
                 </div>
               ) : (
-                completedAssignments.map(a => <DeliveryRow key={a.id} a={a} />)
+                completedAssignments.map(a => renderDeliveryRow(a))
               )}
            </TabsContent>
         </Tabs>

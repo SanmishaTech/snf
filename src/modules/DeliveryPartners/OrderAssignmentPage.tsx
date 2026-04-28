@@ -346,12 +346,11 @@ export default function OrderAssignmentPage() {
    });
 
    const { data: partners = [] } = useQuery({
-      queryKey: ['partners', selectedDepotId],
+      queryKey: ['partners'],
       queryFn: async () => {
-         const res = await get(`/delivery-partners?depotId=${selectedDepotId}`);
+         const res = await get('/delivery-partners');
          return res.deliveryPartners || [];
       },
-      enabled: !!selectedDepotId,
    });
 
    const assignMutation = useMutation({
