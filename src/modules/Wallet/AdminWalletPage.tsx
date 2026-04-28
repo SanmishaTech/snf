@@ -683,7 +683,7 @@ const AdminWalletPage: React.FC = () => {
                               (() => {
                                 const isSkippedNote = /skipp/i.test(tx.notes)
                                 const skippedDateMatch = isSkippedNote
-                                  ? tx.notes.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/)
+                                  ? tx.notes.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}|\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2})/)
                                   : null
                                 const parsedTxDate = tx.timestamp ? new Date(tx.timestamp) : null
                                 const txDateFallback = parsedTxDate && !Number.isNaN(parsedTxDate.getTime())
