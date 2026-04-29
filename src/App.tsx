@@ -114,6 +114,8 @@ import POSPage from "./modules/POS/POSPage";
 import DeliveryPartnersListPage from "./modules/DeliveryPartners/DeliveryPartnersListPage";
 import OrderAssignmentPage from "./modules/DeliveryPartners/OrderAssignmentPage";
 import DeliveryPartnerDashboard from "./modules/DeliveryPartnerApp/Dashboard";
+import InventoryDashboard from "./modules/Inventory/InventoryDashboard";
+import StockLedgerPage from "./modules/Inventory/StockLedgerPage";
 
 
 import { AuthProvider } from "./hooks/useAuth";
@@ -427,6 +429,12 @@ const App = () => {
             <Route path="/admin/pos" element={<POSPage />} />
             <Route path="/admin/delivery-partners" element={<DeliveryPartnersListPage />} />
             <Route path="/admin/order-assignment" element={<OrderAssignmentPage />} />
+            {/* Indraai Inventory */}
+            <Route path="/admin/indraai-inventory" element={<InventoryDashboard isDairy={true} />} />
+            <Route path="/admin/indraai-inventory/stock-ledger" element={<StockLedgerPage isDairy={true} />} />
+            {/* SNF Inventory */}
+            <Route path="/admin/snf-inventory" element={<InventoryDashboard isDairy={false} />} />
+            <Route path="/admin/snf-inventory/stock-ledger" element={<StockLedgerPage isDairy={false} />} />
           </Route>
 
           {/* Other routes using MainLayout (e.g., Vendor routes) - not protected by AdminProtectedRoute */}

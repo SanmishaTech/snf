@@ -324,6 +324,21 @@ const initialData = {
           icon: Boxes,
           groupLabel: "SNF Reports",
         },
+
+
+
+        {
+          title: "SNF Inventory",
+          url: "/admin/snf-inventory",
+          icon: Boxes,
+          groupLabel: "SNF Inventory",
+        },
+        {
+          title: "SNF Stock Ledger",
+          url: "/admin/snf-inventory/stock-ledger",
+          icon: BookOpen,
+          groupLabel: "SNF Inventory",
+        },
         {
           title: "Users",
           url: "/admin/users",
@@ -392,6 +407,20 @@ const initialData = {
             { title: "Packing List Report", url: "/admin/reports/snf-packing-list" },
             { title: "Stock Requirement Report", url: "/admin/reports/snf-stock-requirement" },
           ],
+        },
+
+
+        {
+          title: "SNF Inventory",
+          url: "/admin/snf-inventory",
+          icon: Boxes,
+          groupLabel: "SNF Inventory",
+        },
+        {
+          title: "SNF Stock Ledger",
+          url: "/admin/snf-inventory/stock-ledger",
+          icon: BookOpen,
+          groupLabel: "SNF Inventory",
         },
         {
           title: "Activity Log",

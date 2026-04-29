@@ -114,9 +114,8 @@ export function NavUser({
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem
-                onSelect={(e) => {
-                  e.preventDefault();
-                  setShowChangePasswordDialog(true);
+                onSelect={() => {
+                  setTimeout(() => setShowChangePasswordDialog(true), 100);
                 }}
                 className="cursor-pointer"
               >
@@ -125,10 +124,8 @@ export function NavUser({
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onSelect={(e) => {
-                  e.preventDefault();
-                  console.log('[nav-user.tsx] Logout DropdownMenuItem clicked. Setting showConfirmation to true.');
-                  setShowConfirmation(true);
+                onSelect={() => {
+                  setTimeout(() => setShowConfirmation(true), 100);
                 }}
                 className="cursor-pointer text-destructive"
               >

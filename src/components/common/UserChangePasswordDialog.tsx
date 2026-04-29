@@ -128,6 +128,7 @@ const UserChangePasswordDialog: React.FC<UserChangePasswordDialogProps> = ({
             <PasswordInput
               id="currentPassword"
               name="currentPassword"
+              placeholder="Enter current password"
               value={formData.currentPassword}
               onChange={handleInputChange}
               autoComplete="current-password"
@@ -142,6 +143,7 @@ const UserChangePasswordDialog: React.FC<UserChangePasswordDialogProps> = ({
             <PasswordInput
               id="newPassword"
               name="newPassword"
+              placeholder="Enter new password"
               value={formData.newPassword}
               onChange={handleInputChange}
               autoComplete="new-password"
@@ -156,6 +158,7 @@ const UserChangePasswordDialog: React.FC<UserChangePasswordDialogProps> = ({
             <PasswordInput
               id="confirmPassword"
               name="confirmPassword"
+              placeholder="Confirm new password"
               value={formData.confirmPassword}
               onChange={handleInputChange}
               autoComplete="new-password"
