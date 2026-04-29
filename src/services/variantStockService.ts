@@ -24,7 +24,33 @@ export const getVariantStocks = async (
     page?: number;
     limit?: number;
     search?: string;
+    isDairy?: string;
   }
 ): Promise<PaginatedVariantStockResponse> => {
-  return get<PaginatedVariantStockResponse>('/variant-stocks', params);
+  // Query parameters mapping
+  const queryParams: any = {
+    depotId: params.depotId,
+    page: params.page,
+    limit: params.limit,
+    search: params.search,
+    isDairy: params.isDairy,
+  };
+  
+  const res = await get<any>('/depot-product-variants', queryParams);
+  
+  return {
+    currentPage: res.currentPage || 1,
+    totalPages: res.totalPages || 1,
+    totalRecords: res.totalRecords || 0,
+    data: (res.data || []).map((v: any) => ({
+      id: v.id,
+      productId: v.productId,
+      variantId: v.id,
+      depotId: v.depotId,
+      closingQty: (v.closingQty || 0).toString(),
+      product: v.product || { id: v.productId, name: 'N/A' },
+      variant: { id: v.id, name: v.name || 'N/A' },
+      depot: v.depot || { id: v.depotId, name: 'N/A' }
+    }))
+  };
 };

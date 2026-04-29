@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { get } from "@/services/apiService";
 import { Link } from "react-router-dom";
@@ -78,7 +78,6 @@ const StatCard = ({
 );
 
 const InventoryDashboard = ({ isDairy }: Props) => {
-  const [depotStats, setDepotStats] = useState<DepotStat[]>([]);
   const label = isDairy ? "Indraai" : "SNF";
   const stockLedgerPath = isDairy ? "/admin/indraai-inventory/stock-ledger" : "/admin/snf-inventory/stock-ledger";
   const variantStockPath = isDairy ? `/admin/variantstock?isDairy=true` : `/admin/variantstock?isDairy=false`;
@@ -89,7 +88,7 @@ const InventoryDashboard = ({ isDairy }: Props) => {
   // Fetch variant stocks filtered by product type
   const { data: stockData, isLoading: stockLoading } = useQuery({
     queryKey: ["inventory-all-stocks", isDairy],
-    queryFn: () => get(`/variant-stocks?limit=1000&isDairy=${isDairyParam}`),
+    queryFn: () => get(`/depot-product-variants?limit=1000&isDairy=${isDairyParam}`),
   });
 
   // Fetch ledger summary filtered by product type
@@ -98,7 +97,16 @@ const InventoryDashboard = ({ isDairy }: Props) => {
     queryFn: () => get(`/stock-ledgers?limit=1000&isDairy=${isDairyParam}`),
   });
 
-  const allStocks: VariantStockEntry[] = stockData?.data || [];
+  const allStocks: VariantStockEntry[] = useMemo(() => {
+    return (stockData?.data || []).map((v: any) => ({
+      id: v.id,
+      closingQty: (v.closingQty || 0).toString(),
+      product: v.product,
+      variant: { id: v.id, name: v.name },
+      depot: v.depot
+    }));
+  }, [stockData]);
+
   const allLedger: Array<{ receivedQty: number; issuedQty: number; depot: { id: number; name: string } }> = ledgerData?.data || [];
 
   // Aggregate totals
@@ -109,8 +117,8 @@ const InventoryDashboard = ({ isDairy }: Props) => {
   const totalIssued = allLedger.reduce((sum, e) => sum + (e.issuedQty || 0), 0);
 
   // Build per-depot stats
-  useEffect(() => {
-    if (!allStocks.length) return;
+  const depotStats = useMemo(() => {
+    if (!allStocks.length) return [];
 
     const depotMap = new Map<number, DepotStat>();
     for (const s of allStocks) {
@@ -131,7 +139,7 @@ const InventoryDashboard = ({ isDairy }: Props) => {
         });
       }
     }
-    setDepotStats(Array.from(depotMap.values()).sort((a, b) => b.totalQty - a.totalQty));
+    return Array.from(depotMap.values()).sort((a, b) => b.totalQty - a.totalQty);
   }, [allStocks]);
 
   const isLoading = stockLoading || ledgerLoading;
@@ -317,6 +325,76 @@ const InventoryDashboard = ({ isDairy }: Props) => {
                       </TableCell>
                     </TableRow>
                   ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Product Variant Breakdown */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <PackageSearch className="h-5 w-5 text-gray-500" /> Stock by Product Variant
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto max-h-[400px]">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gray-50 sticky top-0 z-10 shadow-sm">
+                  <TableHead>Product</TableHead>
+                  <TableHead>Variant</TableHead>
+                  <TableHead>Depot / Shop</TableHead>
+                  <TableHead className="text-right">Qty Available</TableHead>
+                  <TableHead className="text-center">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                      {Array.from({ length: 5 }).map((__, j) => (
+                        <TableCell key={j}>
+                          <Skeleton className="h-4 w-full" />
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : allStocks.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-12 text-gray-400">
+                      <Boxes className="h-10 w-10 mx-auto mb-2" />
+                      <p className="font-medium text-gray-600">No variant stock data available</p>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  allStocks.map((stock) => {
+                    const qty = parseFloat(stock.closingQty || "0");
+                    const isLow = qty < LOW_STOCK_THRESHOLD;
+                    return (
+                      <TableRow key={stock.id} className="hover:bg-gray-50">
+                        <TableCell className="font-medium">{stock.product?.name || "N/A"}</TableCell>
+                        <TableCell>{stock.variant?.name || "N/A"}</TableCell>
+                        <TableCell className="text-gray-600 text-sm">{stock.depot?.name || "N/A"}</TableCell>
+                        <TableCell className={cn("text-right font-semibold", isLow ? "text-amber-600" : "text-gray-900")}>
+                          {qty.toLocaleString()}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {isLow ? (
+                            <Badge variant="outline" className="border-amber-400 text-amber-700 bg-amber-50">
+                              Low Stock
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="border-green-400 text-green-700 bg-green-50">
+                              In Stock
+                            </Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>

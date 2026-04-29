@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 import { getVariantStocks, VariantStock } from '../../services/variantStockService';
 import { getAllDepotsList, DepotListItem } from '../../services/depotService';
@@ -17,7 +18,13 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const VarientstockListPage: React.FC = () => {
-  const [depotId, setDepotId] = useState<number | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const depotIdFromUrl = searchParams.get('depotId');
+  const isDairyFromUrl = searchParams.get('isDairy');
+
+  const [depotId, setDepotId] = useState<number | null>(() => {
+    return depotIdFromUrl ? parseInt(depotIdFromUrl, 10) : null;
+  });
   const [depots, setDepots] = useState<DepotListItem[]>([]);
   const [stocks, setStocks] = useState<VariantStock[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -28,20 +35,28 @@ const VarientstockListPage: React.FC = () => {
   const [isDepotLoading, setIsDepotLoading] = useState(true);
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
+  useEffect(() => {
+    if (depotIdFromUrl) {
+      setDepotId(parseInt(depotIdFromUrl, 10));
+    }
+  }, [depotIdFromUrl]);
+
   const fetchDepots = useCallback(async () => {
     setIsDepotLoading(true);
     try {
       const list = await getAllDepotsList();
       setDepots(list);
       if (list.length) {
-        setDepotId(list[0].id);
+        if (!depotIdFromUrl && !depotId) {
+          setDepotId(list[0].id);
+        }
       }
     } catch (err: any) {
       toast.error(err.message || 'Failed to fetch depots');
     } finally {
       setIsDepotLoading(false);
     }
-  }, []);
+  }, [depotIdFromUrl, depotId]);
 
   const fetchStocks = useCallback(async () => {
     if (!depotId) return;
@@ -51,7 +66,8 @@ const VarientstockListPage: React.FC = () => {
         depotId, 
         page: currentPage, 
         limit: 10,
-        search
+        search,
+        isDairy: isDairyFromUrl || undefined
       });
       
       setStocks(res.data);
@@ -62,7 +78,7 @@ const VarientstockListPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [depotId, currentPage, search]);
+  }, [depotId, currentPage, search, isDairyFromUrl]);
 
   // Handle search with debounce
   const handleSearch = (value: string) => {
@@ -135,6 +151,10 @@ const VarientstockListPage: React.FC = () => {
                 onValueChange={(val) => {
                   setDepotId(parseInt(val, 10));
                   setCurrentPage(1);
+                  setSearchParams((prev) => {
+                    prev.set('depotId', val);
+                    return prev;
+                  });
                 }}
                 disabled={isDepotLoading}
               >

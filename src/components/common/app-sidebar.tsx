@@ -10,6 +10,7 @@ import {
   FileText,
   Briefcase,
   ChevronDown,
+  ChevronsDownUp,
   BarChart3,
   ClipboardList,
   ShoppingCart,
@@ -37,6 +38,7 @@ import {
   CollapsibleContent,
 } from "@/components/ui/collapsible";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type SidebarSubItem = {
@@ -49,7 +51,8 @@ type SidebarProject = {
   title: string;
   url: string;
   icon?: LucideIcon;
-  groupLabel: string;
+  groupLabel?: string;
+  isStandalone?: boolean;
   isActive?: boolean;
   items?: SidebarSubItem[];
 };
@@ -550,6 +553,12 @@ const initialData = {
     AGENCY: {
       projects: [
         {
+          title: "Indraai Dashboard",
+          url: "/admin/dashboard/indraai",
+          icon: BarChart3,
+          isStandalone: true,
+        },
+        {
           title: "Orders",
           url: "/admin/orders",
           icon: FileText,
@@ -641,6 +650,36 @@ export const AppSidebar = React.forwardRef<
     {}
   );
 
+  // Helper to check if a route is active
+  const isRouteActive = React.useCallback((routeUrl: string) => {
+    if (!routeUrl || !pathname) return false;
+    const cleanRoute = routeUrl.split('?')[0].replace(/\/$/, '');
+    const cleanPath = pathname.split('?')[0].replace(/\/$/, '');
+    return cleanPath === cleanRoute || (cleanRoute !== '/admin' && cleanPath.startsWith(cleanRoute + '/'));
+  }, [pathname]);
+
+  // Auto-expand group when route changes
+  React.useEffect(() => {
+    if (!data.projects.length) return;
+    
+    setOpenGroups((prev) => {
+      const updated = { ...prev };
+      let changed = false;
+      
+      data.projects.forEach((item) => {
+        if (isRouteActive(item.url)) {
+          const group = item.groupLabel || "Other";
+          if (!updated[group]) {
+            updated[group] = true;
+            changed = true;
+          }
+        }
+      });
+      
+      return changed ? updated : prev;
+    });
+  }, [pathname, data.projects, isRouteActive]);
+
   React.useEffect(() => {
     const storedUser = localStorage.getItem("user");
     const storedRoles = localStorage.getItem("roles");
@@ -692,7 +731,11 @@ export const AppSidebar = React.forwardRef<
 
         // Initialize all groups as closed by default
         const groups = [
-          ...new Set(roleData?.projects.map((p) => p.groupLabel)),
+          ...new Set(
+            roleData?.projects
+              .map((p) => p.groupLabel)
+              .filter(Boolean) as string[]
+          ),
         ];
         const initialOpenState = groups.reduce((acc, group) => {
           acc[group] = false;
@@ -730,6 +773,7 @@ export const AppSidebar = React.forwardRef<
 
   // Group items by groupLabel
   const groupedItems = data.projects.reduce((groups, item) => {
+    if (item.isStandalone) return groups;
     const group = item.groupLabel || "Other";
     if (!groups[group]) {
       groups[group] = [];
@@ -751,9 +795,9 @@ export const AppSidebar = React.forwardRef<
             <SidebarMenuButton
               asChild
               tooltip={appName}
-              className="data-[slot=sidebar-menu-button]:!p-2 hover:bg-white/10 transition-colors rounded-lg"
+              className="data-[slot=sidebar-menu-button]:!p-2 hover:bg-white/10 transition-colors rounded-lg flex-1"
             >
-              <div className="flex items-center gap-2 justify-between">
+              <div className="flex items-center gap-2 justify-between w-full">
                 <Link
                   to="/admin/dashboard/indraai"
                   onClick={() => isMobile && setOpenMobile(false)}
@@ -764,6 +808,19 @@ export const AppSidebar = React.forwardRef<
                     {appName}
                   </span>
                 </Link>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-white hover:bg-white/10 hover:text-white group-data-[collapsible=icon]:hidden"
+                  onClick={(e: React.MouseEvent) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setOpenGroups({});
+                  }}
+                  title="Collapse All Groups"
+                >
+                  <ChevronsDownUp className="h-4 w-4" />
+                </Button>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -789,7 +846,7 @@ export const AppSidebar = React.forwardRef<
                       onClick={() => isMobile && setOpenMobile(false)}
                       className={cn(
                         "block w-full px-3 py-2 text-sm transition-colors",
-                        pathname === item.url
+                              isRouteActive(item.url)
                           ? "bg-white text-[#1d398d] rounded-md font-medium shadow-sm"
                           : "text-blue-100 hover:bg-white/15 hover:text-white rounded-md"
                       )}
@@ -802,6 +859,45 @@ export const AppSidebar = React.forwardRef<
             ))}
           </div>
         )}
+
+        {/* Standalone navigation items */}
+        <div className="space-y-1 mb-2 ml-6 mr-3 mt-2 group-data-[collapsible=icon]:ml-0 group-data-[collapsible=icon]:px-1">
+          {data.projects
+            .filter((item) => item.isStandalone)
+            .map((item) => (
+              <Tooltip key={item.url}>
+                <TooltipTrigger asChild>
+                  <Link
+                    to={item.url}
+                    onClick={() => isMobile && setOpenMobile(false)}
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-2 text-sm transition-colors group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:px-2",
+                      isRouteActive(item.url)
+                        ? "bg-white text-[#1d398d] rounded-md font-medium shadow-sm"
+                        : "text-blue-100 hover:bg-white/15 hover:text-white rounded-md"
+                    )}
+                  >
+                    {item.icon && (
+                      <item.icon
+                        className={cn(
+                          "h-4 w-4 flex-shrink-0 group-data-[collapsible=icon]:mx-auto",
+                          isRouteActive(item.url)
+                            ? "text-[#1d398d]"
+                            : "text-blue-200"
+                        )}
+                      />
+                    )}
+                    <span className="group-data-[collapsible=icon]:hidden">
+                      {item.title}
+                    </span>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="right" align="center" hidden={!showCollapsedTooltips}>
+                  {item.title}
+                </TooltipContent>
+              </Tooltip>
+            ))}
+        </div>
 
         {/* Grouped navigation items */}
         <div className="space-y-2">
@@ -842,7 +938,7 @@ export const AppSidebar = React.forwardRef<
                             onClick={() => isMobile && setOpenMobile(false)}
                             className={cn(
                               "flex items-center gap-2 px-3 py-2 text-sm transition-colors group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:px-2",
-                              pathname === item.url
+                              isRouteActive(item.url)
                                 ? "bg-white text-[#1d398d] rounded-md font-medium shadow-sm"
                                 : "text-blue-100 hover:bg-white/15 hover:text-white rounded-md"
                             )}
@@ -851,7 +947,7 @@ export const AppSidebar = React.forwardRef<
                               <item.icon
                                 className={cn(
                                   "h-4 w-4 flex-shrink-0 group-data-[collapsible=icon]:mx-auto",
-                                  pathname === item.url
+                                  isRouteActive(item.url)
                                     ? "text-[#1d398d]"
                                     : "text-blue-200"
                                 )}
@@ -886,7 +982,7 @@ export const AppSidebar = React.forwardRef<
                     onClick={() => isMobile && setOpenMobile(false)}
                     className={cn(
                       "flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2",
-                      pathname === item.url
+                      isRouteActive(item.url)
                         ? "bg-white text-[#1d398d] rounded-md font-medium shadow-sm"
                         : "text-blue-100 hover:bg-white/15 hover:text-white rounded-md"
                     )}
@@ -895,7 +991,7 @@ export const AppSidebar = React.forwardRef<
                       <item.icon
                         className={cn(
                           "h-4 w-4",
-                          pathname === item.url ? "text-[#1d398d]" : "text-blue-200"
+                          isRouteActive(item.url) ? "text-[#1d398d]" : "text-blue-200"
                         )}
                       />
                     )}
