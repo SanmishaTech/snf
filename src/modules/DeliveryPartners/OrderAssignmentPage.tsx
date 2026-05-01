@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { format, addDays, isAfter, isBefore, startOfDay } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -312,6 +313,8 @@ export default function OrderAssignmentPage() {
 
    const [activeTab, setActiveTab] = useState('pending');
    const [page, setPage] = useState(1);
+   const [reschedulingId, setReschedulingId] = useState<number | null>(null);
+   const [selectedRescheduleDate, setSelectedRescheduleDate] = useState<string>('');
 
    useEffect(() => {
       setPage(1);
@@ -326,21 +329,25 @@ export default function OrderAssignmentPage() {
       enabled: isAdmin
    });
 
-   const { data: pendingData = { orders: [], total: 0 }, isLoading: loadingPending } = useQuery({
-      queryKey: ['pendingOrders', selectedDepotId, activeTab === 'pending' ? page : 1],
+   const { data: pendingData = { orders: [], holdedOrders: [], total: 0, holdedTotal: 0 }, isLoading: loadingPending } = useQuery({
+      queryKey: ['pendingOrders', selectedDepotId, (activeTab === 'pending' || activeTab === 'holded') ? page : 1],
       queryFn: async () => {
-         const limit = activeTab === 'pending' ? 50 : 1;
-         const p = activeTab === 'pending' ? page : 1;
+         const limit = (activeTab === 'pending' || activeTab === 'holded') ? 50 : 1;
+         const p = (activeTab === 'pending' || activeTab === 'holded') ? page : 1;
          const res = await get(`/delivery-assignments/pending?depotId=${selectedDepotId}&page=${p}&limit=${limit}`);
-         const snf = (res.snfOrders || []).map((o: any) => ({ ...o, type: 'SNF' }));
-         const entries = (res.subEntries || []).map((e: any) => ({ ...e, type: 'SUB' }));
-         return { orders: [...snf, ...entries], total: res.total || 0 };
+         return {
+            orders: res.orders || [],
+            holdedOrders: res.holdedOrders || [],
+            total: res.total || 0,
+            holdedTotal: res.holdedTotal || 0
+         };
       },
       enabled: !!selectedDepotId,
       refetchInterval: 10000,
    });
 
    const pendingOrders = pendingData.orders;
+   const holdedOrders = pendingData.holdedOrders;
 
    const { data: trackerData = { assignments: [], totals: { assigned: 0, delivered: 0, failed: 0 }, total: 0 }, isLoading: loadingTracking } = useQuery({
       queryKey: ['assignedOrders', selectedDepotId, activeTab, activeTab !== 'pending' ? page : 1],
@@ -411,8 +418,9 @@ export default function OrderAssignmentPage() {
 
    const activeTotal = useMemo(() => {
       if (activeTab === 'pending') return pendingData.total;
+      if (activeTab === 'holded') return pendingData.holdedTotal;
       return trackerData.total;
-   }, [activeTab, pendingData.total, trackerData.total]);
+   }, [activeTab, pendingData.total, pendingData.holdedTotal, trackerData.total]);
 
    const totalPages = Math.ceil(activeTotal / 50);
 
@@ -430,6 +438,35 @@ export default function OrderAssignmentPage() {
          deliveryScheduleEntryIds: type === 'SUB' ? [orderId] : []
       };
       assignMutation.mutate(payload);
+   };
+
+   const retryMutation = useMutation({
+      mutationFn: ({ id, nextDate }: { id: number, nextDate: string }) =>
+         post(`/delivery-assignments/${id}/retry`, { deliveryDate: nextDate }),
+      onSuccess: () => {
+         queryClient.invalidateQueries({ queryKey: ['delivery-tracker'] });
+         toast.success('Delivery rescheduled for tomorrow');
+      },
+      onError: (err: any) => {
+         toast.error(err.response?.data?.errors?.message || 'Failed to reschedule delivery');
+      }
+   });
+
+   const handleReschedule = (asgnId: number, selectedDate: string) => {
+      const targetDate = new Date(selectedDate);
+      const today = startOfDay(new Date());
+      const maxDate = addDays(today, 30);
+
+      if (isBefore(targetDate, today)) {
+         toast.error('Cannot reschedule for a past date');
+         return;
+      }
+      if (isAfter(targetDate, maxDate)) {
+         toast.error('Cannot reschedule more than 30 days in advance');
+         return;
+      }
+
+      retryMutation.mutate({ id: asgnId, nextDate: selectedDate });
    };
 
    const handleUnassign = (assignmentId: number) => {
@@ -562,6 +599,65 @@ export default function OrderAssignmentPage() {
                                  Recall
                               </Button>
                            )}
+                           {asgn.status === 'NOT_DELIVERED' && (
+                              <div className="w-full space-y-2">
+                                 {reschedulingId === asgn.id ? (
+                                    <div className="space-y-2 p-2 bg-white rounded-lg border border-amber-100 shadow-inner">
+                                       <input
+                                          type="date"
+                                          className="w-full h-8 px-2 text-[10px] font-bold rounded-md border-amber-200 focus:outline-none focus:ring-1 focus:ring-amber-400 bg-amber-50/30"
+                                          min={format(new Date(), 'yyyy-MM-dd')}
+                                          max={format(addDays(new Date(), 30), 'yyyy-MM-dd')}
+                                          value={selectedRescheduleDate}
+                                          onChange={(e) => setSelectedRescheduleDate(e.target.value)}
+                                          onClick={(e) => e.stopPropagation()}
+                                       />
+                                       <div className="flex gap-1.5">
+                                          <Button
+                                             size="sm"
+                                             className="flex-1 h-7 text-[9px] font-bold bg-amber-500 hover:bg-amber-600 text-white rounded-md uppercase"
+                                             onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (selectedRescheduleDate) {
+                                                   handleReschedule(asgn.id, selectedRescheduleDate);
+                                                   setReschedulingId(null);
+                                                } else {
+                                                   toast.error('Please select a date');
+                                                }
+                                             }}
+                                             disabled={retryMutation.isPending}
+                                          >
+                                             Confirm
+                                          </Button>
+                                          <Button
+                                             size="sm"
+                                             variant="ghost"
+                                             className="flex-1 h-7 text-[9px] font-bold text-slate-400 hover:text-slate-600 rounded-md uppercase"
+                                             onClick={(e) => {
+                                                e.stopPropagation();
+                                                setReschedulingId(null);
+                                             }}
+                                          >
+                                             Cancel
+                                          </Button>
+                                       </div>
+                                    </div>
+                                 ) : (
+                                    <Button
+                                       variant="outline"
+                                       className="w-full h-8 rounded-lg border-amber-200 bg-white text-amber-600 font-bold text-[9px] tracking-wider uppercase hover:bg-amber-50 hover:text-amber-700 transition-all shadow-sm"
+                                       onClick={(e) => {
+                                          e.stopPropagation();
+                                          setReschedulingId(asgn.id);
+                                          setSelectedRescheduleDate(format(addDays(new Date(), 1), 'yyyy-MM-dd'));
+                                       }}
+                                    >
+                                       <RefreshCw size={11} className="mr-1.5" />
+                                       Reschedule
+                                    </Button>
+                                 )}
+                              </div>
+                           )}
                         </div>
                      </div>
                   </div>
@@ -617,6 +713,10 @@ export default function OrderAssignmentPage() {
                      <Package size={16} className="mr-2" />To Assign
                      <Badge variant="secondary" className="ml-2 bg-slate-200/50 text-slate-600 border-none px-1.5 py-0 h-4 text-[9px] font-bold">{pendingData.total}</Badge>
                   </TabsTrigger>
+                  <TabsTrigger value="holded" className="rounded-lg px-6 font-semibold text-xs text-slate-500 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md transition-all h-full">
+                     <AlertTriangle size={16} className="mr-2" />Hold
+                     <Badge variant="secondary" className="ml-2 bg-red-100 text-red-600 border-none px-1.5 py-0 h-4 text-[9px] font-bold">{pendingData.holdedTotal}</Badge>
+                  </TabsTrigger>
                   <TabsTrigger value="assigned" className="rounded-lg px-6 font-semibold text-xs text-slate-500 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md transition-all h-full">
                      <Truck size={16} className="mr-2" />Assigned
                      <Badge variant="secondary" className="ml-2 bg-slate-200/50 text-slate-600 border-none px-1.5 py-0 h-4 text-[9px] font-bold">{trackerData.totals?.assigned || 0}</Badge>
@@ -665,6 +765,83 @@ export default function OrderAssignmentPage() {
                                              <SelectContent>{partners.map((p: any) => (<SelectItem key={p.id} value={p.id.toString()}>{p.firstName} {p.lastName}</SelectItem>))}</SelectContent>
                                           </Select>
                                           <Button className="w-full font-bold uppercase text-[9px] h-8" onClick={(e) => { e.stopPropagation(); handleAssign(order.id, order.type); }} disabled={assignMutation.isPending}>{assignMutation.isPending ? <LoaderCircle size={12} className="animate-spin" /> : "DISPATCH"}</Button>
+                                       </div>
+                                    </div>
+                                 </CardContent>
+                              </Card>
+                           );
+                        })}
+                     </div>
+                  )}
+               </TabsContent>
+
+               <TabsContent value="holded" className="space-y-4 outline-none">
+                  {loadingPending ? (
+                     <div className="flex justify-center items-center py-20"><LoaderCircle className="animate-spin text-primary" size={32} /></div>
+                  ) : holdedOrders.length === 0 ? (
+                     <div className="flex flex-col items-center justify-center py-20 bg-white border-2 border-dashed border-gray-100 rounded-3xl text-gray-400">
+                        <CheckCircle2 size={48} className="mb-4 opacity-10" /><p className="font-bold italic">No holded orders found.</p>
+                     </div>
+                  ) : (
+                     <div className="grid gap-4">
+                        {holdedOrders.map((order: any) => {
+                           const key = `${order.type}-${order.id}`;
+                           const isFailed = order.holdReason?.includes('Failed');
+                           return (
+                              <Card key={key} className="group overflow-hidden border-red-200/60 bg-red-50/10 hover:border-red-300 transition-all duration-300 rounded-2xl cursor-pointer" onClick={() => openDetails(order)}>
+                                 <CardContent className="p-0">
+                                    <div className="flex flex-col lg:flex-row items-stretch">
+                                       <div className="flex-1 p-3.5">
+                                          <div className="flex items-center gap-2 mb-1.5">
+                                             <Badge className="bg-red-100 text-red-600 border-none font-bold text-[8px] px-1.5 py-0 rounded-full uppercase">ON HOLD</Badge>
+                                             <span className="text-[9px] font-bold text-slate-400 uppercase">{order.orderNo ? `#${order.orderNo}` : `REF-${order.id}`}</span>
+                                             <Badge variant="outline" className="text-[11px] font-extrabold bg-red-50 text-red-700 border-red-200 px-2 py-0.5 h-auto">
+                                                Wallet: ₹{order.member?.walletBalance || 0}
+                                             </Badge>
+                                          </div>
+                                          <h4 className="font-bold text-base text-slate-800 leading-tight mb-1.5">{order.name || order.deliveryAddress?.recipientName}</h4>
+                                          <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500"><MapPin size={11} className="text-slate-300" /><span className="truncate">{order.addressLine1 || order.deliveryAddress?.plotBuilding || 'No address'}</span></div>
+                                          
+                                          <p className="mt-3 text-[10px] text-red-600 font-black uppercase tracking-wider flex items-center gap-1.5 bg-red-100/50 w-fit px-2 py-0.5 rounded-md">
+                                             <AlertTriangle size={12} /> 
+                                             {order.holdReason}
+                                          </p>
+                                          {isFailed && order.prevPartner && (
+                                             <p className="mt-1.5 text-[9px] text-slate-500 font-bold italic">Previously with: <span className="text-slate-700">{order.prevPartner}</span></p>
+                                          )}
+                                       </div>
+
+                                       <div className="lg:w-64 border-t lg:border-t-0 lg:border-l border-red-100 p-3.5 bg-white/50 flex flex-col justify-center" onClick={(e) => e.stopPropagation()}>
+                                          {isFailed ? (
+                                             <div className="space-y-2">
+                                                {reschedulingId === order.assignmentId ? (
+                                                   <div className="space-y-2">
+                                                      <input
+                                                         type="date"
+                                                         className="w-full h-8 px-2 text-[10px] font-bold rounded-xl border-amber-200 focus:outline-none focus:ring-1 focus:ring-amber-400 bg-amber-50/30"
+                                                         min={format(new Date(), 'yyyy-MM-dd')}
+                                                         max={format(addDays(new Date(), 30), 'yyyy-MM-dd')}
+                                                         value={selectedRescheduleDate}
+                                                         onChange={(e) => setSelectedRescheduleDate(e.target.value)}
+                                                      />
+                                                      <div className="flex gap-1.5">
+                                                         <Button size="sm" className="flex-1 h-7 text-[9px] font-bold bg-amber-500 hover:bg-amber-600 text-white rounded-xl uppercase" onClick={() => { if (selectedRescheduleDate) { handleReschedule(order.assignmentId, selectedRescheduleDate); setReschedulingId(null); } }}>Confirm</Button>
+                                                         <Button size="sm" variant="ghost" className="flex-1 h-7 text-[9px] font-bold text-slate-400 hover:text-slate-600 rounded-xl uppercase" onClick={() => setReschedulingId(null)}>Cancel</Button>
+                                                      </div>
+                                                   </div>
+                                                ) : (
+                                                   <Button variant="outline" className="w-full h-8 rounded-xl border-amber-200 bg-white text-amber-600 font-bold text-[9px] tracking-wider uppercase hover:bg-amber-50 transition-all shadow-sm" onClick={() => { setReschedulingId(order.assignmentId); setSelectedRescheduleDate(format(addDays(new Date(), 1), 'yyyy-MM-dd')); }}>
+                                                      <RefreshCw size={11} className="mr-1.5" />Reschedule
+                                                   </Button>
+                                                )}
+                                             </div>
+                                          ) : (
+                                             <div className="text-center">
+                                                <div className="p-2 rounded-full bg-red-100 text-red-600 mb-1.5 w-fit mx-auto"><XCircle size={18} /></div>
+                                                <p className="text-[10px] font-black text-red-700 leading-tight">DELIVERY BLOCKED</p>
+                                                <p className="text-[8px] text-red-500/80 font-bold uppercase mt-0.5 tracking-tighter">Clear dues to assign</p>
+                                             </div>
+                                          )}
                                        </div>
                                     </div>
                                  </CardContent>
