@@ -134,17 +134,15 @@ function AssignmentDetailsContent({ order }: { order: any }) {
                <CardContent className="px-4 py-2.5">
                   <div>
                      <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest mb-1">Current Status</p>
-                     <div className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border ${
-                        order.status === 'DELIVERED' 
-                           ? 'bg-green-50 border-green-100 text-green-700' 
-                           : order.status === 'NOT_DELIVERED'
-                              ? 'bg-amber-50 border-amber-100 text-amber-700'
-                              : 'bg-blue-50 border-blue-100 text-blue-700'
-                     }`}>
-                        <div className={`h-1.5 w-1.5 rounded-full ${
-                           order.status === 'DELIVERED' ? 'bg-green-500' : 
+                     <div className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border ${order.status === 'DELIVERED'
+                        ? 'bg-green-50 border-green-100 text-green-700'
+                        : order.status === 'NOT_DELIVERED'
+                           ? 'bg-amber-50 border-amber-100 text-amber-700'
+                           : 'bg-blue-50 border-blue-100 text-blue-700'
+                        }`}>
+                        <div className={`h-1.5 w-1.5 rounded-full ${order.status === 'DELIVERED' ? 'bg-green-500' :
                            order.status === 'NOT_DELIVERED' ? 'bg-amber-500' : 'bg-blue-500'
-                        }`} />
+                           }`} />
                         <span className="text-[10px] font-bold uppercase tracking-tight">
                            {order.status || 'Pending'}
                         </span>
@@ -162,12 +160,28 @@ function AssignmentDetailsContent({ order }: { order: any }) {
                      <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest mb-1">Cash Collected</p>
                      <p className="text-lg font-bold text-green-600">₹{order.cashCollected || 0}</p>
                   </div>
+                  <div className="bg-white px-4 py-2.5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center">
+                     <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest mb-1">Target Amount</p>
+                     <p className="text-lg font-bold text-slate-800">₹{order.totalAmount || order.payableAmount || 0}</p>
+                  </div>
+               </div>
+
+               {((order.totalAmount || order.payableAmount || 0) - (order.cashCollected || 0)) > 0 && (
+                  <div className="bg-red-50 border border-red-100 p-3 rounded-xl flex items-center gap-2">
+                     <AlertTriangle size={14} className="text-red-500" />
+                     <p className="text-[10px] font-bold text-red-600 uppercase tracking-tight">
+                        Deficit of ₹{(order.totalAmount || order.payableAmount || 0) - (order.cashCollected || 0)} debited from wallet
+                     </p>
+                  </div>
+               )}
+
+               <div className="grid grid-cols-1 gap-3">
                   {order.deliveryPhotoUrl ? (
                      <div className="bg-white px-4 py-2.5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center">
                         <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest mb-1">Image Proof</p>
-                        <Button 
-                           variant="outline" 
-                           size="sm" 
+                        <Button
+                           variant="outline"
+                           size="sm"
                            className="h-6 px-3 text-[9px] font-bold uppercase tracking-wider rounded-lg border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-primary transition-all"
                            onClick={() => window.open(`http://localhost:3000${order.deliveryPhotoUrl}`, '_blank')}
                         >
@@ -288,11 +302,11 @@ export default function OrderAssignmentPage() {
    const [isPanelOpen, setIsPanelOpen] = useState(false);
    const [selectedPartners, setSelectedPartners] = useState<{ [key: string]: string }>({});
    const queryClient = useQueryClient();
- 
+
    const userContextStr = localStorage.getItem('user') || localStorage.getItem('userDetails') || '{}';
    const userObj = JSON.parse(userContextStr);
    const initialDepotId = userObj.depotId || userObj.depot_id;
-   
+
    const [selectedDepotId, setSelectedDepotId] = useState<string>(initialDepotId?.toString() || '');
    const isAdmin = userObj.role === 'ADMIN';
 
@@ -335,7 +349,7 @@ export default function OrderAssignmentPage() {
          if (activeTab === 'assigned') status = 'ASSIGNED,OUT_FOR_DELIVERY';
          else if (activeTab === 'delivered') status = 'DELIVERED';
          else if (activeTab === 'failed') status = 'NOT_DELIVERED';
-         
+
          const limit = activeTab !== 'pending' ? 50 : 1;
          const p = activeTab !== 'pending' ? page : 1;
          const res = await get(`/delivery-assignments/track?depotId=${selectedDepotId}&status=${status}&page=${p}&limit=${limit}`);
@@ -373,16 +387,16 @@ export default function OrderAssignmentPage() {
       onError: () => toast.error('Recall failed')
    });
 
-   const assignedOrders = useMemo(() => 
-      activeTab === 'assigned' ? trackerData.assignments : [], 
+   const assignedOrders = useMemo(() =>
+      activeTab === 'assigned' ? trackerData.assignments : [],
       [trackerData.assignments, activeTab]
    );
-   const deliveredOrders = useMemo(() => 
-      activeTab === 'delivered' ? trackerData.assignments : [], 
+   const deliveredOrders = useMemo(() =>
+      activeTab === 'delivered' ? trackerData.assignments : [],
       [trackerData.assignments, activeTab]
    );
-   const failedOrders = useMemo(() => 
-      activeTab === 'failed' ? trackerData.assignments : [], 
+   const failedOrders = useMemo(() =>
+      activeTab === 'failed' ? trackerData.assignments : [],
       [trackerData.assignments, activeTab]
    );
 
@@ -425,8 +439,8 @@ export default function OrderAssignmentPage() {
    const openDetails = (data: any) => {
       let orderToDetail = data;
       if (data.snfOrder || data.deliveryScheduleEntry) {
-         orderToDetail = { 
-            ...(data.snfOrder || data.deliveryScheduleEntry), 
+         orderToDetail = {
+            ...(data.snfOrder || data.deliveryScheduleEntry),
             type: data.snfOrder ? 'SNF' : 'SUB',
             status: data.status,
             cashCollected: data.cashCollected,
@@ -438,22 +452,21 @@ export default function OrderAssignmentPage() {
    };
 
    const TrackingRow = ({ asgn }: { asgn: any }) => {
-      const items = asgn.snfOrder ? (asgn.snfOrder.items || []) : 
-                   asgn.deliveryScheduleEntry ? [asgn.deliveryScheduleEntry] : [];
+      const items = asgn.snfOrder ? (asgn.snfOrder.items || []) :
+         asgn.deliveryScheduleEntry ? [asgn.deliveryScheduleEntry] : [];
       const customerName = asgn.snfOrder ? (asgn.snfOrder.name || asgn.snfOrder.customerName) : asgn.deliveryScheduleEntry?.deliveryAddress?.recipientName || 'Member';
       const partnerName = asgn.deliveryPartner ? `${asgn.deliveryPartner.firstName} ${asgn.deliveryPartner.lastName}` : 'Partner';
       const walletBalance = asgn.snfOrder?.member?.walletBalance ?? asgn.deliveryScheduleEntry?.member?.walletBalance;
 
       return (
-         <Card 
-            key={asgn.id} 
-            className={`overflow-hidden transition-all duration-300 rounded-2xl cursor-pointer ${
-               asgn.status === 'DELIVERED' 
-                  ? 'border-l-[6px] border-l-green-500 border-slate-200 shadow-md ring-1 ring-green-100/50' 
-                  : asgn.status === 'NOT_DELIVERED'
-                     ? 'border-l-[6px] border-l-amber-500 border-slate-200 shadow-md ring-1 ring-amber-100/50'
-                     : 'border-l-[6px] border-l-blue-500 border-slate-200 shadow-sm'
-            }`}
+         <Card
+            key={asgn.id}
+            className={`overflow-hidden transition-all duration-300 rounded-2xl cursor-pointer ${asgn.status === 'DELIVERED'
+               ? 'border-l-[6px] border-l-green-500 border-slate-200 shadow-md ring-1 ring-green-100/50'
+               : asgn.status === 'NOT_DELIVERED'
+                  ? 'border-l-[6px] border-l-amber-500 border-slate-200 shadow-md ring-1 ring-amber-100/50'
+                  : 'border-l-[6px] border-l-blue-500 border-slate-200 shadow-sm'
+               }`}
             onClick={() => openDetails(asgn)}
          >
             <CardContent className="p-0">
@@ -473,8 +486,8 @@ export default function OrderAssignmentPage() {
                               <Badge className={`
                                  font-bold text-[8px] tracking-wide px-1.5 py-0 border-none rounded-full
                                  ${asgn.status === 'DELIVERED' ? 'bg-green-500 text-white' :
-                                               asgn.status === 'NOT_DELIVERED' ? 'bg-amber-500 text-white' :
-                                               'bg-blue-500 text-white'}
+                                    asgn.status === 'NOT_DELIVERED' ? 'bg-amber-500 text-white' :
+                                       'bg-blue-500 text-white'}
                               `}>
                                  {asgn.status}
                               </Badge>
@@ -509,17 +522,15 @@ export default function OrderAssignmentPage() {
                         </div>
                      </div>
                   </div>
-                  <div 
-                     className={`md:w-56 p-3.5 border-t md:border-t-0 md:border-l border-slate-100 flex flex-col justify-between items-center text-center ${
-                        asgn.status === 'DELIVERED' ? 'bg-green-50/20' : 'bg-slate-50'
-                     }`}
+                  <div
+                     className={`md:w-56 p-3.5 border-t md:border-t-0 md:border-l border-slate-100 flex flex-col justify-between items-center text-center ${asgn.status === 'DELIVERED' ? 'bg-green-50/20' : 'bg-slate-50'
+                        }`}
                      onClick={(e) => e.stopPropagation()}
                   >
                      <div className="w-full space-y-2.5">
                         <div className="flex flex-col items-center gap-1 px-3 py-1.5 bg-white rounded-lg border border-slate-200/50 shadow-sm">
-                           <div className={`h-7 w-7 rounded-full flex items-center justify-center ${
-                              asgn.status === 'DELIVERED' ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-400'
-                           }`}>
+                           <div className={`h-7 w-7 rounded-full flex items-center justify-center ${asgn.status === 'DELIVERED' ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-400'
+                              }`}>
                               <User size={14} />
                            </div>
                            <div>

@@ -55,6 +55,7 @@ const CheckoutPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [deliveryLocation, setDeliveryLocation] = useState<DeliveryLocation | null>(null);
   const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [strictCodLimit, setStrictCodLimit] = useState<boolean>(false);
   const [isFetchingWallet, setIsFetchingWallet] = useState<boolean>(false);
   const [walletError, setWalletError] = useState<string | null>(null);
   const [isValidating, setIsValidating] = useState(false);
@@ -133,6 +134,9 @@ const CheckoutPage: React.FC = () => {
         let balance: number | null = null;
         if (resp && resp.data && typeof resp.data.balance === 'number') {
           balance = resp.data.balance;
+          if (typeof resp.data.strictCodLimit === 'boolean') {
+            setStrictCodLimit(resp.data.strictCodLimit);
+          }
         } else if (typeof resp?.balance === 'number') {
           balance = resp.balance;
         }
@@ -216,6 +220,13 @@ const CheckoutPage: React.FC = () => {
       const walletDeduction = Math.max(0, Math.min(walletBalance || 0, subAfterCoupon));
       // What is left after wallet deduction
       const payableOnline = Math.max(0, subAfterCoupon - walletDeduction);
+
+      // Check COD restriction
+      const isCodDisabled = strictCodLimit ? walletBalance < 0 : walletBalance < -1000;
+      if (paymentMode === 'WALLET' && payableOnline > 0 && isCodDisabled) {
+        toast.error("Cash on Delivery is currently disabled due to outstanding wallet balance.");
+        return;
+      }
 
       if (!selectedAddress) {
         toast.error("Please select a delivery address");
@@ -599,21 +610,31 @@ const CheckoutPage: React.FC = () => {
                       const betaNumbers = (import.meta.env.VITE_PHONEPE_BETA_NUMBERS || "").split(",").map((s: string) => s.trim());
                       const isOnlineEnabled = selectedAddress && betaNumbers.includes(selectedAddress.mobile);
                       
+                      const isCodDisabled = strictCodLimit 
+                        ? walletBalance < 0 
+                        : walletBalance < -1000;
+
                       return payableOnline > 0 ? (
                         <div className="pt-2 space-y-2">
                           <p className="text-xs font-medium text-muted-foreground">How would you like to pay the remaining {currency.format(payableOnline)}?</p>
                           <div className="grid grid-cols-2 gap-2">
                             <button
                               type="button"
+                              disabled={isCodDisabled}
                               onClick={() => setPaymentMode('WALLET')}
                               className={`flex items-center gap-2 rounded-lg border p-3 text-sm transition-all ${
                                 paymentMode === 'WALLET'
                                   ? 'border-primary bg-primary/5 text-primary font-medium'
                                   : 'border-border text-muted-foreground hover:border-primary/40'
-                              }`}
+                              } ${isCodDisabled ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
                             >
                               <Wallet className="size-4 shrink-0" />
-                              <span>Cash / UPI<br /><span className="text-xs font-normal">On delivery</span></span>
+                              <div className="flex flex-col items-start">
+                                <span>Cash / UPI</span>
+                                <span className={`text-[10px] font-normal ${isCodDisabled ? 'text-destructive font-bold' : ''}`}>
+                                  {isCodDisabled ? 'Limit Crossed' : 'On delivery'}
+                                </span>
+                              </div>
                             </button>
                             {isOnlineEnabled ? (
                               <button

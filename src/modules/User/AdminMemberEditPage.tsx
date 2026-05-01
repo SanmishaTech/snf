@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useForm, SubmitHandler } from 'react-hook-form';
+import { useForm, SubmitHandler, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -31,6 +31,8 @@ import { DeliveryAddress } from '@/modules/Address/components/AddressForm';
 import AdminAddressForm from './components/AdminAddressForm';
 import Validate from '@/lib/Handlevalidation'; // Assuming this handles backend validation errors
 
+import { Checkbox } from '@/components/ui/checkbox';
+
 // Define the Zod schema for member editing
 const memberEditSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -39,8 +41,7 @@ const memberEditSchema = z.object({
     .refine(val => !val || /^\d{10,15}$/.test(val), {
       message: 'Mobile number must be 10-15 digits if provided.',
     }),
-  // Add other fields if necessary, e.g., address, etc.
-  // Note: 'role' and 'active' status are typically handled elsewhere for members.
+  strictCodLimit: z.boolean().default(false),
 });
 
 type MemberEditFormInputs = z.infer<typeof memberEditSchema>;
@@ -60,6 +61,7 @@ const AdminMemberEditPage: React.FC = () => {
   const [isDeletingAddress, setIsDeletingAddress] = useState(false);
 
   const {
+    control,
     register,
     handleSubmit,
     setValue,
@@ -79,6 +81,7 @@ const AdminMemberEditPage: React.FC = () => {
           setValue('name', member.name);
           setValue('email', member.email);
           if (member.mobile) setValue('mobile', member.mobile.toString());
+          setValue('strictCodLimit', !!member.strictCodLimit);
 
           // Fetch member addresses
           await fetchMemberAddresses();
@@ -226,6 +229,30 @@ const AdminMemberEditPage: React.FC = () => {
                   {errors.email.message}
                 </span>
               )}
+            </div>
+
+            {/* Strict COD Limit Field */}
+            <div className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+              <Controller
+                name="strictCodLimit"
+                control={control}
+                render={({ field }) => (
+                  <Checkbox
+                    id="strictCodLimit"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                )}
+              />
+              <div className="space-y-1 leading-none">
+                <Label htmlFor="strictCodLimit" className="text-sm font-medium leading-none cursor-pointer">
+                  Disable COD on Negative Balance
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  If checked, Cash on Delivery will be disabled immediately if the wallet balance is negative. 
+                  If unchecked, the customer can go up to -₹1000 before COD is disabled.
+                </p>
+              </div>
             </div>
 
             {/* Mobile Field */}

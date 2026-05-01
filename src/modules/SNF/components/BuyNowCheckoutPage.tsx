@@ -63,6 +63,7 @@ const BuyNowCheckoutPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [deliveryLocation, setDeliveryLocation] = useState<DeliveryLocation | null>(null);
   const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [strictCodLimit, setStrictCodLimit] = useState<boolean>(false);
   const [isFetchingWallet, setIsFetchingWallet] = useState<boolean>(false);
   const [walletError, setWalletError] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(initialQuantity);
@@ -116,6 +117,9 @@ const BuyNowCheckoutPage: React.FC = () => {
         let balance: number | null = null;
         if (resp && resp.data && typeof resp.data.balance === 'number') {
           balance = resp.data.balance;
+          if (typeof resp.data.strictCodLimit === 'boolean') {
+            setStrictCodLimit(resp.data.strictCodLimit);
+          }
         } else if (typeof resp?.balance === 'number') {
           balance = resp.balance;
         }
@@ -191,6 +195,14 @@ const BuyNowCheckoutPage: React.FC = () => {
 
       const deliveryFee = 0;
       const walletDeduction = Math.max(0, Math.min(walletBalance || 0, subtotal + deliveryFee));
+      const payableRemaining = Math.max(0, (subtotal + deliveryFee) - walletDeduction);
+
+      // Check COD restriction
+      const isCodDisabled = strictCodLimit ? walletBalance < 0 : walletBalance < -1000;
+      if (payableRemaining > 0 && isCodDisabled) {
+        toast.error("Cash on Delivery is currently disabled due to outstanding wallet balance.");
+        return;
+      }
 
       if (!selectedAddress) {
         toast.error("Please select a delivery address");
@@ -549,13 +561,30 @@ const BuyNowCheckoutPage: React.FC = () => {
                   )}
                 </CardContent>
                 <CardFooter className="flex-col gap-2">
-                  <Button
-                    className="w-full"
-                    onClick={handlePlaceOrder}
-                    disabled={!isFormValid || loading}
-                  >
-                    {loading ? "Placing order..." : "Proceed to payment"}
-                  </Button>
+                  {(() => {
+                    const amountAfterCoupon = subtotal - couponDiscountAmount;
+                    const d = Math.max(0, Math.min(walletBalance || 0, amountAfterCoupon));
+                    const remaining = Math.max(0, amountAfterCoupon - d);
+                    const isCodDisabled = strictCodLimit ? walletBalance < 0 : walletBalance < -1000;
+                    const restrictionActive = remaining > 0 && isCodDisabled;
+
+                    return (
+                      <>
+                        <Button
+                          className="w-full"
+                          onClick={handlePlaceOrder}
+                          disabled={!isFormValid || loading || restrictionActive}
+                        >
+                          {loading ? "Placing order..." : restrictionActive ? "COD Disabled" : "Proceed to payment"}
+                        </Button>
+                        {restrictionActive && (
+                          <p className="text-[10px] text-red-600 text-center mt-1 font-bold">
+                            Cash on Delivery is disabled due to your wallet balance. Please clear your dues to continue.
+                          </p>
+                        )}
+                      </>
+                    );
+                  })()}
                   {!selectedAddress && (
                     <p className="text-xs text-red-600 text-center">
                       Please select a delivery address to continue
