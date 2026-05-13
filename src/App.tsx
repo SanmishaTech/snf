@@ -1,5 +1,5 @@
 //Vipul
-import React, { useEffect } from "react";
+import React, { useEffect, lazy } from "react";
 import { appName } from "./config"; // Import appName from config
 import {
   BrowserRouter as Router,
@@ -30,8 +30,9 @@ import AgencyList from "./modules/Agency/AgencyList"
 import SupervisorList from "./modules/Supervisor/SupervisorList"
 import CreateVendorPage from "./modules/Vendor/CreateVendorPage";
 import EditVendorPage from "./modules/Vendor/EditVendorPage";
-import CreateAgencyPage from "./modules/Agency/CreateAgencyPage";
-import EditAgencyPage from "./modules/Agency/EditAgencyPage";
+const CreateAgencyPage = lazy(() => import("./modules/Agency/CreateAgencyPage"));
+const EditAgencyPage = lazy(() => import("./modules/Agency/EditAgencyPage"));
+const AgencyCustomers = lazy(() => import("./modules/Agency/AgencyCustomers"));
 import CreateSupervisorPage from "./modules/Supervisor/CreateSupervisorPage";
 import EditSupervisorPage from "./modules/Supervisor/EditSupervisorPage";
 import Orderlist from "./modules/Order/OrderList";
@@ -428,6 +429,7 @@ const App = () => {
             <Route path="/admin/activity-log" element={<ActivityLogPage />} />
             <Route path="/admin/pos" element={<POSPage />} />
             <Route path="/admin/delivery-partners" element={<DeliveryPartnersListPage />} />
+            <Route path="/admin/agency-customers" element={<AgencyCustomers />} />
             <Route path="/admin/order-assignment" element={<OrderAssignmentPage />} />
             {/* Indraai Inventory */}
             <Route path="/admin/indraai-inventory" element={<InventoryDashboard isDairy={true} />} />

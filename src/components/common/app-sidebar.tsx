@@ -15,6 +15,7 @@ import {
   ClipboardList,
   ShoppingCart,
   Boxes,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 
@@ -562,6 +563,12 @@ const initialData = {
           title: "Orders",
           url: "/admin/orders",
           icon: FileText,
+          groupLabel: "Agencies Portal",
+        },
+        {
+          title: "My Customers",
+          url: "/admin/agency-customers",
+          icon: Users,
           groupLabel: "Agencies Portal",
         },
         {
