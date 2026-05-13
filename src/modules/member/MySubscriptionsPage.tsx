@@ -32,9 +32,9 @@ interface Product {
   name: string;
   price?: number;
   unit?: string; // Added unit property
-  depotProductVariantId?: string;
+  categoryId?: number;
   depotVariant?: {
-    id: string;
+    id: number;
     name: string;
     unit: string;
   };
@@ -87,6 +87,13 @@ export interface MemberSubscription {
   paymentStatus?: "PENDING" | "PAID" | "FAILED" | "CANCELLED";
   agency?: Agency | null;
   amount?: number;
+  walletamt?: number;
+  payableamt?: number;
+  receivedamt?: number;
+  paymentMode?: string;
+  paymentDate?: string;
+  paymentReferenceNo?: string;
+  createdAt: string;
   deliveryAddress?: Address | null;
   deliveryScheduleEntries?: DeliveryScheduleEntry[];
   productOrder?: {
@@ -493,9 +500,53 @@ const MySubscriptionsPage: React.FC = () => {
                   </p>
                 )}
                 {sub.amount !== undefined && (
-                  <p className="font-semibold text-base">
-                    <strong>Total Amount:</strong> ₹{sub.amount.toFixed(2)}
-                  </p>
+                  <div className="space-y-1 mt-4 pt-3 border-t">
+                    <p className="font-semibold text-base flex justify-between">
+                      <span>Total Amount:</span> 
+                      <span>₹{sub.amount.toFixed(2)}</span>
+                    </p>
+                    {sub.walletamt && sub.walletamt > 0 ? (
+                      <div className="space-y-1 bg-green-50/50 p-2 rounded-md mt-2">
+                        <p className="text-xs text-green-600 flex justify-between font-medium">
+                          <span>Paid from Wallet:</span>
+                          <span>- ₹{sub.walletamt.toFixed(2)}</span>
+                        </p>
+                        {sub.payableamt && sub.payableamt > 0 ? (
+                          <p className="text-xs text-blue-600 flex justify-between font-bold border-t border-green-100 pt-1">
+                            <span>Remaining Payable:</span>
+                            <span>₹{sub.payableamt.toFixed(2)}</span>
+                          </p>
+                        ) : (
+                           <div className="text-[10px] text-green-700 font-bold uppercase tracking-wider mt-1">
+                             Fully Paid via Wallet
+                           </div>
+                        )}
+                      </div>
+                    ) : null}
+                    
+                    {sub.paymentStatus === 'PAID' && (
+                      <div className="mt-3 space-y-1 text-xs text-gray-500 border-t pt-2">
+                        <div className="flex justify-between">
+                          <span>Mode:</span>
+                          <span className="font-medium text-gray-700">
+                            {sub.paymentMode === "BANK" ? "Bank Transfer" : (sub.paymentMode || ((sub.walletamt ?? 0) > 0 ? "WALLET" : "N/A"))}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Date:</span>
+                          <span className="font-medium text-gray-700">
+                            {format(new Date(sub.paymentDate || sub.createdAt), "dd MMM yyyy")}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Ref:</span>
+                          <span className="font-medium text-gray-700 truncate ml-4 max-w-[150px]">
+                            {sub.paymentReferenceNo || sub.productOrder?.orderNo || "N/A"}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </CardContent>
               <CardFooter className="p-4 pt-0">

@@ -418,14 +418,40 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
               {/* Empty space for alignment on desktop if needed, or we can leave it to stack */}
               <div className="hidden sm:block"></div>
 
+              {/* Total Amount */}
+              <div className="space-y-1.5">
+                <Label htmlFor="total-amount" className="text-sm font-medium">
+                  Total Amount
+                </Label>
+                <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 border rounded-md h-10">
+                  <IndianRupeeIcon className="h-4 w-4 text-gray-500" />
+                  <span id="total-amount" className="font-semibold text-base">
+                    {order.totalAmount?.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Wallet Amount */}
+              <div className="space-y-1.5">
+                <Label htmlFor="wallet-amount" className="text-sm font-medium">
+                  Paid via Wallet
+                </Label>
+                <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-md h-10">
+                  <IndianRupeeIcon className="h-4 w-4 text-green-600" />
+                  <span id="wallet-amount" className="font-semibold text-base text-green-700">
+                    {order.walletamt?.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+
               {/* Payable Amount */}
               <div className="space-y-1.5">
                 <Label htmlFor="payable-amount" className="text-sm font-medium">
-                  Payable Amount
+                  Remaining Payable
                 </Label>
-                <div className="flex items-center gap-2 px-3 py-2 bg-white border rounded-md h-10">
-                  <IndianRupeeIcon className="h-4 w-4 text-gray-500" />
-                  <span id="payable-amount" className="font-bold text-base">
+                <div className="flex items-center gap-2 px-3 py-2 bg-white border rounded-md h-10 ring-1 ring-blue-100">
+                  <IndianRupeeIcon className="h-4 w-4 text-blue-600" />
+                  <span id="payable-amount" className="font-bold text-base text-blue-700">
                     {payableAmount}
                   </span>
                 </div>
@@ -1771,9 +1797,16 @@ const AdminSubscriptionList: React.FC = () => {
                               {order.subscriptions.length > 1 ? "s" : ""}
                             </span>
                           </div>
-                          <div className="flex items-center gap-1 font-medium">
-                            <IndianRupeeIcon className="h-4 w-4" />
-                            <span>{(order.payableamt || 0).toFixed(2)}</span>
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-1 font-medium">
+                              <IndianRupeeIcon className="h-4 w-4" />
+                              <span className="text-lg">{(order.totalAmount || 0).toFixed(2)}</span>
+                            </div>
+                            {order.walletamt > 0 && (
+                              <div className="text-[10px] bg-green-50 text-green-700 px-1.5 py-0.5 rounded border border-green-100 w-fit">
+                                Incl. ₹{order.walletamt.toFixed(2)} Wallet
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1943,30 +1976,42 @@ const AdminSubscriptionList: React.FC = () => {
                           <div className="mt-3 pt-3 border-t border-gray-200">
                             <h4 className="text-xs font-semibold text-gray-600 mb-2">Payment Details</h4>
                             <div className="space-y-1.5 text-xs">
-                              {order.paymentMode && (
+                                {order.walletamt > 0 && order.payableamt > 0 && (
+                                  <div className="flex items-center gap-2 text-green-700 font-medium">
+                                    <span className="text-gray-500 min-w-[70px]">Wallet:</span>
+                                    <span>₹{order.walletamt.toFixed(2)}</span>
+                                  </div>
+                                )}
                                 <div className="flex items-center gap-2">
                                   <span className="text-gray-500 min-w-[70px]">Mode:</span>
                                   <span className="font-medium text-gray-700">
-                                    {order.paymentMode === "BANK" ? "Bank Transfer" : order.paymentMode}
+                                    {order.paymentMode === "BANK"
+                                      ? "Bank Transfer"
+                                      : (order.paymentMode || (order.walletamt > 0 ? "WALLET" : "N/A"))}
                                   </span>
                                 </div>
-                              )}
-                              {order.paymentDate && (
                                 <div className="flex items-center gap-2">
-                                  <span className="text-gray-500 min-w-[70px]">Date:</span>
+                                  <span className="text-gray-500 min-w-[70px]">Received:</span>
                                   <span className="font-medium text-gray-700">
-                                    {format(new Date(order.paymentDate), "dd MMM yyyy")}
+                                    ₹{(order.receivedamt || (order.payableamt === 0 ? order.walletamt : 0)).toFixed(2)}
                                   </span>
                                 </div>
-                              )}
-                              {order.paymentReferenceNo && (
-                                <div className="flex items-center gap-2">
-                                  <span className="text-gray-500 min-w-[70px]">Reference:</span>
-                                  <span className="font-medium text-gray-700 break-all">
-                                    {order.paymentReferenceNo}
-                                  </span>
-                                </div>
-                              )}
+                                {(order.paymentDate || (order.walletamt > 0 && order.payableamt === 0)) && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-gray-500 min-w-[70px]">Date:</span>
+                                    <span className="font-medium text-gray-700">
+                                      {format(new Date(order.paymentDate || order.createdAt), "dd MMM yyyy")}
+                                    </span>
+                                  </div>
+                                )}
+                                {(order.paymentReferenceNo || (order.walletamt > 0 && order.payableamt === 0)) && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-gray-500 min-w-[70px]">Reference:</span>
+                                    <span className="font-medium text-gray-700 break-all">
+                                      {order.paymentReferenceNo || order.orderNo}
+                                    </span>
+                                  </div>
+                                )}
                             </div>
                           </div>
                         )}
