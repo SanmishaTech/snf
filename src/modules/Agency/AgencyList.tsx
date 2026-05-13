@@ -26,7 +26,6 @@ import {
   CardTitle,
   CardDescription,
   CardContent,
-  CardFooter,
 } from "@/components/ui/card";
 import {
   DropdownMenu,
@@ -217,31 +216,15 @@ const AgencyList: React.FC = () => {
     return null;
   };
 
-  // Dialog state for ConfirmDialog
-  const [dialogState, setDialogState] = useState({
-    isOpen: false,
-    title: "",
-    description: "",
-    confirmButtonText: "",
-    onConfirm: null as (() => void) | null,
-  });
 
-  const handleCancelDialog = () => {
-    setDialogState({
-      ...dialogState,
-      isOpen: false,
-    });
-    setAgencyToDeleteId(null);
-  };
+
+
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
 
-  const handleRecordsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setRecordsPerPage(Number(e.target.value));
-    setCurrentPage(1);
-  };
+
 
   if (isError && error instanceof Error) {
     return (
@@ -257,9 +240,9 @@ const AgencyList: React.FC = () => {
         <CardHeader className="pb-2">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <CardTitle className="text-2xl">Delivery Partner</CardTitle>
+              <CardTitle className="text-2xl">Delivery Agencies</CardTitle>
               <CardDescription>
-                Manage your delivery partner and their details.
+                Manage your delivery agencies and their details.
               </CardDescription>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -278,7 +261,7 @@ const AgencyList: React.FC = () => {
                 className="w-full sm:w-auto bg-green-600 hover:bg-primary text-white"
               >
                 <PlusCircle size={16} className="mr-2" />
-                Add Delivery Partner
+                Add Delivery Agency
               </Button>
             </div>
           </div>
@@ -331,7 +314,7 @@ const AgencyList: React.FC = () => {
                       className="pl-6 cursor-pointer hover:bg-muted/80 transition-colors w-[200px]"
                       onClick={() => handleSort("name")}
                     >
-                      <div className="flex items-center gap-1">Delivery Partner Name {getSortIndicator("name")}</div>
+                      <div className="flex items-center gap-1">Delivery Agency Name {getSortIndicator("name")}</div>
                     </TableHead>
                     <TableHead
                       className="cursor-pointer hover:bg-muted/80 transition-colors w-[180px]"
@@ -395,7 +378,7 @@ const AgencyList: React.FC = () => {
                             size="icon"
                             className="h-8 w-8 text-blue-600 hover:text-blue-700"
                             onClick={() => navigate(`/admin/agencies/edit/${agency.id}`)}
-                            title="Edit Partner"
+                            title="Edit Agency"
                           >
                             <Edit size={16} />
                           </Button>
@@ -404,7 +387,7 @@ const AgencyList: React.FC = () => {
                             size="icon"
                             className="h-8 w-8 text-red-600 hover:text-red-700"
                             onClick={() => confirmDeleteAgency(agency.id)}
-                            title="Delete Partner"
+                            title="Delete Agency"
                           >
                             <Trash2 size={16} />
                           </Button>
@@ -454,14 +437,14 @@ const AgencyList: React.FC = () => {
               <p className="mb-6 text-muted-foreground max-w-sm">
                 {search
                   ? "Try a different search term or clear filters"
-                  : "Get started by adding your first Delivery Partner"}
+                  : "Get started by adding your first Delivery Agency"}
               </p>
               <Button
                 onClick={() => navigate("/admin/agencies/create")}
                 className="bg-green-600 hover:bg-primary text-white"
               >
                 <PlusCircle size={16} className="mr-2" />
-                Add Delivery Partner
+                Add Delivery Agency
               </Button>
             </div>
           ) : (
@@ -502,6 +485,12 @@ const AgencyList: React.FC = () => {
                     currentPage={currentPage}
                     totalPages={totalPages}
                     onPageChange={handlePageChange}
+                    totalRecords={totalAgencies}
+                    recordsPerPage={recordsPerPage}
+                    onRecordsPerPageChange={(value) => {
+                      setRecordsPerPage(value);
+                      setCurrentPage(1);
+                    }}
                   />
                 )}
               </div>
@@ -522,14 +511,14 @@ const AgencyList: React.FC = () => {
       {/* Confirm Delete Dialog */}
       <ConfirmDialog
         isOpen={showConfirmDeleteDialog}
-        title="Delete Delivery Partner"
+        title="Delete Delivery Agency"
         description="Are you sure you want to delete this delivery agency? This action cannot be undone."
         onCancel={() => {
           setShowConfirmDeleteDialog(false);
           setAgencyToDeleteId(null);
         }}
         onConfirm={handleDeleteAgency}
-        confirmLabel="Delete Delivery Partner"
+        confirmLabel="Delete Delivery Agency"
       />
     </div>
   );

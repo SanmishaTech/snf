@@ -212,7 +212,7 @@ const initialData = {
           groupLabel: "SNF",
         },
         {
-          title: "Delivery Partners",
+          title: "Agencies",
           url: "/admin/agencies",
           icon: Briefcase,
           groupLabel: "Indraai",
@@ -262,7 +262,7 @@ const initialData = {
           groupLabel: "Indraai Reports",
         },
         {
-          title: "Delivery Partners Report",
+          title: "Agencies Report",
           url: "/admin/reports/delivery-agencies",
           icon: BarChart3,
           groupLabel: "Indraai Reports",
@@ -562,16 +562,16 @@ const initialData = {
           title: "Orders",
           url: "/admin/orders",
           icon: FileText,
-          groupLabel: "Delivery Partners Portal",
+          groupLabel: "Agencies Portal",
         },
         {
           title: "Delivery",
           url: "/admin/delivery",
           icon: FileText,
-          groupLabel: "Delivery Partners Portal",
+          groupLabel: "Agencies Portal",
         },
         {
-          title: "Delivery Partners Report",
+          title: "Agencies Report",
           url: "/admin/reports/delivery-agencies",
           icon: BarChart3,
           groupLabel: "Reports",

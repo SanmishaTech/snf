@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 
 const baseAgencySchema = z.object({
-  name: z.string().min(1, "Partner name is required"),
+  name: z.string().min(1, "Agency name is required"),
   contactPersonName: z.string().optional(),
   email: z.string().optional().nullable(),
   mobile: z.string().regex(/^\d{10}$/, "Mobile number must be 10 digits"),
@@ -123,7 +123,7 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
       const fetchAgency = async () => {
         try {
           const agency = await get(`/agencies/${agencyId}`)
-          console.log("Partner Data:", agency)
+          console.log("Agency Data:", agency)
           console.log("Setting depot ID to:", agency.depotId)
           
           setValue("name", agency.name);
@@ -219,7 +219,7 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
       }
     },
     onSuccess: () => {
-      toast.success(`Partner ${mode === "create" ? "created (with user)" : "updated"} successfully`);
+      toast.success(`Agency ${mode === "create" ? "created (with user)" : "updated"} successfully`);
       queryClient.invalidateQueries({ queryKey: ["agencies"] });
       queryClient.invalidateQueries({ queryKey: ["users"] });
       if (agencyId && mode === 'edit') {
@@ -240,13 +240,13 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className={`space-y-6 ${className}`}>
-      {/* Partner Details Section */}
+      {/* Agency Details Section */}
       <div className="border-b pb-4 mb-4 mt-6">
-          <h3 className="text-lg font-medium leading-6 text-gray-900">Delivery Partner Details</h3>
+          <h3 className="text-lg font-medium leading-6 text-gray-900">Delivery Agency Details</h3>
       </div>
 
       <div className="grid gap-2 relative">
-        <Label htmlFor="name">Delivery Partner Name</Label>
+        <Label htmlFor="name">Delivery Agency Name</Label>
         <Input id="name" type="text"  {...register("name")} disabled={isSubmitting} />
         {errors.name && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.name.message}</span>}
       </div>
@@ -274,7 +274,7 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
         <div className="grid gap-2 relative">
           <Label htmlFor="alternateMobile">Alternate Mobile (Optional)</Label>
           <Input id="alternateMobile" type="text"  {...register("alternateMobile")} disabled={isSubmitting} />
-          {errors.alternateMobile && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.alternateMobile.message}</span>}
+          {errors.alternateMobile && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{(errors.alternateMobile as any).message}</span>}
         </div>
       </div>
 
@@ -287,7 +287,7 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
         <div className="grid gap-2 relative">
           <Label htmlFor="address2">Address Line 2 (Optional)</Label>
           <Input id="address2" type="text"  {...register("address2")} disabled={isSubmitting} />
-          {errors.address2 && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{errors.address2.message}</span>}
+          {errors.address2 && <span className="text-red-500 text-xs absolute bottom-0 translate-y-full pt-1">{(errors.address2 as any).message}</span>}
         </div>
       </div>
 
@@ -415,7 +415,7 @@ const AgencyForm: React.FC<AgencyFormProps> = ({ mode, agencyId, onSuccess, init
               {mode === "create" ? "Creating..." : "Updating..."}
             </>
           ) : (
-            <>{mode === "create" ? "Create Delivery Partner" : "Update Delivery Partner"}</>
+            <>{mode === "create" ? "Create Delivery Agency" : "Update Delivery Agency"}</>
           )}
         </Button>
       </div>
